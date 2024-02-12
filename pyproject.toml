@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "ruff-sync"
+version = "0.0.1.dev0"
+description = "Syncronize ruff linter config settings accross projects"
+authors = ["Gabriel Gore <gabriel59kg@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+httpx = "^0.26.0"
+
+[tool.poetry.group.dev.dependencies]
+invoke = "^2.2.0"
+mypy = "^1.8.0"
+pytest = "^8.0.0"
+respx = "^0.20.2"
+ruff = "^0.2.1"
+pytest-asyncio = "^0.23.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
