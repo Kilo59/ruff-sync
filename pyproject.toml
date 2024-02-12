@@ -14,13 +14,25 @@ httpx = "^0.26.0"
 invoke = "^2.2.0"
 mypy = "^1.8.0"
 pytest = "^8.0.0"
+pytest-asyncio = "^0.23.5"
 respx = "^0.20.2"
 ruff = "^0.2.1"
-pytest-asyncio = "^0.23.5"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = "3.9"
+files = ["ruff-sync/", "tests/", "tasks.py"]
+strict = true
+warn_unused_configs = true
+ignore_missing_imports = true
+warn_redundant_casts = true
+show_error_codes = true
+implicit_reexport = false
+disallow_any_generics = true
+enable_error_code = ['ignore-without-code', 'explicit-override']
 
 [tool.ruff]
 target-version = "py39"
