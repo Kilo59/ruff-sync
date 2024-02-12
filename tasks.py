@@ -39,6 +39,7 @@ def lint(ctx: Context, check: bool = False, unsafe_fixes: bool = False) -> None:
         cmds.extend(["--unsafe-fixes", "--show-fixes"])
     ctx.run(" ".join(cmds), echo=True, pty=True)
 
+
 @invoke.task(
     aliases=["types"],
 )
