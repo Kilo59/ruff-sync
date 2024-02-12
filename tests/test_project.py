@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import re
+import sys
 import warnings
 from pprint import pformat as pf
 from typing import TYPE_CHECKING, Final
@@ -22,6 +23,9 @@ LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 PROJECT_ROOT: Final = pathlib.Path(__file__).parent.parent
 PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
+
+PYTHON_VERSION: Final = Version(sys.version.split()[0])
+MIN_PYTHON_VERSION: Final = Version("3.9")  # TODO: get this from pyproject.toml
 
 
 @pytest.fixture
@@ -96,6 +100,10 @@ def latest_poetry_version(lock_file_poetry_version: Version) -> Version:
     return latest_version
 
 
+@pytest.mark.skipif(
+    PYTHON_VERSION.minor != MIN_PYTHON_VERSION.minor,
+    reason=f"only testing for python {MIN_PYTHON_VERSION}",
+)
 def test_lockfile_poetry_version(lock_file_poetry_version: Version, latest_poetry_version: Version):
     """
     This test ensures that the poetry.lock file was generated using a recent version of poetry.
