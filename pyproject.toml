@@ -44,6 +44,8 @@ disable_error_code = ['type-arg', 'no-untyped-def']
 target-version = "py39"
 line-length = 100
 lint.select = [
+    # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "ASYNC", # async rules
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
     "F", # Pyflakes
     # https://beta.ruff.rs/docs/rules/#pycodestyle-e-w
