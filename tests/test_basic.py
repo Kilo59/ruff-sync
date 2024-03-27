@@ -77,7 +77,9 @@ def mock_http(toml_s: str) -> Generator[respx.MockRouter, None, None]:
 @pytest.fixture
 def fake_fs_source(fs: FakeFilesystem) -> pathlib.Path:
     """Create a fake file system with a pyproject.toml file."""
-    ff = fs.create_file("my_dir/pyproject.toml", contents=ROOT_PYPROJECT_TOML.read_text())
+    ff = fs.create_file(
+        "my_dir/pyproject.toml", contents=ROOT_PYPROJECT_TOML.read_text()
+    )
     ff_path = pathlib.Path(ff.path)
     assert ff_path.read_text() == ROOT_PYPROJECT_TOML.read_text()
     return ff_path
