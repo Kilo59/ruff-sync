@@ -82,6 +82,7 @@ async def sync(
         source_toml_path = args.source / "pyproject.toml"
     source_toml_path = source_toml_path.resolve(strict=True)
 
+    # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
         file_buffer = await download(args.upstream, client)
 
