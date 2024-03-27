@@ -17,6 +17,17 @@ ROOT_PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 assert ROOT_PYPROJECT_TOML.exists(), f"{ROOT_PYPROJECT_TOML} does not exist"
 
 
+@pytest.fixture(scope="session")
+def pyproject_toml_s() -> str:
+    """
+    The contents of the root pyproject.toml file.
+    Prevents problems with the file or file system being modified during tests.
+    """
+    s = ROOT_PYPROJECT_TOML.read_text()
+    assert s, f"{ROOT_PYPROJECT_TOML} was empty"
+    return s
+
+
 def test_ruff_sync():
     assert ruff_sync.__version__ == "0.0.1.dev0"
 
@@ -76,13 +87,11 @@ def mock_http(toml_s: str) -> Generator[respx.MockRouter, None, None]:
 
 
 @pytest.fixture
-def fake_fs_source(fs: FakeFilesystem) -> pathlib.Path:
+def fake_fs_source(fs: FakeFilesystem, pyproject_toml_s: str) -> pathlib.Path:
     """Create a fake file system with a pyproject.toml file."""
-    ff = fs.create_file(
-        "my_dir/pyproject.toml", contents=ROOT_PYPROJECT_TOML.read_text()
-    )
+    ff = fs.create_file("my_dir/pyproject.toml", contents=pyproject_toml_s)
     ff_path = pathlib.Path(ff.path)  # type: ignore[arg-type]
-    assert ff_path.read_text() == ROOT_PYPROJECT_TOML.read_text()
+    assert ff_path.read_text() == pyproject_toml_s
     return ff_path
 
 
