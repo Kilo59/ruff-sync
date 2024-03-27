@@ -1,14 +1,19 @@
 import pathlib
 from collections.abc import Generator
 from pprint import pformat as pf
+from typing import Final
 
 import pytest
 import respx
 import tomlkit
 from httpx import URL
+from pyfakefs.fake_filesystem import FakeFilesystem
 from tomlkit import TOMLDocument
 
 import ruff_sync
+
+PROJECT_ROOT: Final = pathlib.Path(__file__).parent.parent
+ROOT_PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 
 
 def test_ruff_sync():
@@ -69,11 +74,19 @@ def mock_http(toml_s: str) -> Generator[respx.MockRouter, None, None]:
         yield respx_mock
 
 
+@pytest.fixture
+def fake_fs_source(fs: FakeFilesystem) -> pathlib.Path:
+    """Create a fake file system with a pyproject.toml file."""
+    ff = fs.create_file("my_dir/pyproject.toml", contents=ROOT_PYPROJECT_TOML.read_text())
+    ff_path = pathlib.Path(ff.path)
+    assert ff_path.read_text() == ROOT_PYPROJECT_TOML.read_text()
+    return ff_path
+
+
 @pytest.mark.asyncio
-async def test_sync(mock_http: respx.MockRouter):
-    # TODO: mock file system
+async def test_sync(mock_http: respx.MockRouter, fake_fs_source: pathlib.Path):
     upstream = URL("https://example.com/pyproject.toml")
-    await ruff_sync.sync(ruff_sync.Arguments(upstream=upstream, source=pathlib.Path()))
+    await ruff_sync.sync(ruff_sync.Arguments(upstream=upstream, source=fake_fs_source))
 
 
 if __name__ == "__main__":
