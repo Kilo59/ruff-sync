@@ -41,7 +41,10 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-def toml_ruff_parse(toml_s: str, exclude: Iterable[str] = ()) -> tomlkit.TOMLDocument:
+def toml_ruff_parse(
+    toml_s: str, exclude: Iterable[str] = ("per-file-ignores",)
+) -> tomlkit.TOMLDocument:
+    """Parse a TOML string excluding certain sections from the ruff tool section."""
     toml_doc = tomlkit.parse(toml_s)
     for section in exclude:
         toml_doc["tool"]["ruff"]["lint"].pop(section, None)  # type: ignore[index,union-attr]
@@ -52,7 +55,7 @@ async def main(args: Arguments) -> Any:
     print("Syncing Ruff...")
     async with httpx.AsyncClient() as client:
         file_buffer = await download(DEMO_URL, client)
-        as_toml = toml_ruff_parse(file_buffer.read(), exclude={"per-file-ignores"})
+        as_toml = toml_ruff_parse(file_buffer.read())
         print(as_toml)
 
 
