@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
 __version__ = "0.0.1.dev0"
 
+_DEFAULT_EXCLUDE: Final[set[str]] = {"per-file-ignores"}
+
 
 def _get_cli_parser() -> ArgumentParser:
     parser = ArgumentParser()
@@ -30,12 +32,20 @@ def _get_cli_parser() -> ArgumentParser:
         help="The directory to sync the pyproject.toml file to.",
         required=False,
     )
+    parser.add_argument(
+        "--exclude",
+        nargs="+",
+        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        type=set,
+        default=_DEFAULT_EXCLUDE,
+    )
     return parser
 
 
 class Arguments(NamedTuple):
     upstream: URL
     source: pathlib.Path
+    exclude: Iterable[str] = ()
 
 
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
@@ -45,9 +55,7 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-def toml_ruff_parse(
-    toml_s: str, exclude: Iterable[str] = ("per-file-ignores",)
-) -> tomlkit.TOMLDocument:
+def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> tomlkit.TOMLDocument:
     """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
     ruff_toml: tomlkit.TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
     for section in exclude:
@@ -77,7 +85,7 @@ async def sync(
     async with httpx.AsyncClient() as client:
         file_buffer = await download(args.upstream, client)
 
-    ruff_toml = toml_ruff_parse(file_buffer.read())
+    ruff_toml = toml_ruff_parse(file_buffer.read(), exclude=args.exclude)
     merged_toml = merge_ruff_toml(
         tomlkit.parse(source_toml_path.read_text()),
         ruff_toml,
