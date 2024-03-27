@@ -57,7 +57,7 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
     expected_sections = orginal_keys - set(exclude)
     for section in expected_sections:
         assert (
-            section in original_toml_doc["tool"]["ruff"]["lint"]  # type: ignore[index,union-attr]
+            section in original_toml_doc["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
         ), f"{section} was not in original doc, fix test"
 
         assert section in lint_config, f"{section} was incorrectly excluded"
@@ -80,7 +80,7 @@ def fake_fs_source(fs: FakeFilesystem) -> pathlib.Path:
     ff = fs.create_file(
         "my_dir/pyproject.toml", contents=ROOT_PYPROJECT_TOML.read_text()
     )
-    ff_path = pathlib.Path(ff.path)
+    ff_path = pathlib.Path(ff.path)  # type: ignore[arg-type]
     assert ff_path.read_text() == ROOT_PYPROJECT_TOML.read_text()
     return ff_path
 

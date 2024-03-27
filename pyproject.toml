@@ -36,6 +36,7 @@ strict = true
 warn_unused_configs = true
 ignore_missing_imports = true
 warn_redundant_casts = true
+warn_unused_ignores = true
 show_error_codes = true
 implicit_reexport = false
 disallow_any_generics = true
