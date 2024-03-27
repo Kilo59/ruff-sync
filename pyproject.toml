@@ -6,6 +6,9 @@ authors = ["Gabriel Gore <gabriel59kg@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
+[tool.poetry.scripts]
+ruff-sync = "ruff_sync:main"
+
 [tool.poetry.dependencies]
 python = "^3.9"
 httpx = "^0.26.0"

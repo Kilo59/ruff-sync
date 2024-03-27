@@ -4,7 +4,7 @@ import asyncio
 import pathlib
 from argparse import ArgumentParser
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 import httpx
 import tomlkit
@@ -65,7 +65,10 @@ def merge_ruff_toml(
     return source
 
 
-async def main(args: Arguments) -> Any:
+async def sync(
+    args: Arguments,
+) -> None:
+    """Sync the upstream pyproject.toml file to the source directory."""
     print("Syncing Ruff...")
     if args.source.is_file():
         source_toml_path = args.source
@@ -87,13 +90,18 @@ async def main(args: Arguments) -> Any:
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
-if __name__ == "__main__":
+
+def main() -> None:
     args = PARSER.parse_args()
     asyncio.run(
-        main(
+        sync(
             Arguments(
                 upstream=args.upstream,
                 source=args.source,
             )
         )
     )
+
+
+if __name__ == "__main__":
+    main()
