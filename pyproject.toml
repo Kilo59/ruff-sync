@@ -12,6 +12,7 @@ httpx = "^0.26.0"
 tomlkit = "^0.12.3"
 
 [tool.poetry.group.dev.dependencies]
+coverage = "^7.4.4"
 invoke = "^2.2.0"
 mypy = "^1.9.0"
 pytest = "^8.0.0"
@@ -77,3 +78,8 @@ lint.select = [
     # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
     "S", # bandit - security
 ]
+
+[tool.coverage.run]
+include = [
+    "ruff_sync.py",
+    ]
