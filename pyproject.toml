@@ -103,12 +103,6 @@ lint.ignore = [
 "ISC002", # multi-line-implicit-string-concatenation
 ]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-    "S603", # don't need to validate input for test of ruff-sync
-    "S607", # don't want to test the full path of ruff-sync
-]
-
 [tool.coverage.run]
 include = [
     "ruff_sync.py",
