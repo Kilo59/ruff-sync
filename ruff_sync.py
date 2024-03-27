@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import asyncio
 import pathlib
 from argparse import ArgumentParser
-from collections.abc import Iterable
 from io import StringIO
-from typing import Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 import httpx
 import tomlkit
 from httpx import URL
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 DEMO_URL = URL("https://raw.githubusercontent.com/great-expectations/cloud/main/pyproject.toml")
 
@@ -51,12 +55,32 @@ def toml_ruff_parse(
     return ruff_toml
 
 
+def merge_ruff_toml(
+    source: tomlkit.TOMLDocument, upstream_update: tomlkit.TOMLDocument
+) -> tomlkit.TOMLDocument:
+    """Merge the source and upstream ruff toml config."""
+    source["tool"]["ruff"].update(upstream_update)  # type: ignore[index,union-attr]
+    return source
+
+
 async def main(args: Arguments) -> Any:
     print("Syncing Ruff...")
+    if args.source.is_file():
+        source_toml_path = args.source
+    else:
+        source_toml_path = args.source / "pyproject.toml"
+    source_toml_path = source_toml_path.resolve(strict=True)
+
     async with httpx.AsyncClient() as client:
         file_buffer = await download(DEMO_URL, client)
-        as_toml = toml_ruff_parse(file_buffer.read())
-        print(as_toml)
+
+    ruff_toml = toml_ruff_parse(file_buffer.read())
+    merged_toml = merge_ruff_toml(
+        tomlkit.parse(source_toml_path.read_text()),
+        ruff_toml,
+    )
+    source_toml_path.write_text(merged_toml.as_string())
+    print(f"Updated {source_toml_path.relative_to(pathlib.Path.cwd())}")
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
