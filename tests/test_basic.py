@@ -14,6 +14,7 @@ import ruff_sync
 
 PROJECT_ROOT: Final = pathlib.Path(__file__).parent.parent
 ROOT_PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
+assert ROOT_PYPROJECT_TOML.exists(), f"{ROOT_PYPROJECT_TOML} does not exist"
 
 
 def test_ruff_sync():
