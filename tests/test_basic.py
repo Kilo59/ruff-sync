@@ -30,7 +30,7 @@ def toml_s() -> str:
 
 
 @pytest.mark.parametrize(
-    "exclude", [("per-file-ignores", "line-length"), ("ignore", "target-version")]
+    "exclude", [("per-file-ignores", "line-length"), ("ignore", "target-version"), ()]
 )
 def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
     original_toml_doc = tomlkit.parse(toml_s)
@@ -47,7 +47,11 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
 
     expected_sections = orginal_keys - set(exclude)
     for section in expected_sections:
-        assert section in lint_config
+        assert (
+            section in original_toml_doc["tool"]["ruff"]["lint"]  # type: ignore[index,union-attr]
+        ), f"{section} was not in original doc, fix test"
+
+        assert section in lint_config, f"{section} was incorrectly excluded"
 
 
 if __name__ == "__main__":
