@@ -1,0 +1,26 @@
+# tests/ specific ruff linter overrides
+
+# root linter settings are defined in the file below
+extend = "../pyproject.toml"
+
+lint.extend-ignore = [
+    # https://github.com/charliermarsh/ruff#flake8-type-checking-tch
+    # This is likely to be a high-touch rule. Doing this in `tests` doesn't help circular imports.
+    # Let's differ this for tests until there are auto-fixes
+    "TCH001",
+    # https://beta.ruff.rs/docs/rules/#flake8-tidy-imports-tid
+    # https://beta.ruff.rs/docs/rules/#flake8-bugbear-b
+    "B011", # assert-false - common pattern in pytest
+    # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
+    "PLR2004", # magic value comparison is common test pattern
+    "RUF015", # element index slice is common test pattern
+    # we don't need to enforce these security rules for tests
+    "S101", # https://docs.astral.sh/ruff/rules/assert/
+    "S105", # https://docs.astral.sh/ruff/rules/hardcoded-password-string/
+    "S106", # https://docs.astral.sh/ruff/rules/hardcoded-password-func-arg/
+    "S311", # https://docs.astral.sh/ruff/rules/suspicious-non-cryptographic-random-usage/
+    "S608", # https://docs.astral.sh/ruff/rules/hardcoded-sql-expression/
+]
+
+[lint.isort]
+known-first-party = ["ruff_sync", "tests"]
