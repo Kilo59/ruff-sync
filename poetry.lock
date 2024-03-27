@@ -296,6 +296,17 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "pyfakefs"
+version = "5.3.5"
+description = "pyfakefs implements a fake file system that mocks the Python file system modules."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pyfakefs-5.3.5-py3-none-any.whl", hash = "sha256:751015c1de94e1390128c82b48cdedc3f088bbdbe4bc713c79d02a27f0f61e69"},
+    {file = "pyfakefs-5.3.5.tar.gz", hash = "sha256:7cdc500b35a214cb7a614e1940543acc6650e69a94ac76e30f33c9373bd9cf90"},
+]
+
+[[package]]
 name = "pytest"
 version = "8.1.1"
 description = "pytest: simple powerful testing with Python"
@@ -499,4 +510,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "ce158460c8169d684b3fedec5ab1f857d33e093f6cdcf840a70697ef7c2b42fb"
+content-hash = "5c1dc291113c5a4cff8014a531773ad1411f7f2e3c29c92de0ebd857dbff64e6"
