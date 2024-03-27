@@ -10,7 +10,14 @@ CLI tool for keeping multiple project in sync with a single ruff config.
 pip install ruff-sync
 ```
 
-```
-console
-ruff-sync --source https://github.com/Kilo59/ruff-sync-example
+```console
+$ ruff-sync --help
+usage: ruff-sync [-h] [--source SOURCE] upstream
+
+positional arguments:
+  upstream         The URL to download the pyproject.toml file from.
+
+options:
+  -h, --help       show this help message and exit
+  --source SOURCE  The directory to sync the pyproject.toml file to.
 ```
