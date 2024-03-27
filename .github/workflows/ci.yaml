@@ -72,7 +72,7 @@ jobs:
         run: poetry install --sync
 
       - name: Run tests
-        run: poetry run coverage run -m pytest
+        run: poetry run coverage run -m pytest -vv
 
       - name: Generate coverage report
         run: poetry run coverage xml
