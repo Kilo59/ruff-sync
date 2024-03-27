@@ -1,12 +1,13 @@
 import asyncio
 import pathlib
 from argparse import ArgumentParser
+from collections.abc import Iterable
 from io import StringIO
 from typing import Any, Final, NamedTuple
 
 import httpx
+import tomlkit
 from httpx import URL
-from tomlkit import parse as toml_parse
 
 DEMO_URL = URL("https://raw.githubusercontent.com/great-expectations/cloud/main/pyproject.toml")
 
@@ -33,10 +34,6 @@ class Arguments(NamedTuple):
     source: pathlib.Path
 
 
-def _parse_url(url: str) -> URL:
-    return URL(url)
-
-
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     """Download a file from a URL and return a StringIO object."""
     response = await client.get(url)
@@ -44,11 +41,18 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
+def toml_ruff_parse(toml_s: str, exclude: Iterable[str] = ()) -> tomlkit.TOMLDocument:
+    toml_doc = tomlkit.parse(toml_s)
+    for section in exclude:
+        toml_doc["tool"]["ruff"]["lint"].pop(section, None)  # type: ignore[index,union-attr]
+    return toml_doc
+
+
 async def main(args: Arguments) -> Any:
     print("Syncing Ruff...")
     async with httpx.AsyncClient() as client:
         file_buffer = await download(DEMO_URL, client)
-        as_toml = toml_parse(file_buffer.read())
+        as_toml = toml_ruff_parse(file_buffer.read(), exclude={"per-file-ignores"})
         print(as_toml)
 
 
