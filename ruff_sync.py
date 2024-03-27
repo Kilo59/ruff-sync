@@ -13,6 +13,8 @@ from httpx import URL
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+__version__ = "0.0.1.dev0"
+
 DEMO_URL = URL("https://raw.githubusercontent.com/great-expectations/cloud/main/pyproject.toml")
 
 
