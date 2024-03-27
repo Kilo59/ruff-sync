@@ -1,7 +1,11 @@
+import pathlib
+from collections.abc import Generator
 from pprint import pformat as pf
 
 import pytest
+import respx
 import tomlkit
+from httpx import URL
 from tomlkit import TOMLDocument
 
 import ruff_sync
@@ -52,6 +56,24 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
         ), f"{section} was not in original doc, fix test"
 
         assert section in lint_config, f"{section} was incorrectly excluded"
+
+
+@pytest.fixture
+def mock_http(toml_s: str) -> Generator[respx.MockRouter, None, None]:
+    with respx.mock(base_url="https://example.com/") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=toml_s,
+        )
+        yield respx_mock
+
+
+@pytest.mark.asyncio
+async def test_sync(mock_http: respx.MockRouter):
+    # TODO: mock file system
+    upstream = URL("https://example.com/pyproject.toml")
+    await ruff_sync.sync(ruff_sync.Arguments(upstream=upstream, source=pathlib.Path()))
 
 
 if __name__ == "__main__":

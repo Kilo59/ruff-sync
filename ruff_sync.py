@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 
 __version__ = "0.0.1.dev0"
 
-DEMO_URL = URL("https://raw.githubusercontent.com/great-expectations/cloud/main/pyproject.toml")
-
 
 def _get_cli_parser() -> ArgumentParser:
     parser = ArgumentParser()
@@ -77,7 +75,7 @@ async def sync(
     source_toml_path = source_toml_path.resolve(strict=True)
 
     async with httpx.AsyncClient() as client:
-        file_buffer = await download(DEMO_URL, client)
+        file_buffer = await download(args.upstream, client)
 
     ruff_toml = toml_ruff_parse(file_buffer.read())
     merged_toml = merge_ruff_toml(
