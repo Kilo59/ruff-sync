@@ -45,7 +45,7 @@ def _get_cli_parser() -> ArgumentParser:
 class Arguments(NamedTuple):
     upstream: URL
     source: pathlib.Path
-    exclude: Iterable[str] = ()
+    exclude: Iterable[str]
 
 
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
@@ -105,6 +105,7 @@ def main() -> None:
             Arguments(
                 upstream=args.upstream,
                 source=args.source,
+                exclude=args.exclude,
             )
         )
     )

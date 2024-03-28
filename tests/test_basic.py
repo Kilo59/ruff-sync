@@ -98,7 +98,9 @@ def fake_fs_source(fs: FakeFilesystem, pyproject_toml_s: str) -> pathlib.Path:
 @pytest.mark.asyncio
 async def test_sync(mock_http: respx.MockRouter, fake_fs_source: pathlib.Path):
     upstream = URL("https://example.com/pyproject.toml")
-    await ruff_sync.sync(ruff_sync.Arguments(upstream=upstream, source=fake_fs_source))
+    await ruff_sync.sync(
+        ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
+    )
 
 
 if __name__ == "__main__":
