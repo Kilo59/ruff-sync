@@ -3,20 +3,46 @@ from __future__ import annotations
 import asyncio
 import pathlib
 from argparse import ArgumentParser
+from functools import lru_cache
 from io import StringIO
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 import httpx
 import tomlkit
 from httpx import URL
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
 __version__ = "0.0.1.dev0"
 
+_DEFAULT_EXCLUDE: Final[set[str]] = {"per-file-ignores"}
+
+
+@lru_cache(maxsize=1)
+def get_config(
+    source: pathlib.Path,
+) -> Mapping[Literal["upstream", "source", "exclude"], str | list[str]]:
+    local_toml = source / "pyproject.toml"
+    # TODO: use pydanitc to validate the toml file
+    if local_toml.exists():
+        toml = tomlkit.parse(local_toml.read_text())
+        config = toml.get("tool", {}).get("ruff-sync")
+        if config:
+            return config  # type: ignore[no-any-return]
+    return {}
+
+
+@lru_cache(maxsize=1)
+def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
+    if isinstance(source, str):
+        source = pathlib.Path(source)
+    return source.resolve(strict=True)
+
 
 def _get_cli_parser() -> ArgumentParser:
+    # TODO: determine if args was provided by user or not
+    # https://docs.python.org/3/library/argparse.html#nargs
     parser = ArgumentParser()
     parser.add_argument(
         "upstream",
@@ -27,8 +53,15 @@ def _get_cli_parser() -> ArgumentParser:
         "--source",
         type=pathlib.Path,
         default=".",
-        help="The directory to sync the pyproject.toml file to.",
+        help="The directory to sync the pyproject.toml file to. Default: .",
         required=False,
+    )
+    parser.add_argument(
+        "--exclude",
+        nargs="+",
+        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        type=set,
+        default=_DEFAULT_EXCLUDE,
     )
     return parser
 
@@ -36,6 +69,7 @@ def _get_cli_parser() -> ArgumentParser:
 class Arguments(NamedTuple):
     upstream: URL
     source: pathlib.Path
+    exclude: Iterable[str]
 
 
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
@@ -45,9 +79,7 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-def toml_ruff_parse(
-    toml_s: str, exclude: Iterable[str] = ("per-file-ignores",)
-) -> tomlkit.TOMLDocument:
+def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> tomlkit.TOMLDocument:
     """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
     ruff_toml: tomlkit.TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
     for section in exclude:
@@ -74,10 +106,11 @@ async def sync(
         source_toml_path = args.source / "pyproject.toml"
     source_toml_path = source_toml_path.resolve(strict=True)
 
+    # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
         file_buffer = await download(args.upstream, client)
 
-    ruff_toml = toml_ruff_parse(file_buffer.read())
+    ruff_toml = toml_ruff_parse(file_buffer.read(), exclude=args.exclude)
     merged_toml = merge_ruff_toml(
         tomlkit.parse(source_toml_path.read_text()),
         ruff_toml,
@@ -91,11 +124,13 @@ PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 def main() -> None:
     args = PARSER.parse_args()
+    # config = get_config(args.source)
     asyncio.run(
         sync(
             Arguments(
                 upstream=args.upstream,
                 source=args.source,
+                exclude=args.exclude,
             )
         )
     )

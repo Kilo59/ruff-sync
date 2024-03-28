@@ -19,6 +19,8 @@ lint.extend-ignore = [
     "S105", # https://docs.astral.sh/ruff/rules/hardcoded-password-string/
     "S106", # https://docs.astral.sh/ruff/rules/hardcoded-password-func-arg/
     "S311", # https://docs.astral.sh/ruff/rules/suspicious-non-cryptographic-random-usage/
+    "S603", # https://docs.astral.sh/ruff/rules/subprocess-without-shell-equals-true/
+    "S607", # https://docs.astral.sh/ruff/rules/start-process-with-partial-path/
     "S608", # https://docs.astral.sh/ruff/rules/hardcoded-sql-expression/
 ]
 
