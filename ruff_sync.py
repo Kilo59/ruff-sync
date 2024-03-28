@@ -3,22 +3,46 @@ from __future__ import annotations
 import asyncio
 import pathlib
 from argparse import ArgumentParser
+from functools import lru_cache
 from io import StringIO
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 import httpx
 import tomlkit
 from httpx import URL
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
 __version__ = "0.0.1.dev0"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"per-file-ignores"}
 
 
+@lru_cache(maxsize=1)
+def get_config(
+    source: pathlib.Path,
+) -> Mapping[Literal["upstream", "source", "exclude"], str | list[str]]:
+    local_toml = source / "pyproject.toml"
+    # TODO: use pydanitc to validate the toml file
+    if local_toml.exists():
+        toml = tomlkit.parse(local_toml.read_text())
+        config = toml.get("tool", {}).get("ruff-sync")
+        if config:
+            return config  # type: ignore[no-any-return]
+    return {}
+
+
+@lru_cache(maxsize=1)
+def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
+    if isinstance(source, str):
+        source = pathlib.Path(source)
+    return source.resolve(strict=True)
+
+
 def _get_cli_parser() -> ArgumentParser:
+    # TODO: determine if args was provided by user or not
+    # https://docs.python.org/3/library/argparse.html#nargs
     parser = ArgumentParser()
     parser.add_argument(
         "upstream",
@@ -29,7 +53,7 @@ def _get_cli_parser() -> ArgumentParser:
         "--source",
         type=pathlib.Path,
         default=".",
-        help="The directory to sync the pyproject.toml file to.",
+        help="The directory to sync the pyproject.toml file to. Default: .",
         required=False,
     )
     parser.add_argument(
@@ -100,6 +124,7 @@ PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 def main() -> None:
     args = PARSER.parse_args()
+    # config = get_config(args.source)
     asyncio.run(
         sync(
             Arguments(
