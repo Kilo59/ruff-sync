@@ -1,20 +1,30 @@
+from __future__ import annotations
+
+import contextlib
+import os
 import pathlib
-from collections.abc import Generator
 from pprint import pformat as pf
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import pytest
 import respx
 import tomlkit
 from httpx import URL
-from pyfakefs.fake_filesystem import FakeFilesystem
 from tomlkit import TOMLDocument
 
 import ruff_sync
 
-PROJECT_ROOT: Final = pathlib.Path(__file__).parent.parent
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from pyfakefs.fake_filesystem import FakeFilesystem
+
+TEST_ROOT: Final = pathlib.Path(__file__).parent
+PROJECT_ROOT: Final = TEST_ROOT.parent
 ROOT_PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 assert ROOT_PYPROJECT_TOML.exists(), f"{ROOT_PYPROJECT_TOML} does not exist"
+
+SAMLPLE_TOML_W_RUFF_SYNC_CFG: Final = TEST_ROOT / "w_ruff_sync_cfg"
 
 
 @pytest.fixture(scope="session")
@@ -101,6 +111,41 @@ async def test_sync(mock_http: respx.MockRouter, fake_fs_source: pathlib.Path):
     await ruff_sync.sync(
         ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
     )
+
+
+@contextlib.contextmanager
+def temp_cd(path: pathlib.Path) -> Generator[pathlib.Path, None, None]:
+    """Context manager to temporarily change the working directory."""
+    old_dir = pathlib.Path.cwd()
+    os.chdir(path)
+    try:
+        yield pathlib.Path.cwd()
+    finally:
+        os.chdir(old_dir)
+
+
+@pytest.mark.parametrize(
+    ["sample_toml_dir", "expected_config"],
+    [
+        (
+            SAMLPLE_TOML_W_RUFF_SYNC_CFG,
+            {
+                "upstream": "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml",
+                "exclude": ["per-file-ignores", "ignore", "line-length"],
+            },
+        )
+    ],
+)
+def test_loading_ruff_sync_config(
+    sample_toml_dir: pathlib.Path, expected_config: dict[str, list[str] | str]
+):
+    """Test that that the ruff_sync settings are loaded from the pyproject.toml."""
+    sample_pyproject_toml = sample_toml_dir / "pyproject.toml"
+    assert sample_pyproject_toml.exists(), f"{sample_pyproject_toml} does not exist"
+
+    config = ruff_sync.get_config(sample_toml_dir)
+    print(f"Config:\n{pf(config)}")
+    assert expected_config == config
 
 
 if __name__ == "__main__":
