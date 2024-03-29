@@ -24,7 +24,7 @@ def get_config(
     source: pathlib.Path,
 ) -> Mapping[Literal["upstream", "source", "exclude"], str | list[str]]:
     local_toml = source / "pyproject.toml"
-    # TODO: use pydanitc to validate the toml file
+    # TODO: use pydantic to validate the toml file
     if local_toml.exists():
         toml = tomlkit.parse(local_toml.read_text())
         config = toml.get("tool", {}).get("ruff-sync")
