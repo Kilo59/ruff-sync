@@ -29,7 +29,7 @@ disable_error_code = ['type-arg', 'no-untyped-def']
 [tool.ruff-sync]
 upstream = "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml"
 exclude = ["per-file-ignores", "ignore", "line-length"]
-
+unknown_config = "this should be ignored"
 
 [tool.ruff]
 target-version = "py310"

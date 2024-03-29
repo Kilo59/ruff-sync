@@ -19,6 +19,17 @@ __version__ = "0.0.1.dev0"
 _DEFAULT_EXCLUDE: Final[set[str]] = {"per-file-ignores"}
 
 
+class Arguments(NamedTuple):
+    upstream: URL
+    source: pathlib.Path
+    exclude: Iterable[str]
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def fields(cls) -> set[str]:
+        return set(cls._fields)
+
+
 @lru_cache(maxsize=1)
 def get_config(
     source: pathlib.Path,
@@ -29,7 +40,7 @@ def get_config(
         toml = tomlkit.parse(local_toml.read_text())
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
-            return config  # type: ignore[no-any-return]
+            return {k: v for (k, v) in config.items() if k in Arguments.fields()}  # type: ignore[no-any-return]
     return {}
 
 
@@ -64,12 +75,6 @@ def _get_cli_parser() -> ArgumentParser:
         default=_DEFAULT_EXCLUDE,
     )
     return parser
-
-
-class Arguments(NamedTuple):
-    upstream: URL
-    source: pathlib.Path
-    exclude: Iterable[str]
 
 
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
