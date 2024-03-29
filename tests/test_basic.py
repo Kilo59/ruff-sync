@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import os
 import pathlib
+import shutil
 from pprint import pformat as pf
 from typing import TYPE_CHECKING, Final
 
@@ -27,6 +28,13 @@ assert ROOT_PYPROJECT_TOML.exists(), f"{ROOT_PYPROJECT_TOML} does not exist"
 SAMPLE_TOML_W_RUFF_SYNC_CFG: Final = TEST_ROOT / "w_ruff_sync_cfg"
 SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG: Final = TEST_ROOT / "wo_ruff_sync_cfg"
 SAMPLE_TOML_WITHOUT_RUFF_CFG: Final = TEST_ROOT / "wo_ruff_cfg"
+
+TERMINAL_SIZE: Final[int] = shutil.get_terminal_size().columns
+
+
+@pytest.fixture(scope="session")
+def sep_str() -> str:
+    return f"{'*' * TERMINAL_SIZE}"
 
 
 @pytest.fixture(scope="session")
@@ -108,11 +116,28 @@ def fake_fs_source(fs: FakeFilesystem, pyproject_toml_s: str) -> pathlib.Path:
 
 
 @pytest.mark.asyncio
-async def test_sync(mock_http: respx.MockRouter, fake_fs_source: pathlib.Path):
+async def test_sync_updates_ruff_config(
+    toml_s: str, mock_http: respx.MockRouter, fake_fs_source: pathlib.Path, sep_str: str
+):
+    expected_update: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]
+    original_toml = fake_fs_source.read_text()
+    original_ruff_config: TOMLDocument = tomlkit.parse(original_toml)["tool"]["ruff"]
+    print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
+
     upstream = URL("https://example.com/pyproject.toml")
     await ruff_sync.sync(
         ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
     )
+    updated_toml = fake_fs_source.read_text()
+    updated_ruff_config: TOMLDocument = tomlkit.parse(updated_toml)["tool"]["ruff"]
+    print(f"\nUpdated tool.ruff\n{sep_str}\n{tomlkit.dumps(updated_ruff_config)}")
+    assert original_toml != updated_toml
+
+    assert set(original_ruff_config.keys()).issubset(set(updated_ruff_config.keys()))
+
+    expected_ruff_config = original_ruff_config.copy()
+    expected_ruff_config.update(expected_update)
+    assert expected_ruff_config == updated_ruff_config
 
 
 @contextlib.contextmanager
