@@ -55,19 +55,18 @@ def test_ruff_sync():
 @pytest.fixture
 def toml_s() -> str:
     """A sample pyproject.toml file with ruff config."""
-    return """
-    [tool.ruff.lint]
-    target-version = "py38"
-    line-length = 120
-    lint.select = ["F", "ASYNC"]
-    lint.ignore = ["W191", "E111"]
+    return """[tool.ruff.lint]
+target-version = "py38"
+line-length = 120
+lint.select = ["F", "ASYNC"]
+lint.ignore = ["W191", "E111"]
 
-    [tool.ruff.lint.per-file-ignores]
-    "__init__.py" = [
-        "F401", # unused import
-        "F403", # star imports
-    ]
-    """
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401", # unused import
+    "F403", # star imports
+]
+"""
 
 
 @pytest.mark.parametrize(
@@ -93,6 +92,26 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
         ), f"{section} was not in original doc, fix test"
 
         assert section in lint_config, f"{section} was incorrectly excluded"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        SAMPLE_TOML_WITHOUT_RUFF_CFG.joinpath("pyproject.toml").read_text(),
+        SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.joinpath("pyproject.toml").read_text(),
+    ],
+)
+def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
+    upstream_toml: str = toml_s
+    print(f"Source\n{sep_str}\n{source}\n")
+    print(f"Upstream\n{sep_str}\n{upstream_toml}")
+
+    source_toml = tomlkit.parse(source)
+    source_ruff = source_toml["tool"]["ruff"]
+    expected_ruff = tomlkit.parse(upstream_toml)["tool"]["ruff"]
+
+    merged_ruff = ruff_sync.merge_ruff_toml(source_toml, expected_ruff)
+    assert source_ruff == merged_ruff
 
 
 @pytest.fixture
