@@ -125,6 +125,7 @@ def temp_cd(path: pathlib.Path) -> Generator[pathlib.Path, None, None]:
         os.chdir(old_dir)
 
 
+@pytest.mark.filterwarnings("ignore:Unknown ruff-sync configuration")
 @pytest.mark.parametrize(
     ["sample_toml_dir", "expected_config"],
     [
