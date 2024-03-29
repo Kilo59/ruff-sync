@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import pathlib
+import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
 from io import StringIO
@@ -36,12 +37,19 @@ def get_config(
 ) -> Mapping[Literal["upstream", "source", "exclude"], str | list[str]]:
     local_toml = source / "pyproject.toml"
     # TODO: use pydantic to validate the toml file
+    cfg_result = {}
     if local_toml.exists():
         toml = tomlkit.parse(local_toml.read_text())
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
-            return {k: v for (k, v) in config.items() if k in Arguments.fields()}  # type: ignore[no-any-return]
-    return {}
+            for arg, value in config.items():
+                if arg in Arguments.fields():
+                    cfg_result[arg] = value
+                else:
+                    warnings.warn(
+                        f"Unknown ruff-sync configuration: {arg}", stacklevel=2
+                    )
+    return cfg_result
 
 
 @lru_cache(maxsize=1)
