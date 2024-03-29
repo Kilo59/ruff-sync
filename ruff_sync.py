@@ -45,7 +45,7 @@ def _get_cli_parser() -> ArgumentParser:
     # https://docs.python.org/3/library/argparse.html#nargs
     parser = ArgumentParser()
     parser.add_argument(
-        "upstream",
+        "--upstream",
         type=URL,
         help="The URL to download the pyproject.toml file from.",
     )

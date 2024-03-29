@@ -24,7 +24,8 @@ PROJECT_ROOT: Final = TEST_ROOT.parent
 ROOT_PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 assert ROOT_PYPROJECT_TOML.exists(), f"{ROOT_PYPROJECT_TOML} does not exist"
 
-SAMLPLE_TOML_W_RUFF_SYNC_CFG: Final = TEST_ROOT / "w_ruff_sync_cfg"
+SAMPLE_TOML_W_RUFF_SYNC_CFG: Final = TEST_ROOT / "w_ruff_sync_cfg"
+SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG: Final = TEST_ROOT / "wo_ruff_sync_cfg"
 
 
 @pytest.fixture(scope="session")
@@ -128,12 +129,13 @@ def temp_cd(path: pathlib.Path) -> Generator[pathlib.Path, None, None]:
     ["sample_toml_dir", "expected_config"],
     [
         (
-            SAMLPLE_TOML_W_RUFF_SYNC_CFG,
+            SAMPLE_TOML_W_RUFF_SYNC_CFG,
             {
                 "upstream": "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml",
                 "exclude": ["per-file-ignores", "ignore", "line-length"],
             },
-        )
+        ),
+        (SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG, {}),
     ],
 )
 def test_loading_ruff_sync_config(
