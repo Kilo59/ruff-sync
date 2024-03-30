@@ -47,9 +47,7 @@ def get_config(
                 if arg in Arguments.fields():
                     cfg_result[arg] = value
                 else:
-                    warnings.warn(
-                        f"Unknown ruff-sync configuration: {arg}", stacklevel=2
-                    )
+                    warnings.warn(f"Unknown ruff-sync configuration: {arg}", stacklevel=2)
     return cfg_result
 
 
