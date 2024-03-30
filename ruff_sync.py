@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 import httpx
 import tomlkit
 from httpx import URL
+from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -114,10 +115,10 @@ async def sync(
     """Sync the upstream pyproject.toml file to the source directory."""
     print("Syncing Ruff...")
     if args.source.is_file():
-        source_toml_path = args.source
+        _source_toml_path = args.source
     else:
-        source_toml_path = args.source / "pyproject.toml"
-    source_toml_path = source_toml_path.resolve(strict=True)
+        _source_toml_path = args.source / "pyproject.toml"
+    source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
@@ -125,11 +126,11 @@ async def sync(
 
     ruff_toml = toml_ruff_parse(file_buffer.read(), exclude=args.exclude)
     merged_toml = merge_ruff_toml(
-        tomlkit.parse(source_toml_path.read_text()),
+        source_toml_file.read(),
         ruff_toml,
     )
-    source_toml_path.write_text(merged_toml.as_string())
-    print(f"Updated {source_toml_path.relative_to(pathlib.Path.cwd())}")
+    source_toml_file.write(merged_toml)
+    print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()

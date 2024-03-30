@@ -12,6 +12,7 @@ import respx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument
+from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 
@@ -22,8 +23,8 @@ if TYPE_CHECKING:
 
 TEST_ROOT: Final = pathlib.Path(__file__).parent
 PROJECT_ROOT: Final = TEST_ROOT.parent
-ROOT_PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
-assert ROOT_PYPROJECT_TOML.exists(), f"{ROOT_PYPROJECT_TOML} does not exist"
+ROOT_PYPROJECT_TOML_PATH: Final = PROJECT_ROOT / "pyproject.toml"
+ROOT_PYPROJECT_TOML: Final = TOMLFile(ROOT_PYPROJECT_TOML_PATH)
 
 SAMPLE_TOML_W_RUFF_SYNC_CFG: Final = TEST_ROOT / "w_ruff_sync_cfg"
 SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG: Final = TEST_ROOT / "wo_ruff_sync_cfg"
@@ -43,8 +44,8 @@ def pyproject_toml_s() -> str:
     The contents of the root pyproject.toml file.
     Prevents problems with the file or file system being modified during tests.
     """
-    s = ROOT_PYPROJECT_TOML.read_text()
-    assert s, f"{ROOT_PYPROJECT_TOML} was empty"
+    s = ROOT_PYPROJECT_TOML_PATH.read_text()
+    assert s, f"{ROOT_PYPROJECT_TOML_PATH} was empty"
     return s
 
 
