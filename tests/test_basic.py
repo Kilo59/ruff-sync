@@ -11,14 +11,17 @@ import pytest
 import respx
 import tomlkit
 from httpx import URL
+from pytest import param
 from tomlkit import TOMLDocument
+from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Sequence
 
+    from _pytest.mark.structures import ParameterSet
     from pyfakefs.fake_filesystem import FakeFilesystem
 
 TEST_ROOT: Final = pathlib.Path(__file__).parent
@@ -31,6 +34,16 @@ SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG: Final = TEST_ROOT / "wo_ruff_sync_cfg"
 SAMPLE_TOML_WITHOUT_RUFF_CFG: Final = TEST_ROOT / "wo_ruff_cfg"
 
 TERMINAL_SIZE: Final[int] = shutil.get_terminal_size().columns
+
+
+TOML_STRS_PARAMS: Final[Sequence[ParameterSet]] = [
+    param(t.joinpath("pyproject.toml").read_text(), id=t.name)
+    for t in (
+        SAMPLE_TOML_W_RUFF_SYNC_CFG,
+        SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG,
+        SAMPLE_TOML_WITHOUT_RUFF_CFG,
+    )
+]
 
 
 @pytest.fixture(scope="session")
@@ -93,6 +106,18 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
         ), f"{section} was not in original doc, fix test"
 
         assert section in lint_config, f"{section} was incorrectly excluded"
+
+
+@pytest.mark.parametrize("toml_str", TOML_STRS_PARAMS)
+def test_get_ruff_tool_table(toml_str: str):
+    """
+    Test the get_ruff_tool_table() returns a tool.ruff table regardless of if the
+    input has one or not.
+    """
+    ruff_table = ruff_sync.get_ruff_tool_table(toml_str)
+    print(type(ruff_table))
+    print(f"Ruff Table:\n{ruff_table.as_string()}")
+    assert isinstance(ruff_table, Table)
 
 
 @pytest.mark.parametrize(

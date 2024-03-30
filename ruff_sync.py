@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 import httpx
 import tomlkit
 from httpx import URL
+from tomlkit import TOMLDocument, table
+from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
@@ -89,6 +91,25 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     response = await client.get(url)
     response.raise_for_status()
     return StringIO(response.text)
+
+
+def get_ruff_tool_table(toml_s: str) -> Table:
+    """
+    Get the tool.ruff section from a TOML string.
+    If it does not exist, create it.
+    """
+    doc: TOMLDocument = tomlkit.parse(toml_s)
+    try:
+        tool: Table = doc["tool"]  # type: ignore[index,assignment]
+        ruff = tool["ruff"]  # type: ignore[index]
+    except KeyError:
+        tool = table(True)
+        ruff = table()
+        tool.append("ruff", ruff)
+        doc.append("tool", tool)
+    if not isinstance(ruff, Table):
+        raise TypeError(f"Expected table, got {type(ruff)}")
+    return ruff
 
 
 def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> tomlkit.TOMLDocument:
