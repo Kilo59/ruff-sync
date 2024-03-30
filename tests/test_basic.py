@@ -133,11 +133,14 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     print(f"Upstream\n{sep_str}\n{upstream_toml}")
 
     source_toml = tomlkit.parse(source)
-    source_ruff = source_toml["tool"]["ruff"]
-    expected_ruff = tomlkit.parse(upstream_toml)["tool"]["ruff"]
+    upstream_ruff = tomlkit.parse(upstream_toml)["tool"]["ruff"]
 
-    merged_ruff = ruff_sync.merge_ruff_toml(source_toml, expected_ruff)
-    assert source_ruff == merged_ruff
+    merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
+    print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
+
+    source_ruff = source_toml.get("tool", {}).get("ruff")
+    for key, _ in upstream_ruff.items():
+        assert key in source_ruff, f"{key} was not in the updated source ruff config"
 
 
 @pytest.fixture

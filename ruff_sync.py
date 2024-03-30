@@ -93,12 +93,15 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-def get_ruff_tool_table(toml_s: str) -> Table:
+def get_ruff_tool_table(toml: str | TOMLDocument) -> Table:
     """
     Get the tool.ruff section from a TOML string.
     If it does not exist, create it.
     """
-    doc: TOMLDocument = tomlkit.parse(toml_s)
+    if isinstance(toml, str):
+        doc: TOMLDocument = tomlkit.parse(toml)
+    else:
+        doc = toml
     try:
         tool: Table = doc["tool"]  # type: ignore[index,assignment]
         ruff = tool["ruff"]  # type: ignore[index]
@@ -121,10 +124,13 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> tomlkit.TOMLDocument
 
 
 def merge_ruff_toml(
-    source: tomlkit.TOMLDocument, upstream_update: tomlkit.TOMLDocument
+    source: tomlkit.TOMLDocument, upstream_ruff_doc: tomlkit.TOMLDocument
 ) -> tomlkit.TOMLDocument:
-    """Merge the source and upstream ruff toml config."""
-    source["tool"]["ruff"].update(upstream_update)  # type: ignore[index,union-attr]
+    """
+    Merge the source and upstream tool ruff config
+    """
+    source_tool_ruff = get_ruff_tool_table(source)
+    source_tool_ruff.update(upstream_ruff_doc)  # type: ignore[index,union-attr]
     return source
 
 
@@ -143,10 +149,10 @@ async def sync(
     async with httpx.AsyncClient() as client:
         file_buffer = await download(args.upstream, client)
 
-    ruff_toml = toml_ruff_parse(file_buffer.read(), exclude=args.exclude)
+    upstream_ruff_toml = toml_ruff_parse(file_buffer.read(), exclude=args.exclude)
     merged_toml = merge_ruff_toml(
         source_toml_file.read(),
-        ruff_toml,
+        upstream_ruff_toml,
     )
     source_toml_file.write(merged_toml)
     print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
