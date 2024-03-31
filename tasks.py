@@ -75,10 +75,10 @@ def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None)
     }
     if not description:
         description = f"Sample project for {name}"
-    toml_dict["initial"]["tool"]["poetry"]["name"] = name
-    toml_dict["final"]["tool"]["poetry"]["name"] = name
-    toml_dict["initial"]["tool"]["poetry"]["description"] = description
-    toml_dict["final"]["tool"]["poetry"]["description"] = description
+    toml_dict["initial"]["tool"]["poetry"]["name"] = name  # type: ignore[index]
+    toml_dict["final"]["tool"]["poetry"]["name"] = name  # type: ignore[index]
+    toml_dict["initial"]["tool"]["poetry"]["description"] = description  # type: ignore[index]
+    toml_dict["final"]["tool"]["poetry"]["description"] = description  # type: ignore[index]
 
     # write the new tomls
     for stage, toml_doc in toml_dict.items():

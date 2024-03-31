@@ -165,7 +165,7 @@ def merge_ruff_toml(
     """
     source_tool_ruff = get_ruff_tool_table(source)
     if upstream_ruff_doc:
-        source_tool_ruff.update(upstream_ruff_doc)  # type: ignore[index,union-attr]
+        source_tool_ruff.update(upstream_ruff_doc)
         out_of_order: dict[str, OutOfOrderTableProxy] = {}
 
         # TODO: simplify this

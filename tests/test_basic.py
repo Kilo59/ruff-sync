@@ -140,7 +140,7 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     print(f"Upstream\n{sep_str}\n{upstream_toml}")
 
     source_toml = tomlkit.parse(source)
-    upstream_ruff = tomlkit.parse(upstream_toml)["tool"]["ruff"]
+    upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
 
     merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
     print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
@@ -176,7 +176,7 @@ async def test_sync_updates_ruff_config(
     mock_http: respx.MockRouter, fake_fs_source: pathlib.Path, sep_str: str
 ):
     original_toml = fake_fs_source.read_text()
-    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]
+    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
     print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
 
     upstream = URL("https://example.com/pyproject.toml")
@@ -185,7 +185,7 @@ async def test_sync_updates_ruff_config(
         ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
     )
     updated_toml = fake_fs_source.read_text()
-    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]
+    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
     print(f"\nUpdated tool.ruff\n{sep_str}\n{tomlkit.dumps(updated_ruff_config)}")
     assert original_toml != updated_toml
 
@@ -198,7 +198,7 @@ async def test_sync_updates_ruff_config(
         ), f"Original key {key} was not in updated ruff config"
 
     # Ensure the updated ruff config has the expected updated values from upstream
-    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]
+    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
     print("Upstream updates...")
     for key, value in upstream_ruff_config.items():
         print(f"  {key}", end=" ")
