@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruff-sync"
-version = "0.0.1.dev0"
+version = "0.0.1.dev1"
 description = "Syncronize ruff linter config settings accross projects"
 authors = ["Gabriel Gore <gabriel59kg@gmail.com>"]
 license = "MIT"
@@ -18,9 +18,11 @@ tomlkit = "^0.12.3"
 coverage = "^7.4.4"
 invoke = "^2.2.0"
 mypy = "^1.9.0"
+pre-commit = "^3.7.0"
 pyfakefs = "^5.3.5"
 pytest = "^8.0.0"
 pytest-asyncio = "^0.23.5"
+pytest-icdiff = "^0.9"
 respx = "^0.21.0"
 ruamel-yaml = "^0.18.6"
 ruff = "^0.3.4"
@@ -46,9 +48,12 @@ enable_error_code = ['ignore-without-code', 'explicit-override']
 module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
+[tool.ruff-sync]
+exclude = ["per_file_ignores", "ignore"]
+
 [tool.ruff]
 target-version = "py39"
-line-length = 88
+line-length = 90
 lint.select = [
     # https://docs.astral.sh/ruff/rules/#flake8-async-async
     "ASYNC", # async rules
@@ -106,3 +111,6 @@ lint.ignore = [
 include = [
     "ruff_sync.py",
     ]
+
+[tool.pytest.ini_options]
+log_level = "INFO"

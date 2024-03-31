@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "sample_project"
+version = "0.0.1.dev0"
+description = "Sample project that includes a ruff-sync config section"
+authors = ["Bob Baggins"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = "3.10"
+files = ["foo.py", "bar.py"]
+strict = true
+warn_unused_configs = true
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+enable_error_code = ['ignore-without-code', 'explicit-override']
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = ['type-arg', 'no-untyped-def']
+
+[tool.ruff-sync]
+upstream = "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml"
+exclude = ["per-file-ignores", "ignore", "line-length"]
+unknown_config = "this should be ignored"
+
+[tool.coverage.run]
+include = [
+    "foo.py",
+    "bar.py"
+    ]
