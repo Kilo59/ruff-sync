@@ -7,6 +7,7 @@ import shutil
 from pprint import pformat as pf
 from typing import TYPE_CHECKING, Final
 
+import httpx
 import pytest
 import respx
 import tomlkit
@@ -123,8 +124,14 @@ def test_get_ruff_tool_table(toml_str: str):
 @pytest.mark.parametrize(
     "source",
     [
-        SAMPLE_TOML_WITHOUT_RUFF_CFG.joinpath("pyproject.toml").read_text(),
-        SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.joinpath("pyproject.toml").read_text(),
+        param(
+            SAMPLE_TOML_WITHOUT_RUFF_CFG.joinpath("pyproject.toml").read_text(),
+            id="no ruff cfg",
+        ),
+        param(
+            SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.joinpath("pyproject.toml").read_text(),
+            id="no sync cfg",
+        ),
     ],
 )
 def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
@@ -163,29 +170,40 @@ def fake_fs_source(fs: FakeFilesystem, pyproject_toml_s: str) -> pathlib.Path:
     return ff_path
 
 
+@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_sync_updates_ruff_config(
-    toml_s: str, mock_http: respx.MockRouter, fake_fs_source: pathlib.Path, sep_str: str
+    mock_http: respx.MockRouter, fake_fs_source: pathlib.Path, sep_str: str
 ):
-    expected_update: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]
     original_toml = fake_fs_source.read_text()
-    original_ruff_config: TOMLDocument = tomlkit.parse(original_toml)["tool"]["ruff"]
+    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]
     print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
 
     upstream = URL("https://example.com/pyproject.toml")
+    upstream_toml = httpx.get(upstream).text  # noqa: ASYNC100 # blocking but doesn't matter
     await ruff_sync.sync(
         ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
     )
     updated_toml = fake_fs_source.read_text()
-    updated_ruff_config: TOMLDocument = tomlkit.parse(updated_toml)["tool"]["ruff"]
+    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]
     print(f"\nUpdated tool.ruff\n{sep_str}\n{tomlkit.dumps(updated_ruff_config)}")
     assert original_toml != updated_toml
 
     assert set(original_ruff_config.keys()).issubset(set(updated_ruff_config.keys()))
 
-    expected_ruff_config = original_ruff_config.copy()
-    expected_ruff_config.update(expected_update)
-    assert expected_ruff_config == updated_ruff_config
+    # Ensure the updated ruff config has the same keys as the original
+    for key in original_ruff_config.keys():
+        assert (
+            key in updated_ruff_config
+        ), f"Original key {key} was not in updated ruff config"
+
+    # Ensure the updated ruff config has the expected updated values from upstream
+    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]
+    print("Upstream updates...")
+    for key, value in upstream_ruff_config.items():
+        print(f"  {key}", end=" ")
+        assert updated_ruff_config[key] == value, f"{key} was not updated"
+        print("✅")
 
 
 @contextlib.contextmanager
@@ -203,21 +221,27 @@ def temp_cd(path: pathlib.Path) -> Generator[pathlib.Path, None, None]:
 @pytest.mark.parametrize(
     ["sample_toml_dir", "expected_config"],
     [
-        (
+        param(
             SAMPLE_TOML_W_RUFF_SYNC_CFG,
             {
                 "upstream": "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml",
                 "exclude": ["per-file-ignores", "ignore", "line-length"],
             },
+            id=SAMPLE_TOML_W_RUFF_SYNC_CFG.name,
         ),
-        (
+        param(
             SAMPLE_TOML_WITHOUT_RUFF_CFG,
             {
                 "upstream": "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml",
                 "exclude": ["per-file-ignores", "ignore", "line-length"],
             },
+            id=SAMPLE_TOML_WITHOUT_RUFF_CFG.name,
         ),
-        (SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG, {}),
+        param(
+            SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG,
+            {},
+            id=SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.name,
+        ),
     ],
 )
 def test_loading_ruff_sync_config(

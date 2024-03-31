@@ -2,17 +2,21 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 from invoke.tasks import task
+from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
     from invoke.context import Context
+    from tomlkit import TOMLDocument
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 PROJECT_ROOT: Final[pathlib.Path] = pathlib.Path(__file__).parent
 PYPROJECT_TOML: Final[pathlib.Path] = PROJECT_ROOT / "pyproject.toml"
+TESTS_DIR: Final[pathlib.Path] = PROJECT_ROOT / "tests"
+LIFECYCLE_TOML_DIR: Final[pathlib.Path] = TESTS_DIR / "lifecycle_tomls"
 
 
 @task
@@ -59,3 +63,28 @@ def deps(ctx: Context) -> None:
     # using --with dev incase poetry changes the default behavior
     cmds = ["poetry", "install", "--sync", "--with", "dev"]
     ctx.run(" ".join(cmds), echo=True, pty=True)
+
+
+@task(aliases=["new-case"])
+def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None) -> None:
+    """Create new lifecycle toml test cases using the no_changes tomls as a template"""
+    toml_dict: dict[Literal["initial", "upstream", "final"], TOMLDocument] = {
+        "initial": TOMLFile(LIFECYCLE_TOML_DIR / "no_changes_initial.toml").read(),
+        "upstream": TOMLFile(LIFECYCLE_TOML_DIR / "no_changes_upstream.toml").read(),
+        "final": TOMLFile(LIFECYCLE_TOML_DIR / "no_changes_final.toml").read(),
+    }
+    if not description:
+        description = f"Sample project for {name}"
+    toml_dict["initial"]["tool"]["poetry"]["name"] = name
+    toml_dict["final"]["tool"]["poetry"]["name"] = name
+    toml_dict["initial"]["tool"]["poetry"]["description"] = description
+    toml_dict["final"]["tool"]["poetry"]["description"] = description
+
+    # write the new tomls
+    for stage, toml_doc in toml_dict.items():
+        file_name = f"{name}_{stage}.toml"
+        if LIFECYCLE_TOML_DIR.joinpath(file_name).exists():
+            raise FileExistsError(f"{file_name} already exists")
+        TOMLFile(LIFECYCLE_TOML_DIR / file_name).write(toml_doc)
+        print(f"📄 {file_name}")
+    print(f"🎉 Created tomls for '{name}' test case")

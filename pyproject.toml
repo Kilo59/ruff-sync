@@ -111,3 +111,6 @@ lint.ignore = [
 include = [
     "ruff_sync.py",
     ]
+
+[tool.pytest.ini_options]
+log_level = "INFO"
