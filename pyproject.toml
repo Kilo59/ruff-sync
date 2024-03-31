@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruff-sync"
-version = "0.0.1.dev0"
+version = "0.0.1.dev1"
 description = "Syncronize ruff linter config settings accross projects"
 authors = ["Gabriel Gore <gabriel59kg@gmail.com>"]
 license = "MIT"
