@@ -10,7 +10,7 @@ readme = "README.md"
 ruff-sync = "ruff_sync:main"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 httpx = "^0.27.0"
 tomlkit = "^0.12.3"
 
