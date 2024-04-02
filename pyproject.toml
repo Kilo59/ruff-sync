@@ -33,11 +33,14 @@ dev-dependencies = [
     "mypy>=1.9.0",
 ]
 
+[project.scripts]
+ruff-sync = 'ruff_sync:main'
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ruff_sync2"]
+packages = ["src/ruff_sync.py"]
 
 [tool.mypy]
 python_version = "3.9"
