@@ -11,7 +11,7 @@ repos:
       - id: no-commit-to-branch
         args: [--branch, develop, --branch, main]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.3.4"
+    rev: "v0.3.5"
     hooks:
       - id: ruff
         args: ["--fix", "--unsafe-fixes"]
@@ -25,5 +25,5 @@ ci:
   autofix_prs: true
   autoupdate_branch: "main"
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
-  autoupdate_schedule: monthly
+  autoupdate_schedule: weekly
   submodules: false
