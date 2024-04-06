@@ -133,7 +133,7 @@ lint.ignore = [
 "TRY003", # overkill for such a small project
 ]
 # https://docs.astral.sh/ruff/linter/#fix-safety
-extend-safe-fixes = ["ICN001"]
+lint.extend-safe-fixes = ["ICN001"]
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
@@ -144,6 +144,9 @@ banned-from = ["pathlib", "datetime"]
 datetime = "dt"
 "pprint.pprint" = "pp"
 "pprint.pformat" = "pf"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
 
 [tool.coverage.run]
 include = [
