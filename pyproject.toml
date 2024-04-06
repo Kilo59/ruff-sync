@@ -78,6 +78,8 @@ lint.select = [
     "I", # isort
     # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
     "ICN", # import-conventions
+    # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "N", # pep8-naming
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG", # logging - logging best practices
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
