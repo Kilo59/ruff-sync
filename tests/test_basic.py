@@ -192,7 +192,7 @@ async def test_sync_updates_ruff_config(
     assert set(original_ruff_config.keys()).issubset(set(updated_ruff_config.keys()))
 
     # Ensure the updated ruff config has the same keys as the original
-    for key in original_ruff_config.keys():
+    for key in original_ruff_config:
         assert (
             key in updated_ruff_config
         ), f"Original key {key} was not in updated ruff config"
