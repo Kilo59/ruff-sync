@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-ast
       - id: check-json
@@ -16,6 +16,10 @@ repos:
       - id: ruff
         args: ["--fix", "--unsafe-fixes"]
       - id: ruff-format
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.6.27
+    hooks:
+      - id: actionlint
 # https://pre-commit.ci/
 ci:
   autofix_commit_msg: |
