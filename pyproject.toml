@@ -73,10 +73,16 @@ lint.select = [
     "G", # logging-format - logging format string issues
     # https://beta.ruff.rs/docs/rules/#isort-i
     "I", # isort
+    # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    "ICN", # import-conventions
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG", # logging - logging best practices
+    # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
+    "PERF", # perflint - performance related rules
     # https://beta.ruff.rs/docs/rules/#flake8-pyi-pyi
     "PYI", # flake8-pyi - type stub files
+    # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
+    "PGH", # pygrep-hooks - hooks for pygrep
     # https://beta.ruff.rs/docs/rules/#flake8-use-pathlib-pth
     "PTH", # use-pathlib - use pathlib for os.path and glob operations
     # https://beta.ruff.rs/docs/rules/#pylint-pl
@@ -123,6 +129,16 @@ lint.ignore = [
 # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
 "TRY003", # overkill for such a small project
 ]
+
+[tool.ruff.lint.flake8-import-conventions]
+# Declare the banned `from` imports.
+banned-from = ["pathlib", "datetime"]
+
+[tool.ruff.lint.flake8-import-conventions.aliases]
+# Declare the default aliases.
+datetime = "dt"
+"pprint.pprint" = "pp"
+"pprint.pformat" = "pf"
 
 [tool.coverage.run]
 include = [

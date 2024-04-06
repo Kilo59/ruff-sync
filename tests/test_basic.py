@@ -146,7 +146,7 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
 
     source_ruff = source_toml.get("tool", {}).get("ruff")
-    for key, _ in upstream_ruff.items():
+    for key in upstream_ruff:
         assert key in source_ruff, f"{key} was not in the updated source ruff config"
 
 
