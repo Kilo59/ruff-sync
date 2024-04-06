@@ -68,12 +68,16 @@ lint.select = [
     # https://beta.ruff.rs/docs/rules/#pycodestyle-e-w
     "E", # pycodestyle
     "W", # Warning
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "G", # logging-format - logging format string issues
     # https://beta.ruff.rs/docs/rules/#isort-i
     "I", # isort
     # https://beta.ruff.rs/docs/rules/#flake8-type-checking-tch
     "TCH", # flake8-type-checking-tch
     # https://beta.ruff.rs/docs/rules/#flake8-tidy-imports-tid
     "TID", # flake8-tidy-imports
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "LOG", # logging - logging best practices
     # https://beta.ruff.rs/docs/rules/#flake8-pyi-pyi
     "PYI", # flake8-pyi - type stub files
     # https://beta.ruff.rs/docs/rules/#flake8-use-pathlib-pth
@@ -111,6 +115,8 @@ lint.ignore = [
 "COM819", # prohibited-trailing-comma
 "ISC001", # single-line-implicit-string-concatenation
 "ISC002", # multi-line-implicit-string-concatenation
+# other ignores
+"G004", # https://docs.astral.sh/ruff/rules/logging-f-string/
 ]
 
 [tool.coverage.run]
