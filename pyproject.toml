@@ -83,6 +83,8 @@ lint.select = [
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
     # https://beta.ruff.rs/docs/rules/#pylint-pl
     "PL", # pylint
+    # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "FURB", # refurb - refactoring + modernization
     # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF",
     # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
