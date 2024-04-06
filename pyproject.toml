@@ -57,11 +57,12 @@ line-length = 90
 lint.select = [
     # https://docs.astral.sh/ruff/rules/#flake8-async-async
     "ASYNC", # async rules
+    # https://beta.ruff.rs/docs/rules/#flake8-bugbear-b
     "B", # bugbear - common python bugs & design issues
-    # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     # https://beta.ruff.rs/docs/rules/#flake8-comprehensions-c4
     # https://beta.ruff.rs/docs/rules/#mccabe-c90
     "C", # Complexity (mccabe+) & comprehensions
+    # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
     "F", # Pyflakes
@@ -72,17 +73,12 @@ lint.select = [
     "G", # logging-format - logging format string issues
     # https://beta.ruff.rs/docs/rules/#isort-i
     "I", # isort
-    # https://beta.ruff.rs/docs/rules/#flake8-type-checking-tch
-    "TCH", # flake8-type-checking-tch
-    # https://beta.ruff.rs/docs/rules/#flake8-tidy-imports-tid
-    "TID", # flake8-tidy-imports
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG", # logging - logging best practices
     # https://beta.ruff.rs/docs/rules/#flake8-pyi-pyi
     "PYI", # flake8-pyi - type stub files
     # https://beta.ruff.rs/docs/rules/#flake8-use-pathlib-pth
     "PTH", # use-pathlib - use pathlib for os.path and glob operations
-    # https://beta.ruff.rs/docs/rules/#flake8-bugbear-b
     # https://beta.ruff.rs/docs/rules/#pylint-pl
     "PL", # pylint
     # https://docs.astral.sh/ruff/rules/#refurb-furb
@@ -95,6 +91,12 @@ lint.select = [
     "SIM", # simplify - simplify code
     # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
     "SLOT", # slots - enforce __slots__ usage
+    # https://beta.ruff.rs/docs/rules/#flake8-type-checking-tch
+    "TCH", # flake8-type-checking-tch
+    # https://beta.ruff.rs/docs/rules/#flake8-tidy-imports-tid
+    "TID", # flake8-tidy-imports
+    # https://docs.astral.sh/ruff/rules/#tryceratops-try
+    "TRY", # tryceratops - exception handling
     # https://beta.ruff.rs/docs/rules/#pyupgrade-up
     "UP", # pyupgrade
 ]
@@ -116,7 +118,10 @@ lint.ignore = [
 "ISC001", # single-line-implicit-string-concatenation
 "ISC002", # multi-line-implicit-string-concatenation
 # other ignores
-"G004", # https://docs.astral.sh/ruff/rules/logging-f-string/
+# # https://docs.astral.sh/ruff/rules/logging-f-string/
+"G004", # f-string is performant enough
+# https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+"TRY003", # overkill for such a small project
 ]
 
 [tool.coverage.run]
