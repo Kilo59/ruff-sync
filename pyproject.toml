@@ -90,6 +90,8 @@ lint.select = [
     "PTH", # use-pathlib - use pathlib for os.path and glob operations
     # https://beta.ruff.rs/docs/rules/#pylint-pl
     "PL", # pylint
+    # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    "FA", # future-annotations - enforce future annotations
     # https://docs.astral.sh/ruff/rules/#refurb-furb
     "FURB", # refurb - refactoring + modernization
     # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
