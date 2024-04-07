@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import pathlib
+import re
 import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
@@ -94,7 +95,26 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
+def github_url_to_raw_url(url: URL) -> URL:
+    """
+    Convert a GitHub URL to its corresponding raw content URL
+
+    Args:
+        url (URL): The GitHub URL to be converted.
+
+    Returns:
+        URL: The corresponding raw content URL.
+    """
+    url_str = str(url)
+    if "github.com" in url_str and "/blob/" in url_str:
+        raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+        return httpx.URL(raw_url_str)
+    else:
+        return url
+
+
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
+
     """Download a file from a URL and return a StringIO object."""
     response = await client.get(url)
     response.raise_for_status()
@@ -240,6 +260,10 @@ PARSER: Final[ArgumentParser] = _get_cli_parser()
 def main() -> None:
     args = PARSER.parse_args()
     # config = get_config(args.source)
+
+    # Convert non-raw github upstream url to the raw equivalent
+    args.upstream = github_url_to_raw_url(args.upstream)
+
     asyncio.run(
         sync(
             Arguments(
