@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import pathlib
-import re
 import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
@@ -107,14 +106,15 @@ def github_url_to_raw_url(url: URL) -> URL:
     """
     url_str = str(url)
     if "github.com" in url_str and "/blob/" in url_str:
-        raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+        raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace(
+            "/blob/", "/"
+        )
         return httpx.URL(raw_url_str)
     else:
         return url
 
 
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
-
     """Download a file from a URL and return a StringIO object."""
     response = await client.get(url)
     response.raise_for_status()
