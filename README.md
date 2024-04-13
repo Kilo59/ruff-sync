@@ -1,4 +1,7 @@
 [![codecov](https://codecov.io/gh/Kilo59/ruff-sync/graph/badge.svg?token=kMZw0XtoFW)](https://codecov.io/gh/Kilo59/ruff-sync)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Kilo59/ruff-sync/main.svg)](https://results.pre-commit.ci/latest/github/Kilo59/ruff-sync/main)
+[![Wily](https://img.shields.io/badge/%F0%9F%A6%8A%20wily-passing-brightgreen.svg)](https://wily.readthedocs.io/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 # ruff-sync
 
