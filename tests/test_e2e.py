@@ -95,8 +95,7 @@ async def test_ruff_sync(prep_env):
     assert tomlkit.parse(prep_env.expected_toml) == tomlkit.parse(
         prep_env.source_path.read_text()
     )
-    # TODO: add back after fixing whitespace issues
-    # assert prep_env.expected_toml == prep_env.source_path.read_text()
+    assert prep_env.expected_toml == prep_env.source_path.read_text()
 
 
 if __name__ == "__main__":
