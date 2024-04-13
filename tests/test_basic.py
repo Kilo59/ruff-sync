@@ -125,7 +125,7 @@ def test_get_ruff_tool_table(toml_str: str):
 def test_filter_extra_items(sample_toml_str: str, sep_str: str):
     exclude: list[str] = []  # TODO: pick random sections to exclude
     original_toml = tomlkit.parse(sample_toml_str)
-    original_ruff = original_toml["tool"].get("ruff")
+    original_ruff: TOMLDocument | None = original_toml["tool"].get("ruff")  # type: ignore[union-attr]
     print(f"Original toml:\n{sep_str}\n{original_toml.as_string()}")
 
     filtered_toml = ruff_sync.filter_extra_items(original_toml, lint_exclude=exclude)
@@ -137,11 +137,11 @@ def test_filter_extra_items(sample_toml_str: str, sep_str: str):
         assert top_level_keys == {"tool"}, "Top level keys other than 'tool' found"
 
         for section in exclude:
-            assert section not in filtered_toml["tool"]["ruff"]["lint"]
+            assert section not in filtered_toml["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
 
-        for section in original_ruff["lint"]:
+        for section in original_ruff.get("lint", []):
             if section not in exclude:
-                assert section in filtered_toml["tool"]["ruff"]["lint"]
+                assert section in filtered_toml["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
     else:
         # If there was no ruff section in the original toml,
         # the filtered toml should be empty
