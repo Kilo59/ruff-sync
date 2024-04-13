@@ -7,12 +7,15 @@ import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
 from io import StringIO
+from pprint import pformat as pf
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, table
+from tomlkit import key as toml_key
+from tomlkit.container import OutOfOrderTableProxy
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
@@ -207,6 +210,25 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     return ruff_toml
 
 
+def _dotted_key_merge(source: Table, upstream: Table) -> Table:
+    """
+    Merge two tables with dotted keys.
+    """
+    merged = source.copy()
+    update = {}
+    for key, value in upstream.items():
+        # print(f"--{type(key)}{key} - {type(value)}{value}")
+        if isinstance(value, OutOfOrderTableProxy):
+            for sub_key, sub_value in value.items():
+                dotted_key = toml_key([key, sub_key])
+                update[dotted_key] = sub_value
+        else:
+            update[key] = value
+    print(f"  update:\n{pf(update)}\n")
+    merged.update(update)
+    return merged
+
+
 def merge_ruff_toml(
     source: TOMLDocument, filtered_upstream_doc: TOMLDocument
 ) -> TOMLDocument:
@@ -216,6 +238,15 @@ def merge_ruff_toml(
     upstream_tool: Table | None = filtered_upstream_doc.get("tool")
     if upstream_tool:
         source_tool: Table = source["tool"]  # type: ignore[assignment]
+        source_ruff = source_tool["ruff"]
+        upstream_ruff = upstream_tool["ruff"]
+        # add back any missing sections
+        print(source_ruff)
+        print(source_ruff.as_string())
+        merged_ruff: Table = _dotted_key_merge(source_ruff, upstream_ruff)
+        upstream_tool["ruff"] = merged_ruff
+        print(merged_ruff)
+        print(merged_ruff.as_string())
         source_tool.update(upstream_tool)
     return source
 
