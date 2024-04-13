@@ -5,7 +5,7 @@ on:
 
 jobs:
   evaluate-complexity:
-    name: wily complexity check
+    name: wily check
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
