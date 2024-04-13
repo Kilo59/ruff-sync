@@ -92,10 +92,12 @@ async def test_ruff_sync(prep_env):
 
     print(f"\nUpdated toml\n***************\n\n{prep_env.source_path.read_text()}")
 
-    assert tomlkit.parse(prep_env.expected_toml) == tomlkit.parse(
-        prep_env.source_path.read_text()
-    )
-    assert prep_env.expected_toml == prep_env.source_path.read_text()
+    assert dict(tomlkit.parse(prep_env.expected_toml)) == dict(
+        tomlkit.parse(prep_env.source_path.read_text())
+    ), "TOML items do not match expected"
+    assert (
+        prep_env.expected_toml == prep_env.source_path.read_text()
+    ), "TOML items match but strings do not match exactly"
 
 
 if __name__ == "__main__":
