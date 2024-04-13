@@ -128,9 +128,7 @@ def test_filter_extra_items(sample_toml_str: str, sep_str: str):
     original_ruff = original_toml["tool"].get("ruff")
     print(f"Original toml:\n{sep_str}\n{original_toml.as_string()}")
 
-    filtered_toml = ruff_sync.filter_extra_items(
-        original_toml, ruff_section_excludes=exclude
-    )
+    filtered_toml = ruff_sync.filter_extra_items(original_toml, lint_exclude=exclude)
     print(f"Filtered toml:\n{sep_str}\n{filtered_toml.as_string()}")
 
     top_level_keys = set(filtered_toml.keys())

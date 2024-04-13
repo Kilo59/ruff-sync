@@ -166,7 +166,7 @@ def get_ruff_tool_table(
 
 
 def filter_extra_items(
-    toml: str | TOMLDocument, ruff_section_excludes: Iterable[str]
+    toml: str | TOMLDocument, lint_exclude: Iterable[str] | None = None
 ) -> TOMLDocument:
     """
     Filter out all but the ruff section from a TOML document or string.
@@ -181,9 +181,17 @@ def filter_extra_items(
     if not ruff:
         LOGGER.warning("No `tool.ruff` section found.")
         return filtered_doc
-    for section in ruff_section_excludes:
-        LOGGER.info(f"Exluding section `lint.{section}` from ruff config.")
-        ruff["lint"].pop(section, None)
+
+    if lint_exclude:
+        ruff_lint = ruff.get("lint")
+        if not ruff_lint:
+            raise KeyError(
+                f"No `lint` section found in `tool.ruff`, cannot exclude {lint_exclude}"
+            )
+        for section in lint_exclude:
+            LOGGER.info(f"Excluding section `lint.{section}` from ruff config.")
+            ruff_lint.pop(section, None)
+
     tool = table(is_super_table=True)
     tool.append("ruff", ruff)
     filtered_doc.append("tool", tool)
@@ -228,7 +236,7 @@ async def sync(
 
     upstream_ruff_toml = filter_extra_items(
         file_buffer.read(),
-        ruff_section_excludes=args.exclude,
+        lint_exclude=args.exclude,
     )
     merged_toml = merge_ruff_toml(
         source_toml_file.read(),
