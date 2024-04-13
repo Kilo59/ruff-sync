@@ -121,6 +121,7 @@ def test_get_ruff_tool_table(toml_str: str):
     assert isinstance(ruff_table, Table)
 
 
+@pytest.mark.xfail(reason="method removed")
 @pytest.mark.parametrize(
     "source",
     [
