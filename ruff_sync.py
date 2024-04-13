@@ -83,7 +83,7 @@ def _get_cli_parser() -> ArgumentParser:
     parser.add_argument(
         "--exclude",
         nargs="+",
-        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        help=f"Exclude certain ruff.lint configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         type=set,
         default=_DEFAULT_EXCLUDE,
     )
