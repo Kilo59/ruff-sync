@@ -170,7 +170,9 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     source_toml = tomlkit.parse(source)
     upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
 
-    merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
+    merged_ruff = ruff_sync.merge_ruff_toml(
+        source_toml, filtered_upstream_doc=upstream_ruff
+    )
     print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
 
     source_ruff = source_toml.get("tool", {}).get("ruff")
