@@ -121,13 +121,13 @@ def test_get_ruff_tool_table(toml_str: str):
     assert isinstance(ruff_table, Table)
 
 
-@pytest.mark.xfail(reason="method removed")
 @pytest.mark.parametrize(
     "source",
     [
         param(
             SAMPLE_TOML_WITHOUT_RUFF_CFG.joinpath("pyproject.toml").read_text(),
             id="no ruff cfg",
+            marks=pytest.mark.xfail(reason="maybe not needed"),
         ),
         param(
             SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.joinpath("pyproject.toml").read_text(),
