@@ -5,7 +5,7 @@ on:
 
 jobs:
   evaluate-complexity:
-    name: Evaluate Code complexity
+    name: wily complexity check
     runs-on: ubuntu-latest
 
     steps:
