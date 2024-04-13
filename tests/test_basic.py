@@ -121,6 +121,28 @@ def test_get_ruff_tool_table(toml_str: str):
     assert isinstance(ruff_table, Table)
 
 
+@pytest.mark.parametrize("sample_toml_str", TOML_STRS_PARAMS)
+def test_filter_extra_items(sample_toml_str: str, sep_str: str):
+    exclude: list[str] = []  # TODO: pick random sections to exclude
+    original_toml = tomlkit.parse(sample_toml_str)
+    original_ruff = original_toml["tool"]["ruff"]
+    print(f"Original toml:\n{sep_str}\n{original_toml.as_string()}")
+
+    filtered_toml = ruff_sync.filter_extra_items(original_toml, exclude=exclude)
+    print(f"Filtered toml:\n{sep_str}\n{filtered_toml.as_string()}")
+
+    top_level_keys = set(filtered_toml.keys())
+    print(f"Top level keys: {top_level_keys}")
+    assert top_level_keys == {"tool"}, "Top level keys other than 'tool' found"
+
+    for section in exclude:
+        assert section not in filtered_toml["tool"]["ruff"]["lint"]
+
+    for section in original_ruff["lint"]:
+        if section not in exclude:
+            assert section in filtered_toml["tool"]["ruff"]["lint"]
+
+
 @pytest.mark.parametrize(
     "source",
     [
