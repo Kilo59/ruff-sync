@@ -208,13 +208,15 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
 
 
 def merge_ruff_toml(
-    source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
+    source: TOMLDocument, filtered_upstream_doc: TOMLDocument
 ) -> TOMLDocument:
     """
     Merge the source and upstream tool ruff config
     """
-    if upstream_ruff_doc:
-        source.update(upstream_ruff_doc)
+    upstream_tool: Table | None = filtered_upstream_doc.get("tool")
+    if upstream_tool:
+        source_tool: Table = source["tool"]  # type: ignore[assignment]
+        source_tool.update(upstream_tool)
     return source
 
 
@@ -228,6 +230,7 @@ async def sync(
     else:
         _source_toml_path = args.source / "pyproject.toml"
     source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
+    # print(_source_toml_path.read_text())
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:

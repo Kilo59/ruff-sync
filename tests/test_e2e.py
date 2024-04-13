@@ -36,7 +36,8 @@ LIFECYCLE_GROUPS: Final[set[str]] = {
 }
 # LIFECYCLE_GROUPS.remove("no_changes")
 # LIFECYCLE_GROUPS.remove("standard")
-# LIFECYCLE_GROUPS.remove("no_ruff_cfg")
+LIFECYCLE_GROUPS.remove("no_ruff_cfg")
+LIFECYCLE_GROUPS.remove("no_dotted_keys")
 
 
 class _PrepEnv(NamedTuple):
