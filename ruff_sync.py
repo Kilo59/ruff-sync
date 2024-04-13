@@ -7,16 +7,12 @@ import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
 from io import StringIO
-from pprint import pformat as pf
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, table
-from tomlkit import key as toml_key
-from tomlkit.container import OutOfOrderTableProxy
-from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
@@ -184,46 +180,8 @@ def merge_ruff_toml(
     """
     Merge the source and upstream tool ruff config
     """
-    source_tool_ruff = get_ruff_tool_table(source)
     if upstream_ruff_doc:
-        source_tool_ruff.update(upstream_ruff_doc)
-        out_of_order: dict[str, OutOfOrderTableProxy] = {}
-
-        # TODO: simplify this
-
-        # fix out of order tables
-        for key, value in upstream_ruff_doc.items():
-            dotted_components = key.split(".")
-            if len(dotted_components) > 1:
-                LOGGER.info(f"Found dot-noted key: {key}")
-            if isinstance(value, OutOfOrderTableProxy):
-                out_of_order[key] = value
-                LOGGER.debug(f"Found out of order table: {key}")
-                for nested_key, nested_value in value.items():
-                    dotted_key = toml_key([key, nested_key])
-                    LOGGER.debug(f"Nested: {dotted_key} - {type(nested_value)}")
-                    if isinstance(nested_value, Table):
-                        LOGGER.debug(f"Nested {dotted_key} {type(nested_value).__name__}")
-        LOGGER.debug(f"Out of order tables:\n{list(out_of_order.keys())}")
-        LOGGER.debug(f"Out of order:\n{pf(list(out_of_order.values()))}")
-        # remove out of order tables
-        for key in out_of_order:
-            LOGGER.debug(f"Removing out of order table: {key}")
-            popped: OutOfOrderTableProxy = source_tool_ruff.pop(key)
-            # now breakup the table and add it back in the correct order
-            for nested_key, nested_value in popped.items():
-                dotted_key = toml_key([key, nested_key])
-                LOGGER.debug(f"Adding back: {dotted_key}")
-                # TODO: isinstance check rather than try/except
-                try:
-                    source_tool_ruff[dotted_key] = nested_value
-                except TOMLKitError as e:
-                    LOGGER.debug(f"Error adding {dotted_key}: {e}")
-                    table = {k: v for k, v in popped.items() if k == nested_key}
-                    LOGGER.info(f"Adding Table: {pf(table)}")
-                    source_tool_ruff.append(key, table)
-    else:
-        LOGGER.warning("No upstream ruff config section found.")
+        source.update(upstream_ruff_doc)
     return source
 
 
