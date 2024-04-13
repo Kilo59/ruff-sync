@@ -21,7 +21,7 @@ pip install ruff-sync
 ```console
 pip install git+https://github.com/Kilo59/ruff-sync
 ```
-Or with [`pipx`](https://pipx.pypa.io/stable/) (recommended)
+Or with [`pipx`](https://pipx.pypa.io/stable/) (recommended for isolated installations)
 ```console
 pipx install git+https://github.com/Kilo59/ruff-sync
 ```
