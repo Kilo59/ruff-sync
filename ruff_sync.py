@@ -166,6 +166,29 @@ def get_ruff_tool_table(
     return ruff
 
 
+def filter_extra_items(toml: str | TOMLDocument, exclude: Iterable[str]) -> TOMLDocument:
+    """
+    Filter out extra items from the tool.ruff section of a TOML file.
+    """
+    if isinstance(toml, str):
+        doc: TOMLDocument = tomlkit.parse(toml)
+    else:
+        doc = toml
+    filtered_doc = TOMLDocument()
+    for section in doc:
+        if section != "tool":
+            continue
+        ruff: Table = doc["tool"]["ruff"]
+        LOGGER.info(f"Found `tool.ruff` section. {type(ruff)}")
+        for riff_sec in exclude:
+            LOGGER.info(f"Exluding section `lint.{riff_sec}` from ruff config.")
+            ruff["lint"].pop(riff_sec, None)
+        tool = table(is_super_table=True)
+        tool.append("ruff", ruff)
+        filtered_doc.append("tool", tool)
+    return filtered_doc
+
+
 def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
     ruff_toml: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
@@ -203,25 +226,16 @@ async def sync(
         file_buffer = await download(args.upstream, client)
         LOGGER.info(f"Downloaded upstream file from {args.upstream}")
 
-    upstream_doc: TOMLDocument = tomlkit.parse(file_buffer.getvalue())
-    upsteam_ruff: Table | None = upstream_doc.get("tool", {}).get("ruff")
-    if not upsteam_ruff:
-        raise ValueError("No `tool.ruff` section found in upstream file.")
-
-    source_doc: TOMLDocument = source_toml_file.read()
-    source_tool: Table = source_doc["tool"]  # type: ignore[assignment]
-    source_ruff: Table = source_tool["ruff"]  # type: ignore[assignment]
-
-    # iterate over the upstream ruff config and update the corresponding section in the
-    # source ruff config unless it is in the exclude list
-    for section, value in upsteam_ruff.items():
-        LOGGER.info(f"{section}: {type(value)}{value}")
-        if not isinstance(value, (Table, OutOfOrderTableProxy)):
-            source_ruff[section] = value
-        else:
-            LOGGER.warning(f"Handle {type(value)}")
-
-    source_toml_file.write(source_doc)
+    upstream_ruff_toml = filter_extra_items(
+        file_buffer.read(),
+        # create_if_missing=False,
+        exclude=args.exclude,
+    )
+    merged_toml = merge_ruff_toml(
+        source_toml_file.read(),
+        upstream_ruff_toml,
+    )
+    source_toml_file.write(merged_toml)
     print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
 
 
