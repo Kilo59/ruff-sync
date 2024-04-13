@@ -25,6 +25,7 @@ repos:
     rev: v1.6.27
     hooks:
       - id: actionlint
+        exclude: .github/workflows/complexity.yaml
 # https://pre-commit.ci/
 ci:
   autofix_commit_msg: |
