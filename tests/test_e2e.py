@@ -34,10 +34,9 @@ assert LIFECYLE_TOML_DIR.exists(), f"{LIFECYLE_TOML_DIR} does not exist"
 LIFECYCLE_GROUPS: Final[set[str]] = {
     "_".join(f.name.split("_")[:-1]) for f in LIFECYLE_TOML_DIR.glob("*.toml")
 }
-# LIFECYCLE_GROUPS.remove("no_changes")
-# LIFECYCLE_GROUPS.remove("standard")
-# LIFECYCLE_GROUPS.remove("no_ruff_cfg")
-# LIFECYCLE_GROUPS.remove("no_dotted_keys")
+
+UNSUPPORTED: Final[set[str]] = {"no_ruff_cfg"}
+# LIFECYCLE_GROUPS.symmetric_difference_update(UNWANTED_GROUPS)
 
 
 class _PrepEnv(NamedTuple):
@@ -45,6 +44,7 @@ class _PrepEnv(NamedTuple):
     upstream_url: URL
     expected_toml: str
     respx_mock: respx.MockRouter
+    group_name: str
 
 
 @pytest.fixture(params=LIFECYCLE_GROUPS)
@@ -63,7 +63,7 @@ def prep_env(
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx.mock(base_url=base_url) as respx_mock:
+    with respx.mock(base_url=base_url, assert_all_called=False) as respx_mock:
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
@@ -76,12 +76,16 @@ def prep_env(
                 f"{group_name}_final.toml"
             ).read_text(),
             respx_mock=respx_mock,
+            group_name=group_name,
         )
 
 
 @pytest.mark.asyncio
-async def test_ruff_sync(prep_env):
+async def test_ruff_sync(prep_env: _PrepEnv):
     import ruff_sync
+
+    if prep_env.group_name in UNSUPPORTED:
+        pytest.skip(f"{prep_env.group_name} is not supported")
 
     await ruff_sync.sync(
         ruff_sync.Arguments(
@@ -98,6 +102,23 @@ async def test_ruff_sync(prep_env):
 
     assert expected_toml.unwrap() == actual_toml.unwrap()
     assert prep_env.expected_toml == prep_env.source_path.read_text()
+
+
+@pytest.mark.asyncio
+async def test_unsupported(prep_env: _PrepEnv):
+    import ruff_sync
+
+    if prep_env.group_name not in UNSUPPORTED:
+        pytest.skip(f"{prep_env.group_name} is supported")
+
+    with pytest.raises(ruff_sync.RuffSyncError):
+        await ruff_sync.sync(
+            ruff_sync.Arguments(
+                upstream=prep_env.upstream_url,
+                source=prep_env.source_path,
+                exclude={},
+            )
+        )
 
 
 if __name__ == "__main__":
