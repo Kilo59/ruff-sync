@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from functools import lru_cache
 from io import StringIO
 from pprint import pformat as pf
-from typing import TYPE_CHECKING, Final, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
@@ -16,7 +16,7 @@ from httpx import URL
 from tomlkit import TOMLDocument, table
 from tomlkit import key as toml_key
 from tomlkit.container import OutOfOrderTableProxy
-from tomlkit.items import Table
+from tomlkit.items import Key, Table
 from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
@@ -214,8 +214,8 @@ def _dotted_key_merge(source: Table, upstream: Table) -> Table:
     """
     Merge two tables with dotted keys.
     """
-    merged = source.copy()
-    dotted_key_update: dict = {}
+    to_update = source.copy()
+    dotted_key_update: dict[Key, Any] = {}
     for key, value in upstream.items():
         # print(f"--{type(key)}{key} - {type(value)}{value}")
         if isinstance(value, OutOfOrderTableProxy):
@@ -224,19 +224,29 @@ def _dotted_key_merge(source: Table, upstream: Table) -> Table:
                 print(f"  {dotted_key} - {type(sub_value)}{sub_value}")
                 if isinstance(sub_value, Table):
                     print("    table")
-                    merged[key][sub_key] = sub_value
+                    to_update[key][sub_key] = sub_value
                 else:
-                    x = merged.get(key, {})
+                    x = to_update.get(key, {})
                     y = x.get(sub_key)
                     print(f"{type(x)}{x=}")
                     print(f"{type(y)}{y=}")
-                    dotted_key_update[dotted_key] = sub_value
-        else:
-            merged[key] = value
-    print(f"  update:\n{pf(merged)}\n")
+                dotted_key_update[dotted_key] = sub_value
+        # else:
+        #     to_update[key] = value
+    print(f"\n  dotted_key_update:\n{pf(dotted_key_update)}\n")
+    print(f"{to_update.display_name}")
+    if lint_select := dotted_key_update.get(toml_key(["lint", "select"])):
+        print(f"  update {lint_select=}")
+        to_update["lint"]["select"] = lint_select
+    if lint_ingore := dotted_key_update.get(toml_key(["lint", "ignore"])):
+        print(f"  update {lint_ingore=}")
+        to_update["lint"]["ignore"] = lint_ingore
+
+        # merged.append(dotted_key, value)
+    # merged[dotted_key] = value
     # TODO: return {"tool.ruff": ..., "tool.ruff.lint.per-file_ignore": ...}
     # merged.update(update)
-    return merged
+    return to_update
 
 
 def merge_ruff_toml(
