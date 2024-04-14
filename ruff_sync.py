@@ -284,15 +284,25 @@ async def sync(
         file_buffer = await download(args.upstream, client)
         LOGGER.info(f"Downloaded upstream file from {args.upstream}")
 
-    upstream_ruff_toml = filter_extra_items(
-        file_buffer.read(),
-        lint_exclude=args.exclude,
-    )
-    merged_toml = merge_ruff_toml(
-        source_toml_file.read(),
-        upstream_ruff_toml,
-    )
-    source_toml_file.write(merged_toml)
+    upstream_doc: TOMLDocument = tomlkit.parse(file_buffer.getvalue())
+    upsteam_ruff: Table | None = upstream_doc.get("tool", {}).get("ruff")
+    if not upsteam_ruff:
+        raise ValueError("No `tool.ruff` section found in upstream file.")
+
+    source_doc: TOMLDocument = source_toml_file.read()
+    source_tool: Table = source_doc["tool"]  # type: ignore[assignment]
+    source_ruff: Table = source_tool["ruff"]  # type: ignore[assignment]
+
+    # iterate over the upstream ruff config and update the corresponding section in the
+    # source ruff config unless it is in the exclude list
+    for section, value in upsteam_ruff.items():
+        LOGGER.info(f"{section}: {type(value)}{value}")
+        if not isinstance(value, (Table, OutOfOrderTableProxy)):
+            source_ruff[section] = value
+        else:
+            LOGGER.warning(f"Handle {type(value)}")
+
+    source_toml_file.write(source_doc)
     print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
 
 
