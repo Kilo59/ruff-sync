@@ -34,10 +34,10 @@ assert LIFECYLE_TOML_DIR.exists(), f"{LIFECYLE_TOML_DIR} does not exist"
 LIFECYCLE_GROUPS: Final[set[str]] = {
     "_".join(f.name.split("_")[:-1]) for f in LIFECYLE_TOML_DIR.glob("*.toml")
 }
-LIFECYCLE_GROUPS.remove("no_changes")
+# LIFECYCLE_GROUPS.remove("no_changes")
 # LIFECYCLE_GROUPS.remove("standard")
-LIFECYCLE_GROUPS.remove("no_ruff_cfg")
-LIFECYCLE_GROUPS.remove("no_dotted_keys")
+# LIFECYCLE_GROUPS.remove("no_ruff_cfg")
+# LIFECYCLE_GROUPS.remove("no_dotted_keys")
 
 
 class _PrepEnv(NamedTuple):
@@ -83,11 +83,6 @@ def prep_env(
 async def test_ruff_sync(prep_env):
     import ruff_sync
 
-    initial_toml = tomlkit.parse(prep_env.source_path.read_text())
-    print(
-        f"Initial tool.ruff\n\n{initial_toml['tool']['ruff'].as_string()}************\n"
-    )
-
     await ruff_sync.sync(
         ruff_sync.Arguments(
             upstream=prep_env.upstream_url,
@@ -95,8 +90,6 @@ async def test_ruff_sync(prep_env):
             exclude={},
         )
     )
-
-    print("Initial tool.ruff")
 
     expected_toml = tomlkit.parse(prep_env.expected_toml)
     actual_toml = tomlkit.parse(prep_env.source_path.read_text())
