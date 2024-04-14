@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 import httpx
 import tomlkit
 from httpx import URL
-from tomlkit import TOMLDocument, table
+from tomlkit import TOMLDocument, nl, table
 from tomlkit import key as toml_key
 from tomlkit.container import OutOfOrderTableProxy
 from tomlkit.items import Key, Table
@@ -302,11 +302,12 @@ async def sync(
         if not isinstance(value, (Table, OutOfOrderTableProxy)):
             simple_updates[section] = value
         else:
-            LOGGER.warning(f"Handle {type(value)} {value}")
             for sub_section, sub_value in value.items():
-                LOGGER.warning(f"{section}.{sub_section}: {type(sub_value)}{sub_value}")
+                LOGGER.info(f"{section}.{sub_section}: {type(sub_value)}{sub_value}")
                 if isinstance(sub_value, Table):
-                    LOGGER.error(f"{sub_value}")
+                    source_ruff.append(section, {sub_section: sub_value})
+                    # newline after table
+                    source_ruff.add(nl())
                 else:
                     source_ruff[section][sub_section] = sub_value
 
