@@ -14,6 +14,7 @@ import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, nl, table
+from tomlkit import key as toml_key
 from tomlkit.container import OutOfOrderTableProxy
 from tomlkit.items import Key, Table
 from tomlkit.toml_file import TOMLFile
@@ -166,7 +167,10 @@ async def sync(
                     # newline after table
                     source_ruff.add(nl())
                 else:
-                    source_ruff[section][sub_section] = sub_value
+                    dotted_key = toml_key([section, sub_section])
+                    # remove existing nested key
+                    source_ruff.get(section, {}).pop(sub_section, None)
+                    simple_updates[dotted_key] = sub_value
 
     LOGGER.info(f"Update: ->\n{pf(simple_updates)}")
     source_ruff.update(simple_updates)
