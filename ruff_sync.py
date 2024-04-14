@@ -285,15 +285,6 @@ async def sync(
         file_buffer = await download(args.upstream, client)
         LOGGER.info(f"Downloaded upstream file from {args.upstream}")
 
-    upstream_ruff_toml = filter_extra_items(
-        file_buffer.read(),
-        lint_exclude=args.exclude,
-    )
-    merged_toml = merge_ruff_toml(
-        source_toml_file.read(),
-        upstream_ruff_toml,
-    )
-    source_toml_file.write(merged_toml)
     upstream_doc: TOMLDocument = tomlkit.parse(file_buffer.getvalue())
     upsteam_ruff: Table | None = upstream_doc.get("tool", {}).get("ruff")
     if not upsteam_ruff:
