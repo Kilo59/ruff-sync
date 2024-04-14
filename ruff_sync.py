@@ -151,8 +151,6 @@ async def sync(
         raise RuffSyncError("No `tool.ruff` section found in upstream file.")
 
     source_doc: TOMLDocument = source_toml_file.read()
-    for section, value in source_doc.items():
-        LOGGER.error(f"{section}: {type(value)}{value}")
     source_tool: Table | OutOfOrderTableProxy = source_doc["tool"]  # type: ignore[assignment]
     source_ruff: Table | None = source_tool.get("ruff")  # type: ignore[assignment]
     if not source_ruff:
