@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 import httpx
 import tomlkit
 from httpx import URL
-from tomlkit import TOMLDocument, nl
+from tomlkit import TOMLDocument, nl, table
 from tomlkit.container import OutOfOrderTableProxy
 from tomlkit.items import Key, Table
 from tomlkit.toml_file import TOMLFile
@@ -145,10 +145,14 @@ async def sync(
 
     source_doc: TOMLDocument = source_toml_file.read()
     source_tool: Table = source_doc["tool"]  # type: ignore[assignment]
-    source_ruff: Table = source_tool["ruff"]  # type: ignore[assignment]
+    source_ruff: Table | None = source_tool.get("ruff")  # type: ignore[assignment]
+    if not source_ruff:
+        source_ruff = table()
+        source_tool["ruff"] = source_ruff
 
     # iterate over the upstream ruff config and update the corresponding section in the
     # source ruff config unless it is in the exclude list
+    # TODO: exlcude list
     simple_updates: dict[str | Key, Any] = {}
     for section, value in upsteam_ruff.items():
         LOGGER.info(f"{section}: {type(value)}{value}")
