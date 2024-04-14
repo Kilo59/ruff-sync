@@ -296,18 +296,22 @@ async def sync(
 
     # iterate over the upstream ruff config and update the corresponding section in the
     # source ruff config unless it is in the exclude list
-    update: dict[str | Key, Any] = {}
+    simple_updates: dict[str | Key, Any] = {}
     for section, value in upsteam_ruff.items():
         LOGGER.info(f"{section}: {type(value)}{value}")
         if not isinstance(value, (Table, OutOfOrderTableProxy)):
-            update[section] = value
+            simple_updates[section] = value
         else:
             LOGGER.warning(f"Handle {type(value)} {value}")
             for sub_section, sub_value in value.items():
-                LOGGER.error(f"{sub_section}: {type(sub_value)}{sub_value}")
+                LOGGER.warning(f"{section}.{sub_section}: {type(sub_value)}{sub_value}")
+                if isinstance(sub_value, Table):
+                    LOGGER.error(f"{sub_value}")
+                else:
+                    source_ruff[section][sub_section] = sub_value
 
-    LOGGER.info(f"Update: ->\n{pf(update)}")
-    source_ruff.update(update)
+    LOGGER.info(f"Update: ->\n{pf(simple_updates)}")
+    source_ruff.update(simple_updates)
     source_toml_file.write(source_doc)
     print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
 
