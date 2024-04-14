@@ -215,6 +215,7 @@ def _dotted_key_merge(source: Table, upstream: Table) -> Table:
     Merge two tables with dotted keys.
     """
     merged = source.copy()
+    dotted_key_update: dict = {}
     for key, value in upstream.items():
         # print(f"--{type(key)}{key} - {type(value)}{value}")
         if isinstance(value, OutOfOrderTableProxy):
@@ -229,10 +230,11 @@ def _dotted_key_merge(source: Table, upstream: Table) -> Table:
                     y = x.get(sub_key)
                     print(f"{type(x)}{x=}")
                     print(f"{type(y)}{y=}")
-                    merged[key][sub_key] = sub_value
+                    dotted_key_update[dotted_key] = sub_value
         else:
             merged[key] = value
     print(f"  update:\n{pf(merged)}\n")
+    # TODO: return {"tool.ruff": ..., "tool.ruff.lint.per-file_ignore": ...}
     # merged.update(update)
     return merged
 
