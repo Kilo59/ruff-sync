@@ -13,6 +13,7 @@ import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, table
+from tomlkit.container import OutOfOrderTableProxy
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
@@ -207,11 +208,15 @@ async def sync(
         raise ValueError("No `tool.ruff` section found in upstream file.")
 
     source_doc: TOMLDocument = source_toml_file.read()
+    source_tool: Table = source_doc["tool"]
+    source_ruff: Table = source_tool["ruff"]
 
     # iterate over the upstream ruff config and update the corresponding section in the
     # source ruff config unless it is in the exclude list
     for section, value in upsteam_ruff.items():
-        LOGGER.info(f"{section}: {value}")
+        LOGGER.warning(f"{section}: {type(value)}{value}")
+        if not isinstance(value, (Table, OutOfOrderTableProxy)):
+            source_ruff[section] = value
 
     source_toml_file.write(source_doc)
     print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
