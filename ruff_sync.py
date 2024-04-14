@@ -302,7 +302,9 @@ async def sync(
         if not isinstance(value, (Table, OutOfOrderTableProxy)):
             update[section] = value
         else:
-            LOGGER.warning(f"Handle {type(value)}")
+            LOGGER.warning(f"Handle {type(value)} {value}")
+            for sub_section, sub_value in value.items():
+                LOGGER.error(f"{sub_section}: {type(sub_value)}{sub_value}")
 
     LOGGER.info(f"Update: ->\n{pf(update)}")
     source_ruff.update(update)
