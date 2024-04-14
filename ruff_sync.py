@@ -196,6 +196,7 @@ async def sync(
     else:
         _source_toml_path = args.source / "pyproject.toml"
     source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
+    print("Exluding:", args.exclude)
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
@@ -214,9 +215,11 @@ async def sync(
     # iterate over the upstream ruff config and update the corresponding section in the
     # source ruff config unless it is in the exclude list
     for section, value in upsteam_ruff.items():
-        LOGGER.warning(f"{section}: {type(value)}{value}")
+        LOGGER.info(f"{section}: {type(value)}{value}")
         if not isinstance(value, (Table, OutOfOrderTableProxy)):
             source_ruff[section] = value
+        else:
+            LOGGER.warning(f"Handle {type(value)}")
 
     source_toml_file.write(source_doc)
     print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")

@@ -83,6 +83,11 @@ def prep_env(
 async def test_ruff_sync(prep_env):
     import ruff_sync
 
+    initial_toml = tomlkit.parse(prep_env.source_path.read_text())
+    print(
+        f"Initial tool.ruff\n\n{initial_toml['tool']['ruff'].as_string()}************\n"
+    )
+
     await ruff_sync.sync(
         ruff_sync.Arguments(
             upstream=prep_env.upstream_url,
@@ -91,10 +96,12 @@ async def test_ruff_sync(prep_env):
         )
     )
 
-    print(f"Updated toml\n\n{prep_env.source_path.read_text()}")
+    print("Initial tool.ruff")
 
     expected_toml = tomlkit.parse(prep_env.expected_toml)
     actual_toml = tomlkit.parse(prep_env.source_path.read_text())
+
+    print(f"Updated toml\n\n{prep_env.source_path.read_text()}")
 
     assert expected_toml.unwrap() == actual_toml.unwrap()
     assert prep_env.expected_toml == prep_env.source_path.read_text()
