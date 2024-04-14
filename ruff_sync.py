@@ -215,17 +215,25 @@ def _dotted_key_merge(source: Table, upstream: Table) -> Table:
     Merge two tables with dotted keys.
     """
     merged = source.copy()
-    update = {}
     for key, value in upstream.items():
         # print(f"--{type(key)}{key} - {type(value)}{value}")
         if isinstance(value, OutOfOrderTableProxy):
             for sub_key, sub_value in value.items():
                 dotted_key = toml_key([key, sub_key])
-                update[dotted_key] = sub_value
+                print(f"  {dotted_key} - {type(sub_value)}{sub_value}")
+                if isinstance(sub_value, Table):
+                    print("    table")
+                    merged[key][sub_key] = sub_value
+                else:
+                    x = merged.get(key, {})
+                    y = x.get(sub_key)
+                    print(f"{type(x)}{x=}")
+                    print(f"{type(y)}{y=}")
+                    merged[key][sub_key] = sub_value
         else:
-            update[key] = value
-    print(f"  update:\n{pf(update)}\n")
-    merged.update(update)
+            merged[key] = value
+    print(f"  update:\n{pf(merged)}\n")
+    # merged.update(update)
     return merged
 
 
@@ -241,12 +249,8 @@ def merge_ruff_toml(
         source_ruff = source_tool["ruff"]
         upstream_ruff = upstream_tool["ruff"]
         # add back any missing sections
-        print(source_ruff)
-        print(source_ruff.as_string())
         merged_ruff: Table = _dotted_key_merge(source_ruff, upstream_ruff)
         upstream_tool["ruff"] = merged_ruff
-        print(merged_ruff)
-        print(merged_ruff.as_string())
         source_tool.update(upstream_tool)
     return source
 
