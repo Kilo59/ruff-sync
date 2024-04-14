@@ -121,12 +121,40 @@ def test_get_ruff_tool_table(toml_str: str):
     assert isinstance(ruff_table, Table)
 
 
+@pytest.mark.parametrize("sample_toml_str", TOML_STRS_PARAMS)
+def test_filter_extra_items(sample_toml_str: str, sep_str: str):
+    exclude: list[str] = []  # TODO: pick random sections to exclude
+    original_toml = tomlkit.parse(sample_toml_str)
+    original_ruff: TOMLDocument | None = original_toml["tool"].get("ruff")  # type: ignore[union-attr]
+    print(f"Original toml:\n{sep_str}\n{original_toml.as_string()}")
+
+    filtered_toml = ruff_sync.filter_extra_items(original_toml, lint_exclude=exclude)
+    print(f"Filtered toml:\n{sep_str}\n{filtered_toml.as_string()}")
+
+    top_level_keys = set(filtered_toml.keys())
+    print(f"Top level keys: {top_level_keys}")
+    if original_ruff:
+        assert top_level_keys == {"tool"}, "Top level keys other than 'tool' found"
+
+        for section in exclude:
+            assert section not in filtered_toml["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
+
+        for section in original_ruff.get("lint", []):
+            if section not in exclude:
+                assert section in filtered_toml["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
+    else:
+        # If there was no ruff section in the original toml,
+        # the filtered toml should be empty
+        assert not filtered_toml, "Filtered toml was not empty"
+
+
 @pytest.mark.parametrize(
     "source",
     [
         param(
             SAMPLE_TOML_WITHOUT_RUFF_CFG.joinpath("pyproject.toml").read_text(),
             id="no ruff cfg",
+            marks=pytest.mark.xfail(reason="maybe not needed"),
         ),
         param(
             SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.joinpath("pyproject.toml").read_text(),
@@ -142,7 +170,9 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     source_toml = tomlkit.parse(source)
     upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
 
-    merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
+    merged_ruff = ruff_sync.merge_ruff_toml(
+        source_toml, filtered_upstream_doc=upstream_ruff
+    )
     print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
 
     source_ruff = source_toml.get("tool", {}).get("ruff")

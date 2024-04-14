@@ -7,14 +7,16 @@ import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
 from io import StringIO
-from typing import TYPE_CHECKING, Final, Literal, NamedTuple, overload
+from pprint import pformat as pf
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, table
+from tomlkit import key as toml_key
 from tomlkit.container import OutOfOrderTableProxy
-from tomlkit.items import Table
+from tomlkit.items import Key, Table
 from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
@@ -84,7 +86,7 @@ def _get_cli_parser() -> ArgumentParser:
     parser.add_argument(
         "--exclude",
         nargs="+",
-        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        help=f"Exclude certain ruff.lint configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         type=set,
         default=_DEFAULT_EXCLUDE,
     )
@@ -166,6 +168,39 @@ def get_ruff_tool_table(
     return ruff
 
 
+def filter_extra_items(
+    toml: str | TOMLDocument, lint_exclude: Iterable[str] | None = None
+) -> TOMLDocument:
+    """
+    Filter out all but the ruff section from a TOML document or string.
+    If provided also exclude certain ruff configs.
+    """
+    if isinstance(toml, str):
+        doc: TOMLDocument = tomlkit.parse(toml)
+    else:
+        doc = toml
+    filtered_doc = TOMLDocument()
+    ruff: Table | None = doc.get("tool", {}).get("ruff")
+    if not ruff:
+        LOGGER.warning("No `tool.ruff` section found.")
+        return filtered_doc
+
+    if lint_exclude:
+        ruff_lint = ruff.get("lint")
+        if not ruff_lint:
+            raise KeyError(
+                f"No `lint` section found in `tool.ruff`, cannot exclude {lint_exclude}"
+            )
+        for section in lint_exclude:
+            LOGGER.info(f"Excluding section `lint.{section}` from ruff config.")
+            ruff_lint.pop(section, None)
+
+    tool = table(is_super_table=True)
+    tool.append("ruff", ruff)
+    filtered_doc.append("tool", tool)
+    return filtered_doc
+
+
 def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
     ruff_toml: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
@@ -175,14 +210,60 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     return ruff_toml
 
 
+def _dotted_key_merge(source: Table, upstream: Table) -> Table:
+    """
+    Merge two tables with dotted keys.
+    """
+    to_update = source.copy()
+    dotted_key_update: dict[Key, Any] = {}
+    for key, value in upstream.items():
+        # print(f"--{type(key)}{key} - {type(value)}{value}")
+        if isinstance(value, OutOfOrderTableProxy):
+            for sub_key, sub_value in value.items():
+                dotted_key = toml_key([key, sub_key])
+                print(f"  {dotted_key} - {type(sub_value)}{sub_value}")
+                if isinstance(sub_value, Table):
+                    print("    table")
+                    to_update[key][sub_key] = sub_value
+                else:
+                    x = to_update.get(key, {})
+                    y = x.get(sub_key)
+                    print(f"{type(x)}{x=}")
+                    print(f"{type(y)}{y=}")
+                dotted_key_update[dotted_key] = sub_value
+        # else:
+        #     to_update[key] = value
+    print(f"\n  dotted_key_update:\n{pf(dotted_key_update)}\n")
+    print(f"{to_update.display_name}")
+    if lint_select := dotted_key_update.get(toml_key(["lint", "select"])):
+        print(f"  update {lint_select=}")
+        to_update["lint"]["select"] = lint_select
+    if lint_ingore := dotted_key_update.get(toml_key(["lint", "ignore"])):
+        print(f"  update {lint_ingore=}")
+        to_update["lint"]["ignore"] = lint_ingore
+
+        # merged.append(dotted_key, value)
+    # merged[dotted_key] = value
+    # TODO: return {"tool.ruff": ..., "tool.ruff.lint.per-file_ignore": ...}
+    # merged.update(update)
+    return to_update
+
+
 def merge_ruff_toml(
-    source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
+    source: TOMLDocument, filtered_upstream_doc: TOMLDocument
 ) -> TOMLDocument:
     """
     Merge the source and upstream tool ruff config
     """
-    if upstream_ruff_doc:
-        source.update(upstream_ruff_doc)
+    upstream_tool: Table | None = filtered_upstream_doc.get("tool")
+    if upstream_tool:
+        source_tool: Table = source["tool"]  # type: ignore[assignment]
+        source_ruff = source_tool["ruff"]
+        upstream_ruff = upstream_tool["ruff"]
+        # add back any missing sections
+        merged_ruff: Table = _dotted_key_merge(source_ruff, upstream_ruff)
+        upstream_tool["ruff"] = merged_ruff
+        source_tool.update(upstream_tool)
     return source
 
 
@@ -196,6 +277,7 @@ async def sync(
     else:
         _source_toml_path = args.source / "pyproject.toml"
     source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
+    # print(_source_toml_path.read_text())
     print("Exluding:", args.exclude)
 
     # NOTE: there's no particular reason to use async here.
@@ -203,6 +285,15 @@ async def sync(
         file_buffer = await download(args.upstream, client)
         LOGGER.info(f"Downloaded upstream file from {args.upstream}")
 
+    upstream_ruff_toml = filter_extra_items(
+        file_buffer.read(),
+        lint_exclude=args.exclude,
+    )
+    merged_toml = merge_ruff_toml(
+        source_toml_file.read(),
+        upstream_ruff_toml,
+    )
+    source_toml_file.write(merged_toml)
     upstream_doc: TOMLDocument = tomlkit.parse(file_buffer.getvalue())
     upsteam_ruff: Table | None = upstream_doc.get("tool", {}).get("ruff")
     if not upsteam_ruff:
