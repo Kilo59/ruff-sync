@@ -208,8 +208,8 @@ async def sync(
         raise ValueError("No `tool.ruff` section found in upstream file.")
 
     source_doc: TOMLDocument = source_toml_file.read()
-    source_tool: Table = source_doc["tool"]
-    source_ruff: Table = source_tool["ruff"]
+    source_tool: Table = source_doc["tool"]  # type: ignore[assignment]
+    source_ruff: Table = source_tool["ruff"]  # type: ignore[assignment]
 
     # iterate over the upstream ruff config and update the corresponding section in the
     # source ruff config unless it is in the exclude list
