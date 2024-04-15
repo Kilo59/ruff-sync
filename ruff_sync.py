@@ -152,7 +152,7 @@ async def sync(
 
     source_doc: TOMLDocument = source_toml_file.read()
     source_tool: Table | OutOfOrderTableProxy = source_doc["tool"]  # type: ignore[assignment]
-    source_ruff: Table | None = source_tool.get("ruff")  # type: ignore[assignment]
+    source_ruff: Table | None = source_tool.get("ruff")
     if not source_ruff:
         LOGGER.info("No `tool.ruff` section found in source file.")
         source_ruff = table()
