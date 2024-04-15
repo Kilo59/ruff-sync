@@ -95,8 +95,11 @@ async def test_ruff_sync(prep_env: _PrepEnv):
         )
     )
 
+    update_toml = prep_env.source_path.read_text()
+    print(f"\nUPDATED TOML\n\n{update_toml}")
+
     expected_toml = tomlkit.parse(prep_env.expected_toml)
-    actual_toml = tomlkit.parse(prep_env.source_path.read_text())
+    actual_toml = tomlkit.parse(update_toml)
 
     print(f"Updated toml\n\n{prep_env.source_path.read_text()}")
 
