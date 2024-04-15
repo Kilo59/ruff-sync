@@ -13,3 +13,6 @@ lint.ignore = ["W191", "E111"]
     "F401", # unused import
     "F403", # star imports
 ]
+
+[tool.ruff.lint.mccabe]
+complexity = 8 # default is 10

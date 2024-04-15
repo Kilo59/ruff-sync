@@ -154,6 +154,7 @@ async def sync(
     source_tool: Table | OutOfOrderTableProxy = source_doc["tool"]  # type: ignore[assignment]
     source_ruff: Table | None = source_tool.get("ruff")  # type: ignore[assignment]
     if not source_ruff:
+        LOGGER.info("No `tool.ruff` section found in source file.")
         source_ruff = table()
         if isinstance(source_tool, OutOfOrderTableProxy):
             raise RuffSyncError(
