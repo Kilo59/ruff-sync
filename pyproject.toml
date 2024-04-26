@@ -17,7 +17,7 @@ tomlkit = "^0.12.3"
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.4.4"
 invoke = "^2.2.0"
-mypy = "^1.9.0"
+mypy = "^1.10.0"
 pre-commit = "^3.7.0"
 pyfakefs = "^5.4.1"
 pytest = "^8.0.0"
