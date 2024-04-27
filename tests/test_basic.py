@@ -13,8 +13,6 @@ import respx
 import tomlkit
 from httpx import URL
 from pytest import param
-from tomlkit import TOMLDocument
-from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
@@ -24,6 +22,7 @@ if TYPE_CHECKING:
 
     from _pytest.mark.structures import ParameterSet
     from pyfakefs.fake_filesystem import FakeFilesystem
+    from tomlkit.items import Table
 
 TEST_ROOT: Final = pathlib.Path(__file__).parent
 PROJECT_ROOT: Final = TEST_ROOT.parent
@@ -82,72 +81,6 @@ lint.ignore = ["W191", "E111"]
     "F403", # star imports
 ]
 """
-
-
-@pytest.mark.parametrize(
-    "exclude", [("per-file-ignores", "line-length"), ("ignore", "target-version"), ()]
-)
-def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
-    original_toml_doc = tomlkit.parse(toml_s)
-    orginal_keys = set(original_toml_doc["tool"]["ruff"]["lint"].keys())  # type: ignore[index,union-attr]
-    print(f"{pf(orginal_keys)}")
-
-    parsed_toml_doc = ruff_sync.toml_ruff_parse(toml_s, exclude=exclude)
-    print(f"\n{pf(parsed_toml_doc, compact=True)}")
-
-    lint_config: TOMLDocument = parsed_toml_doc["lint"]  # type: ignore[assignment]
-
-    for section in exclude:
-        assert section not in lint_config
-
-    expected_sections = orginal_keys - set(exclude)
-    for section in expected_sections:
-        assert (
-            section in original_toml_doc["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
-        ), f"{section} was not in original doc, fix test"
-
-        assert section in lint_config, f"{section} was incorrectly excluded"
-
-
-@pytest.mark.parametrize("toml_str", TOML_STRS_PARAMS)
-def test_get_ruff_tool_table(toml_str: str):
-    """
-    Test the get_ruff_tool_table() returns a tool.ruff table regardless of if the
-    input has one or not.
-    """
-    ruff_table = ruff_sync.get_ruff_tool_table(toml_str)
-    print(type(ruff_table))
-    print(f"Ruff Table:\n{ruff_table.as_string()}")
-    assert isinstance(ruff_table, Table)
-
-
-@pytest.mark.parametrize(
-    "source",
-    [
-        param(
-            SAMPLE_TOML_WITHOUT_RUFF_CFG.joinpath("pyproject.toml").read_text(),
-            id="no ruff cfg",
-        ),
-        param(
-            SAMPLE_TOML_WITHOUT_RUFF_SYNC_CFG.joinpath("pyproject.toml").read_text(),
-            id="no sync cfg",
-        ),
-    ],
-)
-def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
-    upstream_toml: str = toml_s
-    print(f"Source\n{sep_str}\n{source}\n")
-    print(f"Upstream\n{sep_str}\n{upstream_toml}")
-
-    source_toml = tomlkit.parse(source)
-    upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
-
-    merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
-    print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
-
-    source_ruff = source_toml.get("tool", {}).get("ruff")
-    for key in upstream_ruff:
-        assert key in source_ruff, f"{key} was not in the updated source ruff config"
 
 
 @pytest.fixture

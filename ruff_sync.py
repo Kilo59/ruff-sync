@@ -7,17 +7,15 @@ import warnings
 from argparse import ArgumentParser
 from functools import lru_cache
 from io import StringIO
-from pprint import pformat as pf
-from typing import TYPE_CHECKING, Final, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import httpx
 import tomlkit
 from httpx import URL
-from tomlkit import TOMLDocument, table
+from tomlkit import TOMLDocument, nl, table
 from tomlkit import key as toml_key
 from tomlkit.container import OutOfOrderTableProxy
-from tomlkit.exceptions import TOMLKitError
-from tomlkit.items import Table
+from tomlkit.items import Key, Table
 from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
@@ -28,6 +26,10 @@ __version__ = "0.0.1.dev0"
 _DEFAULT_EXCLUDE: Final[set[str]] = {"per-file-ignores"}
 
 LOGGER = logging.getLogger(__name__)
+
+
+class RuffSyncError(Exception):
+    pass
 
 
 class Arguments(NamedTuple):
@@ -87,7 +89,7 @@ def _get_cli_parser() -> ArgumentParser:
     parser.add_argument(
         "--exclude",
         nargs="+",
-        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        help=f"Exclude certain ruff.lint configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         type=set,
         default=_DEFAULT_EXCLUDE,
     )
@@ -121,137 +123,68 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-@overload
-def get_ruff_tool_table(
-    toml: str | TOMLDocument,
-    create_if_missing: Literal[True] = ...,
-    exclude: Iterable[str] = ...,
-) -> Table: ...
-
-
-@overload
-def get_ruff_tool_table(
-    toml: str | TOMLDocument,
-    create_if_missing: Literal[False] = ...,
-    exclude: Iterable[str] = ...,
-) -> Table | None: ...
-
-
-def get_ruff_tool_table(
-    toml: str | TOMLDocument, create_if_missing: bool = True, exclude: Iterable[str] = ()
-) -> Table | None:
-    """
-    Get the tool.ruff section from a TOML string.
-    If it does not exist, create it.
-    """
-    if isinstance(toml, str):
-        doc: TOMLDocument = tomlkit.parse(toml)
-    else:
-        doc = toml
-    try:
-        tool: Table = doc["tool"]  # type: ignore[assignment]
-        ruff = tool["ruff"]
-        LOGGER.debug("Found `tool.ruff` section.")
-    except KeyError:
-        if not create_if_missing:
-            return None
-        LOGGER.info("No `tool.ruff` section found, creating it.")
-        tool = table(True)
-        ruff = table()
-        tool.append("ruff", ruff)
-        doc.append("tool", tool)
-    if not isinstance(ruff, Table):
-        raise TypeError(f"Expected table, got {type(ruff)}")
-    for section in exclude:
-        if section in ruff:
-            LOGGER.info(f"Exluding section `lint.{section}` from ruff config.")
-            ruff.pop(section)
-    return ruff
-
-
-def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
-    """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
-    ruff_toml: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
-    for section in exclude:
-        LOGGER.info(f"Exluding section `lint.{section}` from ruff config.")
-        ruff_toml["lint"].pop(section, None)  # type: ignore[union-attr]
-    return ruff_toml
-
-
-def merge_ruff_toml(
-    source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
-) -> TOMLDocument:
-    """
-    Merge the source and upstream tool ruff config
-    """
-    source_tool_ruff = get_ruff_tool_table(source)
-    if upstream_ruff_doc:
-        source_tool_ruff.update(upstream_ruff_doc)
-        out_of_order: dict[str, OutOfOrderTableProxy] = {}
-
-        # TODO: simplify this
-
-        # fix out of order tables
-        for key, value in upstream_ruff_doc.items():
-            dotted_components = key.split(".")
-            if len(dotted_components) > 1:
-                LOGGER.info(f"Found dot-noted key: {key}")
-            if isinstance(value, OutOfOrderTableProxy):
-                out_of_order[key] = value
-                LOGGER.debug(f"Found out of order table: {key}")
-                for nested_key, nested_value in value.items():
-                    dotted_key = toml_key([key, nested_key])
-                    LOGGER.debug(f"Nested: {dotted_key} - {type(nested_value)}")
-                    if isinstance(nested_value, Table):
-                        LOGGER.debug(f"Nested {dotted_key} {type(nested_value).__name__}")
-        LOGGER.debug(f"Out of order tables:\n{list(out_of_order.keys())}")
-        LOGGER.debug(f"Out of order:\n{pf(list(out_of_order.values()))}")
-        # remove out of order tables
-        for key in out_of_order:
-            LOGGER.debug(f"Removing out of order table: {key}")
-            popped: OutOfOrderTableProxy = source_tool_ruff.pop(key)
-            # now breakup the table and add it back in the correct order
-            for nested_key, nested_value in popped.items():
-                dotted_key = toml_key([key, nested_key])
-                LOGGER.debug(f"Adding back: {dotted_key}")
-                # TODO: isinstance check rather than try/except
-                try:
-                    source_tool_ruff[dotted_key] = nested_value
-                except TOMLKitError as e:
-                    LOGGER.debug(f"Error adding {dotted_key}: {e}")
-                    table = {k: v for k, v in popped.items() if k == nested_key}
-                    LOGGER.info(f"Adding Table: {pf(table)}")
-                    source_tool_ruff.append(key, table)
-    else:
-        LOGGER.warning("No upstream ruff config section found.")
-    return source
+def _resolve_py_project_toml(path: pathlib.Path) -> pathlib.Path:
+    py_project_toml = path if path.is_file() else path / "pyproject.toml"
+    return py_project_toml.resolve(strict=True)
 
 
 async def sync(
     args: Arguments,
 ) -> None:
     """Sync the upstream pyproject.toml file to the source directory."""
-    print("Syncing Ruff...")
-    if args.source.is_file():
-        _source_toml_path = args.source
-    else:
-        _source_toml_path = args.source / "pyproject.toml"
-    source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
+    print("🔄 Syncing Ruff ...")
+
+    py_project_toml_path = _resolve_py_project_toml(args.source)
+    source_toml_file = TOMLFile(_resolve_py_project_toml(py_project_toml_path))
+
+    if args.exclude:
+        print("Exluding:", args.exclude)
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
+        print(f"⬇️ Downloading upstream file from {args.upstream}")
         file_buffer = await download(args.upstream, client)
-        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
 
-    upstream_ruff_toml = get_ruff_tool_table(
-        file_buffer.read(), create_if_missing=False, exclude=args.exclude
-    )
-    merged_toml = merge_ruff_toml(
-        source_toml_file.read(),
-        upstream_ruff_toml,
-    )
-    source_toml_file.write(merged_toml)
-    print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
+    upstream_doc: TOMLDocument = tomlkit.parse(file_buffer.getvalue())
+    upsteam_ruff: Table | None = upstream_doc.get("tool", {}).get("ruff")
+    if not upsteam_ruff:
+        raise RuffSyncError("No `tool.ruff` section found in upstream file.")
+
+    source_doc: TOMLDocument = source_toml_file.read()
+    source_tool: Table | OutOfOrderTableProxy = source_doc["tool"]  # type: ignore[assignment]
+    source_ruff: Table | None = source_tool.get("ruff")
+    if not source_ruff:
+        LOGGER.info("No `tool.ruff` section found in source file.")
+        source_ruff = table()
+        if isinstance(source_tool, OutOfOrderTableProxy):
+            raise RuffSyncError(
+                f"tool section is {type(source_tool)} {list(source_tool.keys())}"
+                " and missing 'ruff' section."
+            )
+        source_tool.add("ruff", source_ruff)
+
+    # iterate over the upstream ruff config and update the corresponding section in the
+    # source ruff config unless it is in the exclude list
+    # TODO: exlcude list
+    simple_updates: dict[str | Key, Any] = {}
+    for section, value in upsteam_ruff.items():
+        if not isinstance(value, (Table, OutOfOrderTableProxy)):
+            simple_updates[section] = value
+        else:
+            for sub_section, sub_value in value.items():
+                if isinstance(sub_value, Table):
+                    source_ruff.append(section, {sub_section: sub_value})
+                    # newline after table
+                    source_ruff.add(nl())
+                else:
+                    dotted_key = toml_key([section, sub_section])
+                    # remove existing nested key
+                    source_ruff.get(section, {}).pop(sub_section, None)
+                    simple_updates[dotted_key] = sub_value
+
+    source_ruff.update(simple_updates)
+    source_toml_file.write(source_doc)
+    print(f"✅ Updated {py_project_toml_path.relative_to(pathlib.Path.cwd())}")
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
