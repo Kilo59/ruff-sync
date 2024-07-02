@@ -180,7 +180,7 @@ async def test_sync_updates_ruff_config(
     print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
 
     upstream = URL("https://example.com/pyproject.toml")
-    upstream_toml = httpx.get(upstream).text  # noqa: ASYNC100 # blocking but doesn't matter
+    upstream_toml = httpx.get(upstream).text  # blocking but doesn't matter
     await ruff_sync.sync(
         ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
     )
