@@ -180,7 +180,7 @@ async def test_sync_updates_ruff_config(
     print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
 
     upstream = URL("https://example.com/pyproject.toml")
-    upstream_toml = httpx.get(upstream).text  # noqa: ASYNC100 # blocking but doesn't matter
+    upstream_toml = httpx.get(upstream).text  # blocking but doesn't matter
     await ruff_sync.sync(
         ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
     )
@@ -193,9 +193,9 @@ async def test_sync_updates_ruff_config(
 
     # Ensure the updated ruff config has the same keys as the original
     for key in original_ruff_config:
-        assert (
-            key in updated_ruff_config
-        ), f"Original key {key} was not in updated ruff config"
+        assert key in updated_ruff_config, (
+            f"Original key {key} was not in updated ruff config"
+        )
 
     # Ensure the updated ruff config has the expected updated values from upstream
     upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
