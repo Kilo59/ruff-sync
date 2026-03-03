@@ -10,7 +10,8 @@ import ruff_sync
 
 def test_merge_preserves_whitespace():
     """
-    Test that merging ruff config into a TOML document preserves existing whitespace.
+    Test that merging ruff config into a TOML document preserves existing whitespace
+    and correctly merges the configuration.
     Reproduction for Issue #6.
     """
     source_toml_s = """[tool.poetry]
@@ -45,6 +46,13 @@ lint.select = ["F", "E"]
 
     print(f"Merged TOML:\n{merged_s}")
 
+    # Semantics: check merged values
+    merged_data = tomlkit.parse(merged_s)
+    merged_ruff = cast("Any", merged_data)["tool"]["ruff"]
+    assert merged_ruff["target-version"] == "py310"
+    assert merged_ruff["line-length"] == 120
+    assert list(merged_ruff["lint"]["select"]) == ["F", "E"]
+
     # In Issue #6, the user noted "1 too many newlines" or "remove too much whitespace"
     # Let's check for double newlines that shouldn't be there
     assert "\n\n\n[" not in merged_s, "Found triple newlines, expected at most double"
@@ -52,7 +60,8 @@ lint.select = ["F", "E"]
 
 def test_merge_nested_table_whitespace():
     """
-    Test that merging nested tables (like per-file-ignores) preserves whitespace.
+    Test that merging nested tables (like per-file-ignores) preserves whitespace
+    and correctly merges the nested configuration content.
     """
     source_toml_s = """[tool.ruff]
 lint.select = ["F"]
@@ -78,6 +87,18 @@ lint.per-file-ignores = {"__init__.py" = ["F401", "F403"]}
     print(f"Merged Nested TOML:\n{merged_s}")
     # Ensure there's a newline between the end of ruff config and the next table
     assert "]\n[tool.other]" in merged_s or "]\n\n[tool.other]" in merged_s
+
+    # Validate merged configuration content
+    merged_data = tomlkit.parse(merged_s)
+    merged_ruff = cast("Any", merged_data)["tool"]["ruff"]
+
+    # lint.select should include the updated values from upstream
+    assert list(merged_ruff["lint"]["select"]) == ["F", "E"]
+
+    # per-file-ignores for __init__.py should reflect the merged/updated values
+    per_file_ignores = merged_ruff["lint"]["per-file-ignores"]
+    assert "__init__.py" in per_file_ignores
+    assert list(per_file_ignores["__init__.py"]) == ["F401", "F403"]
 
 
 if __name__ == "__main__":
