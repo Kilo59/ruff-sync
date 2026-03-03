@@ -17,13 +17,11 @@ lint.select = ["F", "ASYNC"]
     doc = TOMLDocument()
     tool = table(True)
     ruff = table()
-    ruff.update(
-        {
-            "target-version": "py38",
-            "line-length": 120,
-            key(["lint", "select"]): ["F", "ASYNC"],
-        }
-    )
+    ruff.update({
+        "target-version": "py38",
+        "line-length": 120,
+        key(["lint", "select"]): ["F", "ASYNC"],
+    })
     tool.append("ruff", ruff)
     doc.append("tool", tool)
     doc_str = doc.as_string()
