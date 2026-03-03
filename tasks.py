@@ -20,7 +20,7 @@ LIFECYCLE_TOML_DIR: Final[pathlib.Path] = TESTS_DIR / "lifecycle_tomls"
 
 
 @task
-def fmt(ctx: Context, check: bool = False) -> None:
+def fmt(ctx: Context, *, check: bool = False) -> None:
     """Format code with ruff format"""
     cmds = ["ruff", "format", "."]
     if check:
@@ -34,9 +34,9 @@ def fmt(ctx: Context, check: bool = False) -> None:
         "unsafe-fixes": "Apply 'un-safe' fixes. See https://docs.astral.sh/ruff/linter/#fix-safety",
     }
 )
-def lint(ctx: Context, check: bool = False, unsafe_fixes: bool = False) -> None:
+def lint(ctx: Context, *, check: bool = False, unsafe_fixes: bool = False) -> None:
     """Lint and fix code with ruff"""
-    cmds = ["ruff", "."]
+    cmds = ["ruff", "check", "."]
     if not check:
         cmds.append("--fix")
     if unsafe_fixes:
@@ -47,7 +47,7 @@ def lint(ctx: Context, check: bool = False, unsafe_fixes: bool = False) -> None:
 @task(
     aliases=["types"],
 )
-def type_check(ctx: Context, install_types: bool = False, check: bool = False) -> None:
+def type_check(ctx: Context, *, install_types: bool = False, check: bool = False) -> None:
     """Type check code with mypy"""
     cmds = ["mypy"]
     if install_types:
@@ -61,7 +61,7 @@ def type_check(ctx: Context, install_types: bool = False, check: bool = False) -
 def deps(ctx: Context) -> None:
     """Sync dependencies with poetry lock file"""
     # using --with dev incase poetry changes the default behavior
-    cmds = ["poetry", "install", "--sync", "--with", "dev"]
+    cmds = ["poetry", "sync", "--with", "dev"]
     ctx.run(" ".join(cmds), echo=True, pty=True)
 
 
