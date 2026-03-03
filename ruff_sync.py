@@ -5,9 +5,10 @@ import logging
 import pathlib
 import warnings
 from argparse import ArgumentParser
+from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
+from typing import Any, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
@@ -15,9 +16,6 @@ from httpx import URL
 from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
 
 __version__ = "0.0.1.dev0"
 
@@ -186,24 +184,36 @@ def merge_ruff_toml(
 
     source_tool_ruff = get_ruff_tool_table(source)
 
-    def _recursive_update(
-        source_table: Table, upstream: Table | Mapping[str, Any]
-    ) -> None:
+    def _recursive_update(source_table: Any, upstream: Any) -> None:
         """Recursively update a TOML table to preserve formatting of existing keys."""
-        for key, value in upstream.items():
-            if (
-                key in source_table
-                and isinstance(source_table[key], Table)
-                and isinstance(value, (Table, dict))
-            ):
-                _recursive_update(source_table[key], value)
-            else:
-                # Direct assignment preserves formatting if key exists,
-                # or appends if it doesn't.
-                source_table[key] = value
+        if hasattr(upstream, "items") or isinstance(upstream, Mapping):
+            items = upstream.items()
+        else:
+            return
 
-    # Use recursive update instead of aggressive update() to preserve
-    # the structure and whitespace of existing tables in source.
+        for key, value in items:
+            if key in source_table:
+                if hasattr(source_table[key], "items") and (
+                    hasattr(value, "items") or isinstance(value, Mapping)
+                ):
+                    # Structural fix: if the target is a proxy (dotted key),
+                    # we must convert it to a real table to ensure children get
+                    # correct headers (otherwise tomlkit might miss the prefix).
+                    if not isinstance(source_table[key], Table):
+                        current_val = source_table[key].unwrap()
+                        # Direct assignment to a proxy key usually converts it
+                        source_table[key] = current_val
+
+                    _recursive_update(source_table[key], value)
+                else:
+                    # Overwrite existing value
+                    source_table[key] = (
+                        value.unwrap() if hasattr(value, "unwrap") else value
+                    )
+            else:
+                # Add new key/value
+                source_table[key] = value.unwrap() if hasattr(value, "unwrap") else value
+
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
     return source
