@@ -5,23 +5,17 @@ import logging
 import pathlib
 import warnings
 from argparse import ArgumentParser
+from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
-from pprint import pformat as pf
-from typing import TYPE_CHECKING, Final, Literal, NamedTuple, overload
+from typing import Any, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, table
-from tomlkit import key as toml_key
-from tomlkit.container import OutOfOrderTableProxy
-from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
 
 __version__ = "0.0.1.dev0"
 
@@ -182,48 +176,50 @@ def merge_ruff_toml(
     source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
 ) -> TOMLDocument:
     """
-    Merge the source and upstream tool ruff config
+    Merge the source and upstream tool ruff config with better whitespace preservation.
     """
-    source_tool_ruff = get_ruff_tool_table(source)
-    if upstream_ruff_doc:
-        source_tool_ruff.update(upstream_ruff_doc)
-        out_of_order: dict[str, OutOfOrderTableProxy] = {}
-
-        # TODO: simplify this
-
-        # fix out of order tables
-        for key, value in upstream_ruff_doc.items():
-            dotted_components = key.split(".")
-            if len(dotted_components) > 1:
-                LOGGER.info(f"Found dot-noted key: {key}")
-            if isinstance(value, OutOfOrderTableProxy):
-                out_of_order[key] = value
-                LOGGER.debug(f"Found out of order table: {key}")
-                for nested_key, nested_value in value.items():
-                    dotted_key = toml_key([key, nested_key])
-                    LOGGER.debug(f"Nested: {dotted_key} - {type(nested_value)}")
-                    if isinstance(nested_value, Table):
-                        LOGGER.debug(f"Nested {dotted_key} {type(nested_value).__name__}")
-        LOGGER.debug(f"Out of order tables:\n{list(out_of_order.keys())}")
-        LOGGER.debug(f"Out of order:\n{pf(list(out_of_order.values()))}")
-        # remove out of order tables
-        for key in out_of_order:
-            LOGGER.debug(f"Removing out of order table: {key}")
-            popped: OutOfOrderTableProxy = source_tool_ruff.pop(key)
-            # now breakup the table and add it back in the correct order
-            for nested_key, nested_value in popped.items():
-                dotted_key = toml_key([key, nested_key])
-                LOGGER.debug(f"Adding back: {dotted_key}")
-                # TODO: isinstance check rather than try/except
-                try:
-                    source_tool_ruff[dotted_key] = nested_value
-                except TOMLKitError as e:
-                    LOGGER.debug(f"Error adding {dotted_key}: {e}")
-                    table = {k: v for k, v in popped.items() if k == nested_key}
-                    LOGGER.info(f"Adding Table: {pf(table)}")
-                    source_tool_ruff.append(key, table)
-    else:
+    if not upstream_ruff_doc:
         LOGGER.warning("No upstream ruff config section found.")
+        return source
+
+    source_tool_ruff = get_ruff_tool_table(source)
+
+    def _recursive_update(source_table: Any, upstream: Any) -> None:
+        """Recursively update a TOML table to preserve formatting of existing keys."""
+        if hasattr(upstream, "items") or isinstance(upstream, Mapping):
+            items = upstream.items()
+        else:
+            return
+
+        for key, value in items:
+            if key in source_table:
+                if hasattr(source_table[key], "items") and (
+                    hasattr(value, "items") or isinstance(value, Mapping)
+                ):
+                    # Structural fix: if the target is a proxy (dotted key),
+                    # and we are adding NEW keys to it, we must convert it to a real
+                    # table to ensure children get correct headers.
+                    source_sub_keys = set(source_table[key].keys())
+                    upstream_sub_keys = set(value.keys())
+                    if not upstream_sub_keys.issubset(source_sub_keys):
+                        current_val = source_table[key].unwrap()
+                        # DELETE PROXY FIRST to avoid structural doubling
+                        del source_table[key]
+                        # ADD AS REAL TABLE
+                        source_table.add(key, current_val)
+
+                    _recursive_update(source_table[key], value)
+                else:
+                    # Overwrite existing value
+                    source_table[key] = (
+                        value.unwrap() if hasattr(value, "unwrap") else value
+                    )
+            else:
+                # Add new key/value
+                source_table[key] = value.unwrap() if hasattr(value, "unwrap") else value
+
+    _recursive_update(source_tool_ruff, upstream_ruff_doc)
+
     return source
 
 

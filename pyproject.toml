@@ -10,7 +10,7 @@ readme = "README.md"
 ruff-sync = "ruff_sync:main"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 httpx = "^0.27.0"
 tomlkit = "^0.12.3"
 
@@ -25,7 +25,7 @@ pytest-asyncio = "^0.23.5"
 pytest-icdiff = "^0.9"
 respx = "^0.21.1"
 ruamel-yaml = "^0.18.6"
-ruff = "^0.3.7"
+ruff = "^0.15.0"
 wily = "^1.25.0"
 
 [build-system]
@@ -33,7 +33,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 files = ["ruff_sync.py", "tests/", "tasks.py"]
 strict = true
 warn_unused_configs = true
@@ -53,12 +53,11 @@ disable_error_code = ['type-arg', 'no-untyped-def']
 exclude = ["per_file_ignores", "ignore"]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 90
-# https://docs.astral.sh/ruff/preview/#preview
-lint.preview = true
-lint.explicit-preview-rules = true
-lint.select = [
+
+[tool.ruff.lint]
+select = [
     # https://docs.astral.sh/ruff/rules/#flake8-async-async
     "ASYNC", # async rules
     # https://beta.ruff.rs/docs/rules/#flake8-bugbear-b
@@ -106,7 +105,7 @@ lint.select = [
     # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
     "SLOT", # slots - enforce __slots__ usage
     # https://beta.ruff.rs/docs/rules/#flake8-type-checking-tch
-    "TCH", # flake8-type-checking-tch
+    "TC", # flake8-type-checking-tch
     # https://beta.ruff.rs/docs/rules/#flake8-tidy-imports-tid
     "TID", # flake8-tidy-imports
     # https://docs.astral.sh/ruff/rules/#tryceratops-try
@@ -114,31 +113,19 @@ lint.select = [
     # https://beta.ruff.rs/docs/rules/#pyupgrade-up
     "UP", # pyupgrade
 ]
-lint.ignore = [
-# formatting conflicts
-# https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
-"W191", # tab-indentation
-"E111", # indentation-with-invalid-multiple
-"E114", # indentation-with-invalid-multiple-comment
-"E117", # over-indented
-"D206", # indent-with-spaces
-"D300", # triple-single-quotes
-"Q000", # bad-quotes-inline-string
-"Q001", # bad-quotes-multiline-string
-"Q002", # bad-quotes-docstring
-"Q003", # avoidable-escaped-quote
-"COM812", # missing-trailing-comma
-"COM819", # prohibited-trailing-comma
-"ISC001", # single-line-implicit-string-concatenation
-"ISC002", # multi-line-implicit-string-concatenation
-# other ignores
-# # https://docs.astral.sh/ruff/rules/logging-f-string/
-"G004", # f-string is performant enough
-# https://docs.astral.sh/ruff/rules/raise-vanilla-args/
-"TRY003", # overkill for such a small project
+ignore = [
+    # https://docs.astral.sh/ruff/rules/logging-f-string/
+    "G004", # f-string is performant enough
+    # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "TRY003", # overkill for such a small project
 ]
-# https://docs.astral.sh/ruff/linter/#fix-safety
-lint.extend-safe-fixes = ["ICN001"]
+
+[tool.ruff.format]
+preview = true
+# Format code snippets in docstrings.
+docstring-code-format = true
+# Wrap docstring code snippets at the project line length.
+docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
@@ -158,5 +145,5 @@ include = [
     "ruff_sync.py",
     ]
 
-[tool.pytest.ini_options]
+[tool.pytest]
 log_level = "INFO"
