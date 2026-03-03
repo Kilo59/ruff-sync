@@ -9,6 +9,8 @@ import respx
 import tomlkit
 from httpx import URL
 
+import ruff_sync
+
 if TYPE_CHECKING:
     from collections.abc import Generator
 
@@ -80,8 +82,6 @@ def prep_env(
 
 @pytest.mark.asyncio
 async def test_ruff_sync(prep_env):
-    import ruff_sync
-
     await ruff_sync.sync(
         ruff_sync.Arguments(
             upstream=prep_env.upstream_url,
