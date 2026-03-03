@@ -197,12 +197,16 @@ def merge_ruff_toml(
                     hasattr(value, "items") or isinstance(value, Mapping)
                 ):
                     # Structural fix: if the target is a proxy (dotted key),
-                    # we must convert it to a real table to ensure children get
-                    # correct headers (otherwise tomlkit might miss the prefix).
-                    if not isinstance(source_table[key], Table):
+                    # and we are adding NEW keys to it, we must convert it to a real
+                    # table to ensure children get correct headers.
+                    source_sub_keys = set(source_table[key].keys())
+                    upstream_sub_keys = set(value.keys())
+                    if not upstream_sub_keys.issubset(source_sub_keys):
                         current_val = source_table[key].unwrap()
-                        # Direct assignment to a proxy key usually converts it
-                        source_table[key] = current_val
+                        # DELETE PROXY FIRST to avoid structural doubling
+                        del source_table[key]
+                        # ADD AS REAL TABLE
+                        source_table.add(key, current_val)
 
                     _recursive_update(source_table[key], value)
                 else:

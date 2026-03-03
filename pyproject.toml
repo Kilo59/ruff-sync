@@ -121,6 +121,7 @@ ignore = [
 ]
 
 [tool.ruff.format]
+preview = true
 # Format code snippets in docstrings.
 docstring-code-format = true
 # Wrap docstring code snippets at the project line length.
