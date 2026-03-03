@@ -115,9 +115,9 @@ def test_lockfile_poetry_version(
     """
     print(f"{lock_file_poetry_version=}")
     print(f"{latest_poetry_version=}")
-    assert lock_file_poetry_version >= Version(
-        "1.7.1"
-    ), "poetry.lock was generated using an older version of poetry"
+    assert lock_file_poetry_version >= Version("1.7.1"), (
+        "poetry.lock was generated using an older version of poetry"
+    )
 
 
 if __name__ == "__main__":

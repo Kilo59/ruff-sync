@@ -193,9 +193,9 @@ async def test_sync_updates_ruff_config(
 
     # Ensure the updated ruff config has the same keys as the original
     for key in original_ruff_config:
-        assert (
-            key in updated_ruff_config
-        ), f"Original key {key} was not in updated ruff config"
+        assert key in updated_ruff_config, (
+            f"Original key {key} was not in updated ruff config"
+        )
 
     # Ensure the updated ruff config has the expected updated values from upstream
     upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
