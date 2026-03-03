@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 import tomlkit
 
@@ -27,7 +29,7 @@ lint.select = ["F", "E"]
 """
 
     source_doc = tomlkit.parse(source_s)
-    upstream_ruff = tomlkit.parse(upstream_s)["tool"]["ruff"]
+    upstream_ruff = cast("Any", tomlkit.parse(upstream_s))["tool"]["ruff"]
 
     merged_doc = ruff_sync.merge_ruff_toml(source_doc, upstream_ruff)
     merged_s = merged_doc.as_string()
@@ -35,7 +37,7 @@ lint.select = ["F", "E"]
     print(f"Merged Result:\n{merged_s}")
 
     merged_data = tomlkit.parse(merged_s)
-    ruff = merged_data["tool"]["ruff"]
+    ruff = cast("Any", merged_data)["tool"]["ruff"]
 
     assert ruff["target-version"] == "py310"
     assert ruff["lint"]["select"] == ["F", "E"]
@@ -47,8 +49,7 @@ lint.select = ["F", "E"]
     )
     assert (
         "[tool.ruff.lint.per-file-ignores]" in merged_s
-        or "lint.per-file-ignores =" in merged_s
-    )
+    ) or "lint.per-file-ignores =" in merged_s
 
 
 def test_merge_preserves_comments_with_dotted_keys():
@@ -62,7 +63,7 @@ target-version = "py310"
 lint.select = ["E"]
 """
     source_doc = tomlkit.parse(source_s)
-    upstream_ruff = tomlkit.parse(upstream_s)["tool"]["ruff"]
+    upstream_ruff = cast("Any", tomlkit.parse(upstream_s))["tool"]["ruff"]
 
     merged_doc = ruff_sync.merge_ruff_toml(source_doc, upstream_ruff)
     merged_s = merged_doc.as_string()

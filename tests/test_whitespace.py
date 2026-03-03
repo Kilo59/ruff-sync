@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 import tomlkit
 
@@ -31,7 +33,7 @@ lint.select = ["F", "E"]
 
     source_doc = tomlkit.parse(source_toml_s)
     upstream_doc = tomlkit.parse(upstream_ruff_s)
-    upstream_ruff = upstream_doc["tool"]["ruff"]
+    upstream_ruff = cast("Any", upstream_doc)["tool"]["ruff"]
 
     merged_doc = ruff_sync.merge_ruff_toml(source_doc, upstream_ruff)
     merged_s = merged_doc.as_string()
@@ -68,7 +70,7 @@ lint.per-file-ignores = {"__init__.py" = ["F401", "F403"]}
 """
 
     source_doc = tomlkit.parse(source_toml_s)
-    upstream_ruff = tomlkit.parse(upstream_ruff_s)["tool"]["ruff"]
+    upstream_ruff = cast("Any", tomlkit.parse(upstream_ruff_s))["tool"]["ruff"]
 
     merged_doc = ruff_sync.merge_ruff_toml(source_doc, upstream_ruff)
     merged_s = merged_doc.as_string()
