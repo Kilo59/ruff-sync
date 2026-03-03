@@ -25,7 +25,7 @@ PROJECT_ROOT: Final = pathlib.Path(__file__).parent.parent
 PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 
 PYTHON_VERSION: Final = Version(sys.version.split()[0])
-MIN_PYTHON_VERSION: Final = Version("3.9")  # TODO: get this from pyproject.toml
+MIN_PYTHON_VERSION: Final = Version("3.10")  # TODO: get this from pyproject.toml
 
 
 @pytest.fixture
@@ -115,7 +115,7 @@ def test_lockfile_poetry_version(
     """
     print(f"{lock_file_poetry_version=}")
     print(f"{latest_poetry_version=}")
-    assert lock_file_poetry_version >= Version("1.7.1"), (
+    assert lock_file_poetry_version >= Version("2.3.2"), (
         "poetry.lock was generated using an older version of poetry"
     )
 
