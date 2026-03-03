@@ -105,7 +105,7 @@ select = [
     # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
     "SLOT", # slots - enforce __slots__ usage
     # https://beta.ruff.rs/docs/rules/#flake8-type-checking-tch
-    "TCH", # flake8-type-checking-tch
+    "TC", # flake8-type-checking-tch
     # https://beta.ruff.rs/docs/rules/#flake8-tidy-imports-tid
     "TID", # flake8-tidy-imports
     # https://docs.astral.sh/ruff/rules/#tryceratops-try
