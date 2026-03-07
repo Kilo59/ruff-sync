@@ -17,7 +17,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.1.dev3"
+__version__ = "0.0.1.dev4"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
@@ -68,7 +68,8 @@ def _get_cli_parser() -> ArgumentParser:
         "upstream",
         type=URL,
         nargs="?",
-        help="The URL to download the pyproject.toml file from. Optional if defined in [tool.ruff-sync].",
+        help="The URL to download the pyproject.toml file from."
+        " Optional if defined in [tool.ruff-sync].",
     )
     parser.add_argument(
         "--source",
