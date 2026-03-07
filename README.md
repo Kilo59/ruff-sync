@@ -94,8 +94,8 @@ ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 # Sync into a specific project directory
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml --source ./my-project
 
-# Exclude specific sections from being overwritten
-ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml --exclude per-file-ignores ignore
+# Exclude specific sections from being overwritten using dotted paths
+ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml --exclude lint.per-file-ignores lint.ignore
 ```
 
 ### CLI Reference
@@ -126,10 +126,16 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
-exclude = ["per-file-ignores", "ignore"]
+# Use simple names for top-level keys, and dotted paths for nested keys
+exclude = [
+    "target-version",          # A top-level key under [tool.ruff]
+    "lint.per-file-ignores",   # A nested key under [tool.ruff.lint]
+    "lint.ignore"
+]
 ```
 
-This sets the default exclusions so you don't need to pass `--exclude` every time.
+This sets the default exclusions so you don't need to pass `--exclude` on the command line every time.
+*Note: Any explicitly provided CLI arguments will override the list in `pyproject.toml`.*
 
 ## Example Workflow
 
