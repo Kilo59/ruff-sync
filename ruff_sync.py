@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import pathlib
+import sys
 from argparse import ArgumentParser
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
-from typing import Any, Final, Literal, NamedTuple, overload
+from typing import Any, ClassVar, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
@@ -21,6 +22,28 @@ __version__ = "0.0.1.dev4"
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 LOGGER = logging.getLogger(__name__)
+
+
+class ColoredFormatter(logging.Formatter):
+    """Logging Formatter to add colors"""
+
+    RESET: ClassVar[str] = "\x1b[0m"
+    COLORS: ClassVar[Mapping[int, str]] = {
+        logging.DEBUG: "\x1b[38;21m",  # Grey
+        logging.INFO: "\x1b[32;21m",  # Green
+        logging.WARNING: "\x1b[33;21m",  # Yellow
+        logging.ERROR: "\x1b[31;21m",  # Red
+        logging.CRITICAL: "\x1b[31;1m",  # Bold Red
+    }
+
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[explicit-override]
+        log_fmt = "%(message)s"
+        if sys.stderr.isatty():
+            color = self.COLORS.get(record.levelno, self.RESET)
+            log_fmt = f"{color}%(message)s{self.RESET}"
+
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
 
 
 class Arguments(NamedTuple):
@@ -287,7 +310,9 @@ def main() -> None:
         1: logging.INFO,
     }.get(args.verbose, logging.DEBUG)
 
-    logging.basicConfig(level=log_level, format="%(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(ColoredFormatter())
+    logging.basicConfig(level=log_level, handlers=[handler], force=True)
 
     # Resolve upstream: use CLI value if explicitly provided, else file config
     upstream: URL
