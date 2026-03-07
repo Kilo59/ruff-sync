@@ -247,7 +247,7 @@ async def sync(
         upstream_ruff_toml,
     )
     source_toml_file.write(merged_toml)
-    print(f"Updated {_source_toml_path.relative_to(pathlib.Path.cwd())}")
+    print(f"Updated {_source_toml_path.resolve().relative_to(pathlib.Path.cwd())}")
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
