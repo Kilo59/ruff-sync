@@ -109,8 +109,10 @@ def github_url_to_raw_url(url: URL) -> URL:
         raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace(
             "/blob/", "/"
         )
+        LOGGER.debug(f"Converting GitHub URL to raw content URL: {raw_url_str}")
         return httpx.URL(raw_url_str)
     else:
+        LOGGER.debug("URL is not a GitHub URL, returning as is.")
         return url
 
 
