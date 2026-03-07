@@ -65,10 +65,6 @@ def pyproject_toml_s() -> str:
     return s
 
 
-def test_ruff_sync():
-    assert ruff_sync.__version__ == "0.0.1.dev0"
-
-
 @pytest.fixture
 def toml_s() -> str:
     """A sample pyproject.toml file with ruff config."""

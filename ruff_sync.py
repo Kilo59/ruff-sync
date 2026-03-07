@@ -17,7 +17,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.1.dev0"
+__version__ = "0.0.1.dev3"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
