@@ -177,7 +177,7 @@ Defined in `tasks.py`. Run with `invoke <task>` or `poetry run invoke <task>`:
 CI is defined in `.github/workflows/ci.yaml`:
 
 - **Static Analysis**: runs `lint --check`, `fmt --check`, and `type-check` on Python 3.10.
-- **Tests**: matrix across Python 3.10, 3.11, 3.12, 3.13.
+- **Tests**: matrix across Python 3.10, 3.11, 3.12, 3.13, 3.14.
 - **Pre-commit.ci**: auto-fixes and auto-updates hooks on PRs.
 
 ## Common Pitfalls

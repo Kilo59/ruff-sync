@@ -126,7 +126,7 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
-exclude = ["per_file_ignores", "ignore"]
+exclude = ["per-file-ignores", "ignore"]
 ```
 
 This sets the default exclusions so you don't need to pass `--exclude` every time.
