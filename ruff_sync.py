@@ -68,7 +68,7 @@ def _get_cli_parser() -> ArgumentParser:
         "upstream",
         type=URL,
         nargs="?",
-        help="The URL to download the pyproject.toml file from.",
+        help="The URL to download the pyproject.toml file from. Optional if defined in [tool.ruff-sync].",
     )
     parser.add_argument(
         "--source",
