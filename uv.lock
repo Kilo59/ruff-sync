@@ -1015,8 +1015,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", specifier = ">=0.27.0" },
-    { name = "tomlkit", specifier = ">=0.12.3" },
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "tomlkit", specifier = ">=0.12.3,<2.0.0" },
 ]
 
 [package.metadata.requires-dev]
