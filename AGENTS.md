@@ -4,8 +4,41 @@
 
 **ruff-sync** is a CLI tool that synchronizes [Ruff](https://docs.astral.sh/ruff/) linter configuration across multiple Python projects. It downloads a upstream `pyproject.toml`, extracts the `[tool.ruff]` section, and merges it into a local project's `pyproject.toml` while preserving formatting, comments, and whitespace.
 
-The entire application lives in a single module: `ruff_sync.py`.
-Dev tasks are defined in `tasks.py` using [Invoke](https://www.pyinvoke.org/).
+- **GitHub Repository**: [`Kilo59/ruff-sync`](https://github.com/Kilo59/ruff-sync)
+- The entire application lives in a single module: `ruff_sync.py`.
+- Dev tasks are defined in `tasks.py` using [Invoke](https://www.pyinvoke.org/).
+
+## GitHub Context
+
+This is a GitHub-hosted project. Use the **`gh` CLI** to gather extra context about issues, milestones, pull requests, and releases before starting work. This is especially useful for understanding the intent behind a task or finding related discussions.
+
+### Useful Commands
+
+```bash
+# Issues
+gh issue list                           # Open issues
+gh issue view <number>                  # Read a specific issue with full context
+gh issue list --milestone "v0.1"        # Issues for a specific milestone
+
+# Pull Requests
+gh pr list                              # Open PRs
+gh pr view <number>                     # Read PR description, review comments, checks
+gh pr checks <number>                   # See CI status for a PR
+gh pr diff <number>                     # View the diff
+
+# Milestones & Releases
+gh api repos/Kilo59/ruff-sync/milestones  # List milestones
+gh release list                           # List releases
+
+# Labels
+gh label list                           # See available labels
+```
+
+### When to Use `gh`
+
+- **Before starting a task**: If the user references an issue number or milestone, read it with `gh issue view` to understand the full context, acceptance criteria, and any prior discussion.
+- **During PR work**: Use `gh pr view` and `gh pr checks` to understand review feedback and CI status.
+- **When investigating bugs**: Search issues with `gh issue list --search "<keywords>"` to find related reports or prior fixes.
 
 ## Tech Stack
 
