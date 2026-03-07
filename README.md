@@ -166,6 +166,24 @@ mypy .               # type check
 pytest -vv           # test
 ```
 
+## Dogfooding
+
+To see `ruff-sync` in action on a complex, real-world configuration, you can "dogfood" it by syncing this project's own `pyproject.toml` with a large upstream config like Pydantic's.
+
+We've provided a script to make this easy:
+
+```console
+./scripts/dogfood.sh
+```
+
+This will download Pydantic's Ruff configuration and merge it into the local `pyproject.toml`. You can then use `git diff` to see how it merged the keys while preserving the existing structure and comments.
+
+**To revert the changes after testing:**
+
+```console
+git checkout pyproject.toml
+```
+
 ## License
 
 [MIT](LICENSE.md)
