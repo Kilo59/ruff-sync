@@ -1,6 +1,9 @@
 name: ci
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
   schedule:
     - cron: "0 */6 * * *"
@@ -59,3 +62,29 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: Kilo59/ruff-sync
+
+  publish:
+    name: Build and publish to PyPI
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [static-analysis, tests]
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is required for trusted publishing
+      id-token: write
+      # This permission is required to read the repository content
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish package
+        run: uv publish
