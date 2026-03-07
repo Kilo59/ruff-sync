@@ -1,7 +1,8 @@
 [project]
 name = "ruff-sync"
 version = "0.0.1.dev2"
-description = "Syncronize ruff linter config settings accross projects"
+description = "Synchronize Ruff linter configuration across projects"
+keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
     { name = "Gabriel Gore", email = "gabriel59kg@gmail.com" }
 ]
