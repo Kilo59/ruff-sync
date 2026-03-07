@@ -125,7 +125,7 @@ ruff-sync --exclude lint.per-file-ignores lint.ignore
 ### CLI Reference
 
 ```
-usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [upstream]
+usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [-v] [upstream]
 
 positional arguments:
   upstream              The URL to download the pyproject.toml file from.
@@ -136,6 +136,7 @@ optional arguments:
   --source SOURCE       The directory to sync the pyproject.toml file to. Default: .
   --exclude EXCLUDE [EXCLUDE ...]
                         Exclude certain ruff configs. Default: lint.per-file-ignores
+  -v, --verbose         Increase verbosity. -vv for INFO, -vvv for DEBUG.
 ```
 
 ## Key Features

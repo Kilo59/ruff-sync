@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import os
 import pathlib
 import shutil
@@ -269,7 +270,9 @@ async def test_sync_updates_ruff_config(
     upstream = URL("https://example.com/pyproject.toml")
     upstream_toml = httpx.get(upstream).text  # blocking but doesn't matter
     await ruff_sync.sync(
-        ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
+        ruff_sync.Arguments(
+            upstream=upstream, source=fake_fs_source, exclude=(), verbose=0
+        )
     )
     updated_toml = fake_fs_source.read_text()
     updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
@@ -444,6 +447,41 @@ def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
     assert str(captured_args[0].upstream) == "http://config.com"
 
 
+@pytest.mark.parametrize(
+    ["verbose_count", "expected_level"],
+    [
+        (0, logging.WARNING),
+        (1, logging.WARNING),
+        (2, logging.INFO),
+        (3, logging.DEBUG),
+        (4, logging.DEBUG),
+    ],
+)
+def test_verbosity_log_level(
+    monkeypatch: pytest.MonkeyPatch, verbose_count: int, expected_level: int
+):
+    """Test that the log level is correctly set based on the verbose count."""
+    captured_level: list[int] = []
+
+    def mock_basic_config(level: int, **kwargs: Any) -> None:
+        captured_level.append(level)
+
+    argv = ["ruff-sync", "http://example.com"]
+    if verbose_count > 0:
+        argv.append(f"-{'v' * verbose_count}")
+
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.setattr(logging, "basicConfig", mock_basic_config)
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync, "sync", lambda _: asyncio.sleep(0))
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_level) == 1
+    assert captured_level[0] == expected_level
+
+
 @pytest.mark.asyncio
 async def test_sync_default_exclude(fs: FakeFilesystem):
     """Integration style test for default exclude functionality."""
@@ -469,6 +507,7 @@ target-version = "py311"
                 upstream=URL("https://example.com/pyproject.toml"),
                 source=ff_path,
                 exclude=ruff_sync._DEFAULT_EXCLUDE,
+                verbose=0,
             )
         )
 

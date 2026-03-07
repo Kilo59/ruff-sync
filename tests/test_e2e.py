@@ -93,6 +93,7 @@ async def test_ruff_sync(prep_env):
             upstream=prep_env.upstream_url,
             source=prep_env.source_path,
             exclude={},
+            verbose=0,
         )
     )
 

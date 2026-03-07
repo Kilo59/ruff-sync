@@ -23,11 +23,15 @@ _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 LOGGER = logging.getLogger(__name__)
 
+_VERBOSITY_INFO: Final = 2
+_VERBOSITY_DEBUG: Final = 3
+
 
 class Arguments(NamedTuple):
     upstream: URL
     source: pathlib.Path
     exclude: Iterable[str]
+    verbose: int
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -83,6 +87,13 @@ def _get_cli_parser() -> ArgumentParser:
         nargs="+",
         help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         default=None,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity. -vv for INFO, -vvv for DEBUG.",
     )
     return parser
 
@@ -272,6 +283,15 @@ def main() -> None:
     args = PARSER.parse_args()
     config = get_config(args.source)
 
+    # Configure logging
+    log_level = logging.WARNING
+    if args.verbose == _VERBOSITY_INFO:
+        log_level = logging.INFO
+    elif args.verbose >= _VERBOSITY_DEBUG:
+        log_level = logging.DEBUG
+
+    logging.basicConfig(level=log_level, format="%(message)s")
+
     # Resolve upstream: use CLI value if explicitly provided, else file config
     upstream: URL
     if args.upstream:
@@ -307,6 +327,7 @@ def main() -> None:
                 upstream=upstream,
                 source=args.source,
                 exclude=exclude,
+                verbose=args.verbose,
             )
         )
     )
