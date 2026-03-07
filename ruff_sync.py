@@ -81,8 +81,7 @@ def _get_cli_parser() -> ArgumentParser:
         "--exclude",
         nargs="+",
         help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
-        type=set,
-        default=_DEFAULT_EXCLUDE,
+        default=None,
     )
     return parser
 
@@ -275,7 +274,7 @@ def main() -> None:
     # Merge exclude: use CLI value if explicitly provided, else file config,
     # else the built-in default.
     exclude: Iterable[str]
-    if args.exclude != _DEFAULT_EXCLUDE:
+    if args.exclude is not None:
         # User passed --exclude on the CLI — that takes precedence
         exclude = args.exclude
     elif "exclude" in config:
