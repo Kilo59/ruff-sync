@@ -35,7 +35,7 @@ if ! git diff --quiet pyproject.toml; then
 fi
 
 # Run the tool via poetry
-poetry run python ruff_sync.py "$UPSTREAM" -vv
+poetry run python ruff_sync.py "$UPSTREAM" -v
 
 echo ""
 echo "✨ Dogfooding run complete!"
