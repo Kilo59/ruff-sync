@@ -23,9 +23,6 @@ _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 LOGGER = logging.getLogger(__name__)
 
-_VERBOSITY_INFO: Final = 2
-_VERBOSITY_DEBUG: Final = 3
-
 
 class Arguments(NamedTuple):
     upstream: URL
@@ -93,7 +90,7 @@ def _get_cli_parser() -> ArgumentParser:
         "--verbose",
         action="count",
         default=0,
-        help="Increase verbosity. -vv for INFO, -vvv for DEBUG.",
+        help="Increase verbosity. -v for INFO, -vv for DEBUG.",
     )
     return parser
 
@@ -284,11 +281,10 @@ def main() -> None:
     config = get_config(args.source)
 
     # Configure logging
-    log_level = logging.WARNING
-    if args.verbose == _VERBOSITY_INFO:
-        log_level = logging.INFO
-    elif args.verbose >= _VERBOSITY_DEBUG:
-        log_level = logging.DEBUG
+    log_level = {
+        0: logging.WARNING,
+        1: logging.INFO,
+    }.get(args.verbose, logging.DEBUG)
 
     logging.basicConfig(level=log_level, format="%(message)s")
 

@@ -136,7 +136,7 @@ optional arguments:
   --source SOURCE       The directory to sync the pyproject.toml file to. Default: .
   --exclude EXCLUDE [EXCLUDE ...]
                         Exclude certain ruff configs. Default: lint.per-file-ignores
-  -v, --verbose         Increase verbosity. -vv for INFO, -vvv for DEBUG.
+  -v, --verbose         Increase verbosity. -v for INFO, -vv for DEBUG.
 ```
 
 ## Key Features

@@ -451,10 +451,9 @@ def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
     ["verbose_count", "expected_level"],
     [
         (0, logging.WARNING),
-        (1, logging.WARNING),
-        (2, logging.INFO),
+        (1, logging.INFO),
+        (2, logging.DEBUG),
         (3, logging.DEBUG),
-        (4, logging.DEBUG),
     ],
 )
 def test_verbosity_log_level(
