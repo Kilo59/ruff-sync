@@ -62,12 +62,12 @@ def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
 
 
 def _get_cli_parser() -> ArgumentParser:
-    # TODO: determine if args was provided by user or not
     # https://docs.python.org/3/library/argparse.html#nargs
     parser = ArgumentParser()
     parser.add_argument(
         "upstream",
         type=URL,
+        nargs="?",
         help="The URL to download the pyproject.toml file from.",
     )
     parser.add_argument(
@@ -271,6 +271,20 @@ def main() -> None:
     args = PARSER.parse_args()
     config = get_config(args.source)
 
+    # Resolve upstream: use CLI value if explicitly provided, else file config
+    upstream: URL
+    if args.upstream:
+        upstream = args.upstream
+    elif "upstream" in config:
+        # get_config returns str | list[str]
+        upstream = URL(config["upstream"])  # type: ignore[arg-type]
+        LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream}")
+    else:
+        PARSER.error(
+            "the following arguments are required: upstream "
+            "(or define it in [tool.ruff-sync] in pyproject.toml)"
+        )
+
     # Merge exclude: use CLI value if explicitly provided, else file config,
     # else the built-in default.
     exclude: Iterable[str]
@@ -279,17 +293,17 @@ def main() -> None:
         exclude = args.exclude
     elif "exclude" in config:
         exclude = config["exclude"]
-        LOGGER.info(f"Using exclude from [tool.ruff-sync]: {list(exclude)}")
+        LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
     else:
         exclude = _DEFAULT_EXCLUDE
 
     # Convert non-raw github upstream url to the raw equivalent
-    args.upstream = github_url_to_raw_url(args.upstream)
+    upstream = github_url_to_raw_url(upstream)
 
     asyncio.run(
         sync(
             Arguments(
-                upstream=args.upstream,
+                upstream=upstream,
                 source=args.source,
                 exclude=exclude,
             )

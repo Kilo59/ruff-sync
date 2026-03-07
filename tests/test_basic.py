@@ -402,6 +402,48 @@ def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
     assert captured_args[0].exclude == ruff_sync._DEFAULT_EXCLUDE
 
 
+def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
+    """CLI upstream should override config."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
+    monkeypatch.setattr(
+        ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
+    )
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert str(captured_args[0].upstream) == "http://cli.com"
+
+
+def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
+    """[tool.ruff-sync] upstream should be used if CLI one is missing."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    monkeypatch.setattr(
+        ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
+    )
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert str(captured_args[0].upstream) == "http://config.com"
+
+
 @pytest.mark.asyncio
 async def test_sync_default_exclude(fs: FakeFilesystem):
     """Integration style test for default exclude functionality."""
