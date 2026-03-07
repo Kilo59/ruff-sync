@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**ruff-sync** is a CLI tool that synchronizes [Ruff](https://docs.astral.sh/ruff/) linter configuration across multiple Python projects. It downloads a upstream `pyproject.toml`, extracts the `[tool.ruff]` section, and merges it into a local project's `pyproject.toml` while preserving formatting, comments, and whitespace.
+**ruff-sync** is a CLI tool that synchronizes [Ruff](https://docs.astral.sh/ruff/) linter configuration across multiple Python projects. It downloads an upstream `pyproject.toml`, extracts the `[tool.ruff]` section, and merges it into a local project's `pyproject.toml` while preserving formatting, comments, and whitespace.
 
 - **GitHub Repository**: [`Kilo59/ruff-sync`](https://github.com/Kilo59/ruff-sync)
 - The entire application lives in a single module: `ruff_sync.py`.
