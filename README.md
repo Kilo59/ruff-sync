@@ -67,6 +67,12 @@ No package registry. No publishing step. Just a URL.
 pip install ruff-sync
 ``` -->
 
+From Git (with [`uv`](https://docs.astral.sh/uv/guides/tools/)):
+
+```console
+uv tool install git+https://github.com/Kilo59/ruff-sync
+```
+
 From Git (with [`pipx`](https://pipx.pypa.io/stable/) — recommended):
 
 ```console
