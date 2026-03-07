@@ -84,8 +84,6 @@ select = [
     "LOG", # logging - logging best practices
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PERF", # perflint - performance related rules
-    # https://beta.ruff.rs/docs/rules/#flake8-pyi-pyi
-    "PYI", # flake8-pyi - type stub files
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PGH", # pygrep-hooks - hooks for pygrep
     # https://beta.ruff.rs/docs/rules/#flake8-use-pathlib-pth
@@ -121,7 +119,6 @@ ignore = [
 ]
 
 [tool.ruff.format]
-preview = true
 # Format code snippets in docstrings.
 docstring-code-format = true
 # Wrap docstring code snippets at the project line length.
