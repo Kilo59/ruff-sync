@@ -5,7 +5,7 @@ import os
 import pathlib
 import shutil
 from pprint import pformat as pf
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import httpx
 import pytest
@@ -107,6 +107,100 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
         ), f"{section} was not in original doc, fix test"
 
         assert section in lint_config, f"{section} was incorrectly excluded"
+
+
+def test_apply_exclusions_top_level():
+    """Top-level keys like target-version should be excluded directly."""
+    ruff_tbl = tomlkit.parse(
+        """\
+target-version = "py310"
+line-length = 90
+"""
+    )
+    assert "target-version" in ruff_tbl
+    ruff_sync._apply_exclusions(cast("Any", ruff_tbl), ["target-version"])
+    assert "target-version" not in ruff_tbl
+    assert "line-length" in ruff_tbl
+
+
+def test_apply_exclusions_dotted_path():
+    """Dotted paths like lint.per-file-ignores should walk into sub-tables."""
+    ruff_tbl = tomlkit.parse(
+        """\
+target-version = "py310"
+
+[lint]
+select = ["F", "E"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"""
+    )
+    assert "per-file-ignores" in ruff_tbl["lint"]  # type: ignore[operator]
+    ruff_sync._apply_exclusions(cast("Any", ruff_tbl), ["lint.per-file-ignores"])
+    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    # Other keys should be untouched
+    assert ruff_tbl["lint"]["select"] == ["F", "E"]  # type: ignore[index]
+    assert ruff_tbl["target-version"] == "py310"
+
+
+def test_apply_exclusions_missing_key_is_noop():
+    """Excluding a key that doesn't exist should be a silent no-op."""
+    ruff_tbl = tomlkit.parse('target-version = "py310"\n')
+    ruff_sync._apply_exclusions(
+        cast("Any", ruff_tbl), ["nonexistent", "lint.also-missing"]
+    )
+    assert ruff_tbl["target-version"] == "py310"
+
+
+def test_apply_exclusions_mixed():
+    """Mixing top-level and dotted paths in one exclude list."""
+    ruff_tbl = tomlkit.parse(
+        """\
+target-version = "py310"
+line-length = 90
+
+[lint]
+select = ["F"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"x.py" = ["F401"]
+"""
+    )
+    ruff_sync._apply_exclusions(
+        cast("Any", ruff_tbl),
+        ["target-version", "lint.per-file-ignores", "lint.ignore"],
+    )
+    assert "target-version" not in ruff_tbl
+    assert "line-length" in ruff_tbl
+    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert "ignore" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert ruff_tbl["lint"]["select"] == ["F"]  # type: ignore[index]
+
+
+def test_get_ruff_tool_table_with_dotted_exclude():
+    """get_ruff_tool_table should pass dotted excludes through to _apply_exclusions."""
+    full_toml = """\
+[tool.ruff]
+target-version = "py310"
+line-length = 90
+
+[tool.ruff.lint]
+select = ["F"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"""
+    ruff_tbl = ruff_sync.get_ruff_tool_table(
+        full_toml,
+        exclude=["line-length", "lint.per-file-ignores"],
+    )
+    assert isinstance(ruff_tbl, Table)
+    assert "line-length" not in ruff_tbl
+    assert "target-version" in ruff_tbl
+    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert ruff_tbl["lint"]["select"] == ["F"]  # type: ignore[index]
 
 
 @pytest.mark.parametrize("toml_str", TOML_STRS_PARAMS)

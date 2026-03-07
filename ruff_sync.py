@@ -35,7 +35,6 @@ class Arguments(NamedTuple):
         return set(cls._fields)
 
 
-# NOTE: this is not used
 @lru_cache(maxsize=1)
 def get_config(
     source: pathlib.Path,
@@ -89,8 +88,7 @@ def _get_cli_parser() -> ArgumentParser:
 
 
 def github_url_to_raw_url(url: URL) -> URL:
-    """
-    Convert a GitHub URL to its corresponding raw content URL
+    """Convert a GitHub URL to its corresponding raw content URL
 
     Args:
         url (URL): The GitHub URL to be converted.
@@ -132,10 +130,11 @@ def get_ruff_tool_table(
 
 
 def get_ruff_tool_table(
-    toml: str | TOMLDocument, create_if_missing: bool = True, exclude: Iterable[str] = ()
+    toml: str | TOMLDocument,
+    create_if_missing: bool = True,
+    exclude: Iterable[str] = (),
 ) -> Table | None:
-    """
-    Get the tool.ruff section from a TOML string.
+    """Get the tool.ruff section from a TOML string.
     If it does not exist, create it.
     """
     if isinstance(toml, str):
@@ -156,11 +155,29 @@ def get_ruff_tool_table(
         doc.append("tool", tool)
     if not isinstance(ruff, Table):
         raise TypeError(f"Expected table, got {type(ruff)}")
-    for section in exclude:
-        if section in ruff:
-            LOGGER.info(f"Exluding section `lint.{section}` from ruff config.")
-            ruff.pop(section)
+    _apply_exclusions(ruff, exclude)
     return ruff
+
+
+def _apply_exclusions(tbl: Table, exclude: Iterable[str]) -> None:
+    """Remove excluded keys from a ruff table, supporting dotted paths.
+
+    Keys can be simple (e.g. ``"target-version"``) to match top-level ruff
+    keys, or dotted (e.g. ``"lint.per-file-ignores"``) to reach into nested
+    sub-tables.
+    """
+    for key_path in exclude:
+        parts = key_path.split(".")
+        target: Any = tbl
+        for part in parts[:-1]:
+            target = target.get(part) if hasattr(target, "get") else None
+            if target is None:
+                break
+        if target is not None and hasattr(target, "pop"):
+            leaf = parts[-1]
+            if leaf in target:
+                LOGGER.info(f"Excluding `{key_path}` from upstream ruff config.")
+                target.pop(leaf)
 
 
 def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
@@ -175,9 +192,7 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
 def merge_ruff_toml(
     source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
 ) -> TOMLDocument:
-    """
-    Merge the source and upstream tool ruff config with better whitespace preservation.
-    """
+    """Merge the source and upstream tool ruff config with better whitespace preservation."""  # noqa: E501
     if not upstream_ruff_doc:
         LOGGER.warning("No upstream ruff config section found.")
         return source
@@ -255,7 +270,19 @@ PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 def main() -> None:
     args = PARSER.parse_args()
-    # config = get_config(args.source)
+    config = get_config(args.source)
+
+    # Merge exclude: use CLI value if explicitly provided, else file config,
+    # else the built-in default.
+    exclude: Iterable[str]
+    if args.exclude != _DEFAULT_EXCLUDE:
+        # User passed --exclude on the CLI — that takes precedence
+        exclude = args.exclude
+    elif "exclude" in config:
+        exclude = config["exclude"]
+        LOGGER.info(f"Using exclude from [tool.ruff-sync]: {list(exclude)}")
+    else:
+        exclude = _DEFAULT_EXCLUDE
 
     # Convert non-raw github upstream url to the raw equivalent
     args.upstream = github_url_to_raw_url(args.upstream)
@@ -265,7 +292,7 @@ def main() -> None:
             Arguments(
                 upstream=args.upstream,
                 source=args.source,
-                exclude=args.exclude,
+                exclude=exclude,
             )
         )
     )
