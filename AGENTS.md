@@ -43,7 +43,7 @@ gh label list                           # See available labels
 ## Tech Stack
 
 - **Python** ≥ 3.10 (target version `py310`)
-- **Package Manager**: [Poetry](https://python-poetry.org/) — use `poetry install --sync` for dependencies
+- **Package Manager**: [Poetry](https://python-poetry.org/) — Use `poetry run <command>` for all executions to ensure the correct environment.
 - **Linter / Formatter**: [Ruff](https://docs.astral.sh/ruff/) (`^0.15.0`)
 - **Type Checker**: [mypy](https://mypy-lang.org/) (strict mode)
 - **Test Framework**: [pytest](https://docs.pytest.org/) with `pytest-asyncio`, `respx`, `pyfakefs`
@@ -69,20 +69,18 @@ tests/
   lifecycle_tomls/     # TOML fixture files (*_initial.toml, *_upstream.toml, *_final.toml)
 ```
 
-## Validation — ALWAYS Run After Making Changes
-
-After ANY code change, you MUST validate with the following tools, in this order:
+After ANY code change, you MUST validate with the following tools, in this order. **ALWAYS prefix these commands with `poetry run`**:
 
 ### 1. Lint with Ruff
 
 ```bash
-ruff check . --fix
+poetry run ruff check . --fix
 ```
 
 - Ruff config lives in `pyproject.toml` under `[tool.ruff]` and `[tool.ruff.lint]`.
 - Tests have additional overrides in `tests/ruff.toml` (extends the root config).
 - All Python files must include `from __future__ import annotations` (enforced by isort rule `I002`).
-- Use `ruff check . --fix` to auto-fix issues. Use `--unsafe-fixes` only if explicitly asked.
+- Use `poetry run ruff check . --fix` to auto-fix issues. Use `--unsafe-fixes` only if explicitly asked.
 - **Do NOT disable or ignore rules** unless the user explicitly asks you to.
 
 #### Understanding a Rule
@@ -90,16 +88,16 @@ ruff check . --fix
 If you encounter an unfamiliar lint rule or need to understand why a rule exists:
 
 ```bash
-ruff rule <RULE_CODE>
+poetry run ruff rule <RULE_CODE>
 ```
 
-For example: `ruff rule TC006` explains the `TC006` rule in detail.
+For example: `poetry run ruff rule TC006` explains the `TC006` rule in detail.
 Use this to make informed decisions rather than blindly suppressing rules.
 
 ### 2. Format with Ruff
 
 ```bash
-ruff format .
+poetry run ruff format .
 ```
 
 - Line length: **90** characters.
@@ -109,7 +107,7 @@ ruff format .
 ### 3. Type-check with mypy
 
 ```bash
-mypy .
+poetry run mypy .
 ```
 
 - mypy is configured in strict mode with `python_version = "3.10"`.
@@ -120,13 +118,13 @@ mypy .
 ### 4. Run Tests
 
 ```bash
-pytest -vv
+poetry run pytest -vv
 ```
 
 Or with coverage:
 
 ```bash
-coverage run -m pytest -vv
+poetry run coverage run -m pytest -vv
 ```
 
 - Coverage is tracked for `ruff_sync.py` only.
@@ -162,7 +160,7 @@ coverage run -m pytest -vv
 
 ## Invoke Tasks
 
-Defined in `tasks.py`. Run with `invoke <task>` or `poetry run invoke <task>`:
+Defined in `tasks.py`. **ALWAYS** run these through Poetry: `poetry run invoke <task>`
 
 | Task         | Alias        | Description                         |
 | ------------ | ------------ | ----------------------------------- |
