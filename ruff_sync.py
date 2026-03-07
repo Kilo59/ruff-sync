@@ -29,21 +29,21 @@ class ColoredFormatter(logging.Formatter):
 
     RESET: ClassVar[str] = "\x1b[0m"
     COLORS: ClassVar[Mapping[int, str]] = {
-        logging.DEBUG: "\x1b[38;21m",  # Grey
-        logging.INFO: "\x1b[32;21m",  # Green
-        logging.WARNING: "\x1b[33;21m",  # Yellow
-        logging.ERROR: "\x1b[31;21m",  # Red
-        logging.CRITICAL: "\x1b[31;1m",  # Bold Red
+        logging.DEBUG: "\x1b[36m",  # Cyan
+        logging.INFO: "\x1b[32m",  # Green
+        logging.WARNING: "\x1b[33m",  # Yellow
+        logging.ERROR: "\x1b[31m",  # Red
+        logging.CRITICAL: "\x1b[1;31m",  # Bold Red
     }
 
+    def __init__(self, fmt: str = "%(message)s") -> None:
+        super().__init__(fmt)
+
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[explicit-override]
-        log_fmt = "%(message)s"
         if sys.stderr.isatty():
             color = self.COLORS.get(record.levelno, self.RESET)
-            log_fmt = f"{color}%(message)s{self.RESET}"
-
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
+            return f"{color}{super().format(record)}{self.RESET}"
+        return super().format(record)
 
 
 class Arguments(NamedTuple):
