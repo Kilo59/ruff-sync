@@ -1,12 +1,13 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Kilo59/ruff-sync/main/ruff_sync_banner.png" alt="ruff-sync banner" width="100%">
+  <img src="https://raw.githubusercontent.com/Kilo59/ruff-sync/main/ruff_sync_banner.png" alt="ruff-sync banner" width="600">
+  <br>
+  <br>
+  <a href="https://pypi.org/project/ruff-sync/"><img src="https://img.shields.io/pypi/v/ruff-sync" alt="PyPI version"></a>
+  <a href="https://codecov.io/gh/Kilo59/ruff-sync"><img src="https://codecov.io/gh/Kilo59/ruff-sync/graph/badge.svg?token=kMZw0XtoFW" alt="codecov"></a>
+  <a href="https://results.pre-commit.ci/latest/github/Kilo59/ruff-sync/main"><img src="https://results.pre-commit.ci/badge/github/Kilo59/ruff-sync/main.svg" alt="pre-commit.ci status"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://wily.readthedocs.io/"><img src="https://img.shields.io/badge/%F0%9F%A6%8A%20wily-passing-brightgreen.svg" alt="Wily"></a>
 </p>
-
-[![PyPI version](https://img.shields.io/pypi/v/ruff-sync)](https://pypi.org/project/ruff-sync/)
-[![codecov](https://codecov.io/gh/Kilo59/ruff-sync/graph/badge.svg?token=kMZw0XtoFW)](https://codecov.io/gh/Kilo59/ruff-sync)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Kilo59/ruff-sync/main.svg)](https://results.pre-commit.ci/latest/github/Kilo59/ruff-sync/main)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Wily](https://img.shields.io/badge/%F0%9F%A6%8A%20wily-passing-brightgreen.svg)](https://wily.readthedocs.io/)
 
 # ruff-sync
 
