@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import pathlib
-import warnings
 from argparse import ArgumentParser
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
@@ -51,7 +50,7 @@ def get_config(
                 if arg in Arguments.fields():
                     cfg_result[arg] = value
                 else:
-                    warnings.warn(f"Unknown ruff-sync configuration: {arg}", stacklevel=2)
+                    LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
     return cfg_result
 
 
