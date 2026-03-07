@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import os
 import pathlib
 import shutil
+import sys
 from pprint import pformat as pf
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import httpx
 import pytest
@@ -107,6 +109,95 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
         ), f"{section} was not in original doc, fix test"
 
         assert section in lint_config, f"{section} was incorrectly excluded"
+
+
+def test_apply_exclusions_top_level():
+    """Top-level keys like target-version should be excluded directly."""
+    full_toml = """\
+[tool.ruff]
+target-version = "py310"
+line-length = 90
+"""
+    ruff_tbl = ruff_sync.get_ruff_tool_table(full_toml, exclude=["target-version"])
+    assert "target-version" not in ruff_tbl
+    assert "line-length" in ruff_tbl
+
+
+def test_apply_exclusions_dotted_path():
+    """Dotted paths like lint.per-file-ignores should walk into sub-tables."""
+    full_toml = """\
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["F", "E"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"""
+    ruff_tbl = ruff_sync.get_ruff_tool_table(full_toml, exclude=["lint.per-file-ignores"])
+    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    # Other keys should be untouched
+    assert ruff_tbl["lint"]["select"] == ["F", "E"]  # type: ignore[index]
+    assert ruff_tbl["target-version"] == "py310"  # type: ignore[comparison-overlap]
+
+
+def test_apply_exclusions_missing_key_is_noop():
+    """Excluding a key that doesn't exist should be a silent no-op."""
+    full_toml = '[tool.ruff]\ntarget-version = "py310"\n'
+    ruff_tbl = ruff_sync.get_ruff_tool_table(
+        full_toml, exclude=["nonexistent", "lint.also-missing"]
+    )
+    assert ruff_tbl["target-version"] == "py310"  # type: ignore[comparison-overlap]
+
+
+def test_apply_exclusions_mixed():
+    """Mixing top-level and dotted paths in one exclude list."""
+    full_toml = """\
+[tool.ruff]
+target-version = "py310"
+line-length = 90
+
+[tool.ruff.lint]
+select = ["F"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"x.py" = ["F401"]
+"""
+    ruff_tbl = ruff_sync.get_ruff_tool_table(
+        full_toml,
+        exclude=["target-version", "lint.per-file-ignores", "lint.ignore"],
+    )
+    assert "target-version" not in ruff_tbl
+    assert "line-length" in ruff_tbl
+    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert "ignore" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert ruff_tbl["lint"]["select"] == ["F"]  # type: ignore[index]
+
+
+def test_get_ruff_tool_table_with_dotted_exclude():
+    """get_ruff_tool_table should pass dotted excludes through to _apply_exclusions."""
+    full_toml = """\
+[tool.ruff]
+target-version = "py310"
+line-length = 90
+
+[tool.ruff.lint]
+select = ["F"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"""
+    ruff_tbl = ruff_sync.get_ruff_tool_table(
+        full_toml,
+        exclude=["line-length", "lint.per-file-ignores"],
+    )
+    assert isinstance(ruff_tbl, Table)
+    assert "line-length" not in ruff_tbl
+    assert "target-version" in ruff_tbl
+    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert ruff_tbl["lint"]["select"] == ["F"]  # type: ignore[index]
 
 
 @pytest.mark.parametrize("toml_str", TOML_STRS_PARAMS)
@@ -254,6 +345,98 @@ def test_loading_ruff_sync_config(
     config = ruff_sync.get_config(sample_toml_dir)
     print(f"Config:\n{pf(config)}")
     assert expected_config == config
+
+
+def test_exclude_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
+    """CLI exclude should override all others."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(
+        sys, "argv", ["ruff-sync", "http://example.com", "--exclude", "from-cli"]
+    )
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert captured_args[0].exclude == ["from-cli"]
+
+
+def test_exclude_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
+    """[tool.ruff-sync] exclude should override default."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert captured_args[0].exclude == ["from-config"]
+
+
+def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
+    """Default exclude should apply when neither CLI nor Config provides it."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert captured_args[0].exclude == ruff_sync._DEFAULT_EXCLUDE
+
+
+@pytest.mark.asyncio
+async def test_sync_default_exclude(fs: FakeFilesystem):
+    """Integration style test for default exclude functionality."""
+    source_toml = """[tool.ruff]
+target-version = "py310"
+"""
+    upstream_toml = """[tool.ruff]
+target-version = "py311"
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"""
+    ff = fs.create_file("pyproject.toml", contents=source_toml)
+    ff_path = pathlib.Path(ff.path)  # type: ignore[arg-type]
+
+    with respx.mock(base_url="https://example.com/") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_toml,
+        )
+        await ruff_sync.sync(
+            ruff_sync.Arguments(
+                upstream=URL("https://example.com/pyproject.toml"),
+                source=ff_path,
+                exclude=ruff_sync._DEFAULT_EXCLUDE,
+            )
+        )
+
+    updated_toml = ff_path.read_text()
+    assert 'target-version = "py311"' in updated_toml
+    assert "per-file-ignores" not in updated_toml
 
 
 if __name__ == "__main__":

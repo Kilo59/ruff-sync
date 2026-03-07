@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruff-sync"
-version = "0.0.1.dev1"
+version = "0.0.1.dev2"
 description = "Syncronize ruff linter config settings accross projects"
 authors = ["Gabriel Gore <gabriel59kg@gmail.com>"]
 license = "MIT"
@@ -50,7 +50,7 @@ module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
 [tool.ruff-sync]
-exclude = ["per-file-ignores", "ignore"]
+exclude = ["target-version", "line-length", "lint.per-file-ignores", "lint.ignore"]
 
 [tool.ruff]
 target-version = "py310"
@@ -84,8 +84,6 @@ select = [
     "LOG", # logging - logging best practices
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PERF", # perflint - performance related rules
-    # https://beta.ruff.rs/docs/rules/#flake8-pyi-pyi
-    "PYI", # flake8-pyi - type stub files
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PGH", # pygrep-hooks - hooks for pygrep
     # https://beta.ruff.rs/docs/rules/#flake8-use-pathlib-pth
@@ -121,11 +119,13 @@ ignore = [
 ]
 
 [tool.ruff.format]
-preview = true
 # Format code snippets in docstrings.
 docstring-code-format = true
 # Wrap docstring code snippets at the project line length.
 docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"unittest.mock".msg = "Prefer dedicated libraries to mock at external dependencies, such as `httpx` or `pyfakefs`."
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
