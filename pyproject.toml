@@ -124,6 +124,9 @@ docstring-code-format = true
 # Wrap docstring code snippets at the project line length.
 docstring-code-line-length = "dynamic"
 
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"unittest.mock".msg = "Prefer dedicated libraries to mock at external dependencies, such as `httpx` or `pyfakefs`."
+
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
 banned-from = ["pathlib", "datetime"]
