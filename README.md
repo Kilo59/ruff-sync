@@ -156,20 +156,20 @@ git commit -am "sync ruff config from upstream"
 
 This project uses:
 
-- [Poetry](https://python-poetry.org/) for dependency management
+- [uv](https://docs.astral.sh/uv/) for dependency management
 - [Ruff](https://docs.astral.sh/ruff/) for linting and formatting
 - [mypy](https://mypy-lang.org/) for type checking (strict mode)
 - [pytest](https://docs.pytest.org/) for testing
 
 ```console
 # Setup
-poetry install --sync
+uv sync --group dev
 
 # Run checks
-ruff check . --fix   # lint
-ruff format .        # format
-mypy .               # type check
-pytest -vv           # test
+uv run ruff check . --fix   # lint
+uv run ruff format .        # format
+uv run mypy .               # type check
+uv run pytest -vv           # test
 ```
 
 ## Dogfooding
