@@ -46,7 +46,7 @@ gh label list                           # See available labels
 - **Package Manager**: [Poetry](https://python-poetry.org/) — Use `poetry run <command>` for all executions to ensure the correct environment.
 - **Linter / Formatter**: [Ruff](https://docs.astral.sh/ruff/) (`^0.15.0`)
 - **Type Checker**: [mypy](https://mypy-lang.org/) (strict mode)
-- **Test Framework**: [pytest](https://docs.pytest.org/) with `pytest-asyncio`, `respx`, `pyfakefs`
+- **Test Framework**: [pytest](https://docs.pytest.org/) with `pytest-asyncio`, `respx`, `pyfakefs` (See [Testing Standards](.agents/TESTING.md))
 - **Coverage**: `coverage` + Codecov
 - **Pre-commit**: `pre-commit` / `prek` (see `.pre-commit-config.yaml`)
 - **TOML Parsing**: [tomlkit](https://github.com/sdispater/tomlkit) — preserves formatting and comments
@@ -55,6 +55,9 @@ gh label list                           # See available labels
 ## Project Structure
 
 ```
+.agents/               # Agent-specific instructions (Deep Standards)
+  TESTING.md           # Mandatory testing patterns and rules
+  workflows/           # Step-by-step guides for common tasks
 ruff_sync.py           # The entire application — CLI, merging logic, HTTP
 tasks.py               # Invoke tasks: lint, fmt, type-check, deps, new-case
 pyproject.toml         # Project config, dependencies, ruff/mypy settings
@@ -164,11 +167,11 @@ Defined in `tasks.py`. **ALWAYS** run these through Poetry: `poetry run invoke <
 
 | Task         | Alias        | Description                         |
 | ------------ | ------------ | ----------------------------------- |
-| `lint`       |              | Lint with ruff (auto-fixes by default; `--check` to only check) |
+| `lint`       |              | Lint with ruff (auto-fixes by default) |
 | `fmt`        |              | Format with ruff format             |
 | `type-check` | `types`      | Type-check with mypy                |
 | `deps`       | `sync`       | Sync dependencies with poetry       |
-| `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML test fixtures |
+| `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML fixtures (See [Workflow](.agents/workflows/add-test-case.md)) |
 
 ## CI
 
