@@ -2,6 +2,7 @@
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Kilo59/ruff-sync/main.svg)](https://results.pre-commit.ci/latest/github/Kilo59/ruff-sync/main)
 [![Wily](https://img.shields.io/badge/%F0%9F%A6%8A%20wily-passing-brightgreen.svg)](https://wily.readthedocs.io/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![PyPI version](https://img.shields.io/pypi/v/ruff-sync)](https://pypi.org/project/ruff-sync/)
 
 # ruff-sync
 
@@ -61,28 +62,30 @@ No package registry. No publishing step. Just a URL.
 
 ### Install
 
-<!-- ### PyPi Install
+With [uv](https://docs.astral.sh/uv/) (recommended):
+
+```console
+uv tool install ruff-sync
+```
+
+With [pipx](https://pipx.pypa.io/stable/):
+
+```console
+pipx install ruff-sync
+```
+
+With [pip](https://pip.pypa.io/en/stable/):
 
 ```console
 pip install ruff-sync
-``` -->
+```
 
-From Git (with [`uv`](https://docs.astral.sh/uv/guides/tools/)):
+#### From Source (Bleeding Edge)
+
+If you want the latest development version:
 
 ```console
 uv tool install git+https://github.com/Kilo59/ruff-sync
-```
-
-From Git (with [`pipx`](https://pipx.pypa.io/stable/) — recommended):
-
-```console
-pipx install git+https://github.com/Kilo59/ruff-sync
-```
-
-Or with pip:
-
-```console
-pip install git+https://github.com/Kilo59/ruff-sync
 ```
 
 ### Usage
