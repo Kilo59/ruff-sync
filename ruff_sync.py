@@ -216,7 +216,7 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
     ruff_toml: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
     for section in exclude:
-        LOGGER.info(f"Exluding section `lint.{section}` from ruff config.")
+        LOGGER.info(f"Excluding section `lint.{section}` from ruff config.")
         ruff_toml["lint"].pop(section, None)  # type: ignore[union-attr]
     return ruff_toml
 
@@ -310,17 +310,24 @@ def main() -> None:
         1: logging.INFO,
     }.get(args.verbose, logging.DEBUG)
 
+    LOGGER.setLevel(log_level)
     handler = logging.StreamHandler()
     handler.setFormatter(ColoredFormatter())
-    logging.basicConfig(level=log_level, handlers=[handler], force=True)
+    LOGGER.addHandler(handler)
+    LOGGER.propagate = False  # Avoid double logging if root is also configured
 
     # Resolve upstream: use CLI value if explicitly provided, else file config
     upstream: URL
     if args.upstream:
         upstream = args.upstream
     elif "upstream" in config:
-        # get_config returns str | list[str]
-        upstream = URL(config["upstream"])  # type: ignore[arg-type]
+        config_upstream = config["upstream"]
+        if not isinstance(config_upstream, str):
+            PARSER.error(
+                "❌ upstream in [tool.ruff-sync] must be a string, "
+                f"got {type(config_upstream).__name__}"
+            )
+        upstream = URL(config_upstream)
         LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream}")
     else:
         PARSER.error(

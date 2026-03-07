@@ -426,6 +426,39 @@ def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
     assert str(captured_args[0].upstream) == "http://cli.com"
 
 
+def test_upstream_resolution_missing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Error when no upstream is provided via CLI or config."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    # No CLI upstream argument
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    # No upstream in config
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
+    # Ensure sync is never called if upstream is missing
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    with pytest.raises(SystemExit) as excinfo:
+        ruff_sync.main()
+
+    # Non-zero exit code on failure
+    assert excinfo.value.code != 0
+
+    captured = capsys.readouterr()
+    # Error message should indicate that an upstream is required
+    assert "upstream" in captured.err
+    assert "[tool.ruff-sync]" in captured.err
+
+    # When erroring early, sync must not be invoked
+    assert captured_args == []
+
+
 def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
     """[tool.ruff-sync] upstream should be used if CLI one is missing."""
     captured_args: list[ruff_sync.Arguments] = []
@@ -460,25 +493,33 @@ def test_verbosity_log_level(
     monkeypatch: pytest.MonkeyPatch, verbose_count: int, expected_level: int
 ):
     """Test that the log level is correctly set based on the verbose count."""
-    captured_level: list[int] = []
+    captured_args: list[ruff_sync.Arguments] = []
 
-    def mock_basic_config(level: int, **kwargs: Any) -> None:
-        captured_level.append(level)
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
 
     argv = ["ruff-sync", "http://example.com"]
     if verbose_count > 0:
         argv.append(f"-{'v' * verbose_count}")
 
     monkeypatch.setattr(sys, "argv", argv)
-    monkeypatch.setattr(logging, "basicConfig", mock_basic_config)
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync, "sync", lambda _: asyncio.sleep(0))
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    # Reset LOGGER state before test
+    monkeypatch.setattr(ruff_sync.LOGGER, "level", logging.NOTSET)
+    monkeypatch.setattr(ruff_sync.LOGGER, "handlers", [])
 
     ruff_sync.main()
 
-    assert len(captured_level) == 1
-    assert captured_level[0] == expected_level
+    # Verify that the computed log level matches what we expect for this verbosity
+    assert ruff_sync.LOGGER.level == expected_level
+
+    # Verify that the verbose flag value propagates into Arguments.verbose
+    assert len(captured_args) == 1
+    assert captured_args[0].verbose == verbose_count
 
 
 @pytest.mark.asyncio
