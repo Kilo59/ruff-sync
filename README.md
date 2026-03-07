@@ -1,12 +1,30 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Kilo59/ruff-sync/main/ruff_sync_banner.png" alt="ruff-sync banner" width="100%">
+</p>
+
+[![PyPI version](https://img.shields.io/pypi/v/ruff-sync)](https://pypi.org/project/ruff-sync/)
 [![codecov](https://codecov.io/gh/Kilo59/ruff-sync/graph/badge.svg?token=kMZw0XtoFW)](https://codecov.io/gh/Kilo59/ruff-sync)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Kilo59/ruff-sync/main.svg)](https://results.pre-commit.ci/latest/github/Kilo59/ruff-sync/main)
-[![Wily](https://img.shields.io/badge/%F0%9F%A6%8A%20wily-passing-brightgreen.svg)](https://wily.readthedocs.io/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![PyPI version](https://img.shields.io/pypi/v/ruff-sync)](https://pypi.org/project/ruff-sync/)
+[![Wily](https://img.shields.io/badge/%F0%9F%A6%8A%20wily-passing-brightgreen.svg)](https://wily.readthedocs.io/)
 
 # ruff-sync
 
 **Keep your Ruff config consistent across every repo — automatically.**
+
+---
+
+### Table of Contents
+
+- [The Problem](#the-problem)
+- [How It Works](#how-it-works)
+- [Quick Start](#quick-start)
+  - [Install](#install)
+  - [Usage](#usage)
+- [Key Features](#key-features)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [License](#license)
 
 `ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, a raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
 
