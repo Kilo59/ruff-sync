@@ -110,14 +110,14 @@ optional arguments:
   -h, --help            show this help message and exit
   --source SOURCE       The directory to sync the pyproject.toml file to. Default: .
   --exclude EXCLUDE [EXCLUDE ...]
-                        Exclude certain ruff configs. Default: per-file-ignores
+                        Exclude certain ruff configs. Default: lint.per-file-ignores
 ```
 
 ## Key Features
 
 - **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
 - **GitHub URL support** — Paste a GitHub blob URL and it will automatically convert it to the raw content URL.
-- **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores`) from being clobbered by the upstream config.
+- **Selective exclusions** — Keep project-specific overrides (like `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
 
 ## Configuration

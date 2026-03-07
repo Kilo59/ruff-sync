@@ -19,7 +19,7 @@ from tomlkit.toml_file import TOMLFile
 
 __version__ = "0.0.1.dev0"
 
-_DEFAULT_EXCLUDE: Final[set[str]] = {"per-file-ignores"}
+_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 LOGGER = logging.getLogger(__name__)
 
