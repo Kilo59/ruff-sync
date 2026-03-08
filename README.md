@@ -111,16 +111,16 @@ uv tool install git+https://github.com/Kilo59/ruff-sync
 
 ```console
 # Sync from a GitHub URL (blob URLs are auto-converted to raw)
-ruff-sync sync https://github.com/my-org/standards/blob/main/pyproject.toml
+ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 
 # Once configured in pyproject.toml (see below), simply run:
-ruff-sync sync
+ruff-sync
 
 # Sync into a specific project directory
-ruff-sync sync --source ./my-project
+ruff-sync --source ./my-project
 
 # Exclude specific sections from being overwritten using dotted paths
-ruff-sync sync --exclude lint.per-file-ignores lint.ignore
+ruff-sync --exclude lint.per-file-ignores lint.ignore
 
 # Check if your local config is in sync (useful in CI)
 ruff-sync check https://github.com/my-org/standards/blob/main/pyproject.toml
@@ -129,14 +129,12 @@ ruff-sync check https://github.com/my-org/standards/blob/main/pyproject.toml
 ruff-sync check --semantic
 ```
 
-> **Note:** The `sync` subcommand is also the default — `ruff-sync <url>` still works exactly as before for backward compatibility.
-
 ### CLI Reference
 
-#### `ruff-sync sync`
+#### `ruff-sync`
 
 ```
-usage: ruff-sync sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [-v] [upstream]
+usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [-v] [upstream]
 
 positional arguments:
   upstream              The URL to download the pyproject.toml file from.
