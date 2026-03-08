@@ -151,12 +151,12 @@ upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 
 # Use simple names for top-level keys, and dotted paths for nested keys
 exclude = [
-    "target-version",                    # Top-level [tool.ruff] key — projects target different Python versions
-    "lint.per-file-ignores",             # Project-specific file overrides
-    "lint.ignore",                       # Project-specific rule suppressions
-    "lint.isort.known-first-party",      # Every project has different first-party packages
-    "lint.flake8-tidy-imports",          # Entire plugin section — project-specific banned APIs
-    "lint.pydocstyle.convention",        # Teams may disagree on google vs numpy vs pep257
+    "target-version",                      # Top-level [tool.ruff] key — projects target different Python versions
+    "lint.per-file-ignores",                # Project-specific file overrides
+    "lint.ignore",                         # Project-specific rule suppressions
+    "lint.isort.known-first-party",         # Every project has different first-party packages
+    "lint.flake8-tidy-imports.banned-api",  # Entire plugin section — project-specific banned APIs
+    "lint.pydocstyle.convention",          # Teams may disagree on google vs numpy vs pep257
 ]
 ```
 
