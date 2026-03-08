@@ -23,6 +23,7 @@ from tomlkit.toml_file import TOMLFile
 __version__ = "0.0.2"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
+_GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
 
 LOGGER = logging.getLogger(__name__)
 
@@ -176,7 +177,11 @@ def _get_cli_parser() -> ArgumentParser:
 
 
 def github_url_to_raw_url(url: URL) -> URL:
-    """Convert a GitHub URL to its corresponding raw content URL
+    """Convert a GitHub URL to its corresponding raw content URL.
+
+    Supports:
+    - Blob URLs: https://github.com/org/repo/blob/branch/path/to/file
+    - Repo URLs: https://github.com/org/repo (defaults to main/pyproject.toml)
 
     Args:
         url (URL): The GitHub URL to be converted.
@@ -185,15 +190,29 @@ def github_url_to_raw_url(url: URL) -> URL:
         URL: The corresponding raw content URL.
     """
     url_str = str(url)
-    if "github.com" in url_str and "/blob/" in url_str:
+    if "github.com" not in url_str:
+        LOGGER.info("URL is not a GitHub URL, returning as is.")
+        return url
+
+    # Handle blob URLs (e.g. .../blob/main/pyproject.toml)
+    if "/blob/" in url_str:
         raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace(
             "/blob/", "/"
         )
-        LOGGER.debug(f"Converting GitHub URL to raw content URL: {raw_url_str}")
+        LOGGER.info(f"Converting GitHub blob URL to raw content URL: {raw_url_str}")
         return httpx.URL(raw_url_str)
-    else:
-        LOGGER.debug("URL is not a GitHub URL, returning as is.")
-        return url
+
+    # Handle repository URLs (e.g. https://github.com/org/repo)
+    # We assume if it has exactly two path components, it's a repo URL.
+    path_parts = [p for p in url.path.split("/") if p]
+    if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
+        org, repo = path_parts
+        raw_url_str = f"https://raw.githubusercontent.com/{org}/{repo}/main/pyproject.toml"
+        LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url_str}")
+        return httpx.URL(raw_url_str)
+
+    LOGGER.info("URL is a GitHub URL but doesn't match known patterns, returning as is.")
+    return url
 
 
 async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
