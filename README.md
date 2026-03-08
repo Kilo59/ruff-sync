@@ -111,7 +111,10 @@ uv tool install git+https://github.com/Kilo59/ruff-sync
 ### Usage
 
 ```console
-# Sync from a GitHub URL (blob URLs are auto-converted to raw)
+# Sync from a GitHub repository (defaults to main/pyproject.toml)
+ruff-sync https://github.com/my-org/standards
+
+# Or a direct blob/file URL (auto-converts to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 
 # Once configured in pyproject.toml (see Configuration), simply run:
@@ -124,7 +127,7 @@ ruff-sync --source ./my-project
 ruff-sync --exclude lint.per-file-ignores lint.ignore
 
 # Check if your local config is in sync (useful in CI)
-ruff-sync check https://github.com/my-org/standards/blob/main/pyproject.toml
+ruff-sync check https://github.com/my-org/standards
 
 # Semantic check — ignore cosmetic differences like comments and whitespace
 ruff-sync check --semantic
@@ -135,7 +138,7 @@ Run `ruff-sync --help` for full details on all available options.
 ## Key Features
 
 - **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
-- **GitHub URL support** — Paste a GitHub blob URL and it will automatically convert it to the raw content URL.
+- **GitHub URL support** — Automatically converts GitHub repository URLs (e.g., `https://github.com/org/repo`) or blob URLs to raw content URLs.
 - **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
 - **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
@@ -148,7 +151,7 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 ```toml
 [tool.ruff-sync]
 # The source of truth for your Ruff configuration
-upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
+upstream = "https://github.com/my-org/standards"
 
 # Use simple names for top-level keys, and dotted paths for nested keys
 exclude = [
@@ -203,7 +206,7 @@ A typical setup for an organization:
 
 ```console
 # In each project repo:
-ruff-sync https://github.com/my-org/python-standards/blob/main/pyproject.toml
+ruff-sync https://github.com/my-org/python-standards
 git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
 ```
