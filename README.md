@@ -146,7 +146,7 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
-# The source of truth for your ruff configuration
+# The source of truth for your Ruff configuration
 upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 
 # Use simple names for top-level keys, and dotted paths for nested keys
