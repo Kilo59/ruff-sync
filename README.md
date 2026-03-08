@@ -151,9 +151,12 @@ upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 
 # Use simple names for top-level keys, and dotted paths for nested keys
 exclude = [
-    "target-version",          # A top-level key under [tool.ruff]
-    "lint.per-file-ignores",   # A nested key under [tool.ruff.lint]
-    "lint.ignore"
+    "target-version",                    # Top-level [tool.ruff] key — projects target different Python versions
+    "lint.per-file-ignores",             # Project-specific file overrides
+    "lint.ignore",                       # Project-specific rule suppressions
+    "lint.isort.known-first-party",      # Every project has different first-party packages
+    "lint.isort.required-imports",       # e.g. from __future__ import annotations
+    "lint.pydocstyle.convention",        # Teams may disagree on google vs numpy vs pep257
 ]
 ```
 
