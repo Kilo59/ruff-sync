@@ -77,3 +77,32 @@ def test_any_url_to_raw_url(input_url: str, expected_url: str):
     url = URL(input_url)
     result = resolve_raw_url(url)
     assert str(result) == expected_url
+
+
+@pytest.mark.parametrize(
+    "input_url, branch, path, expected_url",
+    [
+        (
+            "https://github.com/org/repo",
+            "develop",
+            "libs/core",
+            "https://raw.githubusercontent.com/org/repo/develop/libs/core/pyproject.toml",
+        ),
+        (
+            "https://github.com/org/repo",
+            "main",
+            "",
+            "https://raw.githubusercontent.com/org/repo/main/pyproject.toml",
+        ),
+        (
+            "https://gitlab.com/org/repo",
+            "v1.0",
+            "config",
+            "https://gitlab.com/org/repo/-/raw/v1.0/config/pyproject.toml",
+        ),
+    ],
+)
+def test_raw_url_with_branch_and_path(input_url: str, branch: str, path: str, expected_url: str):
+    url = URL(input_url)
+    result = resolve_raw_url(url, branch=branch, path=path)
+    assert str(result) == expected_url

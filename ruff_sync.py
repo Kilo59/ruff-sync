@@ -11,7 +11,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
-from typing import Any, ClassVar, Final, Literal, NamedTuple, overload
+from typing import Any, ClassVar, Final, Literal, NamedTuple, cast, overload
 
 import httpx
 import tomlkit
@@ -59,6 +59,8 @@ class Arguments(NamedTuple):
     source: pathlib.Path
     exclude: Iterable[str]
     verbose: int
+    branch: str = "main"
+    path: str = ""
     semantic: bool = False
     diff: bool = True
 
@@ -71,7 +73,7 @@ class Arguments(NamedTuple):
 @lru_cache(maxsize=1)
 def get_config(
     source: pathlib.Path,
-) -> Mapping[Literal["upstream", "source", "exclude"], str | list[str]]:
+) -> Mapping[Literal["upstream", "source", "exclude", "branch", "path"], str | list[str]]:
     local_toml = source / "pyproject.toml"
     # TODO: use pydantic to validate the toml file
     cfg_result = {}
@@ -146,6 +148,16 @@ def _get_cli_parser() -> ArgumentParser:
         default=0,
         help="Increase verbosity. -v for INFO, -vv for DEBUG.",
     )
+    common_parser.add_argument(
+        "--branch",
+        help="The default branch to use when resolving repo URLs. Default: main",
+        default=None,
+    )
+    common_parser.add_argument(
+        "--path",
+        help="The parent path where pyproject.toml is located. Default: root",
+        default=None,
+    )
 
     # Pull subcommand (the default action)
     subparsers.add_parser(
@@ -179,15 +191,17 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
-def _convert_github_url(url: URL) -> URL:
+def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     """Convert a GitHub URL to its corresponding raw content URL.
 
     Supports:
     - Blob URLs: https://github.com/org/repo/blob/branch/path/to/file
-    - Repo URLs: https://github.com/org/repo (defaults to main/pyproject.toml)
+    - Repo URLs: https://github.com/org/repo (defaults to {branch}/{path}/pyproject.toml)
 
     Args:
         url (URL): The GitHub URL to be converted.
+        branch (str): The default branch to use for repo URLs.
+        path (str): The directory prefix for pyproject.toml.
 
     Returns:
         URL: The corresponding raw content URL.
@@ -204,9 +218,10 @@ def _convert_github_url(url: URL) -> URL:
     path_parts = [p for p in url.path.split("/") if p]
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
+        target_path = f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
         raw_url = url.copy_with(
             host=_GITHUB_RAW_HOST,
-            path=f"/{org}/{repo}/main/pyproject.toml",
+            path=f"/{org}/{repo}/{branch}/{target_path}",
         )
         LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url}")
         return raw_url
@@ -215,15 +230,17 @@ def _convert_github_url(url: URL) -> URL:
     return url
 
 
-def _convert_gitlab_url(url: URL) -> URL:
+def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
     """Convert a GitLab URL to its corresponding raw content URL.
 
     Supports:
     - Blob URLs: https://gitlab.com/org/repo/-/blob/branch/path/to/file
-    - Repo URLs: https://gitlab.com/org/repo (defaults to main/pyproject.toml)
+    - Repo URLs: https://gitlab.com/org/repo (defaults to {branch}/{path}/pyproject.toml)
 
     Args:
         url (URL): The GitLab URL to be converted.
+        branch (str): The default branch to use for repo URLs.
+        path (str): The directory prefix for pyproject.toml.
 
     Returns:
         URL: The corresponding raw content URL.
@@ -239,9 +256,10 @@ def _convert_gitlab_url(url: URL) -> URL:
     # If the path doesn't contain the separator '/-/', we assume it's a project root.
     if "/-/" not in url.path:
         # Avoid empty paths or just a slash
-        path = url.path.rstrip("/")
-        if path:
-            raw_url = url.copy_with(path=f"{path}/-/raw/main/pyproject.toml")
+        path_prefix = url.path.rstrip("/")
+        if path_prefix:
+            target_path = f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
+            raw_url = url.copy_with(path=f"{path_prefix}/-/raw/{branch}/{target_path}")
             LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
             return raw_url
 
@@ -249,20 +267,22 @@ def _convert_gitlab_url(url: URL) -> URL:
     return url
 
 
-def resolve_raw_url(url: URL) -> URL:
+def resolve_raw_url(url: URL, branch: str = "main", path: str = "") -> URL:
     """Resolve a GitHub or GitLab URL to its raw content URL.
 
     Args:
         url (URL): The URL to resolve.
+        branch (str): The default branch to use for repo URLs.
+        path (str): The directory prefix for pyproject.toml.
 
     Returns:
         URL: The resolved raw content URL, or the original URL if no conversion applies.
     """
     LOGGER.debug(f"Initial URL: {url}")
     if url.host in _GITHUB_HOSTS:
-        return _convert_github_url(url)
+        return _convert_github_url(url, branch=branch, path=path)
     if url.host in _GITLAB_HOSTS:
-        return _convert_gitlab_url(url)
+        return _convert_gitlab_url(url, branch=branch, path=path)
     return url
 
 
@@ -512,6 +532,68 @@ async def pull(
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
+def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> URL:
+    """Resolve upstream URL from CLI or config."""
+    if args.upstream:
+        return cast("URL", args.upstream)
+    if "upstream" in config:
+        config_upstream = config["upstream"]
+        if not isinstance(config_upstream, str):
+            PARSER.error(
+                "❌ upstream in [tool.ruff-sync] must be a string, "
+                f"got {type(config_upstream).__name__}"
+            )
+        upstream = URL(config_upstream)
+        LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream}")
+        return upstream
+    PARSER.error(
+        "❌ the following arguments are required: upstream "
+        "(or define it in [tool.ruff-sync] in pyproject.toml) 💥"
+    )
+
+
+def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str]:
+    """Resolve exclude patterns from CLI, config, or default."""
+    if args.exclude is not None:
+        return cast("Iterable[str]", args.exclude)
+    if "exclude" in config:
+        exclude = config["exclude"]
+        LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
+        return cast("Iterable[str]", exclude)
+    return _DEFAULT_EXCLUDE
+
+
+def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str:
+    """Resolve branch name from CLI, config, or default."""
+    if args.branch:
+        return cast("str", args.branch)
+    if "branch" in config:
+        branch = cast("str", config["branch"])
+        LOGGER.info(f"🌿 Using branch from [tool.ruff-sync]: {branch}")
+        return branch
+    return "main"
+
+
+def _resolve_path(args: Any, config: Mapping[str, Any]) -> str:
+    """Resolve path prefix from CLI, config, or default."""
+    if args.path:
+        return cast("str", args.path)
+    if "path" in config:
+        path = cast("str", config["path"])
+        LOGGER.info(f"📄 Using path from [tool.ruff-sync]: {path}")
+        return path
+    return ""
+
+
+def _resolve_args(args: Any, config: Mapping[str, Any]) -> tuple[URL, Iterable[str], str, str]:
+    """Resolve upstream, exclude, branch, and path from CLI and config."""
+    upstream = _resolve_upstream(args, config)
+    exclude = _resolve_exclude(args, config)
+    branch = _resolve_branch(args, config)
+    path = _resolve_path(args, config)
+    return upstream, exclude, branch, path
+
+
 def main() -> int:
     # Handle backward compatibility: default to 'pull' if no command provided
     if len(sys.argv) > 1 and sys.argv[1] not in (
@@ -540,39 +622,10 @@ def main() -> int:
     LOGGER.addHandler(handler)
     LOGGER.propagate = False  # Avoid double logging if root is also configured
 
-    # Resolve upstream: use CLI value if explicitly provided, else file config
-    upstream: URL
-    if args.upstream:
-        upstream = args.upstream
-    elif "upstream" in config:
-        config_upstream = config["upstream"]
-        if not isinstance(config_upstream, str):
-            PARSER.error(
-                "❌ upstream in [tool.ruff-sync] must be a string, "
-                f"got {type(config_upstream).__name__}"
-            )
-        upstream = URL(config_upstream)
-        LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream}")
-    else:
-        PARSER.error(
-            "❌ the following arguments are required: upstream "
-            "(or define it in [tool.ruff-sync] in pyproject.toml) 💥"
-        )
-
-    # Merge exclude: use CLI value if explicitly provided, else file config,
-    # else the built-in default.
-    exclude: Iterable[str]
-    if args.exclude is not None:
-        # User passed --exclude on the CLI — that takes precedence
-        exclude = args.exclude
-    elif "exclude" in config:
-        exclude = config["exclude"]
-        LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
-    else:
-        exclude = _DEFAULT_EXCLUDE
+    upstream, exclude, branch, path = _resolve_args(args, config)
 
     # Convert non-raw github/gitlab upstream url to the raw equivalent
-    upstream = resolve_raw_url(upstream)
+    upstream = resolve_raw_url(upstream, branch=branch, path=path)
 
     # Create Arguments object
     exec_args = Arguments(
@@ -581,6 +634,8 @@ def main() -> int:
         source=args.source,
         exclude=exclude,
         verbose=args.verbose,
+        branch=branch,
+        path=path,
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
     )
