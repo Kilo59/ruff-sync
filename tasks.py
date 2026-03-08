@@ -4,6 +4,7 @@ import logging
 import pathlib
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
+import httpx
 from invoke.tasks import task
 from tomlkit.toml_file import TOMLFile
 
@@ -64,10 +65,42 @@ def deps(ctx: Context) -> None:
 
 
 def _get_current_version() -> str:
-    """Read the current version from pyproject.toml"""
+    """Read the current version from pyproject.toml."""
     with PYPROJECT_TOML.open("r", encoding="utf-8") as f:
         toml_content = TOMLFile(f.name).read()
     return str(toml_content["project"]["version"])  # type: ignore[index]
+
+
+def _get_pypi_versions() -> tuple[str | None, str | None]:
+    """Fetch current and previous versions from PyPI."""
+    try:
+        r = httpx.get("https://pypi.org/pypi/ruff-sync/json", timeout=5.0)
+        data = r.json()
+        current = str(data["info"]["version"])
+        # Simple sorting of version strings
+        all_v = sorted(data["releases"].keys())
+        pv = None
+        if current in all_v:
+            idx = all_v.index(current)
+            if idx > 0:
+                pv = all_v[idx - 1]
+        elif all_v:
+            pv = all_v[-1]
+    except Exception:
+        return None, None
+    else:
+        return current, pv
+
+
+def _get_latest_gh_release(ctx: Context) -> str | None:
+    """Get the latest GitHub release tag name."""
+    try:
+        # Use gh cli to get the latest tag name
+        cmd = "gh release list --limit 1 --json tagName --jq '.[0].tagName'"
+        result = ctx.run(cmd, hide=True)
+        return cast("Any", result).stdout.strip()
+    except Exception:
+        return None
 
 
 @task(
@@ -112,7 +145,16 @@ def release(
         ctx.run("uv run pytest", echo=True, pty=True)
 
     version = _get_current_version()
-    print(f"Releasing version: {version}")
+    print(f"Current local version: {version}")
+
+    # Show remote versions
+    latest_gh = _get_latest_gh_release(ctx)
+    pypi_curr, pypi_prev = _get_pypi_versions()
+
+    print(f"Latest GitHub release:  {latest_gh or 'None'}")
+    print(f"Current PyPI version:   {pypi_curr or 'None'}")
+    print(f"Previous PyPI version:  {pypi_prev or 'None'}")
+    print("-" * 40)
 
     if dry_run:
         print(f"⚠️  DRY RUN: Would create a release for v{version}")
