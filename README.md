@@ -25,6 +25,7 @@
 - [Configuration](#configuration)
 - [CI Integration](#ci-integration)
 - [Example Workflow](#example-workflow)
+- [Detailed Check Logic](#detailed-check-logic)
 - [Contributing](#contributing)
 - [Dogfooding](#dogfooding)
 - [License](#license)
@@ -137,7 +138,7 @@ Run `ruff-sync --help` for full details on all available options.
 - **GitHub URL support** — Paste a GitHub blob URL and it will automatically convert it to the raw content URL.
 - **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
-- **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates.
+- **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
 
 ## Configuration
@@ -205,6 +206,42 @@ A typical setup for an organization:
 ruff-sync https://github.com/my-org/python-standards/blob/main/pyproject.toml
 git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
+```
+
+## Detailed Check Logic
+
+When you run `ruff-sync check`, it follows this process to determine if your project has drifted from the upstream source:
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Local[Read Local pyproject.toml]
+    Local --> Upstream[Download Upstream pyproject.toml]
+    Upstream --> Extract[Extract tool.ruff section]
+    Extract --> Exclude[Apply Exclusions]
+    Exclude --> Merge[Perform in-memory Merge]
+
+    subgraph Comparison [Comparison Logic]
+        direction TB
+        Semantic{--semantic?}
+        Semantic -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
+        Unwrap --> CompareVal[Compare Key/Value Pairs]
+        Semantic -- No --> CompareFull[Compare Full File Strings]
+    end
+
+    Merge --> Comparison
+
+    CompareVal --> Result{Match?}
+    CompareFull --> Result
+
+    Result -- Yes --> Success([Exit 0: In Sync])
+    Result -- No --> Diff[Generate Diff]
+    Diff --> Fail([Exit 1: Out of Sync])
+
+    %% Styling
+    style Start fill:#f9f,stroke:#333
+    style Success fill:#dfd,stroke:#333
+    style Fail fill:#fdd,stroke:#333
+    style Comparison fill:#f8f9fa,stroke:#dee2e6,stroke-dasharray: 5 5
 ```
 
 ## Contributing
