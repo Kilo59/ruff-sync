@@ -70,56 +70,33 @@ def _get_current_version() -> str:
     return str(toml_content["project"]["version"])  # type: ignore[index]
 
 
-def _set_version(version: str) -> None:
-    """Update the version in pyproject.toml"""
-    path = PYPROJECT_TOML
-    toml_file = TOMLFile(path)
-    toml_content = toml_file.read()
-    toml_content["project"]["version"] = version  # type: ignore[index]
-    toml_file.write(toml_content)
-
-
 @task(
     help={
-        "version": "The version to release (e.g., 0.1.0). "
-        "If not provided, you will be prompted.",
         "dry-run": "Show what would be done without making changes.",
         "skip-tests": "Skip running tests and linting before release.",
-        "draft": "Create the release as a draft on GitHub.",
+        "draft": "Create the release as a draft on GitHub (default: True).",
     }
 )
 def release(
     ctx: Context,
-    version: str | None = None,
     dry_run: bool = True,
     skip_tests: bool = False,
     draft: bool = True,
 ) -> None:
-    """Tag and create a GitHub release for the project."""
-    if not skip_tests:
-        print("🚀 Running validation suite...")
-        lint(ctx, check=True)
-        fmt(ctx, check=True)
-        type_check(ctx, check=True)
-        ctx.run("uv run pytest", echo=True, pty=True)
-
-    current_version = _get_current_version()
-    print(f"Current version: {current_version}")
-
-    if not version:
-        # Simple heuristic: if it's 0.0.1.devN, suggest 0.0.1
-        suggested = current_version.split(".dev")[0]
-        version = input(f"New version [{suggested}]: ").strip() or suggested
-
-    print(f"Releasing version: {version}")
-
-    if dry_run:
-        print("⚠️  DRY RUN: No matches will be made.")
+    """Tag and create a GitHub release for the current project version."""
+    # Check if we are on the main branch
+    branch_result = ctx.run("git branch --show-current", hide=True)
+    current_branch = cast("Any", branch_result).stdout.strip()
+    if current_branch != "main":
+        print(
+            f"❌ Releases must be made from the 'main' branch "
+            f"(current: {current_branch})."
+        )
         return
 
     # Check for dirty git state
-    result = ctx.run("git status --porcelain", hide=True)
-    git_status = cast("Any", result).stdout.strip()
+    status_result = ctx.run("git status --porcelain", hide=True)
+    git_status = cast("Any", status_result).stdout.strip()
     if git_status:
         print(
             "❌ Git repository has uncommitted changes. "
@@ -127,19 +104,19 @@ def release(
         )
         return
 
-    # Update pyproject.toml
-    print(f"📝 Updating pyproject.toml to version {version}...")
-    _set_version(version)
+    if not skip_tests:
+        print("🚀 Running validation suite...")
+        lint(ctx, check=True)
+        fmt(ctx, check=True)
+        type_check(ctx, check=True)
+        ctx.run("uv run pytest", echo=True, pty=True)
 
-    # Commit the version bump
-    ctx.run(
-        f'git add pyproject.toml && git commit -m "chore: release {version}"',
-        echo=True,
-    )
+    version = _get_current_version()
+    print(f"Releasing version: {version}")
 
-    # Push changes
-    print("📤 Pushing changes to origin...")
-    ctx.run("git push", echo=True)
+    if dry_run:
+        print(f"⚠️  DRY RUN: Would create a release for v{version}")
+        return
 
     # Create GitHub release
     print(f"📦 Creating GitHub release for v{version}...")
