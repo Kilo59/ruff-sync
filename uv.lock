@@ -990,7 +990,7 @@ wheels = [
 
 [[package]]
 name = "ruff-sync"
-version = "0.0.1.dev4"
+version = "0.0.2.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -1002,6 +1002,7 @@ dev = [
     { name = "coverage" },
     { name = "invoke" },
     { name = "mypy" },
+    { name = "packaging" },
     { name = "pre-commit" },
     { name = "pyfakefs" },
     { name = "pytest" },
@@ -1024,6 +1025,7 @@ dev = [
     { name = "coverage", specifier = ">=7.4.4" },
     { name = "invoke", specifier = ">=2.2.0" },
     { name = "mypy", specifier = ">=1.10.0" },
+    { name = "packaging", specifier = ">=26.0" },
     { name = "pre-commit", specifier = ">=3.7.0" },
     { name = "pyfakefs", specifier = ">=5.4.1" },
     { name = "pytest", specifier = ">=8.0.0" },

@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.0.1.dev4"
+version = "0.0.2.dev0"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -43,6 +43,7 @@ dev = [
     "coverage>=7.4.4",
     "invoke>=2.2.0",
     "mypy>=1.10.0",
+    "packaging>=26.0",
     "pre-commit>=3.7.0",
     "pyfakefs>=5.4.1",
     "pytest>=8.0.0",

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
+import json
 import logging
 import pathlib
+import re
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
@@ -17,7 +20,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.1.dev4"
+__version__ = "0.0.2.dev0"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
@@ -47,10 +50,13 @@ class ColoredFormatter(logging.Formatter):
 
 
 class Arguments(NamedTuple):
+    command: str
     upstream: URL
     source: pathlib.Path
     exclude: Iterable[str]
     verbose: int
+    semantic: bool = False
+    diff: bool = True
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -85,35 +91,89 @@ def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
 
 
 def _get_cli_parser() -> ArgumentParser:
-    # https://docs.python.org/3/library/argparse.html#nargs
-    parser = ArgumentParser()
-    parser.add_argument(
+    parser = ArgumentParser(
+        prog="ruff-sync",
+        description=(
+            "Synchronize Ruff linter configuration across Python projects.\n\n"
+            "Downloads a pyproject.toml from an upstream URL, extracts the\n"
+            "[tool.ruff] section, and merges it into the local pyproject.toml\n"
+            "while preserving formatting, comments, and whitespace.\n\n"
+            "Defaults to the 'pull' subcommand when none is specified."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml\n"
+            "  ruff-sync check https://github.com/org/repo/blob/main/pyproject.toml\n"
+            "  ruff-sync check --semantic  # ignore formatting-only differences\n\n"
+            "The upstream URL can also be set in [tool.ruff-sync] in pyproject.toml\n"
+            "so you can simply run: ruff-sync pull"
+        ),
+        formatter_class=RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    subparsers = parser.add_subparsers(
+        dest="command", help="Subcommand to run (default: pull)"
+    )
+
+    # Common arguments
+    common_parser = ArgumentParser(add_help=False)
+    common_parser.add_argument(
         "upstream",
         type=URL,
         nargs="?",
         help="The URL to download the pyproject.toml file from."
         " Optional if defined in [tool.ruff-sync].",
     )
-    parser.add_argument(
+    common_parser.add_argument(
         "--source",
         type=pathlib.Path,
         default=".",
         help="The directory to sync the pyproject.toml file to. Default: .",
         required=False,
     )
-    parser.add_argument(
+    common_parser.add_argument(
         "--exclude",
         nargs="+",
         help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         default=None,
     )
-    parser.add_argument(
+    common_parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         default=0,
         help="Increase verbosity. -v for INFO, -vv for DEBUG.",
     )
+
+    # Pull subcommand (the default action)
+    subparsers.add_parser(
+        "pull",
+        parents=[common_parser],
+        help="Pull and apply upstream ruff configuration",
+    )
+
+    # Check subcommand
+    check_parser = subparsers.add_parser(
+        "check", parents=[common_parser], help="Check if ruff configuration is in sync"
+    )
+    check_parser.add_argument(
+        "--semantic",
+        action="store_true",
+        help="Ignore non-functional differences like whitespace and comments.",
+    )
+    check_parser.add_argument(
+        "--diff",
+        action="store_true",
+        default=True,
+        help="Show a diff of what would change. Default: True.",
+    )
+    check_parser.add_argument(
+        "--no-diff",
+        action="store_false",
+        dest="diff",
+        help="Do not show a diff.",
+    )
+
     return parser
 
 
@@ -221,6 +281,48 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     return ruff_toml
 
 
+def _recursive_update(source_table: Any, upstream: Any) -> None:
+    """Recursively update a TOML table, preserving formatting of existing keys."""
+    if hasattr(upstream, "items") or isinstance(upstream, Mapping):
+        items = upstream.items()
+    else:
+        return
+
+    for key, value in items:
+        if key in source_table:
+            if hasattr(source_table[key], "items") and (
+                hasattr(value, "items") or isinstance(value, Mapping)
+            ):
+                # Structural fix: if the target is a proxy (dotted key),
+                # and we are adding NEW keys to it, we must convert it to a real
+                # table to ensure children get correct headers.
+                source_sub_keys = set(source_table[key].keys())
+                upstream_sub_keys = set(value.keys())
+                if not upstream_sub_keys.issubset(source_sub_keys):
+                    current_val = source_table[key].unwrap()
+                    # DELETE PROXY FIRST to avoid structural doubling
+                    del source_table[key]
+                    # ADD AS REAL TABLE
+                    source_table.add(key, current_val)
+
+                _recursive_update(source_table[key], value)
+            else:
+                # Overwrite existing leaf value only if it's semantically different.
+                # Compare unwrapped values, but assign the raw tomlkit Item to
+                # preserve inline comments attached to the upstream value.
+                current_val = (
+                    source_table[key].unwrap()
+                    if hasattr(source_table[key], "unwrap")
+                    else source_table[key]
+                )
+                new_val_unwrapped = value.unwrap() if hasattr(value, "unwrap") else value
+                if current_val != new_val_unwrapped:
+                    source_table[key] = value
+        else:
+            # New key: assign the raw tomlkit Item to preserve comments
+            source_table[key] = value
+
+
 def merge_ruff_toml(
     source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
 ) -> TOMLDocument:
@@ -231,54 +333,100 @@ def merge_ruff_toml(
 
     source_tool_ruff = get_ruff_tool_table(source)
 
-    def _recursive_update(source_table: Any, upstream: Any) -> None:
-        """Recursively update a TOML table to preserve formatting of existing keys."""
-        if hasattr(upstream, "items") or isinstance(upstream, Mapping):
-            items = upstream.items()
-        else:
-            return
-
-        for key, value in items:
-            if key in source_table:
-                if hasattr(source_table[key], "items") and (
-                    hasattr(value, "items") or isinstance(value, Mapping)
-                ):
-                    # Structural fix: if the target is a proxy (dotted key),
-                    # and we are adding NEW keys to it, we must convert it to a real
-                    # table to ensure children get correct headers.
-                    source_sub_keys = set(source_table[key].keys())
-                    upstream_sub_keys = set(value.keys())
-                    if not upstream_sub_keys.issubset(source_sub_keys):
-                        current_val = source_table[key].unwrap()
-                        # DELETE PROXY FIRST to avoid structural doubling
-                        del source_table[key]
-                        # ADD AS REAL TABLE
-                        source_table.add(key, current_val)
-
-                    _recursive_update(source_table[key], value)
-                else:
-                    # Overwrite existing value
-                    source_table[key] = (
-                        value.unwrap() if hasattr(value, "unwrap") else value
-                    )
-            else:
-                # Add new key/value
-                source_table[key] = value.unwrap() if hasattr(value, "unwrap") else value
-
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
-    # Ensure a newline at the end of the section for better readability.
-    # We only add it if it's missing to avoid triple newlines between sections.
-    if not source_tool_ruff.as_string().endswith("\n\n"):
+    # Add a blank separator line after the ruff section — but only when another
+    # top-level section follows it. Adding \n\n at end-of-file is unnecessary.
+    doc_str = source.as_string()
+    ruff_start = doc_str.find("[tool.ruff]")
+    # Look for any non-ruff top-level section header after [tool.ruff]
+    ruff_is_last = ruff_start == -1 or not re.search(
+        r"^\[(?!tool\.ruff)", doc_str[ruff_start:], re.MULTILINE
+    )
+    if not ruff_is_last and not source_tool_ruff.as_string().endswith("\n\n"):
         source_tool_ruff.add(tomlkit.nl())
 
     return source
 
 
-async def sync(
+async def check(
     args: Arguments,
-) -> None:
-    """Sync the upstream pyproject.toml file to the source directory."""
+) -> int:
+    """Check if the local pyproject.toml is in sync with the upstream."""
+    print("🔍 Checking Ruff sync status...")
+    if args.source.is_file():
+        _source_toml_path = args.source
+    else:
+        _source_toml_path = args.source / "pyproject.toml"
+
+    _source_toml_path = _source_toml_path.resolve(strict=True)
+    source_toml_file = TOMLFile(_source_toml_path)
+    source_doc = source_toml_file.read()
+
+    async with httpx.AsyncClient() as client:
+        file_buffer = await download(args.upstream, client)
+        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
+
+    upstream_ruff_toml = get_ruff_tool_table(
+        file_buffer.read(), create_if_missing=False, exclude=args.exclude
+    )
+
+    # Create a copy for comparison
+    source_doc_copy = tomlkit.parse(source_doc.as_string())
+    merged_doc = merge_ruff_toml(source_doc_copy, upstream_ruff_toml)
+
+    if args.semantic:
+        source_ruff = source_doc.get("tool", {}).get("ruff")
+        merged_ruff = merged_doc.get("tool", {}).get("ruff")
+
+        # Compare unwrapped versions
+        source_val = source_ruff.unwrap() if source_ruff is not None else None
+        merged_val = merged_ruff.unwrap() if merged_ruff is not None else None
+
+        if source_val == merged_val:
+            print("✅ Ruff configuration is semantically in sync.")
+            return 0
+    elif source_doc.as_string() == merged_doc.as_string():
+        print("✅ Ruff configuration is in sync.")
+        return 0
+
+    try:
+        rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
+    except ValueError:
+        rel_path = _source_toml_path
+    print(f"❌ Ruff configuration at {rel_path} is out of sync!")
+    if args.diff:
+        if args.semantic:
+            # Semantic diff of the managed section
+            from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(
+                keepends=True
+            )
+            to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(
+                keepends=True
+            )
+            from_file = "local (semantic)"
+            to_file = "upstream (semantic)"
+        else:
+            # Full text diff of the file
+            from_lines = source_doc.as_string().splitlines(keepends=True)
+            to_lines = merged_doc.as_string().splitlines(keepends=True)
+            from_file = f"local/{_source_toml_path.name}"
+            to_file = f"upstream/{_source_toml_path.name}"
+
+        diff = difflib.unified_diff(
+            from_lines,
+            to_lines,
+            fromfile=from_file,
+            tofile=to_file,
+        )
+        sys.stdout.writelines(diff)
+    return 1
+
+
+async def pull(
+    args: Arguments,
+) -> int:
+    """Pull the upstream ruff config and apply it to the source pyproject.toml."""
     print("🔄 Syncing Ruff...")
     if args.source.is_file():
         _source_toml_path = args.source
@@ -300,12 +448,25 @@ async def sync(
     )
     source_toml_file.write(merged_toml)
     print(f"✅ Updated {_source_toml_path.resolve().relative_to(pathlib.Path.cwd())}")
+    return 0
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
-def main() -> None:
+def main() -> int:
+    # Handle backward compatibility: default to 'pull' if no command provided
+    if len(sys.argv) > 1 and sys.argv[1] not in (
+        "pull",
+        "check",
+        "-h",
+        "--help",
+        "--version",
+    ):
+        sys.argv.insert(1, "pull")
+    elif len(sys.argv) == 1:
+        sys.argv.append("pull")
+
     args = PARSER.parse_args()
     config = get_config(args.source)
 
@@ -355,17 +516,21 @@ def main() -> None:
     # Convert non-raw github upstream url to the raw equivalent
     upstream = github_url_to_raw_url(upstream)
 
-    asyncio.run(
-        sync(
-            Arguments(
-                upstream=upstream,
-                source=args.source,
-                exclude=exclude,
-                verbose=args.verbose,
-            )
-        )
+    # Create Arguments object
+    exec_args = Arguments(
+        command=args.command,
+        upstream=upstream,
+        source=args.source,
+        exclude=exclude,
+        verbose=args.verbose,
+        semantic=getattr(args, "semantic", False),
+        diff=getattr(args, "diff", True),
     )
+
+    if exec_args.command == "check":
+        return asyncio.run(check(exec_args))
+    return asyncio.run(pull(exec_args))
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

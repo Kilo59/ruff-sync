@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
+import httpx
 from invoke.tasks import task
+from packaging.version import Version
 from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
@@ -59,10 +61,117 @@ def type_check(ctx: Context, *, install_types: bool = False, check: bool = False
 
 @task(aliases=["sync"])
 def deps(ctx: Context) -> None:
-    """Sync dependencies with poetry lock file"""
-    # using --with dev incase poetry changes the default behavior
-    cmds = ["poetry", "sync", "--with", "dev"]
-    ctx.run(" ".join(cmds), echo=True, pty=True)
+    """Sync dependencies with uv lock file"""
+    ctx.run("uv sync", echo=True, pty=True)
+
+
+def _get_current_version() -> str:
+    """Read the current version from pyproject.toml."""
+    with PYPROJECT_TOML.open("r", encoding="utf-8") as f:
+        toml_content = TOMLFile(f.name).read()
+    return str(toml_content["project"]["version"])  # type: ignore[index]
+
+
+def _get_pypi_versions() -> tuple[str | None, str | None]:
+    """Fetch current and previous versions from PyPI."""
+    try:
+        r = httpx.get("https://pypi.org/pypi/ruff-sync/json", timeout=5.0)
+        data = r.json()
+        current = str(data["info"]["version"])
+        # PEP 440-aware sorting of version strings
+        all_v = sorted(data["releases"].keys(), key=Version)
+        pv = None
+        if current in all_v:
+            idx = all_v.index(current)
+            if idx > 0:
+                pv = all_v[idx - 1]
+        elif all_v:
+            pv = all_v[-1]
+    except Exception:
+        return None, None
+    else:
+        return current, pv
+
+
+def _get_latest_gh_release(ctx: Context) -> str | None:
+    """Get the latest GitHub release tag name."""
+    try:
+        # Use gh cli to get the latest tag name
+        cmd = "gh release list --limit 1 --json tagName --jq '.[0].tagName'"
+        result = ctx.run(cmd, hide=True)
+        if result:
+            return result.stdout.strip()
+    except Exception:
+        return None
+    return None
+
+
+@task(
+    help={
+        "dry-run": "Show what would be done without making changes.",
+        "skip-tests": "Skip running tests and linting before release.",
+        "draft": "Create the release as a draft on GitHub (default: True).",
+    }
+)
+def release(
+    ctx: Context,
+    dry_run: bool = True,
+    skip_tests: bool = False,
+    draft: bool = True,
+) -> None:
+    """Tag and create a GitHub release for the current project version."""
+    # Check if we are on the main branch
+    branch_result = ctx.run("git branch --show-current", hide=True)
+    current_branch = cast("Any", branch_result).stdout.strip()
+    if not dry_run and current_branch != "main":
+        print(
+            f"❌ Releases must be made from the 'main' branch "
+            f"(current: {current_branch})."
+        )
+        return
+
+    # Check for dirty git state
+    status_result = ctx.run("git status --porcelain", hide=True)
+    git_status = cast("Any", status_result).stdout.strip()
+    if git_status:
+        print(
+            "❌ Git repository has uncommitted changes. "
+            "Please commit or stash them first."
+        )
+        return
+
+    if not skip_tests:
+        print("🚀 Running validation suite...")
+        lint(ctx, check=True)
+        fmt(ctx, check=True)
+        type_check(ctx, check=True)
+        ctx.run("uv run pytest", echo=True, pty=True)
+
+    version = _get_current_version()
+    print(f"Current local version: {version}")
+
+    # Show remote versions
+    latest_gh = _get_latest_gh_release(ctx)
+    pypi_curr, pypi_prev = _get_pypi_versions()
+
+    print(f"Latest GitHub release:  {latest_gh or 'None'}")
+    print(f"Current PyPI version:   {pypi_curr or 'None'}")
+    print(f"Previous PyPI version:  {pypi_prev or 'None'}")
+    print("-" * 40)
+
+    if dry_run:
+        print(f"⚠️  DRY RUN: Would create a release for v{version}")
+        return
+
+    # Create GitHub release
+    print(f"📦 Creating GitHub release for v{version}...")
+    gh_cmd = f"gh release create v{version} --generate-notes"
+    if draft:
+        gh_cmd += " --draft"
+
+    ctx.run(gh_cmd, echo=True)
+
+    print(f"🎉 Version {version} released successfully!")
 
 
 @task(aliases=["new-case"])

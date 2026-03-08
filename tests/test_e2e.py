@@ -88,11 +88,12 @@ def prep_env(
 
 @pytest.mark.asyncio
 async def test_ruff_sync(prep_env):
-    await ruff_sync.sync(
+    await ruff_sync.pull(
         ruff_sync.Arguments(
+            command="pull",
             upstream=prep_env.upstream_url,
             source=prep_env.source_path,
-            exclude={},
+            exclude=set(),
             verbose=0,
         )
     )
@@ -102,8 +103,67 @@ async def test_ruff_sync(prep_env):
     assert tomlkit.parse(prep_env.expected_toml) == tomlkit.parse(
         prep_env.source_path.read_text()
     )
-    # TODO: add back after fixing whitespace issues
-    # assert prep_env.expected_toml == prep_env.source_path.read_text()
+    assert prep_env.expected_toml == prep_env.source_path.read_text()
+
+
+@pytest.mark.asyncio
+async def test_ruff_check(prep_env):
+    # 1. Initially it should be out of sync
+    exit_code = await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+        )
+    )
+    # 'no_changes' fixtures are already in sync; all others must be out-of-sync initially.
+    if prep_env.expected_toml != prep_env.source_path.read_text():
+        assert exit_code != 0, (
+            "Expected out-of-sync fixture to return a non-zero exit code"
+        )
+    #
+    # 2. Sync it
+    await ruff_sync.pull(
+        ruff_sync.Arguments(
+            command="pull",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+        )
+    )
+    #
+    # 3. Now it MUST be in sync (strictly)
+    exit_code = await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+        )
+    )
+    assert exit_code == 0
+    #
+    # 4. Now it MUST be in sync (semantically)
+    exit_code = await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=True,
+            diff=True,
+        )
+    )
+    assert exit_code == 0
 
 
 if __name__ == "__main__":

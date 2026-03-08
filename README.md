@@ -22,6 +22,7 @@
   - [Install](#install)
   - [Usage](#usage)
 - [Key Features](#key-features)
+- [CI Integration](#ci-integration)
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [License](#license)
@@ -120,9 +121,17 @@ ruff-sync --source ./my-project
 
 # Exclude specific sections from being overwritten using dotted paths
 ruff-sync --exclude lint.per-file-ignores lint.ignore
+
+# Check if your local config is in sync (useful in CI)
+ruff-sync check https://github.com/my-org/standards/blob/main/pyproject.toml
+
+# Semantic check — ignore cosmetic differences like comments and whitespace
+ruff-sync check --semantic
 ```
 
 ### CLI Reference
+
+#### `ruff-sync`
 
 ```
 usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [-v] [upstream]
@@ -133,11 +142,33 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --source SOURCE       The directory to sync the pyproject.toml file to. Default: .
+  --source SOURCE       The directory or file to sync. Default: .
   --exclude EXCLUDE [EXCLUDE ...]
-                        Exclude certain ruff configs. Default: lint.per-file-ignores
+                        Exclude certain ruff config keys. Default: lint.per-file-ignores
   -v, --verbose         Increase verbosity. -v for INFO, -vv for DEBUG.
 ```
+
+#### `ruff-sync check`
+
+```
+usage: ruff-sync check [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [--semantic] [--no-diff] [-v] [upstream]
+
+positional arguments:
+  upstream              The URL to download the pyproject.toml file from.
+                        Optional if defined in [tool.ruff-sync]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --source SOURCE       The directory or file to check. Default: .
+  --exclude EXCLUDE [EXCLUDE ...]
+                        Exclude certain ruff config keys.
+  --semantic            Ignore cosmetic differences (whitespace, comments);
+                        only fail on actual value changes.
+  --no-diff             Suppress the diff output.
+  -v, --verbose         Increase verbosity. -v for INFO, -vv for DEBUG.
+```
+
+Exits **0** if in sync, **1** if out of sync.
 
 ## Key Features
 
@@ -145,6 +176,37 @@ optional arguments:
 - **GitHub URL support** — Paste a GitHub blob URL and it will automatically convert it to the raw content URL.
 - **Selective exclusions** — Keep project-specific overrides (like `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
+- **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates.
+- **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
+
+## CI Integration
+
+The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges:
+
+```yaml
+# .github/workflows/ci.yaml
+- name: Check ruff config is in sync
+  run: |
+    ruff-sync check --semantic
+```
+
+With `--semantic`, minor reformatting of your local file won't cause a false positive — only actual rule or value differences will fail the check.
+
+To see exactly what's drifted, omit `--no-diff` (the default) and the output will include a unified diff:
+
+```console
+$ ruff-sync check --semantic
+🔍 Checking Ruff sync status...
+❌ Ruff configuration at pyproject.toml is out of sync!
+--- local (semantic)
++++ upstream (semantic)
+@@ -5,6 +5,7 @@
+   "select": [
++    "PERF",
+     "RUF",
+     ...
+   ]
+```
 
 ## Configuration
 
@@ -203,9 +265,15 @@ uv run pytest -vv           # test
 
 ## Dogfooding
 
-To see `ruff-sync` in action on a complex, real-world configuration, you can "dogfood" it by syncing this project's own `pyproject.toml` with a large upstream config like Pydantic's.
+To see `ruff-sync` in action, you can "dogfood" it on this project's own config.
 
-We've provided a script to make this easy:
+**Check if this project is in sync with its upstream:**
+
+```console
+./scripts/dogfood_check.sh
+```
+
+**Or sync from a large upstream like Pydantic's config:**
 
 ```console
 ./scripts/dogfood.sh

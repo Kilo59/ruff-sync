@@ -269,9 +269,13 @@ async def test_sync_updates_ruff_config(
 
     upstream = URL("https://example.com/pyproject.toml")
     upstream_toml = httpx.get(upstream).text  # blocking but doesn't matter
-    await ruff_sync.sync(
+    await ruff_sync.pull(
         ruff_sync.Arguments(
-            upstream=upstream, source=fake_fs_source, exclude=(), verbose=0
+            command="pull",
+            upstream=upstream,
+            source=fake_fs_source,
+            exclude=(),
+            verbose=0,
         )
     )
     updated_toml = fake_fs_source.read_text()
@@ -358,7 +362,7 @@ def test_exclude_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
         sys, "argv", ["ruff-sync", "http://example.com", "--exclude", "from-cli"]
     )
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     ruff_sync.main()
@@ -377,7 +381,7 @@ def test_exclude_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     ruff_sync.main()
@@ -396,7 +400,7 @@ def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     ruff_sync.main()
@@ -417,7 +421,7 @@ def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
     )
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     ruff_sync.main()
@@ -441,7 +445,7 @@ def test_upstream_resolution_missing(
     # No upstream in config
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
     # Ensure sync is never called if upstream is missing
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     with pytest.raises(SystemExit) as excinfo:
@@ -471,7 +475,7 @@ def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
     )
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     ruff_sync.main()
@@ -505,7 +509,7 @@ def test_verbosity_log_level(
 
     monkeypatch.setattr(sys, "argv", argv)
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
     # Reset LOGGER state before test
@@ -542,8 +546,9 @@ target-version = "py311"
             content_type="text/plain",
             content=upstream_toml,
         )
-        await ruff_sync.sync(
+        await ruff_sync.pull(
             ruff_sync.Arguments(
+                command="pull",
                 upstream=URL("https://example.com/pyproject.toml"),
                 source=ff_path,
                 exclude=ruff_sync._DEFAULT_EXCLUDE,
