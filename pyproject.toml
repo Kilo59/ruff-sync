@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.0.3"
+version = "0.0.3.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
