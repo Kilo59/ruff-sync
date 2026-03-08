@@ -12,7 +12,7 @@
 
 **Keep your Ruff config consistent across multiple projects.**
 
-`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, a raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
+`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, or any raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
 
 ---
 
@@ -111,8 +111,14 @@ uv tool install git+https://github.com/Kilo59/ruff-sync
 ### Usage
 
 ```console
-# Sync from a GitHub URL (blob URLs are auto-converted to raw)
+# Sync from a GitHub repository (defaults to main/pyproject.toml)
+ruff-sync https://github.com/my-org/standards
+
+# Or a direct blob/file URL (auto-converts to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
+
+# GitLab support (including nested projects)
+ruff-sync https://gitlab.com/my-org/my-group/nested/standards
 
 # Once configured in pyproject.toml (see Configuration), simply run:
 ruff-sync
@@ -124,7 +130,7 @@ ruff-sync --source ./my-project
 ruff-sync --exclude lint.per-file-ignores lint.ignore
 
 # Check if your local config is in sync (useful in CI)
-ruff-sync check https://github.com/my-org/standards/blob/main/pyproject.toml
+ruff-sync check https://github.com/my-org/standards
 
 # Semantic check — ignore cosmetic differences like comments and whitespace
 ruff-sync check --semantic
@@ -135,7 +141,7 @@ Run `ruff-sync --help` for full details on all available options.
 ## Key Features
 
 - **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
-- **GitHub URL support** — Paste a GitHub blob URL and it will automatically convert it to the raw content URL.
+- **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
 - **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
 - **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
@@ -148,7 +154,7 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 ```toml
 [tool.ruff-sync]
 # The source of truth for your Ruff configuration
-upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
+upstream = "https://github.com/my-org/standards"
 
 # Use simple names for top-level keys, and dotted paths for nested keys
 exclude = [
@@ -163,6 +169,21 @@ exclude = [
 
 This sets the default upstream and exclusions so you don't need to pass them on the command line every time.
 *Note: Any explicitly provided CLI arguments will override the values in `pyproject.toml`.*
+
+### Advanced Configuration
+
+For more complex setups, you can also configure the default branch and parent directory used when resolving repository URLs (e.g. `https://github.com/my-org/standards`):
+
+```toml
+[tool.ruff-sync]
+upstream = "https://github.com/my-org/standards"
+
+# Use a specific branch or tag (default: "main")
+branch = "develop"
+
+# Specify a parent directory if pyproject.toml is not at the repo root
+path = "config/ruff"
+```
 
 ## CI Integration
 
@@ -203,7 +224,7 @@ A typical setup for an organization:
 
 ```console
 # In each project repo:
-ruff-sync https://github.com/my-org/python-standards/blob/main/pyproject.toml
+ruff-sync https://github.com/my-org/python-standards
 git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
 ```

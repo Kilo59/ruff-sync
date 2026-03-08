@@ -13,7 +13,7 @@ This document defines the mandatory testing standards and patterns for the `ruff
 
 ## 2. Tooling and Environment
 
-- **Execution**: Always run tests using `poetry run pytest -vv`.
+- **Execution**: Always run tests using `uv run pytest -vv`.
 - **Async Tests**: We use `pytest-asyncio` in **strict mode**.
   - Always decorate async tests with `@pytest.mark.asyncio`.
 - **HTTP Mocking**: Use [respx](https://github.com/lundberg/respx) for all network interactions.
@@ -79,7 +79,7 @@ Each test case consists of three files in `tests/lifecycle_tomls/`:
 ### Scaffolding New Cases
 Use the provided Invoke task to create a new case from a template:
 ```bash
-poetry run invoke new-case --name <case_name> --description "Description of the edge case"
+uv run invoke new-case --name <case_name> --description "Description of the edge case"
 ```
 
 ## 5. Standard Assertions for Merges
@@ -109,5 +109,5 @@ def test_my_edge_case():
 ## 6. Code Coverage
 
 We target **high coverage** for `ruff_sync.py`.
-- Run coverage locally: `poetry run coverage run -m pytest -vv && poetry run coverage report`
+- Run coverage locally: `uv run coverage run -m pytest -vv && uv run coverage report`
 - New features MUST include unit tests in `tests/test_basic.py` or specialized files like `tests/test_whitespace.py` if they involve formatting logic.

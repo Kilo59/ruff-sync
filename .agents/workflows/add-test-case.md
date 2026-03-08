@@ -12,7 +12,7 @@ Follow these steps to add a new end-to-end (E2E) test case for `ruff-sync` to te
 // turbo
 1. Run the `new-case` task to generate the file triple:
    ```bash
-   poetry run invoke new-case --name <case_name> --description "Description of the test case"
+   uv run invoke new-case --name <case_name> --description "Description of the test case"
    ```
    *Replace `<case_name>` with a simple name (e.g., `dotted_keys`). This creates files in `tests/lifecycle_tomls/`.*
 
@@ -25,7 +25,7 @@ Follow these steps to add a new end-to-end (E2E) test case for `ruff-sync` to te
 // turbo
 1. Execute the tests to ensure the new case is picked up:
    ```bash
-   poetry run pytest -vv tests/test_e2e.py
+   uv run pytest -vv tests/test_e2e.py
    ```
    *The E2E suite automatically discovers all file triples in the `lifecycle_tomls/` directory.*
 
@@ -33,6 +33,6 @@ Follow these steps to add a new end-to-end (E2E) test case for `ruff-sync` to te
 // turbo
 1. Ensure the new TOML files don't break any project rules:
    ```bash
-   poetry run invoke lint --check
-   poetry run invoke types
+   uv run invoke lint --check
+   uv run invoke types
    ```

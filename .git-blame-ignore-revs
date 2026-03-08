@@ -1,0 +1,20 @@
+# .git-blame-ignore-revs
+#
+# This file contains a list of Git commit hashes that should be ignored by
+# `git blame`. It is primarily used for large-scale refactorings, purely
+# stylistic changes, or mass-formatting that would otherwise "pollute" the
+# blame history without changing the actual logic.
+#
+# Use this file VERY SELECTIVELY. Only include commits that are truly
+# non-functional and where seeing the original author in the blame history
+# provides no useful context for the code's behavior.
+#
+# Entries should follow this pattern:
+#
+# # <Brief description of the change>
+# # PR: https://github.com/Kilo59/ruff-sync/pull/<PR_NUMBER>
+# <COMMIT_HASH>
+
+# Changing linelength to 100, other changes are tests and readme only
+# PR: https://github.com/Kilo59/ruff-sync/pull/76
+75f9e34ced8537a32cdc62f85ae0f8e464756cee

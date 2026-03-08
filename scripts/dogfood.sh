@@ -10,9 +10,9 @@ set -euo pipefail
 #   ./scripts/dogfood.sh [upstream_url]
 #
 # Default upstream:
-#   https://github.com/pydantic/pydantic/blob/main/pyproject.toml
+#   https://github.com/pydantic/pydantic
 
-DEFAULT_UPSTREAM="https://github.com/pydantic/pydantic/blob/main/pyproject.toml"
+DEFAULT_UPSTREAM="https://github.com/pydantic/pydantic"
 UPSTREAM=${1:-$DEFAULT_UPSTREAM}
 
 echo "🐶 Dogfooding ruff-sync..."
@@ -35,7 +35,7 @@ if ! git diff --quiet pyproject.toml; then
 fi
 
 # Run the tool via poetry
-poetry run python ruff_sync.py "$UPSTREAM" -v
+uv run python ruff_sync.py "$UPSTREAM" -v
 
 echo ""
 echo "✨ Dogfooding run complete!"
