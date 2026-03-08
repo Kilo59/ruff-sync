@@ -271,7 +271,11 @@ async def test_sync_updates_ruff_config(
     upstream_toml = httpx.get(upstream).text  # blocking but doesn't matter
     await ruff_sync.sync(
         ruff_sync.Arguments(
-            upstream=upstream, source=fake_fs_source, exclude=(), verbose=0
+            command="sync",
+            upstream=upstream,
+            source=fake_fs_source,
+            exclude=(),
+            verbose=0,
         )
     )
     updated_toml = fake_fs_source.read_text()
@@ -544,6 +548,7 @@ target-version = "py311"
         )
         await ruff_sync.sync(
             ruff_sync.Arguments(
+                command="sync",
                 upstream=URL("https://example.com/pyproject.toml"),
                 source=ff_path,
                 exclude=ruff_sync._DEFAULT_EXCLUDE,

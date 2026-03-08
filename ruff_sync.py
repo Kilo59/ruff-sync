@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
 import logging
 import pathlib
 import sys
@@ -47,10 +48,13 @@ class ColoredFormatter(logging.Formatter):
 
 
 class Arguments(NamedTuple):
+    command: str
     upstream: URL
     source: pathlib.Path
     exclude: Iterable[str]
     verbose: int
+    semantic: bool = False
+    diff: bool = True
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -85,35 +89,64 @@ def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
 
 
 def _get_cli_parser() -> ArgumentParser:
-    # https://docs.python.org/3/library/argparse.html#nargs
-    parser = ArgumentParser()
-    parser.add_argument(
+    parser = ArgumentParser(prog="ruff-sync")
+    subparsers = parser.add_subparsers(dest="command", help="Subcommand to run")
+
+    # Common arguments
+    common_parser = ArgumentParser(add_help=False)
+    common_parser.add_argument(
         "upstream",
         type=URL,
         nargs="?",
         help="The URL to download the pyproject.toml file from."
         " Optional if defined in [tool.ruff-sync].",
     )
-    parser.add_argument(
+    common_parser.add_argument(
         "--source",
         type=pathlib.Path,
         default=".",
         help="The directory to sync the pyproject.toml file to. Default: .",
         required=False,
     )
-    parser.add_argument(
+    common_parser.add_argument(
         "--exclude",
         nargs="+",
         help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         default=None,
     )
-    parser.add_argument(
+    common_parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         default=0,
         help="Increase verbosity. -v for INFO, -vv for DEBUG.",
     )
+
+    # Sync subcommand
+    subparsers.add_parser("sync", parents=[common_parser], help="Sync ruff configuration")
+
+    # Check subcommand
+    check_parser = subparsers.add_parser(
+        "check", parents=[common_parser], help="Check if ruff configuration is in sync"
+    )
+    check_parser.add_argument(
+        "--semantic",
+        action="store_true",
+        help="Ignore non-functional differences like whitespace and comments.",
+    )
+    check_parser.add_argument(
+        "--diff",
+        action="store_true",
+        default=True,
+        help="Show a diff of what would change. Default: True.",
+    )
+    check_parser.add_argument(
+        "--no-diff",
+        action="store_false",
+        dest="diff",
+        help="Do not show a diff.",
+    )
+
     return parser
 
 
@@ -275,9 +308,63 @@ def merge_ruff_toml(
     return source
 
 
+async def check(
+    args: Arguments,
+) -> int:
+    """Check if the local pyproject.toml is in sync with the upstream."""
+    print("🔍 Checking Ruff sync status...")
+    if args.source.is_file():
+        _source_toml_path = args.source
+    else:
+        _source_toml_path = args.source / "pyproject.toml"
+
+    _source_toml_path = _source_toml_path.resolve(strict=True)
+    source_toml_file = TOMLFile(_source_toml_path)
+    source_doc = source_toml_file.read()
+
+    async with httpx.AsyncClient() as client:
+        file_buffer = await download(args.upstream, client)
+        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
+
+    upstream_ruff_toml = get_ruff_tool_table(
+        file_buffer.read(), create_if_missing=False, exclude=args.exclude
+    )
+
+    # Create a copy for comparison
+    source_doc_copy = tomlkit.parse(source_doc.as_string())
+    merged_doc = merge_ruff_toml(source_doc_copy, upstream_ruff_toml)
+
+    if args.semantic:
+        source_ruff = source_doc.get("tool", {}).get("ruff")
+        merged_ruff = merged_doc.get("tool", {}).get("ruff")
+
+        # Compare unwrapped versions
+        source_val = source_ruff.unwrap() if source_ruff is not None else None
+        merged_val = merged_ruff.unwrap() if merged_ruff is not None else None
+
+        if source_val == merged_val:
+            print("✅ Ruff configuration is semantically in sync.")
+            return 0
+    elif source_doc.as_string() == merged_doc.as_string():
+        print("✅ Ruff configuration is in sync.")
+        return 0
+
+    rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
+    print(f"❌ Ruff configuration at {rel_path} is out of sync!")
+    if args.diff:
+        diff = difflib.unified_diff(
+            source_doc.as_string().splitlines(keepends=True),
+            merged_doc.as_string().splitlines(keepends=True),
+            fromfile=f"local/{_source_toml_path.name}",
+            tofile=f"upstream/{_source_toml_path.name}",
+        )
+        sys.stdout.writelines(diff)
+    return 1
+
+
 async def sync(
     args: Arguments,
-) -> None:
+) -> int:
     """Sync the upstream pyproject.toml file to the source directory."""
     print("🔄 Syncing Ruff...")
     if args.source.is_file():
@@ -300,12 +387,25 @@ async def sync(
     )
     source_toml_file.write(merged_toml)
     print(f"✅ Updated {_source_toml_path.resolve().relative_to(pathlib.Path.cwd())}")
+    return 0
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
-def main() -> None:
+def main() -> int:
+    # Handle backward compatibility: default to 'sync' if no command provided
+    if len(sys.argv) > 1 and sys.argv[1] not in (
+        "sync",
+        "check",
+        "-h",
+        "--help",
+        "--version",
+    ):
+        sys.argv.insert(1, "sync")
+    elif len(sys.argv) == 1:
+        sys.argv.append("sync")
+
     args = PARSER.parse_args()
     config = get_config(args.source)
 
@@ -355,17 +455,21 @@ def main() -> None:
     # Convert non-raw github upstream url to the raw equivalent
     upstream = github_url_to_raw_url(upstream)
 
-    asyncio.run(
-        sync(
-            Arguments(
-                upstream=upstream,
-                source=args.source,
-                exclude=exclude,
-                verbose=args.verbose,
-            )
-        )
+    # Create Arguments object
+    exec_args = Arguments(
+        command=args.command,
+        upstream=upstream,
+        source=args.source,
+        exclude=exclude,
+        verbose=args.verbose,
+        semantic=getattr(args, "semantic", False),
+        diff=getattr(args, "diff", True),
     )
+
+    if exec_args.command == "check":
+        return asyncio.run(check(exec_args))
+    return asyncio.run(sync(exec_args))
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

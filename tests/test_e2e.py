@@ -90,9 +90,10 @@ def prep_env(
 async def test_ruff_sync(prep_env):
     await ruff_sync.sync(
         ruff_sync.Arguments(
+            command="sync",
             upstream=prep_env.upstream_url,
             source=prep_env.source_path,
-            exclude={},
+            exclude=set(),
             verbose=0,
         )
     )
@@ -102,8 +103,7 @@ async def test_ruff_sync(prep_env):
     assert tomlkit.parse(prep_env.expected_toml) == tomlkit.parse(
         prep_env.source_path.read_text()
     )
-    # TODO: add back after fixing whitespace issues
-    # assert prep_env.expected_toml == prep_env.source_path.read_text()
+    assert prep_env.expected_toml == prep_env.source_path.read_text()
 
 
 if __name__ == "__main__":
