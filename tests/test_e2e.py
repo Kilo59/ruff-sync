@@ -106,5 +106,62 @@ async def test_ruff_sync(prep_env):
     assert prep_env.expected_toml == prep_env.source_path.read_text()
 
 
+@pytest.mark.asyncio
+async def test_ruff_check(prep_env):
+    # 1. Initially it should be out of sync
+    exit_code = await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+        )
+    )
+    # Most fixtures are out of sync initially
+    # (except maybe one if it's a 'no changes' case, but we test the transitively)
+    #
+    # 2. Sync it
+    await ruff_sync.sync(
+        ruff_sync.Arguments(
+            command="sync",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+        )
+    )
+    #
+    # 3. Now it MUST be in sync (strictly)
+    exit_code = await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+        )
+    )
+    assert exit_code == 0
+    #
+    # 4. Now it MUST be in sync (semantically)
+    exit_code = await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=prep_env.upstream_url,
+            source=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=True,
+            diff=True,
+        )
+    )
+    assert exit_code == 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
