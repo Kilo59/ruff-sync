@@ -20,7 +20,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.2.dev0"
+__version__ = "0.0.2"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
@@ -111,9 +111,7 @@ def _get_cli_parser() -> ArgumentParser:
         formatter_class=RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    subparsers = parser.add_subparsers(
-        dest="command", help="Subcommand to run (default: pull)"
-    )
+    subparsers = parser.add_subparsers(dest="command", help="Subcommand to run (default: pull)")
 
     # Common arguments
     common_parser = ArgumentParser(add_help=False)
@@ -326,7 +324,7 @@ def _recursive_update(source_table: Any, upstream: Any) -> None:
 def merge_ruff_toml(
     source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
 ) -> TOMLDocument:
-    """Merge the source and upstream tool ruff config with better whitespace preservation."""  # noqa: E501
+    """Merge the source and upstream tool ruff config with better whitespace preservation."""
     if not upstream_ruff_doc:
         LOGGER.warning("No upstream ruff config section found.")
         return source
@@ -354,7 +352,7 @@ async def check(
 ) -> int:
     """Check if the local pyproject.toml is in sync with the upstream."""
     print("🔍 Checking Ruff sync status...")
-    if args.source.is_file():
+    if args.source.is_file():  # noqa: SIM108 FIXME
         _source_toml_path = args.source
     else:
         _source_toml_path = args.source / "pyproject.toml"
@@ -398,12 +396,8 @@ async def check(
     if args.diff:
         if args.semantic:
             # Semantic diff of the managed section
-            from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(
-                keepends=True
-            )
-            to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(
-                keepends=True
-            )
+            from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(keepends=True)
+            to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
             from_file = "local (semantic)"
             to_file = "upstream (semantic)"
         else:
@@ -428,7 +422,7 @@ async def pull(
 ) -> int:
     """Pull the upstream ruff config and apply it to the source pyproject.toml."""
     print("🔄 Syncing Ruff...")
-    if args.source.is_file():
+    if args.source.is_file():  # noqa: SIM108 FIXME
         _source_toml_path = args.source
     else:
         _source_toml_path = args.source / "pyproject.toml"

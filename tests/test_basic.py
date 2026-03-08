@@ -287,9 +287,7 @@ async def test_sync_updates_ruff_config(
 
     # Ensure the updated ruff config has the same keys as the original
     for key in original_ruff_config:
-        assert key in updated_ruff_config, (
-            f"Original key {key} was not in updated ruff config"
-        )
+        assert key in updated_ruff_config, f"Original key {key} was not in updated ruff config"
 
     # Ensure the updated ruff config has the expected updated values from upstream
     upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
@@ -358,9 +356,7 @@ def test_exclude_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
         captured_args.append(args)
         return asyncio.sleep(0)
 
-    monkeypatch.setattr(
-        sys, "argv", ["ruff-sync", "http://example.com", "--exclude", "from-cli"]
-    )
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com", "--exclude", "from-cli"])
     monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
     monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
@@ -418,9 +414,7 @@ def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
         return asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
-    monkeypatch.setattr(
-        ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
-    )
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"})
     monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 
@@ -472,9 +466,7 @@ def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
         return asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync"])
-    monkeypatch.setattr(
-        ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
-    )
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"})
     monkeypatch.setattr(ruff_sync, "pull", mock_sync)
     monkeypatch.setattr(asyncio, "run", lambda _coro: None)
 

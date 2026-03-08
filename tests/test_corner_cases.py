@@ -44,9 +44,7 @@ lint.select = ["F", "E"]
     assert ruff["lint"]["per-file-ignores"] == {"x.py": ["F401"]}
 
     # Check structure: it shouldn't have doubled tool.ruff or broken headers
-    assert "[lint.per-file-ignores]" not in merged_s, (
-        "Should have tool.ruff prefix or be dotted"
-    )
+    assert "[lint.per-file-ignores]" not in merged_s, "Should have tool.ruff prefix or be dotted"
     assert (
         "[tool.ruff.lint.per-file-ignores]" in merged_s
     ) or "lint.per-file-ignores =" in merged_s

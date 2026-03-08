@@ -1,0 +1,37 @@
+[tool.ruff]
+# Upstream wants py310, but local should keep py39 via exclude
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "B", "S", "PTH", "RUFF"]
+# Upstream ignores differ, but local should keep its own via exclude
+ignore = ["W191", "E111"]
+
+[tool.ruff.lint.per-file-ignores]
+# Upstream per-file-ignores differ, but local should keep its own via exclude
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.lint.isort]
+# Upstream first-party differs, but local should keep its own via exclude
+known-first-party = ["upstream_pkg"]
+combine-as-imports = true
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# Upstream wants to ban more things, but local should keep its own via exclude
+"os.environ".msg = """Please do not use os.environ outside of configuration files.
+If you are working in a configuration file you may use the inline comment \
+"# noqa: TID251 # os.environ allowed in config files" to ignore this error."""
+"sqlalchemy".msg = "Please do not import sqlalchemy directly, import from compatibility.sqlalchemy instead."
+"pyspark".msg = "Please do not import pyspark directly, import from compatibility.pyspark instead."
+"boto3".msg = "Please do not import boto3 directly, import from compatibility.aws instead."
+"google".msg = "Please do not import google directly, import from compatibility.google instead."
+"azure".msg = "Please do not import azure directly, import from compatibility.azure instead."
+"trino".msg = "Please do not import trino directly, import from compatibility.trino instead."
+"pyparsing".msg = "Please do not import pyparsing directly, import from compatibility.pyparsing instead."
+"pyarrow".msg = "Please do not import pyarrow directly, import from compatibility.pyarrow instead."
+"typing_extensions.override".msg = "Do not import typing_extensions.override directly, import `override` from compatibility.typing_extensions instead."
+
+[tool.ruff.lint.pydocstyle]
+# Upstream convention differs, but local should keep its own via exclude
+convention = "google"

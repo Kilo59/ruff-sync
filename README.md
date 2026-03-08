@@ -10,7 +10,9 @@
 
 # ruff-sync
 
-**Keep your Ruff config consistent across every repo — automatically.**
+**Keep your Ruff config consistent across multiple projects.**
+
+`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, a raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
 
 ---
 
@@ -19,15 +21,14 @@
 - [The Problem](#the-problem)
 - [How It Works](#how-it-works)
 - [Quick Start](#quick-start)
-  - [Install](#install)
-  - [Usage](#usage)
 - [Key Features](#key-features)
-- [CI Integration](#ci-integration)
 - [Configuration](#configuration)
+- [CI Integration](#ci-integration)
+- [Example Workflow](#example-workflow)
+- [Detailed Check Logic](#detailed-check-logic)
 - [Contributing](#contributing)
+- [Dogfooding](#dogfooding)
 - [License](#license)
-
-`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, a raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
 
 ## The Problem
 
@@ -45,7 +46,7 @@ Ruff's `extend` is perfect inside a monorepo, but if your projects live in **sep
 
 **That's what `ruff-sync` does.**
 
-## How It Works
+### How It Works
 
 ```
 ┌─────────────────────────────┐
@@ -113,7 +114,7 @@ uv tool install git+https://github.com/Kilo59/ruff-sync
 # Sync from a GitHub URL (blob URLs are auto-converted to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 
-# Once configured in pyproject.toml (see below), simply run:
+# Once configured in pyproject.toml (see Configuration), simply run:
 ruff-sync
 
 # Sync into a specific project directory
@@ -129,55 +130,39 @@ ruff-sync check https://github.com/my-org/standards/blob/main/pyproject.toml
 ruff-sync check --semantic
 ```
 
-### CLI Reference
-
-#### `ruff-sync`
-
-```
-usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [-v] [upstream]
-
-positional arguments:
-  upstream              The URL to download the pyproject.toml file from.
-                        Optional if defined in [tool.ruff-sync]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --source SOURCE       The directory or file to sync. Default: .
-  --exclude EXCLUDE [EXCLUDE ...]
-                        Exclude certain ruff config keys. Default: lint.per-file-ignores
-  -v, --verbose         Increase verbosity. -v for INFO, -vv for DEBUG.
-```
-
-#### `ruff-sync check`
-
-```
-usage: ruff-sync check [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [--semantic] [--no-diff] [-v] [upstream]
-
-positional arguments:
-  upstream              The URL to download the pyproject.toml file from.
-                        Optional if defined in [tool.ruff-sync]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --source SOURCE       The directory or file to check. Default: .
-  --exclude EXCLUDE [EXCLUDE ...]
-                        Exclude certain ruff config keys.
-  --semantic            Ignore cosmetic differences (whitespace, comments);
-                        only fail on actual value changes.
-  --no-diff             Suppress the diff output.
-  -v, --verbose         Increase verbosity. -v for INFO, -vv for DEBUG.
-```
-
-Exits **0** if in sync, **1** if out of sync.
+Run `ruff-sync --help` for full details on all available options.
 
 ## Key Features
 
 - **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
 - **GitHub URL support** — Paste a GitHub blob URL and it will automatically convert it to the raw content URL.
-- **Selective exclusions** — Keep project-specific overrides (like `target-version`) from being clobbered by the upstream config.
+- **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
-- **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates.
+- **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
+
+## Configuration
+
+You can configure `ruff-sync` itself in your `pyproject.toml`:
+
+```toml
+[tool.ruff-sync]
+# The source of truth for your Ruff configuration
+upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
+
+# Use simple names for top-level keys, and dotted paths for nested keys
+exclude = [
+    "target-version",                      # Top-level [tool.ruff] key — projects target different Python versions
+    "lint.per-file-ignores",                # Project-specific file overrides
+    "lint.ignore",                         # Project-specific rule suppressions
+    "lint.isort.known-first-party",         # Every project has different first-party packages
+    "lint.flake8-tidy-imports.banned-api",  # Entire plugin section — project-specific banned APIs
+    "lint.pydocstyle.convention",          # Teams may disagree on google vs numpy vs pep257
+]
+```
+
+This sets the default upstream and exclusions so you don't need to pass them on the command line every time.
+*Note: Any explicitly provided CLI arguments will override the values in `pyproject.toml`.*
 
 ## CI Integration
 
@@ -208,26 +193,6 @@ $ ruff-sync check --semantic
    ]
 ```
 
-## Configuration
-
-You can configure `ruff-sync` itself in your `pyproject.toml`:
-
-```toml
-[tool.ruff-sync]
-# The source of truth for your ruff configuration
-upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
-
-# Use simple names for top-level keys, and dotted paths for nested keys
-exclude = [
-    "target-version",          # A top-level key under [tool.ruff]
-    "lint.per-file-ignores",   # A nested key under [tool.ruff.lint]
-    "lint.ignore"
-]
-```
-
-This sets the default exclusions so you don't need to pass `--exclude` on the command line every time.
-*Note: Any explicitly provided CLI arguments will override the list in `pyproject.toml`.*
-
 ## Example Workflow
 
 A typical setup for an organization:
@@ -241,6 +206,44 @@ A typical setup for an organization:
 ruff-sync https://github.com/my-org/python-standards/blob/main/pyproject.toml
 git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
+```
+
+## Detailed Check Logic
+
+When you run `ruff-sync check`, it follows this process to determine if your project has drifted from the upstream source:
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Local[Read Local pyproject.toml]
+    Local --> Upstream[Download Upstream pyproject.toml]
+    Upstream --> Extract[Extract tool.ruff section]
+    Extract --> Exclude[Apply Exclusions]
+    Exclude --> Merge[Perform in-memory Merge]
+
+    subgraph Comparison [Comparison Logic]
+        direction TB
+        SemanticNode{--semantic?}
+        SemanticNode -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
+        Unwrap --> CompareVal[Compare Key/Value Pairs]
+        SemanticNode -- No --> CompareFull[Compare Full File Strings]
+    end
+
+    Merge --> Comparison
+
+    CompareVal --> ResultNode{Match?}
+    CompareFull --> ResultNode
+
+    ResultNode -- Yes --> Success([Exit 0: In Sync])
+    ResultNode -- No --> Diff[Generate Diff]
+    Diff --> Fail([Exit 1: Out of Sync])
+
+    %% Styling
+    style Start fill:#4a90e2,color:#fff,stroke:#357abd
+    style Success fill:#48c774,color:#fff,stroke:#36975a
+    style Fail fill:#f14668,color:#fff,stroke:#b2334b
+    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
+    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```
 
 ## Contributing

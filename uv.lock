@@ -990,7 +990,7 @@ wheels = [
 
 [[package]]
 name = "ruff-sync"
-version = "0.0.2.dev0"
+version = "0.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
