@@ -25,11 +25,14 @@ ignore = ["E501"]
 # Local per-file-ignores — should be preserved by exclude
 "tests/*.py" = ["S101"]
 
+[tool.ruff.lint.flake8-tidy-imports]
+# Local sub-table — should be preserved by exclude
+banned-api = { "typing.List" = { msg = "Use list instead." } }
+
 [tool.ruff.lint.pydocstyle]
 # Local convention — should be preserved by exclude
 convention = "numpy"
 
 [tool.ruff.lint.isort]
 known-first-party = ["my_local_pkg"]
-required-imports = ["from __future__ import annotations"]
 combine-as-imports = true

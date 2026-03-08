@@ -19,7 +19,7 @@ README_EXCLUDES: Final[set[str]] = {
     "lint.per-file-ignores",
     "lint.ignore",
     "lint.isort.known-first-party",
-    "lint.isort.required-imports",
+    "lint.flake8-tidy-imports",
     "lint.pydocstyle.convention",
 }
 

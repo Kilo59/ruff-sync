@@ -15,9 +15,11 @@ ignore = ["W191", "E111"]
 [tool.ruff.lint.isort]
 # Upstream first-party differs, but local should keep its own via exclude
 known-first-party = ["upstream_pkg"]
-# Upstream required-imports differs, but local should keep its own via exclude
-required-imports = []
 combine-as-imports = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Upstream wants to ban more things, but local should keep its own via exclude
+banned-api = { "typing.Dict" = { msg = "Use dict instead." } }
 
 [tool.ruff.lint.pydocstyle]
 # Upstream convention differs, but local should keep its own via exclude

@@ -155,7 +155,7 @@ exclude = [
     "lint.per-file-ignores",             # Project-specific file overrides
     "lint.ignore",                       # Project-specific rule suppressions
     "lint.isort.known-first-party",      # Every project has different first-party packages
-    "lint.isort.required-imports",       # e.g. from __future__ import annotations
+    "lint.flake8-tidy-imports",          # Entire plugin section — project-specific banned APIs
     "lint.pydocstyle.convention",        # Teams may disagree on google vs numpy vs pep257
 ]
 ```

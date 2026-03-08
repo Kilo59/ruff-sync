@@ -28,8 +28,10 @@ ignore = ["E501"]
 [tool.ruff.lint.isort]
 # Local first-party packages — should be preserved by exclude
 known-first-party = ["my_local_pkg"]
-# Local required-imports — should be preserved by exclude
-required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Local sub-table — should be preserved by exclude
+banned-api = { "typing.List" = { msg = "Use list instead." } }
 
 [tool.ruff.lint.pydocstyle]
 # Local convention — should be preserved by exclude
