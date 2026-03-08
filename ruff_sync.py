@@ -110,6 +110,7 @@ def _get_cli_parser() -> ArgumentParser:
         ),
         formatter_class=RawDescriptionHelpFormatter,
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(
         dest="command", help="Subcommand to run (default: pull)"
     )
