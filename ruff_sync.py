@@ -371,10 +371,7 @@ async def check(
 ) -> int:
     """Check if the local pyproject.toml is in sync with the upstream."""
     print("🔍 Checking Ruff sync status...")
-    if args.source.is_file():  # noqa: SIM108 FIXME
-        _source_toml_path = args.source
-    else:
-        _source_toml_path = args.source / "pyproject.toml"
+    _source_toml_path = args.source if args.source.is_file() else args.source / "pyproject.toml"
 
     _source_toml_path = _source_toml_path.resolve(strict=True)
     source_toml_file = TOMLFile(_source_toml_path)
@@ -441,10 +438,7 @@ async def pull(
 ) -> int:
     """Pull the upstream ruff config and apply it to the source pyproject.toml."""
     print("🔄 Syncing Ruff...")
-    if args.source.is_file():  # noqa: SIM108 FIXME
-        _source_toml_path = args.source
-    else:
-        _source_toml_path = args.source / "pyproject.toml"
+    _source_toml_path = args.source if args.source.is_file() else args.source / "pyproject.toml"
     source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
 
     # NOTE: there's no particular reason to use async here.
