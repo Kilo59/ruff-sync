@@ -267,6 +267,11 @@ def merge_ruff_toml(
 
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
+    # Ensure a newline at the end of the section for better readability.
+    # We only add it if it's missing to avoid triple newlines between sections.
+    if not source_tool_ruff.as_string().endswith("\n\n"):
+        source_tool_ruff.add(tomlkit.nl())
+
     return source
 
 

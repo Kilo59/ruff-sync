@@ -101,5 +101,27 @@ lint.per-file-ignores = {"__init__.py" = ["F401", "F403"]}
     assert list(per_file_ignores["__init__.py"]) == ["F401", "F403"]
 
 
+def test_merge_adds_newline_at_end():
+    """
+    Test that merging adds a newline at the end of the ruff section if missing.
+    """
+    source_toml_s = """[tool.ruff]
+target-version = "py310"
+"""
+    upstream_ruff_s = """[tool.ruff]
+line-length = 100
+"""
+    source_doc = tomlkit.parse(source_toml_s)
+    upstream_ruff = cast("Any", tomlkit.parse(upstream_ruff_s))["tool"]["ruff"]
+
+    merged_doc = ruff_sync.merge_ruff_toml(source_doc, upstream_ruff)
+    merged_s = merged_doc.as_string()
+
+    print(f"Merged Result:\n{merged_s!r}")
+    # In TOML, sections usually end with a newline.
+    # We want to ensure it ends with \n\n if it's the last section.
+    assert merged_s.endswith("\n\n") or "\n\n[" in merged_s
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
