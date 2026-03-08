@@ -5,6 +5,7 @@ import difflib
 import json
 import logging
 import pathlib
+import re
 import sys
 from argparse import ArgumentParser
 from collections.abc import Iterable, Mapping
@@ -313,9 +314,15 @@ def merge_ruff_toml(
 
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
-    # Ensure a newline at the end of the section for better readability.
-    # We only add it if it's missing to avoid triple newlines between sections.
-    if not source_tool_ruff.as_string().endswith("\n\n"):
+    # Add a blank separator line after the ruff section — but only when another
+    # top-level section follows it. Adding \n\n at end-of-file is unnecessary.
+    doc_str = source.as_string()
+    ruff_start = doc_str.find("[tool.ruff]")
+    # Look for any non-ruff top-level section header after [tool.ruff]
+    ruff_is_last = ruff_start == -1 or not re.search(
+        r"^\[(?!tool\.ruff)", doc_str[ruff_start:], re.MULTILINE
+    )
+    if not ruff_is_last and not source_tool_ruff.as_string().endswith("\n\n"):
         source_tool_ruff.add(tomlkit.nl())
 
     return source

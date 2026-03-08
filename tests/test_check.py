@@ -91,15 +91,18 @@ target-version = "py311"
 
 @pytest.mark.asyncio
 async def test_check_semantic_sync(fs: FakeFilesystem):
-    # Setup - only whitespace/comments differ
+    # A local comment does NOT make you out of sync — ruff-sync only adds/updates
+    # keys, it never strips local-only additions like comments.
     local_content = """
 [tool.ruff]
-# Some comment
+# Some local comment
 target-version = "py310"
+line-length = 90
 """
     upstream_content = """
 [tool.ruff]
 target-version = "py310"
+line-length = 90
 """
     fs.create_file("pyproject.toml", contents=local_content)
     source_path = pathlib.Path("pyproject.toml")
@@ -113,7 +116,7 @@ target-version = "py310"
             content=upstream_content,
         )
 
-        # Strict check should fail
+        # Strict check: merging upstream produces no text change → in sync
         args_strict = ruff_sync.Arguments(
             command="check",
             upstream=upstream_url,
@@ -123,9 +126,9 @@ target-version = "py310"
             semantic=False,
             diff=True,
         )
-        assert await ruff_sync.check(args_strict) == 1
+        assert await ruff_sync.check(args_strict) == 0
 
-        # Semantic check should pass
+        # Semantic check also passes — values are identical
         args_semantic = ruff_sync.Arguments(
             command="check",
             upstream=upstream_url,

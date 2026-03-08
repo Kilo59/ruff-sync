@@ -103,8 +103,13 @@ lint.per-file-ignores = {"__init__.py" = ["F401", "F403"]}
 
 def test_merge_adds_newline_at_end():
     """
-    Test that merging adds a newline at the end of the ruff section if missing.
+    When [tool.ruff] is the last section in the file, the document should end
+    with a single newline (normal EOF), NOT a double newline.
+
+    When [tool.ruff] is followed by another section, a blank separator line
+    should be inserted between them.
     """
+    # Case 1: ruff is the last section — expect normal single-newline EOF
     source_toml_s = """[tool.ruff]
 target-version = "py310"
 """
@@ -117,10 +122,27 @@ line-length = 100
     merged_doc = ruff_sync.merge_ruff_toml(source_doc, upstream_ruff)
     merged_s = merged_doc.as_string()
 
-    print(f"Merged Result:\n{merged_s!r}")
-    # In TOML, sections usually end with a newline.
-    # We want to ensure it ends with \n\n if it's the last section.
-    assert merged_s.endswith("\n\n") or "\n\n[" in merged_s
+    print(f"Merged Result (ruff last):\n{merged_s!r}")
+    assert merged_s.endswith("\n"), "File should end with a single newline"
+    assert not merged_s.endswith("\n\n"), "File should NOT end with a double newline"
+
+    # Case 2: ruff is followed by another section — expect a blank separator line
+    source_toml_with_next = """[tool.ruff]
+target-version = "py310"
+
+[tool.coverage.run]
+include = ["foo.py"]
+"""
+    source_doc2 = tomlkit.parse(source_toml_with_next)
+    upstream_ruff2 = cast("Any", tomlkit.parse(upstream_ruff_s))["tool"]["ruff"]
+
+    merged_doc2 = ruff_sync.merge_ruff_toml(source_doc2, upstream_ruff2)
+    merged_s2 = merged_doc2.as_string()
+
+    print(f"Merged Result (ruff not last):\n{merged_s2!r}")
+    assert "\n\n[tool.coverage" in merged_s2, (
+        "Expected a blank line between [tool.ruff] and [tool.coverage.run]"
+    )
 
 
 if __name__ == "__main__":
