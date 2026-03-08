@@ -26,6 +26,7 @@ _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
 _GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
 _GITHUB_RAW_HOST: Final[str] = "raw.githubusercontent.com"
+_GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
 
 LOGGER = logging.getLogger(__name__)
 
@@ -214,6 +215,45 @@ def github_url_to_raw_url(url: URL) -> URL:
         )
         LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url}")
         return raw_url
+
+    LOGGER.info("URL is a GitHub URL but doesn't match known patterns, returning as is.")
+    return url
+
+
+def gitlab_url_to_raw_url(url: URL) -> URL:
+    """Convert a GitLab URL to its corresponding raw content URL.
+
+    Supports:
+    - Blob URLs: https://gitlab.com/org/repo/-/blob/branch/path/to/file
+    - Repo URLs: https://gitlab.com/org/repo (defaults to main/pyproject.toml)
+
+    Args:
+        url (URL): The GitLab URL to be converted.
+
+    Returns:
+        URL: The corresponding raw content URL.
+    """
+    LOGGER.debug(f"Initial GitLab URL: {url}")
+    if url.host not in _GITLAB_HOSTS:
+        LOGGER.info("URL is not a GitLab URL, returning as is.")
+        return url
+
+    # Handle blob URLs (e.g. .../-/blob/main/pyproject.toml)
+    if "/-/blob/" in url.path:
+        new_path = url.path.replace("/-/blob/", "/-/raw/", 1)
+        raw_url = url.copy_with(path=new_path)
+        LOGGER.info(f"Converting GitLab blob URL to raw content URL: {raw_url}")
+        return raw_url
+
+    # Handle repository URLs (e.g. https://gitlab.com/org/repo)
+    # If the path doesn't contain the separator '/-/', we assume it's a project root.
+    if "/-/" not in url.path:
+        # Avoid empty paths or just a slash
+        path = url.path.rstrip("/")
+        if path:
+            raw_url = url.copy_with(path=f"{path}/-/raw/main/pyproject.toml")
+            LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
+            return raw_url
 
     LOGGER.info("URL is a GitHub URL but doesn't match known patterns, returning as is.")
     return url
@@ -524,8 +564,9 @@ def main() -> int:
     else:
         exclude = _DEFAULT_EXCLUDE
 
-    # Convert non-raw github upstream url to the raw equivalent
+    # Convert non-raw github/gitlab upstream url to the raw equivalent
     upstream = github_url_to_raw_url(upstream)
+    upstream = gitlab_url_to_raw_url(upstream)
 
     # Create Arguments object
     exec_args = Arguments(

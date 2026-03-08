@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from httpx import URL
 
-from ruff_sync import github_url_to_raw_url
+from ruff_sync import github_url_to_raw_url, gitlab_url_to_raw_url
 
 
 @pytest.mark.parametrize(
@@ -52,9 +52,29 @@ from ruff_sync import github_url_to_raw_url
             "https://www.github.com/pydantic/pydantic",
             "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml",
         ),
+        # GitLab Repo URLs
+        (
+            "https://gitlab.com/gitlab-org/gitlab",
+            "https://gitlab.com/gitlab-org/gitlab/-/raw/main/pyproject.toml",
+        ),
+        (
+            "https://gitlab.com/gitlab-org/nested/group/sub-a/sub-b/project",
+            "https://gitlab.com/gitlab-org/nested/group/sub-a/sub-b/project/-/raw/main/pyproject.toml",
+        ),
+        # GitLab Blob URLs
+        (
+            "https://gitlab.com/gitlab-org/gitlab/-/blob/master/pyproject.toml",
+            "https://gitlab.com/gitlab-org/gitlab/-/raw/master/pyproject.toml",
+        ),
+        # GitLab other pattern (tree)
+        (
+            "https://gitlab.com/gitlab-org/gitlab/-/tree/master",
+            "https://gitlab.com/gitlab-org/gitlab/-/tree/master",
+        ),
     ],
 )
-def test_github_url_to_raw_url(input_url: str, expected_url: str):
+def test_any_url_to_raw_url(input_url: str, expected_url: str):
     url = URL(input_url)
     result = github_url_to_raw_url(url)
+    result = gitlab_url_to_raw_url(result)
     assert str(result) == expected_url

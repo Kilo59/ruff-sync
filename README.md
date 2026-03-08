@@ -12,7 +12,7 @@
 
 **Keep your Ruff config consistent across multiple projects.**
 
-`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, a raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
+`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, or any raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
 
 ---
 
@@ -117,6 +117,9 @@ ruff-sync https://github.com/my-org/standards
 # Or a direct blob/file URL (auto-converts to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 
+# GitLab support (including nested projects)
+ruff-sync https://gitlab.com/my-org/my-group/nested/standards
+
 # Once configured in pyproject.toml (see Configuration), simply run:
 ruff-sync
 
@@ -138,7 +141,7 @@ Run `ruff-sync --help` for full details on all available options.
 ## Key Features
 
 - **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
-- **GitHub URL support** — Automatically converts GitHub repository URLs (e.g., `https://github.com/org/repo`) or blob URLs to raw content URLs.
+- **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
 - **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
 - **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
