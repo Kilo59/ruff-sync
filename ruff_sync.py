@@ -6,7 +6,9 @@ import json
 import logging
 import pathlib
 import re
+import subprocess
 import sys
+import tempfile
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
@@ -121,6 +123,8 @@ def _get_cli_parser() -> ArgumentParser:
             "Examples:\n"
             "  ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml\n"
             "  ruff-sync check https://github.com/org/repo/blob/main/pyproject.toml\n"
+            "  ruff-sync pull git@github.com:org/repo.git\n"
+            "  ruff-sync pull ssh://git@gitlab.com/org/repo.git\n"
             "  ruff-sync check --semantic  # ignore formatting-only differences\n\n"
             "The upstream URL can also be set in [tool.ruff-sync] in pyproject.toml\n"
             "so you can simply run: ruff-sync pull"
@@ -290,6 +294,8 @@ def resolve_raw_url(url: URL, branch: str = "main", path: str = "") -> URL:
         URL: The resolved raw content URL, or the original URL if no conversion applies.
     """
     LOGGER.debug(f"Initial URL: {url}")
+    if url.scheme in ("ssh", "git", "git+ssh") or str(url).startswith("git@"):
+        return url
     if url.host in _GITHUB_HOSTS:
         return _convert_github_url(url, branch=branch, path=path)
     if url.host in _GITLAB_HOSTS:
@@ -302,6 +308,46 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     response = await client.get(url)
     response.raise_for_status()
     return StringIO(response.text)
+
+
+async def fetch_upstream_config(
+    url: URL, client: httpx.AsyncClient, branch: str, path: str
+) -> StringIO:
+    """Fetch the upstream pyproject.toml either via HTTP or git clone."""
+    if url.scheme in ("ssh", "git", "git+ssh") or str(url).startswith("git@"):
+        LOGGER.info(f"Cloning {url} via git...")
+
+        def _git_clone_and_read() -> str:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                cmd = ["git", "clone", "--depth", "1", "--branch", branch, str(url), temp_dir]
+                LOGGER.debug(f"Running git command: {' '.join(cmd)}")
+                try:
+                    subprocess.run(  # noqa: S603
+                        cmd,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                except subprocess.CalledProcessError as e:
+                    LOGGER.exception(f"Git clone failed: {e.stderr}")
+                    raise
+
+                target_path = pathlib.Path(temp_dir)
+                if path:
+                    target_path = target_path / path.strip("/")
+                target_path = target_path / "pyproject.toml"
+
+                if not target_path.exists():
+                    full_git_path = target_path.relative_to(temp_dir)
+                    raise FileNotFoundError(
+                        f"Configuration file not found in repository at {full_git_path}"
+                    )
+                return target_path.read_text()
+
+        content = await asyncio.to_thread(_git_clone_and_read)
+        return StringIO(content)
+
+    return await download(url, client)
 
 
 @overload
@@ -460,8 +506,10 @@ async def check(
     source_doc = source_toml_file.read()
 
     async with httpx.AsyncClient() as client:
-        file_buffer = await download(args.upstream, client)
-        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
+        file_buffer = await fetch_upstream_config(
+            args.upstream, client, branch=args.branch, path=args.path
+        )
+        LOGGER.info(f"Loaded upstream file from {args.upstream}")
 
     upstream_ruff_toml = get_ruff_tool_table(
         file_buffer.read(), create_if_missing=False, exclude=args.exclude
@@ -525,8 +573,10 @@ async def pull(
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
-        file_buffer = await download(args.upstream, client)
-        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
+        file_buffer = await fetch_upstream_config(
+            args.upstream, client, branch=args.branch, path=args.path
+        )
+        LOGGER.info(f"Loaded upstream file from {args.upstream}")
 
     upstream_ruff_toml = get_ruff_tool_table(
         file_buffer.read(), create_if_missing=False, exclude=args.exclude

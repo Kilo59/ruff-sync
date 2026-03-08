@@ -111,20 +111,19 @@ uv tool install git+https://github.com/Kilo59/ruff-sync
 ### Usage
 
 ```console
-# Sync from a GitHub repository (defaults to main/pyproject.toml)
+# Sync from a GitHub/GitLab repository (defaults to main/pyproject.toml)
 ruff-sync https://github.com/my-org/standards
 
 # Or a direct blob/file URL (auto-converts to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 
-# GitLab support (including nested projects)
-ruff-sync https://gitlab.com/my-org/my-group/nested/standards
+# Clone from any git repository (using SSH or HTTP, defaults to --depth 1)
+# You can use the --branch flag to specify a branch (default: main)
+ruff-sync git@github.com:my-org/standards.git
+ruff-sync ssh://git@gitlab.com/my-org/standards.git
 
-# Once configured in pyproject.toml (see Configuration), simply run:
+# Or if configured in pyproject.toml (see Configuration), simply run:
 ruff-sync
-
-# Sync into a specific project directory
-ruff-sync --source ./my-project
 
 # Exclude specific sections from being overwritten using dotted paths
 ruff-sync --exclude lint.per-file-ignores lint.ignore
@@ -142,8 +141,9 @@ Run `ruff-sync --help` for full details on all available options.
 
 - **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
 - **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
+- **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform a shallow clone to safely extract the configuration.
 - **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
-- **Works with any host** — GitHub, GitLab, Bitbucket, or any raw URL that serves a `pyproject.toml`.
+- **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml`.
 - **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
 
