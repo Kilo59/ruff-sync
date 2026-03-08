@@ -20,7 +20,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
