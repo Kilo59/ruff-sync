@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import subprocess
-from unittest.mock import MagicMock, patch  # noqa: TID251
+from unittest.mock import patch  # noqa: TID251
 
 import pytest
 from httpx import URL, AsyncClient
@@ -17,11 +17,15 @@ async def test_fetch_upstream_config_git():
     with patch("ruff_sync.subprocess.run") as mock_run:
         # Mock what git clone does by writing to the temp directory
         def side_effect(cmd, **_kwargs):
-            # cmd is like: ['git', 'clone', '--depth', '1', '--branch', 'main', '...', '/tmp/...']
-            # cmd[-1] is the temp_dir
-            temp_dir = pathlib.Path(cmd[-1])
-            (temp_dir / "pyproject.toml").write_text("[tool.ruff]\nselect = ['E']")
-            return MagicMock(returncode=0)
+            if cmd[1] == "clone":
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+            elif cmd[3] == "restore":
+                temp_dir = pathlib.Path(cmd[2])
+                target_path = temp_dir / cmd[-1]
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.write_text("[tool.ruff]\nselect = ['E']")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
         mock_run.side_effect = side_effect
 
@@ -31,19 +35,31 @@ async def test_fetch_upstream_config_git():
         assert result.read() == "[tool.ruff]\nselect = ['E']"
 
         # Verify the subprocess arguments
-        mock_run.assert_called_once()
-        args, _kwargs = mock_run.call_args
+        assert mock_run.call_count == 2
+        clone_args, _ = mock_run.call_args_list[0]
+        restore_args, _ = mock_run.call_args_list[1]
+
         # The last argument is the auto-generated temp_dir path
-        assert args[0][:-1] == [
+        assert clone_args[0][:-1] == [
             "git",
             "clone",
             "--depth",
             "1",
+            "--filter=blob:none",
+            "--no-checkout",
             "--branch",
             "main",
             "git@github.com:Kilo59/ruff-sync.git",
         ]
-        assert _kwargs["check"] is True
+        assert restore_args[0][:6] == [
+            "git",
+            "-C",
+            clone_args[0][-1],
+            "restore",
+            "--source",
+            "main",
+        ]
+        assert restore_args[0][6] == "pyproject.toml"
 
 
 @pytest.mark.asyncio
@@ -53,11 +69,15 @@ async def test_fetch_upstream_config_git_with_path():
     with patch("ruff_sync.subprocess.run") as mock_run:
 
         def side_effect(cmd, **_kwargs):
-            temp_dir = pathlib.Path(cmd[-1])
-            target_path = temp_dir / "sub" / "dir"
-            target_path.mkdir(parents=True)
-            (target_path / "pyproject.toml").write_text("[tool.ruff]\nselect = ['F']")
-            return MagicMock(returncode=0)
+            if cmd[1] == "clone":
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+            elif cmd[3] == "restore":
+                temp_dir = pathlib.Path(cmd[2])
+                target_path = temp_dir / cmd[-1]
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.write_text("[tool.ruff]\nselect = ['F']")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
         mock_run.side_effect = side_effect
 
@@ -66,17 +86,30 @@ async def test_fetch_upstream_config_git_with_path():
 
         assert result.read() == "[tool.ruff]\nselect = ['F']"
 
-        mock_run.assert_called_once()
-        args, _kwargs = mock_run.call_args
-        assert args[0][:-1] == [
+        assert mock_run.call_count == 2
+        clone_args, _ = mock_run.call_args_list[0]
+        restore_args, _ = mock_run.call_args_list[1]
+
+        assert clone_args[0][:-1] == [
             "git",
             "clone",
             "--depth",
             "1",
+            "--filter=blob:none",
+            "--no-checkout",
             "--branch",
             "main",
             "ssh://git@github.com/Kilo59/ruff-sync.git",
         ]
+        assert restore_args[0][:6] == [
+            "git",
+            "-C",
+            clone_args[0][-1],
+            "restore",
+            "--source",
+            "main",
+        ]
+        assert restore_args[0][6] == "sub/dir/pyproject.toml"
 
 
 @pytest.mark.asyncio

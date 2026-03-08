@@ -318,8 +318,30 @@ async def fetch_upstream_config(
         LOGGER.info(f"Cloning {url} via git...")
 
         def _git_clone_and_read() -> str:
+            """Clone the git repo into a temp directory and read pyproject.toml.
+
+            Uses an efficient cloning strategy to minimize network traffic and disk space:
+            - `--depth 1`: only fetches the tip of the requested branch
+            - `--filter=blob:none`: avoids downloading any file contents (blobs) during the clone
+            - `--no-checkout`: prevents git from populating the working tree
+
+            After the metadata is cloned, we use `git restore` to explicitly download and place
+            only the requested `pyproject.toml` file into the working tree.
+            """
             with tempfile.TemporaryDirectory() as temp_dir:
-                cmd = ["git", "clone", "--depth", "1", "--branch", branch, str(url), temp_dir]
+                # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
+                cmd = [
+                    "git",
+                    "clone",
+                    "--depth",
+                    "1",
+                    "--filter=blob:none",
+                    "--no-checkout",
+                    "--branch",
+                    branch,
+                    str(url),
+                    temp_dir,
+                ]
                 LOGGER.debug(f"Running git command: {' '.join(cmd)}")
                 try:
                     subprocess.run(  # noqa: S603
@@ -328,21 +350,39 @@ async def fetch_upstream_config(
                         capture_output=True,
                         text=True,
                     )
+                    target_path = (
+                        pathlib.Path(path.strip("/")) / "pyproject.toml"
+                        if path
+                        else pathlib.Path("pyproject.toml")
+                    )
+
+                    # Restore just the pyproject_toml file
+                    restore_cmd = [
+                        "git",
+                        "-C",
+                        temp_dir,
+                        "restore",
+                        "--source",
+                        branch,
+                        str(target_path),
+                    ]
+                    LOGGER.debug(f"Running git restore: {' '.join(restore_cmd)}")
+                    subprocess.run(  # noqa: S603
+                        restore_cmd,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
                 except subprocess.CalledProcessError as e:
-                    LOGGER.exception(f"Git clone failed: {e.stderr}")
+                    LOGGER.exception(f"Git operation failed: {e.stderr}")
                     raise
 
-                target_path = pathlib.Path(temp_dir)
-                if path:
-                    target_path = target_path / path.strip("/")
-                target_path = target_path / "pyproject.toml"
-
-                if not target_path.exists():
-                    full_git_path = target_path.relative_to(temp_dir)
+                full_target_path = pathlib.Path(temp_dir) / target_path
+                if not full_target_path.exists():
                     raise FileNotFoundError(
-                        f"Configuration file not found in repository at {full_git_path}"
+                        f"Configuration file not found in repository at {target_path}"
                     )
-                return target_path.read_text()
+                return full_target_path.read_text()
 
         content = await asyncio.to_thread(_git_clone_and_read)
         return StringIO(content)
