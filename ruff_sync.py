@@ -6,7 +6,9 @@ import json
 import logging
 import pathlib
 import re
+import subprocess
 import sys
+import tempfile
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
@@ -121,6 +123,8 @@ def _get_cli_parser() -> ArgumentParser:
             "Examples:\n"
             "  ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml\n"
             "  ruff-sync check https://github.com/org/repo/blob/main/pyproject.toml\n"
+            "  ruff-sync pull git@github.com:org/repo.git\n"
+            "  ruff-sync pull ssh://git@gitlab.com/org/repo.git\n"
             "  ruff-sync check --semantic  # ignore formatting-only differences\n\n"
             "The upstream URL can also be set in [tool.ruff-sync] in pyproject.toml\n"
             "so you can simply run: ruff-sync pull"
@@ -278,22 +282,30 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
     return url
 
 
-def resolve_raw_url(url: URL, branch: str = "main", path: str = "") -> URL:
-    """Resolve a GitHub or GitLab URL to its raw content URL.
+def is_git_url(url: URL) -> bool:
+    """Return True if the URL should be treated as a git repository."""
+    return str(url).startswith("git@") or url.scheme in ("ssh", "git", "git+ssh")
+
+
+def resolve_raw_url(url: URL, branch: str = "main", path: str | None = None) -> URL:
+    """Convert a GitHub or GitLab repository/blob URL to a raw content URL.
 
     Args:
         url (URL): The URL to resolve.
         branch (str): The default branch to use for repo URLs.
-        path (str): The directory prefix for pyproject.toml.
+        path (str | None): The directory prefix for pyproject.toml.
 
     Returns:
         URL: The resolved raw content URL, or the original URL if no conversion applies.
     """
+    # If it's a git URL, leave it alone; we'll handle it via git clone
+    if is_git_url(url):
+        return url
     LOGGER.debug(f"Initial URL: {url}")
     if url.host in _GITHUB_HOSTS:
-        return _convert_github_url(url, branch=branch, path=path)
+        return _convert_github_url(url, branch=branch, path=path or "")
     if url.host in _GITLAB_HOSTS:
-        return _convert_gitlab_url(url, branch=branch, path=path)
+        return _convert_gitlab_url(url, branch=branch, path=path or "")
     return url
 
 
@@ -302,6 +314,107 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     response = await client.get(url)
     response.raise_for_status()
     return StringIO(response.text)
+
+
+async def fetch_upstream_config(
+    url: URL, client: httpx.AsyncClient, branch: str, path: str | None
+) -> StringIO:
+    """Fetch the upstream pyproject.toml either via HTTP or git clone."""
+    if is_git_url(url):
+        LOGGER.info(f"Cloning {url} via git...")
+
+        def _git_clone_and_read() -> str:
+            """Clone the git repo into a temp directory and read pyproject.toml.
+
+            Uses an efficient cloning strategy to minimize network traffic and disk space:
+            - `--depth 1`: only fetches the tip of the requested branch
+            - `--filter=blob:none`: avoids downloading any file contents (blobs) during the clone
+            - `--no-checkout`: prevents git from populating the working tree
+
+            After the metadata is cloned, we try `git restore` to explicitly download and place
+            only the requested `pyproject.toml` file into the working tree. If `restore` fails
+            (e.g. on older git versions), we fall back to a specific `git checkout`.
+            """
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
+                cmd = [
+                    "git",
+                    "clone",
+                    "--depth",
+                    "1",
+                    "--filter=blob:none",
+                    "--no-checkout",
+                    "--branch",
+                    branch,
+                    str(url),
+                    temp_dir,
+                ]
+                LOGGER.info(f"Running git command: {' '.join(cmd)}")
+                try:
+                    subprocess.run(  # noqa: S603
+                        cmd,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    target_path = (
+                        pathlib.Path(path.strip("/")) / "pyproject.toml"
+                        if path
+                        else pathlib.Path("pyproject.toml")
+                    )
+
+                    # Restore just the pyproject_toml file
+                    restore_cmd = [
+                        "git",
+                        "-C",
+                        temp_dir,
+                        "restore",
+                        "--source",
+                        branch,
+                        str(target_path),
+                    ]
+                    LOGGER.info(f"Running git restore: {' '.join(restore_cmd)}")
+
+                    try:
+                        subprocess.run(  # noqa: S603
+                            restore_cmd,
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                    except subprocess.CalledProcessError:
+                        LOGGER.info("git restore failed, falling back to git checkout")
+                        checkout_cmd = [
+                            "git",
+                            "-C",
+                            temp_dir,
+                            "checkout",
+                            branch,
+                            "--",
+                            str(target_path),
+                        ]
+                        LOGGER.info(f"Running git checkout: {' '.join(checkout_cmd)}")
+                        subprocess.run(  # noqa: S603
+                            checkout_cmd,
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                except subprocess.CalledProcessError as e:
+                    LOGGER.exception(f"Git operation failed: {e.stderr}")
+                    raise
+
+                full_target_path = pathlib.Path(temp_dir) / target_path
+                if not full_target_path.exists():
+                    raise FileNotFoundError(
+                        f"Configuration file not found in repository at {target_path}"
+                    )
+                return full_target_path.read_text()
+
+        content = await asyncio.to_thread(_git_clone_and_read)
+        return StringIO(content)
+
+    return await download(url, client)
 
 
 @overload
@@ -460,8 +573,10 @@ async def check(
     source_doc = source_toml_file.read()
 
     async with httpx.AsyncClient() as client:
-        file_buffer = await download(args.upstream, client)
-        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
+        file_buffer = await fetch_upstream_config(
+            args.upstream, client, branch=args.branch, path=args.path
+        )
+        LOGGER.info(f"Loaded upstream file from {args.upstream}")
 
     upstream_ruff_toml = get_ruff_tool_table(
         file_buffer.read(), create_if_missing=False, exclude=args.exclude
@@ -525,8 +640,10 @@ async def pull(
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
-        file_buffer = await download(args.upstream, client)
-        LOGGER.info(f"Downloaded upstream file from {args.upstream}")
+        file_buffer = await fetch_upstream_config(
+            args.upstream, client, branch=args.branch, path=args.path
+        )
+        LOGGER.info(f"Loaded upstream file from {args.upstream}")
 
     upstream_ruff_toml = get_ruff_tool_table(
         file_buffer.read(), create_if_missing=False, exclude=args.exclude
