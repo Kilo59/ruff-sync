@@ -282,24 +282,30 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
     return url
 
 
-def resolve_raw_url(url: URL, branch: str = "main", path: str = "") -> URL:
-    """Resolve a GitHub or GitLab URL to its raw content URL.
+def is_git_url(url: URL) -> bool:
+    """Return True if the URL should be treated as a git repository."""
+    return str(url).startswith("git@") or url.scheme in ("ssh", "git", "git+ssh")
+
+
+def resolve_raw_url(url: URL, branch: str = "main", path: str | None = None) -> URL:
+    """Convert a GitHub or GitLab repository/blob URL to a raw content URL.
 
     Args:
         url (URL): The URL to resolve.
         branch (str): The default branch to use for repo URLs.
-        path (str): The directory prefix for pyproject.toml.
+        path (str | None): The directory prefix for pyproject.toml.
 
     Returns:
         URL: The resolved raw content URL, or the original URL if no conversion applies.
     """
-    LOGGER.debug(f"Initial URL: {url}")
-    if url.scheme in ("ssh", "git", "git+ssh") or str(url).startswith("git@"):
+    # If it's a git URL, leave it alone; we'll handle it via git clone
+    if is_git_url(url):
         return url
+    LOGGER.debug(f"Initial URL: {url}")
     if url.host in _GITHUB_HOSTS:
-        return _convert_github_url(url, branch=branch, path=path)
+        return _convert_github_url(url, branch=branch, path=path or "")
     if url.host in _GITLAB_HOSTS:
-        return _convert_gitlab_url(url, branch=branch, path=path)
+        return _convert_gitlab_url(url, branch=branch, path=path or "")
     return url
 
 
@@ -311,10 +317,10 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
 
 
 async def fetch_upstream_config(
-    url: URL, client: httpx.AsyncClient, branch: str, path: str
+    url: URL, client: httpx.AsyncClient, branch: str, path: str | None
 ) -> StringIO:
     """Fetch the upstream pyproject.toml either via HTTP or git clone."""
-    if url.scheme in ("ssh", "git", "git+ssh") or str(url).startswith("git@"):
+    if is_git_url(url):
         LOGGER.info(f"Cloning {url} via git...")
 
         def _git_clone_and_read() -> str:
@@ -325,8 +331,9 @@ async def fetch_upstream_config(
             - `--filter=blob:none`: avoids downloading any file contents (blobs) during the clone
             - `--no-checkout`: prevents git from populating the working tree
 
-            After the metadata is cloned, we use `git restore` to explicitly download and place
-            only the requested `pyproject.toml` file into the working tree.
+            After the metadata is cloned, we try `git restore` to explicitly download and place
+            only the requested `pyproject.toml` file into the working tree. If `restore` fails
+            (e.g. on older git versions), we fall back to a specific `git checkout`.
             """
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
@@ -367,12 +374,32 @@ async def fetch_upstream_config(
                         str(target_path),
                     ]
                     LOGGER.debug(f"Running git restore: {' '.join(restore_cmd)}")
-                    subprocess.run(  # noqa: S603
-                        restore_cmd,
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
+
+                    try:
+                        subprocess.run(  # noqa: S603
+                            restore_cmd,
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                    except subprocess.CalledProcessError:
+                        LOGGER.debug("git restore failed, falling back to git checkout")
+                        checkout_cmd = [
+                            "git",
+                            "-C",
+                            temp_dir,
+                            "checkout",
+                            branch,
+                            "--",
+                            str(target_path),
+                        ]
+                        LOGGER.debug(f"Running git checkout: {' '.join(checkout_cmd)}")
+                        subprocess.run(  # noqa: S603
+                            checkout_cmd,
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
                 except subprocess.CalledProcessError as e:
                     LOGGER.exception(f"Git operation failed: {e.stderr}")
                     raise

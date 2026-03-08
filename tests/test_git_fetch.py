@@ -127,6 +127,20 @@ async def test_fetch_upstream_config_git_failure(monkeypatch: pytest.MonkeyPatch
             await fetch_upstream_config(url, client, branch="main", path="")
 
 
+@pytest.mark.asyncio
+async def test_fetch_upstream_config_git_missing_file(monkeypatch: pytest.MonkeyPatch):
+    url = URL("git@github.com:Kilo59/ruff-sync.git")
+
+    def mock_run_success(cmd, **_kwargs):
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", mock_run_success)
+
+    with pytest.raises(FileNotFoundError, match="Configuration file not found in repository"):
+        async with AsyncClient() as client:
+            await fetch_upstream_config(url, client, branch="main", path="")
+
+
 def test_resolve_raw_url_git_ssh():
     url = URL("git@github.com:Kilo59/ruff-sync.git")
     resolved = resolve_raw_url(url)
