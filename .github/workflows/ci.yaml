@@ -64,10 +64,35 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: Kilo59/ruff-sync
 
+  pre-publish:
+    name: Test package installation
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [static-analysis, tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Build package
+        run: uv build
+
+      - name: Install and test packaged program
+        run: |
+          uv tool install $(ls dist/*.whl)
+          ruff-sync --version
+          ruff-sync https://github.com/Kilo59/ruff-sync
+          ruff-sync check https://github.com/Kilo59/ruff-sync
+
   publish:
     name: Build and publish to PyPI
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [static-analysis, tests]
+    needs: [pre-publish]
     runs-on: ubuntu-latest
     permissions:
       # This permission is required for trusted publishing
