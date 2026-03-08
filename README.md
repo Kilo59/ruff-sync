@@ -172,16 +172,25 @@ This sets the default upstream and exclusions so you don't need to pass them on 
 
 ### Advanced Configuration
 
-For more complex setups, you can also configure the default branch and parent directory used when resolving repository URLs (e.g. `https://github.com/my-org/standards`):
+Here are all the possible values that can be provided in `[tool.ruff-sync]` along with their explanations and defaults:
 
 ```toml
 [tool.ruff-sync]
+# The source of truth URL for your Ruff configuration. (Required, unless passed via CLI)
 upstream = "https://github.com/my-org/standards"
 
-# Use a specific branch or tag (default: "main")
+# A list of config keys to exclude from being synced. (Default: ["lint.per-file-ignores"])
+# Use simple names for top-level keys, and dotted paths for nested keys.
+exclude = [
+    "target-version",
+    "lint.per-file-ignores",
+]
+
+# The branch, tag, or commit hash to use when resolving a Git repository URL. (Default: "main")
 branch = "develop"
 
-# Specify a parent directory if pyproject.toml is not at the repo root
+# A directory prefix to use when looking for a configuration file in a repository. (Default: "")
+# Useful if the upstream pyproject.toml is not at the repository root.
 path = "config/ruff"
 ```
 
