@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import difflib
+import json
 import logging
 import pathlib
 import sys
@@ -352,11 +353,28 @@ async def check(
     rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
     print(f"❌ Ruff configuration at {rel_path} is out of sync!")
     if args.diff:
+        if args.semantic:
+            # Semantic diff of the managed section
+            from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(
+                keepends=True
+            )
+            to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(
+                keepends=True
+            )
+            from_file = "local (semantic)"
+            to_file = "upstream (semantic)"
+        else:
+            # Full text diff of the file
+            from_lines = source_doc.as_string().splitlines(keepends=True)
+            to_lines = merged_doc.as_string().splitlines(keepends=True)
+            from_file = f"local/{_source_toml_path.name}"
+            to_file = f"upstream/{_source_toml_path.name}"
+
         diff = difflib.unified_diff(
-            source_doc.as_string().splitlines(keepends=True),
-            merged_doc.as_string().splitlines(keepends=True),
-            fromfile=f"local/{_source_toml_path.name}",
-            tofile=f"upstream/{_source_toml_path.name}",
+            from_lines,
+            to_lines,
+            fromfile=from_file,
+            tofile=to_file,
         )
         sys.stdout.writelines(diff)
     return 1
