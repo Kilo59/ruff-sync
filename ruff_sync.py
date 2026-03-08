@@ -65,6 +65,7 @@ class Arguments(NamedTuple):
     path: str = ""
     semantic: bool = False
     diff: bool = True
+    init: bool = False
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -81,6 +82,7 @@ class Config(TypedDict, total=False):
     path: str
     semantic: bool
     diff: bool
+    init: bool
 
 
 @lru_cache(maxsize=1)
@@ -175,10 +177,15 @@ def _get_cli_parser() -> ArgumentParser:
     )
 
     # Pull subcommand (the default action)
-    subparsers.add_parser(
+    pull_parser = subparsers.add_parser(
         "pull",
         parents=[common_parser],
         help="Pull and apply upstream ruff configuration",
+    )
+    pull_parser.add_argument(
+        "--init",
+        action="store_true",
+        help="Create a new configuration file if it does not exist in the target directory.",
     )
 
     # Check subcommand
@@ -695,9 +702,22 @@ async def pull(
     source_toml_file = TOMLFile(_source_toml_path)
     if _source_toml_path.exists():
         source_doc = source_toml_file.read()
-    else:
+    elif args.init:
         LOGGER.info(f"✨ Target file {_source_toml_path} does not exist, creating it.")
         source_doc = tomlkit.document()
+        # Scaffold the file immediately to ensure we can write to the enclosing directory
+        try:
+            _source_toml_path.parent.mkdir(parents=True, exist_ok=True)
+            _source_toml_path.touch()
+        except OSError as e:
+            print(f"❌ Failed to create {_source_toml_path}: {e}", file=sys.stderr)
+            return 1
+    else:
+        print(
+            f"❌ Configuration file {_source_toml_path} does not exist. "
+            "Pass the '--init' flag to create it."
+        )
+        return 1
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
@@ -838,6 +858,7 @@ def main() -> int:
         path=path,
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
+        init=getattr(args, "init", False),
     )
 
     if exec_args.command == "check":

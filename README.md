@@ -229,6 +229,18 @@ git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
 ```
 
+## Bootstrapping a New Project
+
+By default, `ruff-sync` requires an existing configuration file (`pyproject.toml` or `ruff.toml`) to merge into. If you are starting a fresh project and want to initialize it with your organization's Ruff settings, you can use the `--init` flag to scaffold a new file automatically.
+
+```console
+# Create a new pyproject.toml (or ruff.toml) pre-configured with upstream settings
+ruff-sync pull https://github.com/my-org/standards --init
+```
+
+`ruff-sync` seamlessly supports both `pyproject.toml` and standalone `ruff.toml` (or `.ruff.toml`) files. If your upstream source or your local target is a `ruff.toml`, it will automatically adapt and sync the root configuration rather than looking for a `[tool.ruff]` section.
+
+
 ## Detailed Check Logic
 
 When you run `ruff-sync check`, it follows this process to determine if your project has drifted from the upstream source:
@@ -265,26 +277,6 @@ flowchart TD
     style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
     style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
     style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
-```
-
-## Contributing
-
-This project uses:
-
-- [uv](https://docs.astral.sh/uv/) for dependency management
-- [Ruff](https://docs.astral.sh/ruff/) for linting and formatting
-- [mypy](https://mypy-lang.org/) for type checking (strict mode)
-- [pytest](https://docs.pytest.org/) for testing
-
-```console
-# Setup
-uv sync --group dev
-
-# Run checks
-uv run ruff check . --fix   # lint
-uv run ruff format .        # format
-uv run mypy .               # type check
-uv run pytest -vv           # test
 ```
 
 ## Dogfooding
