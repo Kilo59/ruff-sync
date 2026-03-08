@@ -222,26 +222,28 @@ flowchart TD
 
     subgraph Comparison [Comparison Logic]
         direction TB
-        Semantic{--semantic?}
-        Semantic -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
+        SemanticNode{--semantic?}
+        SemanticNode -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
         Unwrap --> CompareVal[Compare Key/Value Pairs]
-        Semantic -- No --> CompareFull[Compare Full File Strings]
+        SemanticNode -- No --> CompareFull[Compare Full File Strings]
     end
 
     Merge --> Comparison
 
-    CompareVal --> Result{Match?}
-    CompareFull --> Result
+    CompareVal --> ResultNode{Match?}
+    CompareFull --> ResultNode
 
-    Result -- Yes --> Success([Exit 0: In Sync])
-    Result -- No --> Diff[Generate Diff]
+    ResultNode -- Yes --> Success([Exit 0: In Sync])
+    ResultNode -- No --> Diff[Generate Diff]
     Diff --> Fail([Exit 1: Out of Sync])
 
     %% Styling
-    style Start fill:#f9f,stroke:#333
-    style Success fill:#dfd,stroke:#333
-    style Fail fill:#fdd,stroke:#333
-    style Comparison fill:#f8f9fa,stroke:#dee2e6,stroke-dasharray: 5 5
+    style Start fill:#4a90e2,color:#fff,stroke:#357abd
+    style Success fill:#48c774,color:#fff,stroke:#36975a
+    style Fail fill:#f14668,color:#fff,stroke:#b2334b
+    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
+    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```
 
 ## Contributing
