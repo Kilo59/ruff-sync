@@ -10,9 +10,9 @@ set -euo pipefail
 #   ./scripts/dogfood_check.sh [upstream_url]
 #
 # Default upstream:
-#   https://github.com/Kilo59/ruff-sync/blob/main/pyproject.toml
+#   https://github.com/Kilo59/ruff-sync
 
-DEFAULT_UPSTREAM="https://github.com/Kilo59/ruff-sync/blob/main/pyproject.toml"
+DEFAULT_UPSTREAM="https://github.com/Kilo59/ruff-sync"
 UPSTREAM=${1:-$DEFAULT_UPSTREAM}
 
 echo "🐶 Dogfooding ruff-sync check..."
