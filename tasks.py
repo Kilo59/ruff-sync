@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 from invoke.tasks import task
 from tomlkit.toml_file import TOMLFile
@@ -118,7 +118,8 @@ def release(
         return
 
     # Check for dirty git state
-    git_status = ctx.run("git status --porcelain", hide=True).stdout.strip()
+    result = ctx.run("git status --porcelain", hide=True)
+    git_status = cast("Any", result).stdout.strip()
     if git_status:
         print(
             "❌ Git repository has uncommitted changes. "
