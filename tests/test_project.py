@@ -4,12 +4,14 @@ import logging
 import pathlib
 import sys
 from pprint import pformat as pf
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import pytest
 import tomlkit
 from packaging.version import Version
 from ruamel.yaml import YAML
+
+import ruff_sync
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -60,6 +62,15 @@ def test_pre_commit_versions_are_in_sync(
             f"{package} Version mismatch."
             " Make sure the .pre-commit config and uv versions are in sync."
         )
+
+
+def test_ruff_sync_version_is_in_sync_with_pyproject():
+    """
+    Ensure the version in ruff_sync.py matches the version in pyproject.toml
+    """
+    toml_doc = tomlkit.loads(PYPROJECT_TOML.read_text())
+    pyproject_version = cast("Any", toml_doc)["project"]["version"]
+    assert ruff_sync.__version__ == pyproject_version
 
 
 if __name__ == "__main__":

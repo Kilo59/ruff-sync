@@ -3,12 +3,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import pathlib
-import warnings
+import sys
 from argparse import ArgumentParser
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
-from typing import Any, Final, Literal, NamedTuple, overload
+from typing import Any, ClassVar, Final, Literal, NamedTuple, overload
 
 import httpx
 import tomlkit
@@ -17,17 +17,40 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.1.dev0"
+__version__ = "0.0.1.dev4"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 LOGGER = logging.getLogger(__name__)
 
 
+class ColoredFormatter(logging.Formatter):
+    """Logging Formatter to add colors"""
+
+    RESET: ClassVar[str] = "\x1b[0m"
+    COLORS: ClassVar[Mapping[int, str]] = {
+        logging.DEBUG: "\x1b[36m",  # Cyan
+        logging.INFO: "\x1b[32m",  # Green
+        logging.WARNING: "\x1b[33m",  # Yellow
+        logging.ERROR: "\x1b[31m",  # Red
+        logging.CRITICAL: "\x1b[1;31m",  # Bold Red
+    }
+
+    def __init__(self, fmt: str = "%(message)s") -> None:
+        super().__init__(fmt)
+
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[explicit-override]
+        if sys.stderr.isatty():
+            color = self.COLORS.get(record.levelno, self.RESET)
+            return f"{color}{super().format(record)}{self.RESET}"
+        return super().format(record)
+
+
 class Arguments(NamedTuple):
     upstream: URL
     source: pathlib.Path
     exclude: Iterable[str]
+    verbose: int
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -50,7 +73,7 @@ def get_config(
                 if arg in Arguments.fields():
                     cfg_result[arg] = value
                 else:
-                    warnings.warn(f"Unknown ruff-sync configuration: {arg}", stacklevel=2)
+                    LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
     return cfg_result
 
 
@@ -62,13 +85,14 @@ def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
 
 
 def _get_cli_parser() -> ArgumentParser:
-    # TODO: determine if args was provided by user or not
     # https://docs.python.org/3/library/argparse.html#nargs
     parser = ArgumentParser()
     parser.add_argument(
         "upstream",
         type=URL,
-        help="The URL to download the pyproject.toml file from.",
+        nargs="?",
+        help="The URL to download the pyproject.toml file from."
+        " Optional if defined in [tool.ruff-sync].",
     )
     parser.add_argument(
         "--source",
@@ -82,6 +106,13 @@ def _get_cli_parser() -> ArgumentParser:
         nargs="+",
         help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
         default=None,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity. -v for INFO, -vv for DEBUG.",
     )
     return parser
 
@@ -100,8 +131,10 @@ def github_url_to_raw_url(url: URL) -> URL:
         raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace(
             "/blob/", "/"
         )
+        LOGGER.debug(f"Converting GitHub URL to raw content URL: {raw_url_str}")
         return httpx.URL(raw_url_str)
     else:
+        LOGGER.debug("URL is not a GitHub URL, returning as is.")
         return url
 
 
@@ -147,7 +180,7 @@ def get_ruff_tool_table(
     except KeyError:
         if not create_if_missing:
             return None
-        LOGGER.info("No `tool.ruff` section found, creating it.")
+        LOGGER.info("✨ No `tool.ruff` section found, creating it.")
         tool = table(True)
         ruff = table()
         tool.append("ruff", ruff)
@@ -183,7 +216,7 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     """Parse a TOML string for the tool.ruff section excluding certain ruff configs."""
     ruff_toml: TOMLDocument = tomlkit.parse(toml_s)["tool"]["ruff"]  # type: ignore[index,assignment]
     for section in exclude:
-        LOGGER.info(f"Exluding section `lint.{section}` from ruff config.")
+        LOGGER.info(f"Excluding section `lint.{section}` from ruff config.")
         ruff_toml["lint"].pop(section, None)  # type: ignore[union-attr]
     return ruff_toml
 
@@ -234,6 +267,11 @@ def merge_ruff_toml(
 
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
+    # Ensure a newline at the end of the section for better readability.
+    # We only add it if it's missing to avoid triple newlines between sections.
+    if not source_tool_ruff.as_string().endswith("\n\n"):
+        source_tool_ruff.add(tomlkit.nl())
+
     return source
 
 
@@ -241,7 +279,7 @@ async def sync(
     args: Arguments,
 ) -> None:
     """Sync the upstream pyproject.toml file to the source directory."""
-    print("Syncing Ruff...")
+    print("🔄 Syncing Ruff...")
     if args.source.is_file():
         _source_toml_path = args.source
     else:
@@ -261,7 +299,7 @@ async def sync(
         upstream_ruff_toml,
     )
     source_toml_file.write(merged_toml)
-    print(f"Updated {_source_toml_path.resolve().relative_to(pathlib.Path.cwd())}")
+    print(f"✅ Updated {_source_toml_path.resolve().relative_to(pathlib.Path.cwd())}")
 
 
 PARSER: Final[ArgumentParser] = _get_cli_parser()
@@ -271,6 +309,37 @@ def main() -> None:
     args = PARSER.parse_args()
     config = get_config(args.source)
 
+    # Configure logging
+    log_level = {
+        0: logging.WARNING,
+        1: logging.INFO,
+    }.get(args.verbose, logging.DEBUG)
+
+    LOGGER.setLevel(log_level)
+    handler = logging.StreamHandler()
+    handler.setFormatter(ColoredFormatter())
+    LOGGER.addHandler(handler)
+    LOGGER.propagate = False  # Avoid double logging if root is also configured
+
+    # Resolve upstream: use CLI value if explicitly provided, else file config
+    upstream: URL
+    if args.upstream:
+        upstream = args.upstream
+    elif "upstream" in config:
+        config_upstream = config["upstream"]
+        if not isinstance(config_upstream, str):
+            PARSER.error(
+                "❌ upstream in [tool.ruff-sync] must be a string, "
+                f"got {type(config_upstream).__name__}"
+            )
+        upstream = URL(config_upstream)
+        LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream}")
+    else:
+        PARSER.error(
+            "❌ the following arguments are required: upstream "
+            "(or define it in [tool.ruff-sync] in pyproject.toml) 💥"
+        )
+
     # Merge exclude: use CLI value if explicitly provided, else file config,
     # else the built-in default.
     exclude: Iterable[str]
@@ -279,19 +348,20 @@ def main() -> None:
         exclude = args.exclude
     elif "exclude" in config:
         exclude = config["exclude"]
-        LOGGER.info(f"Using exclude from [tool.ruff-sync]: {list(exclude)}")
+        LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
     else:
         exclude = _DEFAULT_EXCLUDE
 
     # Convert non-raw github upstream url to the raw equivalent
-    args.upstream = github_url_to_raw_url(args.upstream)
+    upstream = github_url_to_raw_url(upstream)
 
     asyncio.run(
         sync(
             Arguments(
-                upstream=args.upstream,
+                upstream=upstream,
                 source=args.source,
                 exclude=exclude,
+                verbose=args.verbose,
             )
         )
     )

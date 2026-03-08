@@ -112,26 +112,31 @@ uv tool install git+https://github.com/Kilo59/ruff-sync
 # Sync from a GitHub URL (blob URLs are auto-converted to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 
+# Once configured in pyproject.toml (see below), simply run:
+ruff-sync
+
 # Sync into a specific project directory
-ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml --source ./my-project
+ruff-sync --source ./my-project
 
 # Exclude specific sections from being overwritten using dotted paths
-ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml --exclude lint.per-file-ignores lint.ignore
+ruff-sync --exclude lint.per-file-ignores lint.ignore
 ```
 
 ### CLI Reference
 
 ```
-usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] upstream
+usage: ruff-sync [-h] [--source SOURCE] [--exclude EXCLUDE [EXCLUDE ...]] [-v] [upstream]
 
 positional arguments:
   upstream              The URL to download the pyproject.toml file from.
+                        Optional if defined in [tool.ruff-sync]
 
 optional arguments:
   -h, --help            show this help message and exit
   --source SOURCE       The directory to sync the pyproject.toml file to. Default: .
   --exclude EXCLUDE [EXCLUDE ...]
                         Exclude certain ruff configs. Default: lint.per-file-ignores
+  -v, --verbose         Increase verbosity. -v for INFO, -vv for DEBUG.
 ```
 
 ## Key Features
@@ -147,6 +152,9 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
+# The source of truth for your ruff configuration
+upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
+
 # Use simple names for top-level keys, and dotted paths for nested keys
 exclude = [
     "target-version",          # A top-level key under [tool.ruff]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import os
 import pathlib
 import shutil
@@ -63,10 +64,6 @@ def pyproject_toml_s() -> str:
     s = ROOT_PYPROJECT_TOML_PATH.read_text()
     assert s, f"{ROOT_PYPROJECT_TOML_PATH} was empty"
     return s
-
-
-def test_ruff_sync():
-    assert ruff_sync.__version__ == "0.0.1.dev0"
 
 
 @pytest.fixture
@@ -273,7 +270,9 @@ async def test_sync_updates_ruff_config(
     upstream = URL("https://example.com/pyproject.toml")
     upstream_toml = httpx.get(upstream).text  # blocking but doesn't matter
     await ruff_sync.sync(
-        ruff_sync.Arguments(upstream=upstream, source=fake_fs_source, exclude=())
+        ruff_sync.Arguments(
+            upstream=upstream, source=fake_fs_source, exclude=(), verbose=0
+        )
     )
     updated_toml = fake_fs_source.read_text()
     updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
@@ -406,6 +405,123 @@ def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
     assert captured_args[0].exclude == ruff_sync._DEFAULT_EXCLUDE
 
 
+def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
+    """CLI upstream should override config."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
+    monkeypatch.setattr(
+        ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
+    )
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert str(captured_args[0].upstream) == "http://cli.com"
+
+
+def test_upstream_resolution_missing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Error when no upstream is provided via CLI or config."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    # No CLI upstream argument
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    # No upstream in config
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
+    # Ensure sync is never called if upstream is missing
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    with pytest.raises(SystemExit) as excinfo:
+        ruff_sync.main()
+
+    # Non-zero exit code on failure
+    assert excinfo.value.code != 0
+
+    captured = capsys.readouterr()
+    # Error message should indicate that an upstream is required
+    assert "upstream" in captured.err
+    assert "[tool.ruff-sync]" in captured.err
+
+    # When erroring early, sync must not be invoked
+    assert captured_args == []
+
+
+def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
+    """[tool.ruff-sync] upstream should be used if CLI one is missing."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    monkeypatch.setattr(
+        ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"}
+    )
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert str(captured_args[0].upstream) == "http://config.com"
+
+
+@pytest.mark.parametrize(
+    ["verbose_count", "expected_level"],
+    [
+        (0, logging.WARNING),
+        (1, logging.INFO),
+        (2, logging.DEBUG),
+        (3, logging.DEBUG),
+    ],
+)
+def test_verbosity_log_level(
+    monkeypatch: pytest.MonkeyPatch, verbose_count: int, expected_level: int
+):
+    """Test that the log level is correctly set based on the verbose count."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        return asyncio.sleep(0)
+
+    argv = ["ruff-sync", "http://example.com"]
+    if verbose_count > 0:
+        argv.append(f"-{'v' * verbose_count}")
+
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync, "sync", mock_sync)
+    monkeypatch.setattr(asyncio, "run", lambda _coro: None)
+
+    # Reset LOGGER state before test
+    monkeypatch.setattr(ruff_sync.LOGGER, "level", logging.NOTSET)
+    monkeypatch.setattr(ruff_sync.LOGGER, "handlers", [])
+
+    ruff_sync.main()
+
+    # Verify that the computed log level matches what we expect for this verbosity
+    assert ruff_sync.LOGGER.level == expected_level
+
+    # Verify that the verbose flag value propagates into Arguments.verbose
+    assert len(captured_args) == 1
+    assert captured_args[0].verbose == verbose_count
+
+
 @pytest.mark.asyncio
 async def test_sync_default_exclude(fs: FakeFilesystem):
     """Integration style test for default exclude functionality."""
@@ -431,6 +547,7 @@ target-version = "py311"
                 upstream=URL("https://example.com/pyproject.toml"),
                 source=ff_path,
                 exclude=ruff_sync._DEFAULT_EXCLUDE,
+                verbose=0,
             )
         )
 
