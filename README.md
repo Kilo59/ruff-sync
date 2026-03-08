@@ -170,6 +170,21 @@ exclude = [
 This sets the default upstream and exclusions so you don't need to pass them on the command line every time.
 *Note: Any explicitly provided CLI arguments will override the values in `pyproject.toml`.*
 
+### Advanced Configuration
+
+For more complex setups, you can also configure the default branch and parent directory used when resolving repository URLs (e.g. `https://github.com/my-org/standards`):
+
+```toml
+[tool.ruff-sync]
+upstream = "https://github.com/my-org/standards"
+
+# Use a specific branch or tag (default: "main")
+branch = "develop"
+
+# Specify a parent directory if pyproject.toml is not at the repo root
+path = "config/ruff"
+```
+
 ## CI Integration
 
 The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges:
