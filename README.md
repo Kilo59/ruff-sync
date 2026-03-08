@@ -294,13 +294,16 @@ To see `ruff-sync` in action, you can "dogfood" it on this project's own config.
 **Check if this project is in sync with its upstream:**
 
 ```console
-./scripts/dogfood_check.sh
+./scripts/check_dogfood.sh
 ```
 
 **Or sync from a large upstream like Pydantic's config:**
 
 ```console
-./scripts/dogfood.sh
+# Using a HTTP URL
+./scripts/pull_dogfood.sh
+# Using a Git URL
+./scripts/gitclone_dogfood.sh
 ```
 
 This will download Pydantic's Ruff configuration and merge it into the local `pyproject.toml`. You can then use `git diff` to see how it merged the keys while preserving the existing structure and comments.
