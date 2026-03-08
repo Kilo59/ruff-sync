@@ -61,18 +61,14 @@ class _PrepEnv(NamedTuple):
 
 
 @pytest.fixture(params=LIFECYCLE_GROUPS)
-def prep_env(
-    fs: FakeFilesystem, request: FixtureRequest
-) -> Generator[_PrepEnv, None, None]:
+def prep_env(fs: FakeFilesystem, request: FixtureRequest) -> Generator[_PrepEnv, None, None]:
     group_name: str = request.param
     fs.add_real_directory(LIFECYCLE_TOML_DIR)
 
     source_path = pathlib.Path(
         fs.create_file(  # type: ignore[arg-type]
             "my_dir/pyproject.toml",
-            contents=LIFECYCLE_TOML_DIR.joinpath(
-                f"{group_name}_initial.toml"
-            ).read_text(),
+            contents=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_initial.toml").read_text(),
         ).path
     )
     base_url = "https://example.com"
@@ -82,16 +78,12 @@ def prep_env(
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
-            content=LIFECYCLE_TOML_DIR.joinpath(
-                f"{group_name}_upstream.toml"
-            ).read_text(),
+            content=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_upstream.toml").read_text(),
         )
         yield _PrepEnv(
             source_path=source_path,
             upstream_url=upstream_url,
-            expected_toml=LIFECYCLE_TOML_DIR.joinpath(
-                f"{group_name}_final.toml"
-            ).read_text(),
+            expected_toml=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_final.toml").read_text(),
             respx_mock=respx_mock,
         )
 
@@ -110,9 +102,7 @@ async def test_ruff_sync(prep_env):
 
     print(f"Updated toml\n\n{prep_env.source_path.read_text()}")
 
-    assert tomlkit.parse(prep_env.expected_toml) == tomlkit.parse(
-        prep_env.source_path.read_text()
-    )
+    assert tomlkit.parse(prep_env.expected_toml) == tomlkit.parse(prep_env.source_path.read_text())
     assert prep_env.expected_toml == prep_env.source_path.read_text()
 
 
@@ -132,9 +122,7 @@ async def test_ruff_check(prep_env):
     )
     # 'no_changes' fixtures are already in sync; all others must be out-of-sync initially.
     if prep_env.expected_toml != prep_env.source_path.read_text():
-        assert exit_code != 0, (
-            "Expected out-of-sync fixture to return a non-zero exit code"
-        )
+        assert exit_code != 0, "Expected out-of-sync fixture to return a non-zero exit code"
     #
     # 2. Sync it
     await ruff_sync.pull(
@@ -191,9 +179,7 @@ def readme_excludes_env(
     source_path = pathlib.Path(
         fs.create_file(  # type: ignore[arg-type]
             "my_dir/pyproject.toml",
-            contents=LIFECYCLE_TOML_DIR.joinpath(
-                f"{group_name}_initial.toml"
-            ).read_text(),
+            contents=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_initial.toml").read_text(),
         ).path
     )
     base_url = "https://example.com"
@@ -203,16 +189,12 @@ def readme_excludes_env(
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
-            content=LIFECYCLE_TOML_DIR.joinpath(
-                f"{group_name}_upstream.toml"
-            ).read_text(),
+            content=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_upstream.toml").read_text(),
         )
         yield _PrepEnv(
             source_path=source_path,
             upstream_url=upstream_url,
-            expected_toml=LIFECYCLE_TOML_DIR.joinpath(
-                f"{group_name}_final.toml"
-            ).read_text(),
+            expected_toml=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_final.toml").read_text(),
             respx_mock=respx_mock,
         )
 

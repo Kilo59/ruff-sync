@@ -124,20 +124,14 @@ def release(
     branch_result = ctx.run("git branch --show-current", hide=True)
     current_branch = cast("Any", branch_result).stdout.strip()
     if not dry_run and current_branch != "main":
-        print(
-            f"❌ Releases must be made from the 'main' branch "
-            f"(current: {current_branch})."
-        )
+        print(f"❌ Releases must be made from the 'main' branch (current: {current_branch}).")
         return
 
     # Check for dirty git state
     status_result = ctx.run("git status --porcelain", hide=True)
     git_status = cast("Any", status_result).stdout.strip()
     if git_status:
-        print(
-            "❌ Git repository has uncommitted changes. "
-            "Please commit or stash them first."
-        )
+        print("❌ Git repository has uncommitted changes. Please commit or stash them first.")
         return
 
     if not skip_tests:
