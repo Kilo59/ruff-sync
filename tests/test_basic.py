@@ -136,7 +136,7 @@ select = ["F", "E"]
     assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
     # Other keys should be untouched
     assert ruff_tbl["lint"]["select"] == ["F", "E"]  # type: ignore[index]
-    assert ruff_tbl["target-version"] == "py310"  # type: ignore[comparison-overlap]
+    assert ruff_tbl["target-version"] == "py310"
 
 
 def test_apply_exclusions_missing_key_is_noop():
@@ -145,7 +145,7 @@ def test_apply_exclusions_missing_key_is_noop():
     ruff_tbl = ruff_sync.get_ruff_tool_table(
         full_toml, exclude=["nonexistent", "lint.also-missing"]
     )
-    assert ruff_tbl["target-version"] == "py310"  # type: ignore[comparison-overlap]
+    assert ruff_tbl["target-version"] == "py310"
 
 
 def test_apply_exclusions_mixed():

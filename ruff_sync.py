@@ -417,34 +417,47 @@ async def fetch_upstream_config(
     return await download(url, client)
 
 
+def is_ruff_toml_file(path_or_url: str) -> bool:
+    """Return True if the path or URL indicates a ruff.toml file."""
+    return path_or_url.endswith("ruff.toml")
+
+
 @overload
-def get_ruff_tool_table(
+def get_ruff_config(
     toml: str | TOMLDocument,
+    is_ruff_toml: bool = ...,
     create_if_missing: Literal[True] = ...,
     exclude: Iterable[str] = ...,
-) -> Table: ...
+) -> TOMLDocument | Table: ...
 
 
 @overload
-def get_ruff_tool_table(
+def get_ruff_config(
     toml: str | TOMLDocument,
+    is_ruff_toml: bool = ...,
     create_if_missing: Literal[False] = ...,
     exclude: Iterable[str] = ...,
-) -> Table | None: ...
+) -> TOMLDocument | Table | None: ...
 
 
-def get_ruff_tool_table(
+def get_ruff_config(
     toml: str | TOMLDocument,
+    is_ruff_toml: bool = False,
     create_if_missing: bool = True,
     exclude: Iterable[str] = (),
-) -> Table | None:
-    """Get the tool.ruff section from a TOML string.
-    If it does not exist, create it.
+) -> TOMLDocument | Table | None:
+    """Get the ruff section or document from a TOML string.
+    If it does not exist and it is a pyproject.toml, create it.
     """
     if isinstance(toml, str):
         doc: TOMLDocument = tomlkit.parse(toml)
     else:
         doc = toml
+
+    if is_ruff_toml:
+        _apply_exclusions(doc, exclude)
+        return doc
+
     try:
         tool: Table = doc["tool"]  # type: ignore[assignment]
         ruff = tool["ruff"]
@@ -463,7 +476,11 @@ def get_ruff_tool_table(
     return ruff
 
 
-def _apply_exclusions(tbl: Table, exclude: Iterable[str]) -> None:
+# Alias for backward compatibility in internal tools/tests if they exist
+get_ruff_tool_table = get_ruff_config
+
+
+def _apply_exclusions(tbl: Table | TOMLDocument, exclude: Iterable[str]) -> None:
     """Remove excluded keys from a ruff table, supporting dotted paths.
 
     Keys can be simple (e.g. ``"target-version"``) to match top-level ruff
@@ -536,14 +553,20 @@ def _recursive_update(source_table: Any, upstream: Any) -> None:
 
 
 def merge_ruff_toml(
-    source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
+    source: TOMLDocument,
+    upstream_ruff_doc: TOMLDocument | Table | None,
+    is_ruff_toml: bool = False,
 ) -> TOMLDocument:
     """Merge the source and upstream tool ruff config with better whitespace preservation."""
     if not upstream_ruff_doc:
         LOGGER.warning("No upstream ruff config section found.")
         return source
 
-    source_tool_ruff = get_ruff_tool_table(source)
+    if is_ruff_toml:
+        _recursive_update(source, upstream_ruff_doc)
+        return source
+
+    source_tool_ruff = get_ruff_config(source, create_if_missing=True)
 
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
@@ -561,14 +584,32 @@ def merge_ruff_toml(
     return source
 
 
+def _resolve_target_path(args: Arguments) -> pathlib.Path:
+    if args.source.is_file():
+        return args.source
+    if (args.source / "ruff.toml").exists():
+        return args.source / "ruff.toml"
+    if (args.source / ".ruff.toml").exists():
+        return args.source / ".ruff.toml"
+    if args.upstream and is_ruff_toml_file(str(args.upstream)):
+        return args.source / "ruff.toml"
+    return args.source / "pyproject.toml"
+
+
 async def check(
     args: Arguments,
 ) -> int:
-    """Check if the local pyproject.toml is in sync with the upstream."""
+    """Check if the local pyproject.toml / ruff.toml is in sync with the upstream."""
     print("🔍 Checking Ruff sync status...")
-    _source_toml_path = args.source if args.source.is_file() else args.source / "pyproject.toml"
 
-    _source_toml_path = _source_toml_path.resolve(strict=True)
+    _source_toml_path = _resolve_target_path(args).resolve(strict=False)
+    if not _source_toml_path.exists():
+        print(
+            f"❌ Configuration file {_source_toml_path} does not exist. "
+            "Run 'ruff-sync pull' to create it."
+        )
+        return 1
+
     source_toml_file = TOMLFile(_source_toml_path)
     source_doc = source_toml_file.read()
 
@@ -578,17 +619,31 @@ async def check(
         )
         LOGGER.info(f"Loaded upstream file from {args.upstream}")
 
-    upstream_ruff_toml = get_ruff_tool_table(
-        file_buffer.read(), create_if_missing=False, exclude=args.exclude
+    is_upstream_ruff_toml = is_ruff_toml_file(str(args.upstream))
+    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+
+    upstream_ruff_toml = get_ruff_config(
+        file_buffer.read(),
+        is_ruff_toml=is_upstream_ruff_toml,
+        create_if_missing=False,
+        exclude=args.exclude,
     )
 
     # Create a copy for comparison
     source_doc_copy = tomlkit.parse(source_doc.as_string())
-    merged_doc = merge_ruff_toml(source_doc_copy, upstream_ruff_toml)
+    merged_doc = merge_ruff_toml(
+        source_doc_copy,
+        upstream_ruff_toml,
+        is_ruff_toml=is_source_ruff_toml,
+    )
 
     if args.semantic:
-        source_ruff = source_doc.get("tool", {}).get("ruff")
-        merged_ruff = merged_doc.get("tool", {}).get("ruff")
+        if is_source_ruff_toml:
+            source_ruff = source_doc
+            merged_ruff = merged_doc
+        else:
+            source_ruff = source_doc.get("tool", {}).get("ruff")
+            merged_ruff = merged_doc.get("tool", {}).get("ruff")
 
         # Compare unwrapped versions
         source_val = source_ruff.unwrap() if source_ruff is not None else None
@@ -633,10 +688,16 @@ async def check(
 async def pull(
     args: Arguments,
 ) -> int:
-    """Pull the upstream ruff config and apply it to the source pyproject.toml."""
+    """Pull the upstream ruff config and apply it to the source."""
     print("🔄 Syncing Ruff...")
-    _source_toml_path = args.source if args.source.is_file() else args.source / "pyproject.toml"
-    source_toml_file = TOMLFile(_source_toml_path.resolve(strict=True))
+    _source_toml_path = _resolve_target_path(args).resolve(strict=False)
+
+    source_toml_file = TOMLFile(_source_toml_path)
+    if _source_toml_path.exists():
+        source_doc = source_toml_file.read()
+    else:
+        LOGGER.info(f"✨ Target file {_source_toml_path} does not exist, creating it.")
+        source_doc = tomlkit.document()
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
@@ -645,15 +706,26 @@ async def pull(
         )
         LOGGER.info(f"Loaded upstream file from {args.upstream}")
 
-    upstream_ruff_toml = get_ruff_tool_table(
-        file_buffer.read(), create_if_missing=False, exclude=args.exclude
+    is_upstream_ruff_toml = is_ruff_toml_file(str(args.upstream))
+    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+
+    upstream_ruff_toml = get_ruff_config(
+        file_buffer.read(),
+        is_ruff_toml=is_upstream_ruff_toml,
+        create_if_missing=False,
+        exclude=args.exclude,
     )
     merged_toml = merge_ruff_toml(
-        source_toml_file.read(),
+        source_doc,
         upstream_ruff_toml,
+        is_ruff_toml=is_source_ruff_toml,
     )
     source_toml_file.write(merged_toml)
-    print(f"✅ Updated {_source_toml_path.resolve().relative_to(pathlib.Path.cwd())}")
+    try:
+        rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
+    except ValueError:
+        rel_path = _source_toml_path.resolve()
+    print(f"✅ Updated {rel_path}")
     return 0
 
 
