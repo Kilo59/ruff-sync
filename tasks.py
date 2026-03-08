@@ -91,9 +91,9 @@ def _set_version(version: str) -> None:
 def release(
     ctx: Context,
     version: str | None = None,
-    dry_run: bool = False,
+    dry_run: bool = True,
     skip_tests: bool = False,
-    draft: bool = False,
+    draft: bool = True,
 ) -> None:
     """Tag and create a GitHub release for the project."""
     if not skip_tests:
