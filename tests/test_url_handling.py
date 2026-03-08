@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from httpx import URL
 
-from ruff_sync import github_url_to_raw_url, gitlab_url_to_raw_url
+from ruff_sync import resolve_raw_url
 
 
 @pytest.mark.parametrize(
@@ -75,6 +75,5 @@ from ruff_sync import github_url_to_raw_url, gitlab_url_to_raw_url
 )
 def test_any_url_to_raw_url(input_url: str, expected_url: str):
     url = URL(input_url)
-    result = github_url_to_raw_url(url)
-    result = gitlab_url_to_raw_url(result)
+    result = resolve_raw_url(url)
     assert str(result) == expected_url

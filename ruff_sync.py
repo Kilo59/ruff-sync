@@ -179,7 +179,7 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
-def github_url_to_raw_url(url: URL) -> URL:
+def _convert_github_url(url: URL) -> URL:
     """Convert a GitHub URL to its corresponding raw content URL.
 
     Supports:
@@ -192,11 +192,6 @@ def github_url_to_raw_url(url: URL) -> URL:
     Returns:
         URL: The corresponding raw content URL.
     """
-    LOGGER.debug(f"Initial URL: {url}")
-    if url.host not in _GITHUB_HOSTS:
-        LOGGER.info("URL is not a GitHub URL, returning as is.")
-        return url
-
     # Handle blob URLs (e.g. .../blob/main/pyproject.toml)
     if "/blob/" in url.path:
         new_path = url.path.replace("/blob/", "/", 1)
@@ -220,7 +215,7 @@ def github_url_to_raw_url(url: URL) -> URL:
     return url
 
 
-def gitlab_url_to_raw_url(url: URL) -> URL:
+def _convert_gitlab_url(url: URL) -> URL:
     """Convert a GitLab URL to its corresponding raw content URL.
 
     Supports:
@@ -233,11 +228,6 @@ def gitlab_url_to_raw_url(url: URL) -> URL:
     Returns:
         URL: The corresponding raw content URL.
     """
-    LOGGER.debug(f"Initial GitLab URL: {url}")
-    if url.host not in _GITLAB_HOSTS:
-        LOGGER.info("URL is not a GitLab URL, returning as is.")
-        return url
-
     # Handle blob URLs (e.g. .../-/blob/main/pyproject.toml)
     if "/-/blob/" in url.path:
         new_path = url.path.replace("/-/blob/", "/-/raw/", 1)
@@ -255,7 +245,24 @@ def gitlab_url_to_raw_url(url: URL) -> URL:
             LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
             return raw_url
 
-    LOGGER.info("URL is a GitHub URL but doesn't match known patterns, returning as is.")
+    LOGGER.info("URL is a GitLab URL but doesn't match known patterns, returning as is.")
+    return url
+
+
+def resolve_raw_url(url: URL) -> URL:
+    """Resolve a GitHub or GitLab URL to its raw content URL.
+
+    Args:
+        url (URL): The URL to resolve.
+
+    Returns:
+        URL: The resolved raw content URL, or the original URL if no conversion applies.
+    """
+    LOGGER.debug(f"Initial URL: {url}")
+    if url.host in _GITHUB_HOSTS:
+        return _convert_github_url(url)
+    if url.host in _GITLAB_HOSTS:
+        return _convert_gitlab_url(url)
     return url
 
 
@@ -565,8 +572,7 @@ def main() -> int:
         exclude = _DEFAULT_EXCLUDE
 
     # Convert non-raw github/gitlab upstream url to the raw equivalent
-    upstream = github_url_to_raw_url(upstream)
-    upstream = gitlab_url_to_raw_url(upstream)
+    upstream = resolve_raw_url(upstream)
 
     # Create Arguments object
     exec_args = Arguments(
