@@ -37,6 +37,21 @@ from ruff_sync import github_url_to_raw_url
             "https://raw.githubusercontent.com/org/repo/main/pyproject.toml",
             "https://raw.githubusercontent.com/org/repo/main/pyproject.toml",
         ),
+        # Unknown GitHub pattern
+        (
+            "https://github.com/org/repo/tree/main/subdir/pyproject.toml",
+            "https://github.com/org/repo/tree/main/subdir/pyproject.toml",
+        ),
+        # False positive on substring in path
+        (
+            "https://notgithub.com/github.com/org/repo",
+            "https://notgithub.com/github.com/org/repo",
+        ),
+        # www.github.com support
+        (
+            "https://www.github.com/pydantic/pydantic",
+            "https://raw.githubusercontent.com/pydantic/pydantic/main/pyproject.toml",
+        ),
     ],
 )
 def test_github_url_to_raw_url(input_url: str, expected_url: str):

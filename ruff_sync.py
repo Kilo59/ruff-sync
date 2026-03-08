@@ -24,6 +24,8 @@ __version__ = "0.0.3"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
+_GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
+_GITHUB_RAW_HOST: Final[str] = "raw.githubusercontent.com"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -190,27 +192,28 @@ def github_url_to_raw_url(url: URL) -> URL:
         URL: The corresponding raw content URL.
     """
     LOGGER.debug(f"Initial URL: {url}")
-    url_str = str(url)
-    if "github.com" not in url_str:
+    if url.host not in _GITHUB_HOSTS:
         LOGGER.info("URL is not a GitHub URL, returning as is.")
         return url
 
     # Handle blob URLs (e.g. .../blob/main/pyproject.toml)
-    if "/blob/" in url_str:
-        raw_url_str = url_str.replace("github.com", "raw.githubusercontent.com").replace(
-            "/blob/", "/"
-        )
-        LOGGER.info(f"Converting GitHub blob URL to raw content URL: {raw_url_str}")
-        return httpx.URL(raw_url_str)
+    if "/blob/" in url.path:
+        new_path = url.path.replace("/blob/", "/", 1)
+        raw_url = url.copy_with(host=_GITHUB_RAW_HOST, path=new_path)
+        LOGGER.info(f"Converting GitHub blob URL to raw content URL: {raw_url}")
+        return raw_url
 
     # Handle repository URLs (e.g. https://github.com/org/repo)
     # We assume if it has exactly two path components, it's a repo URL.
     path_parts = [p for p in url.path.split("/") if p]
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
-        raw_url_str = f"https://raw.githubusercontent.com/{org}/{repo}/main/pyproject.toml"
-        LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url_str}")
-        return httpx.URL(raw_url_str)
+        raw_url = url.copy_with(
+            host=_GITHUB_RAW_HOST,
+            path=f"/{org}/{repo}/main/pyproject.toml",
+        )
+        LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url}")
+        return raw_url
 
     LOGGER.info("URL is a GitHub URL but doesn't match known patterns, returning as is.")
     return url
