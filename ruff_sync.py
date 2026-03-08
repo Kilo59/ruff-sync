@@ -123,8 +123,12 @@ def _get_cli_parser() -> ArgumentParser:
         help="Increase verbosity. -v for INFO, -vv for DEBUG.",
     )
 
-    # Sync subcommand
-    subparsers.add_parser("sync", parents=[common_parser], help="Sync ruff configuration")
+    # Pull subcommand (the default action)
+    subparsers.add_parser(
+        "pull",
+        parents=[common_parser],
+        help="Pull and apply upstream ruff configuration",
+    )
 
     # Check subcommand
     check_parser = subparsers.add_parser(
@@ -388,10 +392,10 @@ async def check(
     return 1
 
 
-async def sync(
+async def pull(
     args: Arguments,
 ) -> int:
-    """Sync the upstream pyproject.toml file to the source directory."""
+    """Pull the upstream ruff config and apply it to the source pyproject.toml."""
     print("🔄 Syncing Ruff...")
     if args.source.is_file():
         _source_toml_path = args.source
@@ -420,17 +424,17 @@ PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
 def main() -> int:
-    # Handle backward compatibility: default to 'sync' if no command provided
+    # Handle backward compatibility: default to 'pull' if no command provided
     if len(sys.argv) > 1 and sys.argv[1] not in (
-        "sync",
+        "pull",
         "check",
         "-h",
         "--help",
         "--version",
     ):
-        sys.argv.insert(1, "sync")
+        sys.argv.insert(1, "pull")
     elif len(sys.argv) == 1:
-        sys.argv.append("sync")
+        sys.argv.append("pull")
 
     args = PARSER.parse_args()
     config = get_config(args.source)
@@ -494,7 +498,7 @@ def main() -> int:
 
     if exec_args.command == "check":
         return asyncio.run(check(exec_args))
-    return asyncio.run(sync(exec_args))
+    return asyncio.run(pull(exec_args))
 
 
 if __name__ == "__main__":

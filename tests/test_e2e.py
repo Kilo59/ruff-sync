@@ -88,9 +88,9 @@ def prep_env(
 
 @pytest.mark.asyncio
 async def test_ruff_sync(prep_env):
-    await ruff_sync.sync(
+    await ruff_sync.pull(
         ruff_sync.Arguments(
-            command="sync",
+            command="pull",
             upstream=prep_env.upstream_url,
             source=prep_env.source_path,
             exclude=set(),
@@ -124,9 +124,9 @@ async def test_ruff_check(prep_env):
     # (except maybe one if it's a 'no changes' case, but we test the transitively)
     #
     # 2. Sync it
-    await ruff_sync.sync(
+    await ruff_sync.pull(
         ruff_sync.Arguments(
-            command="sync",
+            command="pull",
             upstream=prep_env.upstream_url,
             source=prep_env.source_path,
             exclude=set(),
