@@ -87,7 +87,7 @@ def release(
     # Check if we are on the main branch
     branch_result = ctx.run("git branch --show-current", hide=True)
     current_branch = cast("Any", branch_result).stdout.strip()
-    if current_branch != "main":
+    if not dry_run and current_branch != "main":
         print(
             f"❌ Releases must be made from the 'main' branch "
             f"(current: {current_branch})."
