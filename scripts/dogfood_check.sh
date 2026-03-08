@@ -29,10 +29,10 @@ if ! git diff --quiet pyproject.toml; then
     echo ""
 fi
 
-# Run the check command via poetry
+# Run the check command via uv
 # This will return 0 if in sync, 1 if out of sync
 set +e
-poetry run python ruff_sync.py check "$UPSTREAM" --semantic -v
+uv run python ruff_sync.py check "$UPSTREAM" --semantic -v
 EXIT_CODE=$?
 set -e
 

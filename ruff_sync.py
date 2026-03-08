@@ -362,7 +362,10 @@ async def check(
         print("✅ Ruff configuration is in sync.")
         return 0
 
-    rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
+    try:
+        rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
+    except ValueError:
+        rel_path = _source_toml_path
     print(f"❌ Ruff configuration at {rel_path} is out of sync!")
     if args.diff:
         if args.semantic:

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import httpx
 from invoke.tasks import task
+from packaging.version import Version
 from tomlkit.toml_file import TOMLFile
 
 if TYPE_CHECKING:
@@ -77,8 +78,8 @@ def _get_pypi_versions() -> tuple[str | None, str | None]:
         r = httpx.get("https://pypi.org/pypi/ruff-sync/json", timeout=5.0)
         data = r.json()
         current = str(data["info"]["version"])
-        # Simple sorting of version strings
-        all_v = sorted(data["releases"].keys())
+        # PEP 440-aware sorting of version strings
+        all_v = sorted(data["releases"].keys(), key=Version)
         pv = None
         if current in all_v:
             idx = all_v.index(current)

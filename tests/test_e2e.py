@@ -120,8 +120,11 @@ async def test_ruff_check(prep_env):
             diff=True,
         )
     )
-    # Most fixtures are out of sync initially
-    # (except maybe one if it's a 'no changes' case, but we test the transitively)
+    # 'no_changes' fixtures are already in sync; all others must be out-of-sync initially.
+    if prep_env.expected_toml != prep_env.source_path.read_text():
+        assert exit_code != 0, (
+            "Expected out-of-sync fixture to return a non-zero exit code"
+        )
     #
     # 2. Sync it
     await ruff_sync.pull(
