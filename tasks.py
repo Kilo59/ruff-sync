@@ -98,9 +98,11 @@ def _get_latest_gh_release(ctx: Context) -> str | None:
         # Use gh cli to get the latest tag name
         cmd = "gh release list --limit 1 --json tagName --jq '.[0].tagName'"
         result = ctx.run(cmd, hide=True)
-        return cast("Any", result).stdout.strip()
+        if result:
+            return result.stdout.strip()
     except Exception:
         return None
+    return None
 
 
 @task(
