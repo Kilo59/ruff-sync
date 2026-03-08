@@ -29,8 +29,10 @@ disable_error_code = ['type-arg', 'no-untyped-def']
 [tool.ruff]
 target-version = "py312"
 line-length = 120
-lint.select = ["F", "ASYNC", "RUFF", "B", "S", "PTH", "W", "E"]
-lint.ignore = ["W191", "E111"]
+
+[tool.ruff.lint]
+select = ["F", "ASYNC", "RUFF", "B", "S", "PTH", "W", "E"]
+ignore = ["W191", "E111"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [

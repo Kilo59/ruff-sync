@@ -255,6 +255,48 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     return ruff_toml
 
 
+def _recursive_update(source_table: Any, upstream: Any) -> None:
+    """Recursively update a TOML table, preserving formatting of existing keys."""
+    if hasattr(upstream, "items") or isinstance(upstream, Mapping):
+        items = upstream.items()
+    else:
+        return
+
+    for key, value in items:
+        if key in source_table:
+            if hasattr(source_table[key], "items") and (
+                hasattr(value, "items") or isinstance(value, Mapping)
+            ):
+                # Structural fix: if the target is a proxy (dotted key),
+                # and we are adding NEW keys to it, we must convert it to a real
+                # table to ensure children get correct headers.
+                source_sub_keys = set(source_table[key].keys())
+                upstream_sub_keys = set(value.keys())
+                if not upstream_sub_keys.issubset(source_sub_keys):
+                    current_val = source_table[key].unwrap()
+                    # DELETE PROXY FIRST to avoid structural doubling
+                    del source_table[key]
+                    # ADD AS REAL TABLE
+                    source_table.add(key, current_val)
+
+                _recursive_update(source_table[key], value)
+            else:
+                # Overwrite existing leaf value only if it's semantically different.
+                # Compare unwrapped values, but assign the raw tomlkit Item to
+                # preserve inline comments attached to the upstream value.
+                current_val = (
+                    source_table[key].unwrap()
+                    if hasattr(source_table[key], "unwrap")
+                    else source_table[key]
+                )
+                new_val_unwrapped = value.unwrap() if hasattr(value, "unwrap") else value
+                if current_val != new_val_unwrapped:
+                    source_table[key] = value
+        else:
+            # New key: assign the raw tomlkit Item to preserve comments
+            source_table[key] = value
+
+
 def merge_ruff_toml(
     source: TOMLDocument, upstream_ruff_doc: TOMLDocument | Table | None
 ) -> TOMLDocument:
@@ -264,40 +306,6 @@ def merge_ruff_toml(
         return source
 
     source_tool_ruff = get_ruff_tool_table(source)
-
-    def _recursive_update(source_table: Any, upstream: Any) -> None:
-        """Recursively update a TOML table to preserve formatting of existing keys."""
-        if hasattr(upstream, "items") or isinstance(upstream, Mapping):
-            items = upstream.items()
-        else:
-            return
-
-        for key, value in items:
-            if key in source_table:
-                if hasattr(source_table[key], "items") and (
-                    hasattr(value, "items") or isinstance(value, Mapping)
-                ):
-                    # Structural fix: if the target is a proxy (dotted key),
-                    # and we are adding NEW keys to it, we must convert it to a real
-                    # table to ensure children get correct headers.
-                    source_sub_keys = set(source_table[key].keys())
-                    upstream_sub_keys = set(value.keys())
-                    if not upstream_sub_keys.issubset(source_sub_keys):
-                        current_val = source_table[key].unwrap()
-                        # DELETE PROXY FIRST to avoid structural doubling
-                        del source_table[key]
-                        # ADD AS REAL TABLE
-                        source_table.add(key, current_val)
-
-                    _recursive_update(source_table[key], value)
-                else:
-                    # Overwrite existing value
-                    source_table[key] = (
-                        value.unwrap() if hasattr(value, "unwrap") else value
-                    )
-            else:
-                # Add new key/value
-                source_table[key] = value.unwrap() if hasattr(value, "unwrap") else value
 
     _recursive_update(source_tool_ruff, upstream_ruff_doc)
 
