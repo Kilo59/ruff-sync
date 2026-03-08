@@ -7,7 +7,7 @@ import logging
 import pathlib
 import re
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
@@ -91,8 +91,28 @@ def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
 
 
 def _get_cli_parser() -> ArgumentParser:
-    parser = ArgumentParser(prog="ruff-sync")
-    subparsers = parser.add_subparsers(dest="command", help="Subcommand to run")
+    parser = ArgumentParser(
+        prog="ruff-sync",
+        description=(
+            "Synchronize Ruff linter configuration across Python projects.\n\n"
+            "Downloads a pyproject.toml from an upstream URL, extracts the\n"
+            "[tool.ruff] section, and merges it into the local pyproject.toml\n"
+            "while preserving formatting, comments, and whitespace.\n\n"
+            "Defaults to the 'pull' subcommand when none is specified."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml\n"
+            "  ruff-sync check https://github.com/org/repo/blob/main/pyproject.toml\n"
+            "  ruff-sync check --semantic  # ignore formatting-only differences\n\n"
+            "The upstream URL can also be set in [tool.ruff-sync] in pyproject.toml\n"
+            "so you can simply run: ruff-sync pull"
+        ),
+        formatter_class=RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(
+        dest="command", help="Subcommand to run (default: pull)"
+    )
 
     # Common arguments
     common_parser = ArgumentParser(add_help=False)
