@@ -42,6 +42,11 @@ from ruff_sync import resolve_raw_url
             "https://github.com/org/repo/tree/main/subdir/pyproject.toml",
             "https://github.com/org/repo/tree/main/subdir/pyproject.toml",
         ),
+        # Another unknown pattern
+        (
+            "https://github.com/org/repo/pull/123",
+            "https://github.com/org/repo/pull/123",
+        ),
         # False positive on substring in path
         (
             "https://notgithub.com/github.com/org/repo",
