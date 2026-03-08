@@ -349,7 +349,7 @@ async def fetch_upstream_config(
                     str(url),
                     temp_dir,
                 ]
-                LOGGER.debug(f"Running git command: {' '.join(cmd)}")
+                LOGGER.info(f"Running git command: {' '.join(cmd)}")
                 try:
                     subprocess.run(  # noqa: S603
                         cmd,
@@ -373,7 +373,7 @@ async def fetch_upstream_config(
                         branch,
                         str(target_path),
                     ]
-                    LOGGER.debug(f"Running git restore: {' '.join(restore_cmd)}")
+                    LOGGER.info(f"Running git restore: {' '.join(restore_cmd)}")
 
                     try:
                         subprocess.run(  # noqa: S603
@@ -383,7 +383,7 @@ async def fetch_upstream_config(
                             text=True,
                         )
                     except subprocess.CalledProcessError:
-                        LOGGER.debug("git restore failed, falling back to git checkout")
+                        LOGGER.info("git restore failed, falling back to git checkout")
                         checkout_cmd = [
                             "git",
                             "-C",
@@ -393,7 +393,7 @@ async def fetch_upstream_config(
                             "--",
                             str(target_path),
                         ]
-                        LOGGER.debug(f"Running git checkout: {' '.join(checkout_cmd)}")
+                        LOGGER.info(f"Running git checkout: {' '.join(checkout_cmd)}")
                         subprocess.run(  # noqa: S603
                             checkout_cmd,
                             check=True,
