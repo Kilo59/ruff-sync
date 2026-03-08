@@ -11,7 +11,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
-from typing import Any, ClassVar, Final, Literal, NamedTuple, cast, overload
+from typing import Any, ClassVar, Final, Literal, NamedTuple, TypedDict, cast, overload
 
 import httpx
 import tomlkit
@@ -70,13 +70,24 @@ class Arguments(NamedTuple):
         return set(cls._fields)
 
 
+class Config(TypedDict, total=False):
+    upstream: str
+    source: str
+    exclude: list[str]
+    verbose: int
+    branch: str
+    path: str
+    semantic: bool
+    diff: bool
+
+
 @lru_cache(maxsize=1)
 def get_config(
     source: pathlib.Path,
-) -> Mapping[Literal["upstream", "source", "exclude", "branch", "path"], str | list[str]]:
+) -> Config:
     local_toml = source / "pyproject.toml"
     # TODO: use pydantic to validate the toml file
-    cfg_result = {}
+    cfg_result: dict[str, Any] = {}
     if local_toml.exists():
         toml = tomlkit.parse(local_toml.read_text())
         config = toml.get("tool", {}).get("ruff-sync")
@@ -86,7 +97,7 @@ def get_config(
                     cfg_result[arg] = value
                 else:
                     LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
-    return cfg_result
+    return cast("Config", cfg_result)
 
 
 @lru_cache(maxsize=1)
@@ -608,7 +619,7 @@ def main() -> int:
         sys.argv.append("pull")
 
     args = PARSER.parse_args()
-    config = get_config(args.source)
+    config: Config = get_config(args.source)
 
     # Configure logging
     log_level = {
