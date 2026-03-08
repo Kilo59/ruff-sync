@@ -189,6 +189,7 @@ def github_url_to_raw_url(url: URL) -> URL:
     Returns:
         URL: The corresponding raw content URL.
     """
+    LOGGER.debug(f"Initial URL: {url}")
     url_str = str(url)
     if "github.com" not in url_str:
         LOGGER.info("URL is not a GitHub URL, returning as is.")
