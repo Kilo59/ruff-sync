@@ -48,6 +48,9 @@ def test_merge_scenarios(source, upstream, expected_keys):
     # ... test logic ...
 ```
 
+### 3.3 No Autouse Fixtures
+`autouse=True` fixtures are **never allowed**. They hide setup logic and can cause non-obvious side effects or dependencies between tests. All fixtures used by a test must be explicitly requested in the test function's arguments.
+
 ## 4. Handling TOML and `tomlkit`
 
 `tomlkit` is central to this project but its dynamic type system can be tricky for mypy.
