@@ -128,3 +128,130 @@ async def test_pull_with_init_scaffolds_ruff_toml(mock_http: respx.MockRouter, f
     assert "[tool.ruff]" not in content
     assert 'target-version = "py310"' in content
     assert "line-length = 99" in content
+
+
+@pytest.mark.asyncio
+async def test_pull_init_uses_existing_pyproject_toml(
+    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Arrange: existing pyproject.toml, no ruff.toml or .ruff.toml
+    directory = fs.create_dir("project_with_pyproject")
+    target_dir = pathlib.Path(directory.path)  # type: ignore[arg-type]
+    pyproject_path = target_dir / "pyproject.toml"
+
+    fs.create_file(str(pyproject_path), contents="[tool.ruff]\nline-length = 79\n")
+
+    upstream = URL("https://example.com/pyproject.toml")
+    mock_http.get(str(upstream)).respond(200, text="[tool.ruff]\nline-length = 88\n")
+
+    # Act
+    result = await ruff_sync.pull(
+        ruff_sync.Arguments(
+            command="pull",
+            upstream=upstream,
+            source=target_dir,
+            exclude=(),
+            verbose=0,
+            init=True,
+        )
+    )
+
+    # Assert: command succeeded, existing pyproject.toml was used as target
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "pyproject.toml" in captured.out
+
+    assert pyproject_path.exists()
+    assert (target_dir / "ruff.toml").exists() is False
+    assert (target_dir / ".ruff.toml").exists() is False
+
+    contents = pyproject_path.read_text()
+    assert "line-length = 88" in contents
+
+
+@pytest.mark.asyncio
+async def test_pull_prefers_dot_ruff_toml_over_pyproject_toml(
+    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Arrange: both pyproject.toml and .ruff.toml exist
+    directory = fs.create_dir("project_with_pyproject_and_dot_ruff")
+    target_dir = pathlib.Path(directory.path)  # type: ignore[arg-type]
+    pyproject_path = target_dir / "pyproject.toml"
+    dot_ruff_path = target_dir / ".ruff.toml"
+
+    fs.create_file(str(pyproject_path), contents="[tool.ruff]\nline-length = 79\n")
+    fs.create_file(str(dot_ruff_path), contents='target-version = "py310"\nline-length = 100\n')
+
+    upstream = URL("https://example.com/ruff.toml")
+    mock_http.get(str(upstream)).respond(200, text='target-version = "py310"\nline-length = 88\n')
+
+    # Act: no --init, should update existing config, preferring .ruff.toml
+    result = await ruff_sync.pull(
+        ruff_sync.Arguments(
+            command="pull",
+            upstream=upstream,
+            source=target_dir,
+            exclude=(),
+            verbose=0,
+            init=False,
+        )
+    )
+
+    # Assert: command succeeded and .ruff.toml was selected and updated
+    assert result == 0
+    captured = capsys.readouterr()
+    assert ".ruff.toml" in captured.out
+
+    assert pyproject_path.exists()
+    assert dot_ruff_path.exists()
+
+    pyproject_contents = pyproject_path.read_text()
+    dot_ruff_contents = dot_ruff_path.read_text()
+
+    # pyproject.toml should remain unchanged
+    assert "line-length = 79" in pyproject_contents
+    # .ruff.toml should be updated with the upstream contents
+    assert "line-length = 88" in dot_ruff_contents
+
+
+@pytest.mark.asyncio
+async def test_pull_updates_existing_dot_ruff_toml(
+    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Arrange: only .ruff.toml exists
+    directory = fs.create_dir("project_with_dot_ruff_only")
+    target_dir = pathlib.Path(directory.path)  # type: ignore[arg-type]
+    dot_ruff_path = target_dir / ".ruff.toml"
+
+    fs.create_file(str(dot_ruff_path), contents='target-version = "py310"\nline-length = 79\n')
+
+    upstream = URL("https://example.com/ruff.toml")
+    mock_http.get(str(upstream)).respond(200, text='target-version = "py310"\nline-length = 120\n')
+
+    # Act
+    result = await ruff_sync.pull(
+        ruff_sync.Arguments(
+            command="pull",
+            upstream=upstream,
+            source=target_dir,
+            exclude=(),
+            verbose=0,
+            init=False,
+        )
+    )
+
+    # Assert: command succeeded, .ruff.toml was updated, and no new files created
+    assert result == 0
+    captured = capsys.readouterr()
+    assert ".ruff.toml" in captured.out
+
+    assert dot_ruff_path.exists()
+    assert (target_dir / "ruff.toml").exists() is False
+    assert (target_dir / "pyproject.toml").exists() is False
+
+    contents = dot_ruff_path.read_text()
+    assert "line-length = 120" in contents
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-vv"])

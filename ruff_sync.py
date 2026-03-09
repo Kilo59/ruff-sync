@@ -14,6 +14,7 @@ from collections.abc import Iterable, Mapping
 from functools import lru_cache
 from io import StringIO
 from typing import Any, ClassVar, Final, Literal, NamedTuple, TypedDict, cast, overload
+from urllib.parse import urlparse
 
 import httpx
 import tomlkit
@@ -427,8 +428,23 @@ async def fetch_upstream_config(
 
 
 def is_ruff_toml_file(path_or_url: str) -> bool:
-    """Return True if the path or URL indicates a ruff.toml file."""
-    return path_or_url.endswith("ruff.toml")
+    """Return True if the path or URL indicates a ruff.toml file.
+
+    This handles:
+    - Plain paths (e.g. "ruff.toml", ".ruff.toml", "configs/ruff.toml")
+    - URLs with query strings or fragments (e.g. "ruff.toml?ref=main", "ruff.toml#L10")
+    by examining only the path component (or the part before any query/fragment).
+    """
+    parsed = urlparse(path_or_url)
+
+    # If it's a URL with a scheme/netloc, use the parsed path component.
+    # Otherwise, fall back to stripping any query/fragment from the raw string.
+    if parsed.scheme or parsed.netloc:
+        path = parsed.path
+    else:
+        path = path_or_url.split("?", 1)[0].split("#", 1)[0]
+
+    return path.endswith("ruff.toml")
 
 
 @overload

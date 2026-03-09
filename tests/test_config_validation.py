@@ -65,5 +65,27 @@ command = "pull"
     assert "command" not in config
 
 
+def test_get_config_passes_allowed_keys(
+    tmp_path: pathlib.Path, caplog: pytest.LogCaptureFixture, clean_config_cache: None
+):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[tool.ruff-sync]
+upstream = "https://github.com/org/repo"
+exclude = ["lint.per-file-ignores"]
+branch = "develop"
+"""
+    )
+
+    with caplog.at_level(logging.WARNING):
+        config = get_config(tmp_path)
+
+    assert "Unknown ruff-sync configuration" not in caplog.text
+    assert config["upstream"] == "https://github.com/org/repo"
+    assert config["exclude"] == ["lint.per-file-ignores"]
+    assert config["branch"] == "develop"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
