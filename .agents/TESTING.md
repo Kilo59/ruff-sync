@@ -51,6 +51,19 @@ def test_merge_scenarios(source, upstream, expected_keys):
 ### 3.3 No Autouse Fixtures
 `autouse=True` fixtures are **never allowed**. They hide setup logic and can cause non-obvious side effects or dependencies between tests. All fixtures used by a test must be explicitly requested in the test function's arguments.
 
+### 3.4 Main Entry Point
+Every test file **must** end with a main entry point block. This ensures each file is independently executable as a script (`python tests/test_foo.py`).
+
+```python
+if __name__ == "__main__":
+    pytest.main([__file__, "-vv"])
+```
+
+**Why this matters:**
+1.  **Direct Execution**: Developers can run a single test file using standard Python without needing to remember complex `pytest` filter flags.
+2.  **IDE Workflow Integration**: Many IDEs (like VS Code or PyCharm) allow you to run the "Current File" with a single click or keyboard shortcut. Having a main block ensures this works out of the box with the correct verbosity and scope.
+3.  **Cleaner Diffs**: By terminating the file with this standard block, it prevents "no newline at end of file" warnings and ensures that new tests added above it produce clean, isolated diff segments. It also ensures that when debugging with `--icdiff` or similar tools, the output is scoped correctly to the specific file.
+
 ## 4. Handling TOML and `tomlkit`
 
 `tomlkit` is central to this project but its dynamic type system can be tricky for mypy.
