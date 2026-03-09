@@ -89,6 +89,7 @@ class Config(TypedDict, total=False):
 def get_config(
     source: pathlib.Path,
 ) -> Config:
+    """Read [tool.ruff-sync] configuration from pyproject.toml."""
     local_toml = source / "pyproject.toml"
     # TODO: use pydantic to validate the toml file
     cfg_result: dict[str, Any] = {}
@@ -96,8 +97,9 @@ def get_config(
         toml = tomlkit.parse(local_toml.read_text())
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
+            allowed_keys = set(Config.__annotations__.keys())
             for arg, value in config.items():
-                if arg in Arguments.fields():
+                if arg in allowed_keys:
                     cfg_result[arg] = value
                 else:
                     LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
@@ -828,7 +830,6 @@ def main() -> int:
         sys.argv.append("pull")
 
     args = PARSER.parse_args()
-    config: Config = get_config(args.source)
 
     # Configure logging
     log_level = {
@@ -841,6 +842,8 @@ def main() -> int:
     handler.setFormatter(ColoredFormatter())
     LOGGER.addHandler(handler)
     LOGGER.propagate = False  # Avoid double logging if root is also configured
+
+    config: Config = get_config(args.source)
 
     upstream, exclude, branch, path = _resolve_args(args, config)
 
