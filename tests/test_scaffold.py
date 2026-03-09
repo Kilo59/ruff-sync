@@ -141,7 +141,7 @@ async def test_pull_init_uses_existing_pyproject_toml(
 
     fs.create_file(str(pyproject_path), contents="[tool.ruff]\nline-length = 79\n")
 
-    upstream = URL("https://example.com/pyproject.toml")
+    upstream = URL("https://example.org/pyproject.toml")
     mock_http.get(str(upstream)).respond(200, text="[tool.ruff]\nline-length = 88\n")
 
     # Act
@@ -182,7 +182,7 @@ async def test_pull_prefers_dot_ruff_toml_over_pyproject_toml(
     fs.create_file(str(pyproject_path), contents="[tool.ruff]\nline-length = 79\n")
     fs.create_file(str(dot_ruff_path), contents='target-version = "py310"\nline-length = 100\n')
 
-    upstream = URL("https://example.com/ruff.toml")
+    upstream = URL("https://example.org/ruff.toml")
     mock_http.get(str(upstream)).respond(200, text='target-version = "py310"\nline-length = 88\n')
 
     # Act: no --init, should update existing config, preferring .ruff.toml
@@ -225,7 +225,7 @@ async def test_pull_updates_existing_dot_ruff_toml(
 
     fs.create_file(str(dot_ruff_path), contents='target-version = "py310"\nline-length = 79\n')
 
-    upstream = URL("https://example.com/ruff.toml")
+    upstream = URL("https://example.org/ruff.toml")
     mock_http.get(str(upstream)).respond(200, text='target-version = "py310"\nline-length = 120\n')
 
     # Act

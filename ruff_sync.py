@@ -444,7 +444,7 @@ def is_ruff_toml_file(path_or_url: str) -> bool:
     else:
         path = path_or_url.split("?", 1)[0].split("#", 1)[0]
 
-    return path.endswith("ruff.toml")
+    return pathlib.Path(path).name in ("ruff.toml", ".ruff.toml")
 
 
 @overload
