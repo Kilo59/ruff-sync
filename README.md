@@ -290,15 +290,15 @@ flowchart TD
 
 ## Dogfooding
 
-To see `ruff-sync` in action, you can "dogfood" it on this project's own config.
+To see `ruff-sync` in action, you can ["dogfood" it on this project's own config](./scripts).
 
-**Check if this project is in sync with its upstream:**
+[**Check if this project is in sync with its upstream:**](./scripts/check_dogfood.sh)
 
 ```console
 ./scripts/check_dogfood.sh
 ```
 
-**Or sync from a large upstream like Pydantic's config:**
+[**Or sync from a large upstream like Pydantic's config:**](./scripts/pull_dogfood.sh)
 
 ```console
 # Using a HTTP URL
