@@ -12,7 +12,7 @@
 
 **Keep your Ruff config consistent across multiple projects.**
 
-`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` (hosted anywhere — GitHub, GitLab, or any raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
+`ruff-sync` is a CLI tool that pulls a canonical [Ruff](https://docs.astral.sh/ruff/) configuration from an upstream `pyproject.toml` or `ruff.toml` (hosted anywhere — GitHub, GitLab, or any raw URL) and merges it into your local project, preserving your comments, formatting, and project-specific overrides.
 
 ---
 
@@ -139,13 +139,13 @@ Run `ruff-sync --help` for full details on all available options.
 
 ## Key Features
 
-- **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
-- **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
-- **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform an efficient shallow clone (using `--filter=blob:none` and `--no-checkout`) to safely extract the configuration with minimal network traffic.
-- **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
-- **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml`.
-- **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
-- **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
+- 🏗️ **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
+- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
+- 📥 **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform an efficient shallow clone (using `--filter=blob:none` and `--no-checkout`) to safely extract the configuration with minimal network traffic.
+- 🛡️ **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
+- 🌍 **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml` or `ruff.toml`.
+- 🤖 **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
+- 🧠 **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
 
 ## Configuration
 
@@ -172,16 +172,25 @@ This sets the default upstream and exclusions so you don't need to pass them on 
 
 ### Advanced Configuration
 
-For more complex setups, you can also configure the default branch and parent directory used when resolving repository URLs (e.g. `https://github.com/my-org/standards`):
+Here are all the possible values that can be provided in `[tool.ruff-sync]` along with their explanations and defaults:
 
 ```toml
 [tool.ruff-sync]
+# The source of truth URL for your Ruff configuration. (Required, unless passed via CLI)
 upstream = "https://github.com/my-org/standards"
 
-# Use a specific branch or tag (default: "main")
+# A list of config keys to exclude from being synced. (Default: ["lint.per-file-ignores"])
+# Use simple names for top-level keys, and dotted paths for nested keys.
+exclude = [
+    "target-version",
+    "lint.per-file-ignores",
+]
+
+# The branch, tag, or commit hash to use when resolving a Git repository URL. (Default: "main")
 branch = "develop"
 
-# Specify a parent directory if pyproject.toml is not at the repo root
+# A directory prefix to use when looking for a configuration file in a repository. (Default: "")
+# Useful if the upstream pyproject.toml is not at the repository root.
 path = "config/ruff"
 ```
 
@@ -229,6 +238,18 @@ git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
 ```
 
+## Bootstrapping a New Project
+
+By default, `ruff-sync` requires an existing configuration file (`pyproject.toml` or `ruff.toml`) to merge into. If you are starting a fresh project and want to initialize it with your organization's Ruff settings, you can use the `--init` flag to scaffold a new file automatically.
+
+```console
+# Create a new pyproject.toml (or ruff.toml) pre-configured with upstream settings
+ruff-sync pull https://github.com/my-org/standards --init
+```
+
+`ruff-sync` seamlessly supports both `pyproject.toml` and standalone `ruff.toml` (or `.ruff.toml`) files. If your upstream source or your local target is a `ruff.toml`, it will automatically adapt and sync the root configuration rather than looking for a `[tool.ruff]` section.
+
+
 ## Detailed Check Logic
 
 When you run `ruff-sync check`, it follows this process to determine if your project has drifted from the upstream source:
@@ -267,37 +288,17 @@ flowchart TD
     style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```
 
-## Contributing
-
-This project uses:
-
-- [uv](https://docs.astral.sh/uv/) for dependency management
-- [Ruff](https://docs.astral.sh/ruff/) for linting and formatting
-- [mypy](https://mypy-lang.org/) for type checking (strict mode)
-- [pytest](https://docs.pytest.org/) for testing
-
-```console
-# Setup
-uv sync --group dev
-
-# Run checks
-uv run ruff check . --fix   # lint
-uv run ruff format .        # format
-uv run mypy .               # type check
-uv run pytest -vv           # test
-```
-
 ## Dogfooding
 
-To see `ruff-sync` in action, you can "dogfood" it on this project's own config.
+To see `ruff-sync` in action, you can ["dogfood" it on this project's own config](./scripts).
 
-**Check if this project is in sync with its upstream:**
+[**Check if this project is in sync with its upstream:**](./scripts/check_dogfood.sh)
 
 ```console
 ./scripts/check_dogfood.sh
 ```
 
-**Or sync from a large upstream like Pydantic's config:**
+[**Or sync from a large upstream like Pydantic's config:**](./scripts/pull_dogfood.sh)
 
 ```console
 # Using a HTTP URL
