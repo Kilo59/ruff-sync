@@ -100,14 +100,6 @@ With [pip](https://pip.pypa.io/en/stable/):
 pip install ruff-sync
 ```
 
-#### From Source (Bleeding Edge)
-
-If you want the latest development version:
-
-```console
-uv tool install git+https://github.com/Kilo59/ruff-sync
-```
-
 ### Usage
 
 ```console
