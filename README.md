@@ -100,14 +100,6 @@ With [pip](https://pip.pypa.io/en/stable/):
 pip install ruff-sync
 ```
 
-#### From Source (Bleeding Edge)
-
-If you want the latest development version:
-
-```console
-uv tool install git+https://github.com/Kilo59/ruff-sync
-```
-
 ### Usage
 
 ```console
@@ -236,6 +228,24 @@ A typical setup for an organization:
 ruff-sync https://github.com/my-org/python-standards
 git diff pyproject.toml  # review the changes
 git commit -am "sync ruff config from upstream"
+```
+
+### Curated Examples
+
+While `ruff-sync` is designed to sync from *any* repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
+
+For example, to sync an exhaustive "kitchen-sink" configuration that explicitly enables all rules and documents them:
+
+```console
+ruff-sync https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
+```
+
+Or configure it using `pyproject.toml` so it's always the default for your local project:
+
+```toml
+[tool.ruff-sync]
+upstream = "https://github.com/Kilo59/ruff-sync"
+path = "configs/kitchen-sink"
 ```
 
 ## Bootstrapping a New Project

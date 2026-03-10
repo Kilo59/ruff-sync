@@ -88,6 +88,7 @@ jobs:
           ruff-sync --version
           ruff-sync https://github.com/Kilo59/ruff-sync
           ruff-sync check https://github.com/Kilo59/ruff-sync
+          ! ruff-sync check --semantic https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
 
   publish:
     name: Build and publish to PyPI
