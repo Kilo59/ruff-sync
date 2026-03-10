@@ -1,168 +1,136 @@
 # ruff-sync Kitchen Sink Configuration
 # https://github.com/Kilo59/ruff-sync
 #
-# This file enables ALL possible Ruff rules as of Ruff v0.9+
+# This file enables ALL possible Ruff rules as of Ruff v0.15.5
 # It explicitly lists all rule categories and provides links to their documentation.
 # This serves as a comprehensive reference for what is possible with Ruff.
-
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
-]
 
 # Same as Black.
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.13
-target-version = "py313"
+# Assume Python 3.10
+target-version = "py310"
 
 [lint]
 # Enable all rule categories explicitly.
 select = [
+    # https://docs.astral.sh/ruff/rules/#pyflakes-f
     "F",      # Pyflakes: Essential checks for python bugs
-              # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    # https://docs.astral.sh/ruff/rules/#error-e
     "E",      # pycodestyle errors: PEP8 styling
-              # https://docs.astral.sh/ruff/rules/#error-e
+    # https://docs.astral.sh/ruff/rules/#warning-w
     "W",      # pycodestyle warnings: PEP8 styling
-              # https://docs.astral.sh/ruff/rules/#warning-w
+    # https://docs.astral.sh/ruff/rules/#mccabe-c90
     "C90",    # mccabe: Code complexity (cyclomatic complexity)
-              # https://docs.astral.sh/ruff/rules/#mccabe-c90
+    # https://docs.astral.sh/ruff/rules/#isort-i
     "I",      # isort: Import sorting
-              # https://docs.astral.sh/ruff/rules/#isort-i
+    # https://docs.astral.sh/ruff/rules/#pep8-naming-n
     "N",      # pep8-naming: Naming conventions
-              # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    # https://docs.astral.sh/ruff/rules/#pydocstyle-d
     "D",      # pydocstyle: Docstring conventions
-              # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    # https://docs.astral.sh/ruff/rules/#pyupgrade-up
     "UP",     # pyupgrade: Upgrade syntax for newer Python versions
-              # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    # https://docs.astral.sh/ruff/rules/#flake8-2020-ytt
     "YTT",    # flake8-2020: Checks for sys.version and sys.version_info usage
-              # https://docs.astral.sh/ruff/rules/#flake8-2020-ytt
+    # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
     "ANN",    # flake8-annotations: Type annotation checks
-              # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
+    # https://docs.astral.sh/ruff/rules/#flake8-async-async
     "ASYNC",  # flake8-async: Asynchronous code checks
-              # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
     "S",      # flake8-bandit: Security testing
-              # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    # https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
     "BLE",    # flake8-blind-except: Checks for blind except: statements
-              # https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
+    # https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
     "FBT",    # flake8-boolean-trap: Boolean trap checks
-              # https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
+    # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
     "B",      # flake8-bugbear: Finding likely bugs and design problems
-              # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    # https://docs.astral.sh/ruff/rules/#flake8-builtins-a
     "A",      # flake8-builtins: Check for python builtins being used as variables or parameters
-              # https://docs.astral.sh/ruff/rules/#flake8-builtins-a
+    # https://docs.astral.sh/ruff/rules/#flake8-commas-com
     "COM",    # flake8-commas: Trailing commas checks
-              # https://docs.astral.sh/ruff/rules/#flake8-commas-com
+    # https://docs.astral.sh/ruff/rules/#flake8-copyright-cpy
     "CPY",    # flake8-copyright: Copyright notice checks
-              # https://docs.astral.sh/ruff/rules/#flake8-copyright-cpy
+    # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
     "C4",     # flake8-comprehensions: Write better list/set/dict comprehensions
-              # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
     "DTZ",    # flake8-datetimez: Usage of unsafe naive datetime class
-              # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
     "T10",    # flake8-debugger: Check for pdb;idbp imports and set_traces
-              # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    # https://docs.astral.sh/ruff/rules/#flake8-django-dj
     "DJ",     # flake8-django: Django specific code quality checks
-              # https://docs.astral.sh/ruff/rules/#flake8-django-dj
+    # https://docs.astral.sh/ruff/rules/#flake8-errmsg-em
     "EM",     # flake8-errmsg: Nicer error messages
-              # https://docs.astral.sh/ruff/rules/#flake8-errmsg-em
+    # https://docs.astral.sh/ruff/rules/#flake8-executable-exe
     "EXE",    # flake8-executable: Executable permissions and shebangs
-              # https://docs.astral.sh/ruff/rules/#flake8-executable-exe
+    # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
     "FA",     # flake8-future-annotations: Verify python 3.7+ from __future__ import annotations
-              # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    # https://docs.astral.sh/ruff/rules/#flake8-implicit-str-concat-isc
     "ISC",    # flake8-implicit-str-concat: Implicit string concatenation checks
-              # https://docs.astral.sh/ruff/rules/#flake8-implicit-str-concat-isc
+    # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
     "ICN",    # flake8-import-conventions: Enforce standard naming for standard libraries
-              # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
     "G",      # flake8-logging-format: Validate logging format strings
-              # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    # https://docs.astral.sh/ruff/rules/#flake8-no-pep420-inp
     "INP",    # flake8-no-pep420: Ban PEP-420 implicit namespace packages
-              # https://docs.astral.sh/ruff/rules/#flake8-no-pep420-inp
+    # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
     "PIE",    # flake8-pie: Misc. lints
-              # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
+    # https://docs.astral.sh/ruff/rules/#flake8-print-t20
     "T20",    # flake8-print: Check for Print statements in python files
-              # https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    # https://docs.astral.sh/ruff/rules/#flake8-pyi-pyi
     "PYI",    # flake8-pyi: Linting for .pyi files
-              # https://docs.astral.sh/ruff/rules/#flake8-pyi-pyi
+    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
     "PT",     # flake8-pytest-style: Checking common style issues or inconsistencies with pytest
-              # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
     "Q",      # flake8-quotes: Lint for quotes
-              # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    # https://docs.astral.sh/ruff/rules/#flake8-raise-rse
     "RSE",    # flake8-raise: Find and correct raise statements
-              # https://docs.astral.sh/ruff/rules/#flake8-raise-rse
+    # https://docs.astral.sh/ruff/rules/#flake8-return-ret
     "RET",    # flake8-return: Check return values
-              # https://docs.astral.sh/ruff/rules/#flake8-return-ret
+    # https://docs.astral.sh/ruff/rules/#flake8-self-slf
     "SLF",    # flake8-self: Private member access checks
-              # https://docs.astral.sh/ruff/rules/#flake8-self-slf
+    # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
     "SLOT",   # flake8-slots: Require __slots__ for subclasses of immutable types
-              # https://docs.astral.sh/ruff/rules/#flake8-slots-slot
+    # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
     "SIM",    # flake8-simplify: Code simplification
-              # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+    # https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
     "TID",    # flake8-tidy-imports: Tidy imports
-              # https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
+    # https://docs.astral.sh/ruff/rules/#flake8-type-checking-tc
     "TC",     # flake8-type-checking: Move imports into type-checking blocks
-              # https://docs.astral.sh/ruff/rules/#flake8-type-checking-tc
-    "INT",    # flake8-gettext: Detect issues with gettext usage
-              # https://docs.astral.sh/ruff/rules/#flake8-gettext-int
+    # https://docs.astral.sh/ruff/rules/#flake8-gettext-int
     "ARG",    # flake8-unused-arguments: Unused argument checks
-              # https://docs.astral.sh/ruff/rules/#flake8-unused-arguments-arg
+    # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
     "PTH",    # flake8-use-pathlib: Use pathlib instead of os.path
-              # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
+    # https://docs.astral.sh/ruff/rules/#flake8-todos-td
     "TD",     # flake8-todos: TODO comments formatting
-              # https://docs.astral.sh/ruff/rules/#flake8-todos-td
+    # https://docs.astral.sh/ruff/rules/#flake8-fixme-fix
     "FIX",    # flake8-fixme: Check for FIXME, XXX and other developer notes
-              # https://docs.astral.sh/ruff/rules/#flake8-fixme-fix
+    # https://docs.astral.sh/ruff/rules/#eradicate-era
     "ERA",    # eradicate: Found commented out code
-              # https://docs.astral.sh/ruff/rules/#eradicate-era
+    # https://docs.astral.sh/ruff/rules/#pandas-vet-pd
     "PD",     # pandas-vet: Pandas code checks
-              # https://docs.astral.sh/ruff/rules/#pandas-vet-pd
+    # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PGH",    # pygrep-hooks: Pygrep hooks
-              # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
+    # https://docs.astral.sh/ruff/rules/#pylint-pl
     "PL",     # Pylint: Pylint rules
-              # https://docs.astral.sh/ruff/rules/#pylint-pl
+    # https://docs.astral.sh/ruff/rules/#tryceratops-try
     "TRY",    # tryceratops: Prevent Exception Handling AntiPatterns
-              # https://docs.astral.sh/ruff/rules/#tryceratops-try
+    # https://docs.astral.sh/ruff/rules/#flynt-fly
     "FLY",    # flynt: Convert string formatting to f-strings
-              # https://docs.astral.sh/ruff/rules/#flynt-fly
+    # https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
     "NPY",    # NumPy-specific rules: NumPy conventions
-              # https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
+    # https://docs.astral.sh/ruff/rules/#airflow-air
     "AIR",    # Airflow: Airflow best practices
-              # https://docs.astral.sh/ruff/rules/#airflow-air
+    # https://docs.astral.sh/ruff/rules/#perflint-perf
     "PERF",   # Perflint: Performance anti-patterns
-              # https://docs.astral.sh/ruff/rules/#perflint-perf
+    # https://docs.astral.sh/ruff/rules/#refurb-furb
     "FURB",   # refurb: Modernize Python code
-              # https://docs.astral.sh/ruff/rules/#refurb-furb
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG",    # flake8-logging: Better logging practices
-              # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    # https://docs.astral.sh/ruff/rules/#pydoclint-doc
     "DOC",    # pydoclint: Validate docstrings against function signatures
-              # https://docs.astral.sh/ruff/rules/#pydoclint-doc
+    # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF"     # Ruff-specific rules: Rules unique to Ruff
-              # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
 ]
 
 # We don't ignore any rules in this config, as it aims to be exhaustive.
@@ -240,3 +208,36 @@ docstring-code-format = true
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[lint.flake8-pytest-style]
+# Whether to require parentheses for pytest fixtures.
+# Default: true
+fixture-parentheses = true
+# The type of pytest.mark.parametrize names to use: "tuple", "list", or "csv"
+# Default: "tuple"
+parametrize-names-type = "tuple"
+
+[lint.pylint]
+# The maximum number of arguments allowed for a function.
+# Default: 5
+max-args = 5
+# The maximum return statements allowed for a function.
+# Default: 6
+max-returns = 6
+# The maximum number of branches allowed for a function.
+# Default: 12
+max-branches = 12
+# The maximum number of local variables allowed for a function.
+# Default: 15
+max-locals = 15
+
+[lint.pep8-naming]
+# Additional functions or methods that should be exempt from the lower_case_with_underscores rule.
+# Default: []
+ignore-names = []
+# Additional decorators that should be treated as classmethod.
+# Default: []
+classmethod-decorators = [
+    "pydantic.validator",
+    "pydantic.root_validator",
+]
