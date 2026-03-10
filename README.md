@@ -237,7 +237,7 @@ While `ruff-sync` is designed to sync from *any* repository or URL of your choos
 For example, to sync an exhaustive "kitchen-sink" configuration that explicitly enables all rules and documents them:
 
 ```console
-ruff-sync https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
+ruff-sync https://github.com/Kilo59/ruff-sync/blob/main/configs/kitchen-sink/ruff.toml
 ```
 
 Or configure it using `pyproject.toml` so it's always the default for your local project:
