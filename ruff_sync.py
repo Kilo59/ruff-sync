@@ -216,17 +216,29 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
+def _get_target_path(path: str | None) -> str:
+    """Resolve the target path for configuration files.
+
+    If the path ends in .toml, it's treated as a direct file path.
+    Otherwise, it appends 'pyproject.toml' to the path.
+    """
+    if path and path.endswith(".toml"):
+        return path.strip("/")
+    return f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
+
+
 def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     """Convert a GitHub URL to its corresponding raw content URL.
 
     Supports:
     - Blob URLs: https://github.com/org/repo/blob/branch/path/to/file
-    - Repo URLs: https://github.com/org/repo (defaults to {branch}/{path}/pyproject.toml)
+    - Repo URLs: https://github.com/org/repo (defaults to {branch}/{path}/pyproject.toml if path
+      doesn't end in .toml)
 
     Args:
         url (URL): The GitHub URL to be converted.
         branch (str): The default branch to use for repo URLs.
-        path (str): The directory prefix for pyproject.toml.
+        path (str): The directory prefix for pyproject.toml, or a direct path to a .toml file.
 
     Returns:
         URL: The corresponding raw content URL.
@@ -243,7 +255,7 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     path_parts = [p for p in url.path.split("/") if p]
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
-        target_path = f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
+        target_path = _get_target_path(path)
         raw_url = url.copy_with(
             host=_GITHUB_RAW_HOST,
             path=f"/{org}/{repo}/{branch}/{target_path}",
@@ -260,12 +272,13 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
 
     Supports:
     - Blob URLs: https://gitlab.com/org/repo/-/blob/branch/path/to/file
-    - Repo URLs: https://gitlab.com/org/repo (defaults to {branch}/{path}/pyproject.toml)
+    - Repo URLs: https://gitlab.com/org/repo (defaults to {branch}/{path}/pyproject.toml if path
+      doesn't end in .toml)
 
     Args:
         url (URL): The GitLab URL to be converted.
         branch (str): The default branch to use for repo URLs.
-        path (str): The directory prefix for pyproject.toml.
+        path (str): The directory prefix for pyproject.toml, or a direct path to a .toml file.
 
     Returns:
         URL: The corresponding raw content URL.
@@ -283,7 +296,7 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
         # Avoid empty paths or just a slash
         path_prefix = url.path.rstrip("/")
         if path_prefix:
-            target_path = f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
+            target_path = _get_target_path(path)
             raw_url = url.copy_with(path=f"{path_prefix}/-/raw/{branch}/{target_path}")
             LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
             return raw_url
@@ -367,11 +380,7 @@ async def fetch_upstream_config(
                         capture_output=True,
                         text=True,
                     )
-                    target_path = (
-                        pathlib.Path(path.strip("/")) / "pyproject.toml"
-                        if path
-                        else pathlib.Path("pyproject.toml")
-                    )
+                    target_path = pathlib.Path(_get_target_path(path))
 
                     # Restore just the pyproject_toml file
                     restore_cmd = [
