@@ -134,8 +134,14 @@ select = [
 ]
 
 # We don't ignore any rules in this config, as it aims to be exhaustive.
-# However, many times users will want to ignore conficting rules like:
-# ignore = ["COM812", "ISC001"] # Recommend to ignore when using Ruff format
+# WARNING: Some of the rules enabled above may be mutually exclusive or
+# conflict with each other (e.g., D212 and D213). You will likely need to
+# remove some rules from the `select` list or add them to the `ignore`
+# list below based on your preferences and project conventions.
+#
+# For example, when using the Ruff formatter, it is recommended to ignore
+# these conflicting lint rules:
+# ignore = ["COM812", "ISC001"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
