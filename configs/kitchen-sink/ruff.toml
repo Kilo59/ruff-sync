@@ -50,7 +50,7 @@ select = [
     # https://docs.astral.sh/ruff/rules/#flake8-commas-com
     "COM",    # flake8-commas: Trailing commas checks
     # https://docs.astral.sh/ruff/rules/#flake8-copyright-cpy
-    "CPY",    # flake8-copyright: Copyright notice checks
+    # "CPY",    # flake8-copyright: Copyright notice checks (Note: requires `preview = true`)
     # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
     "C4",     # flake8-comprehensions: Write better list/set/dict comprehensions
     # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
@@ -128,7 +128,7 @@ select = [
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG",    # flake8-logging: Better logging practices
     # https://docs.astral.sh/ruff/rules/#pydoclint-doc
-    "DOC",    # pydoclint: Validate docstrings against function signatures
+    # "DOC",    # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
     # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF"     # Ruff-specific rules: Rules unique to Ruff
 ]
