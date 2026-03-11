@@ -262,10 +262,9 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
         target_path = _get_target_path(path)
-        new_path = pathlib.PurePosixPath("/", org, repo, branch, target_path)
         raw_url = url.copy_with(
             host=_GITHUB_RAW_HOST,
-            path=str(new_path),
+            path=str(pathlib.PurePosixPath("/", org, repo, branch, target_path)),
         )
         LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url}")
         return raw_url
@@ -304,8 +303,9 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
         path_prefix = url.path.rstrip("/")
         if path_prefix:
             target_path = _get_target_path(path)
-            new_path = pathlib.PurePosixPath(path_prefix, "-", "raw", branch, target_path)
-            raw_url = url.copy_with(path=str(new_path))
+            raw_url = url.copy_with(
+                path=str(pathlib.PurePosixPath(path_prefix, "-", "raw", branch, target_path))
+            )
             LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
             return raw_url
 
