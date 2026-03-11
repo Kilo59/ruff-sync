@@ -219,12 +219,18 @@ def _get_cli_parser() -> ArgumentParser:
 def _get_target_path(path: str | None) -> str:
     """Resolve the target path for configuration files.
 
-    If the path ends in .toml, it's treated as a direct file path.
+    If the path indicates a .toml file, it's treated as a direct file path.
     Otherwise, it appends 'pyproject.toml' to the path.
     """
-    if path and path.endswith(".toml"):
-        return path.strip("/")
-    return f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
+    if not path:
+        return "pyproject.toml"
+
+    # Use PurePosixPath to handle URL-style paths consistently
+    posix_path = pathlib.PurePosixPath(path.strip("/"))
+    if posix_path.suffix == ".toml":
+        return str(posix_path)
+
+    return str(posix_path / "pyproject.toml")
 
 
 def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
@@ -256,9 +262,10 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
         target_path = _get_target_path(path)
+        new_path = pathlib.PurePosixPath("/", org, repo, branch, target_path)
         raw_url = url.copy_with(
             host=_GITHUB_RAW_HOST,
-            path=f"/{org}/{repo}/{branch}/{target_path}",
+            path=str(new_path),
         )
         LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url}")
         return raw_url
@@ -297,7 +304,8 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
         path_prefix = url.path.rstrip("/")
         if path_prefix:
             target_path = _get_target_path(path)
-            raw_url = url.copy_with(path=f"{path_prefix}/-/raw/{branch}/{target_path}")
+            new_path = pathlib.PurePosixPath(path_prefix, "-", "raw", branch, target_path)
+            raw_url = url.copy_with(path=str(new_path))
             LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
             return raw_url
 
