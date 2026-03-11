@@ -310,6 +310,35 @@ def is_git_url(url: URL) -> bool:
     return str(url).startswith("git@") or url.scheme in ("ssh", "git", "git+ssh")
 
 
+def to_git_url(url: URL) -> URL | None:
+    """
+    Attempt to convert a browser or raw URL to a git (SSH) URL.
+
+    Supports GitHub and GitLab.
+    """
+    if is_git_url(url):
+        return url
+
+    if url.host in _GITHUB_HOSTS or url.host == _GITHUB_RAW_HOST:
+        path_parts = [p for p in url.path.split("/") if p]
+        if len(path_parts) >= _GITHUB_REPO_PATH_PARTS_COUNT:
+            org, repo = path_parts[:_GITHUB_REPO_PATH_PARTS_COUNT]
+            repo = repo.removesuffix(".git")
+            return URL(f"git@github.com:{org}/{repo}.git")
+
+    if url.host in _GITLAB_HOSTS:
+        path = url.path.strip("/")
+        if "/-/" in path:
+            project_path = path.split("/-/")[0]
+        else:
+            project_path = path
+        if project_path:
+            project_path = project_path.removesuffix(".git")
+            return URL(f"git@{url.host}:{project_path}.git")
+
+    return None
+
+
 def resolve_raw_url(url: URL, branch: str = "main", path: str | None = None) -> URL:
     """Convert a GitHub or GitLab repository/blob URL to a raw content URL.
 
@@ -433,7 +462,22 @@ async def fetch_upstream_config(
         content = await asyncio.to_thread(_git_clone_and_read)
         return StringIO(content)
 
-    return await download(url, client)
+    try:
+        return await download(url, client)
+    except httpx.HTTPStatusError as e:
+        msg = f"HTTP error {e.response.status_code} when downloading from {url}"
+        git_url = to_git_url(url)
+        if git_url:
+            msg += (
+                f"\n\n💡 Check the URL and your permissions. "
+                "You might want to try cloning via git instead:\n\n"
+                f"   ruff-sync {sys.argv[1] if len(sys.argv) > 1 else 'pull'} {git_url}"
+            )
+        else:
+            msg += "\n\n💡 Check the URL and your permissions."
+
+        # Re-raise with a more helpful message while preserving the original exception context
+        raise httpx.HTTPStatusError(msg, request=e.request, response=e.response) from None
 
 
 def is_ruff_toml_file(path_or_url: str) -> bool:
