@@ -23,7 +23,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.4"
+__version__ = "0.0.5.dev1"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
@@ -328,10 +328,7 @@ def to_git_url(url: URL) -> URL | None:
 
     if url.host in _GITLAB_HOSTS:
         path = url.path.strip("/")
-        if "/-/" in path:
-            project_path = path.split("/-/")[0]
-        else:
-            project_path = path
+        project_path = path.split("/-/")[0] if "/-/" in path else path
         if project_path:
             project_path = project_path.removesuffix(".git")
             return URL(f"git@{url.host}:{project_path}.git")
@@ -468,10 +465,17 @@ async def fetch_upstream_config(
         msg = f"HTTP error {e.response.status_code} when downloading from {url}"
         git_url = to_git_url(url)
         if git_url:
+            # sys.argv[1] might be -v or something else when running via pytest
+            try:
+                cmd = sys.argv[1]
+                if cmd not in ("pull", "check"):
+                    cmd = "pull"
+            except IndexError:
+                cmd = "pull"
             msg += (
                 f"\n\n💡 Check the URL and your permissions. "
                 "You might want to try cloning via git instead:\n\n"
-                f"   ruff-sync {sys.argv[1] if len(sys.argv) > 1 else 'pull'} {git_url}"
+                f"   ruff-sync {cmd} {git_url}"
             )
         else:
             msg += "\n\n💡 Check the URL and your permissions."
