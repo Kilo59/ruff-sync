@@ -5,7 +5,7 @@
 # It enables rules directly relevant to web development and async Python.
 #
 # Usage: extend this config in your project's ruff.toml:
-#   extend = "ruff-sync/configs/fastapi"
+#   extend = "ruff-sync/configs/fastapi/ruff.toml"
 
 # Same as Black.
 line-length = 88
@@ -51,6 +51,10 @@ select = [
     "SIM",   # flake8-simplify: Code simplification
     # https://docs.astral.sh/ruff/rules/#pylint-pl
     "PL",    # Pylint: Pylint rules (includes PLR2004)
+    # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    "Q",     # flake8-quotes: Lint for quotes
+    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "PT",    # flake8-pytest-style: Pytest style checks
 ]
 
 # Ignore rules that conflict with the Ruff formatter.
@@ -61,11 +65,6 @@ ignore = [
     "E117",  # over-indented
     "D206",  # docstring-tab-indentation
     "D300",  # triple-single-quotes
-    "Q000",  # bad-quotes-inline-string
-    "Q001",  # bad-quotes-multiline-string
-    "Q002",  # bad-quotes-docstring
-    "Q003",  # avoidable-escaped-quote
-    "Q004",  # unnecessary-escaped-quote
     "COM812",    # missing-trailing-comma
     "COM819",    # prohibited-trailing-comma
     "ISC001",    # single-line-implicit-string-concatenation
@@ -112,14 +111,15 @@ docstring-quotes = "double"
 avoid-escape = true
 
 [lint.isort]
-# Known first-party modules for FastAPI projects.
-known-first-party = [
+# Known third-party modules for FastAPI projects.
+# These are external dependencies, not your project code.
+known-third-party = [
     "fastapi",
     "starlette",
     "pydantic",
 ]
 
-[lint.pytest-style]
+[lint.flake8-pytest-style]
 # Whether to require parentheses for pytest fixtures.
 # Default: true
 fixture-parentheses = true
