@@ -1,0 +1,150 @@
+# ruff-sync FastAPI Configuration
+# https://github.com/Kilo59/ruff-sync
+#
+# This is a Ruff configuration tailored for FastAPI / Web App development.
+# It enables rules directly relevant to web development and async Python.
+#
+# Usage (direct Ruff config, assuming this file is vendored into your repo):
+#   extend = "configs/fastapi/ruff.toml"
+#
+# Usage (with ruff-sync in pyproject.toml):
+#   [tool.ruff-sync]
+#   path = "configs/fastapi/ruff.toml"
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.10. Consumers should override this to match their project's Python version.
+target-version = "py310"
+
+[lint]
+# Enable rules relevant to web development and async Python.
+select = [
+    # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "F",     # Pyflakes: Essential checks for Python bugs
+    # https://docs.astral.sh/ruff/rules/#error-e
+    "E",     # pycodestyle errors: PEP8 styling
+    # https://docs.astral.sh/ruff/rules/#warning-w
+    "W",     # pycodestyle warnings: PEP8 styling
+    # https://docs.astral.sh/ruff/rules/#mccabe-c90
+    "C90",   # mccabe: Code complexity (cyclomatic complexity)
+    # https://docs.astral.sh/ruff/rules/#isort-i
+    "I",     # isort: Import sorting
+    # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "N",     # pep8-naming: Naming conventions
+    # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "D",     # pydocstyle: Docstring conventions
+    # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "UP",    # pyupgrade: Upgrade syntax for newer Python versions
+    # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
+    "ANN",   # flake8-annotations: Type annotation checks
+    # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "ASYNC", # flake8-async: Asynchronous code checks
+    # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    "S",     # flake8-bandit: Security testing
+    # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "B",     # flake8-bugbear: Finding likely bugs and design problems
+    # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
+    "PIE",   # flake8-pie: Misc. lints
+    # https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    "T20",   # flake8-print: Check for Print statements
+    # https://docs.astral.sh/ruff/rules/#flake8-return-ret
+    "RET",   # flake8-return: Check return values
+    # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+    "SIM",   # flake8-simplify: Code simplification
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "G",     # flake8-logging-format: Validate logging format strings
+    # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    "Q",     # flake8-quotes: Lint for quotes
+    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "PT",    # flake8-pytest-style: Pytest style checks
+    # https://docs.astral.sh/ruff/rules/#pylint-pl
+    "PL",    # Pylint: Pylint rules
+]
+
+# Ignore rules that conflict with the Ruff formatter.
+# See: https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+ignore = [
+    "W191",  # tab-indentation
+    "E111",  # indentation-with-invalid-multiple
+    "E114",  # indentation-with-invalid-multiple-comment
+    "E117",  # over-indented
+    "D206",  # docstring-tab-indentation
+    "D300",  # triple-single-quotes
+    "Q000",  # bad-quotes-inline-string
+    "Q001",  # bad-quotes-multiline-string
+    "Q002",  # bad-quotes-docstring
+    "Q003",  # avoidable-escaped-quote
+    "Q004",  # unnecessary-escaped-quote
+    "COM812",    # missing-trailing-comma
+    "COM819",    # prohibited-trailing-comma
+    "ISC001",    # single-line-implicit-string-concatenation
+    "ISC002",    # multi-line-implicit-string-concatenation
+]
+
+# Allow autofix for all enabled rules.
+fixable = ["ALL"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.mccabe]
+# Flag errors (C901) whenever the complexity level exceeds 10.
+# Default: 10
+max-complexity = 10
+
+[lint.pydocstyle]
+# Use Google-style docstrings (common in FastAPI projects).
+# Default: "pep257"
+convention = "google"
+
+[lint.flake8-quotes]
+# Use double quotes for inline strings (same as Black).
+# Default: "double"
+inline-quotes = "double"
+# Use double quotes for multiline strings.
+# Default: "double"
+multiline-quotes = "double"
+# Use double quotes for docstrings.
+# Default: "double"
+docstring-quotes = "double"
+# Avoid escaping quotes if the other quote type would save an escape.
+# Default: true
+avoid-escape = true
+
+[lint.flake8-pytest-style]
+# Whether to require parentheses for pytest fixtures.
+# Default: true
+fixture-parentheses = true
+# The type of pytest.mark.parametrize names to use: "tuple", "list", or "csv"
+# Default: "tuple"
+parametrize-names-type = "tuple"
+
+[lint.pylint]
+# The maximum number of arguments allowed for a function.
+# Default: 5
+max-args = 5
+# The maximum number of branches allowed for a function.
+# Default: 12
+max-branches = 12
+
+[lint.pep8-naming]
+# Additional decorators that should be treated as classmethod.
+# Pydantic v1/v2 decorators.
+classmethod-decorators = [
+    "pydantic.validator",
+    "pydantic.root_validator",
+    "pydantic.field_validator",
+    "pydantic.model_validator",
+]
+
+[format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
