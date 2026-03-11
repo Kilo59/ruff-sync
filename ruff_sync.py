@@ -23,7 +23,7 @@ from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
-__version__ = "0.0.4"
+__version__ = "0.0.5.dev1"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
@@ -216,17 +216,35 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
+def _get_target_path(path: str | None) -> str:
+    """Resolve the target path for configuration files.
+
+    If the path indicates a .toml file, it's treated as a direct file path.
+    Otherwise, it appends 'pyproject.toml' to the path.
+    """
+    if not path:
+        return "pyproject.toml"
+
+    # Use PurePosixPath to handle URL-style paths consistently
+    posix_path = pathlib.PurePosixPath(path.strip("/"))
+    if posix_path.suffix == ".toml":
+        return str(posix_path)
+
+    return str(posix_path / "pyproject.toml")
+
+
 def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     """Convert a GitHub URL to its corresponding raw content URL.
 
     Supports:
     - Blob URLs: https://github.com/org/repo/blob/branch/path/to/file
-    - Repo URLs: https://github.com/org/repo (defaults to {branch}/{path}/pyproject.toml)
+    - Repo URLs: https://github.com/org/repo (defaults to {branch}/{path}/pyproject.toml if path
+      doesn't end in .toml)
 
     Args:
         url (URL): The GitHub URL to be converted.
         branch (str): The default branch to use for repo URLs.
-        path (str): The directory prefix for pyproject.toml.
+        path (str): The directory prefix for pyproject.toml, or a direct path to a .toml file.
 
     Returns:
         URL: The corresponding raw content URL.
@@ -243,10 +261,10 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     path_parts = [p for p in url.path.split("/") if p]
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
-        target_path = f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
+        target_path = _get_target_path(path)
         raw_url = url.copy_with(
             host=_GITHUB_RAW_HOST,
-            path=f"/{org}/{repo}/{branch}/{target_path}",
+            path=str(pathlib.PurePosixPath("/", org, repo, branch, target_path)),
         )
         LOGGER.info(f"Converting GitHub repo URL to raw content URL: {raw_url}")
         return raw_url
@@ -260,12 +278,13 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
 
     Supports:
     - Blob URLs: https://gitlab.com/org/repo/-/blob/branch/path/to/file
-    - Repo URLs: https://gitlab.com/org/repo (defaults to {branch}/{path}/pyproject.toml)
+    - Repo URLs: https://gitlab.com/org/repo (defaults to {branch}/{path}/pyproject.toml if path
+      doesn't end in .toml)
 
     Args:
         url (URL): The GitLab URL to be converted.
         branch (str): The default branch to use for repo URLs.
-        path (str): The directory prefix for pyproject.toml.
+        path (str): The directory prefix for pyproject.toml, or a direct path to a .toml file.
 
     Returns:
         URL: The corresponding raw content URL.
@@ -283,8 +302,10 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
         # Avoid empty paths or just a slash
         path_prefix = url.path.rstrip("/")
         if path_prefix:
-            target_path = f"{path.strip('/')}/pyproject.toml" if path else "pyproject.toml"
-            raw_url = url.copy_with(path=f"{path_prefix}/-/raw/{branch}/{target_path}")
+            target_path = _get_target_path(path)
+            raw_url = url.copy_with(
+                path=str(pathlib.PurePosixPath(path_prefix, "-", "raw", branch, target_path))
+            )
             LOGGER.info(f"Converting GitLab repo URL to raw content URL: {raw_url}")
             return raw_url
 
@@ -295,6 +316,32 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
 def is_git_url(url: URL) -> bool:
     """Return True if the URL should be treated as a git repository."""
     return str(url).startswith("git@") or url.scheme in ("ssh", "git", "git+ssh")
+
+
+def to_git_url(url: URL) -> URL | None:
+    """
+    Attempt to convert a browser or raw URL to a git (SSH) URL.
+
+    Supports GitHub and GitLab.
+    """
+    if is_git_url(url):
+        return url
+
+    if url.host in _GITHUB_HOSTS or url.host == _GITHUB_RAW_HOST:
+        path_parts = [p for p in url.path.split("/") if p]
+        if len(path_parts) >= _GITHUB_REPO_PATH_PARTS_COUNT:
+            org, repo = path_parts[:_GITHUB_REPO_PATH_PARTS_COUNT]
+            repo = repo.removesuffix(".git")
+            return URL(f"git@github.com:{org}/{repo}.git")
+
+    if url.host in _GITLAB_HOSTS:
+        path = url.path.strip("/")
+        project_path = path.split("/-/")[0] if "/-/" in path else path
+        if project_path:
+            project_path = project_path.removesuffix(".git")
+            return URL(f"git@{url.host}:{project_path}.git")
+
+    return None
 
 
 def resolve_raw_url(url: URL, branch: str = "main", path: str | None = None) -> URL:
@@ -367,11 +414,7 @@ async def fetch_upstream_config(
                         capture_output=True,
                         text=True,
                     )
-                    target_path = (
-                        pathlib.Path(path.strip("/")) / "pyproject.toml"
-                        if path
-                        else pathlib.Path("pyproject.toml")
-                    )
+                    target_path = pathlib.Path(_get_target_path(path))
 
                     # Restore just the pyproject_toml file
                     restore_cmd = [
@@ -424,7 +467,29 @@ async def fetch_upstream_config(
         content = await asyncio.to_thread(_git_clone_and_read)
         return StringIO(content)
 
-    return await download(url, client)
+    try:
+        return await download(url, client)
+    except httpx.HTTPStatusError as e:
+        msg = f"HTTP error {e.response.status_code} when downloading from {url}"
+        git_url = to_git_url(url)
+        if git_url:
+            # sys.argv[1] might be -v or something else when running via pytest
+            try:
+                cmd = sys.argv[1]
+                if cmd not in ("pull", "check"):
+                    cmd = "pull"
+            except IndexError:
+                cmd = "pull"
+            msg += (
+                f"\n\n💡 Check the URL and your permissions. "
+                "You might want to try cloning via git instead:\n\n"
+                f"   ruff-sync {cmd} {git_url}"
+            )
+        else:
+            msg += "\n\n💡 Check the URL and your permissions."
+
+        # Re-raise with a more helpful message while preserving the original exception context
+        raise httpx.HTTPStatusError(msg, request=e.request, response=e.response) from None
 
 
 def is_ruff_toml_file(path_or_url: str) -> bool:
