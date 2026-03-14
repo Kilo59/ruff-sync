@@ -1454,11 +1454,6 @@ dependencies = [
 dev = [
     { name = "coverage" },
     { name = "invoke" },
-    { name = "mkdocs" },
-    { name = "mkdocs-gen-files" },
-    { name = "mkdocs-literate-nav" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
     { name = "mypy" },
     { name = "packaging" },
     { name = "pre-commit" },
@@ -1470,6 +1465,13 @@ dev = [
     { name = "ruamel-yaml" },
     { name = "ruff" },
     { name = "wily" },
+]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-gen-files" },
+    { name = "mkdocs-literate-nav" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
 ]
 
 [package.metadata]
@@ -1483,11 +1485,6 @@ requires-dist = [
 dev = [
     { name = "coverage", specifier = ">=7.4.4" },
     { name = "invoke", specifier = ">=2.2.0" },
-    { name = "mkdocs", specifier = ">=1.6.1" },
-    { name = "mkdocs-gen-files", specifier = ">=0.6.0" },
-    { name = "mkdocs-literate-nav", specifier = ">=0.6.2" },
-    { name = "mkdocs-material", specifier = ">=9.7.5" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.3" },
     { name = "mypy", specifier = ">=1.10.0" },
     { name = "packaging", specifier = ">=26.0" },
     { name = "pre-commit", specifier = ">=3.7.0" },
@@ -1499,6 +1496,13 @@ dev = [
     { name = "ruamel-yaml", specifier = ">=0.18.6" },
     { name = "ruff", specifier = ">=0.15.0" },
     { name = "wily", specifier = ">=1.25.0" },
+]
+docs = [
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-gen-files", specifier = ">=0.6.0" },
+    { name = "mkdocs-literate-nav", specifier = ">=0.6.2" },
+    { name = "mkdocs-material", specifier = ">=9.7.5" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.3" },
 ]
 
 [[package]]

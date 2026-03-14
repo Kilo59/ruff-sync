@@ -43,11 +43,6 @@ ruff-sync = "ruff_sync:main"
 dev = [
     "coverage>=7.4.4",
     "invoke>=2.2.0",
-    "mkdocs>=1.6.1",
-    "mkdocs-gen-files>=0.6.0",
-    "mkdocs-literate-nav>=0.6.2",
-    "mkdocs-material>=9.7.5",
-    "mkdocstrings[python]>=1.0.3",
     "mypy>=1.10.0",
     "packaging>=26.0",
     "pre-commit>=3.7.0",
@@ -60,6 +55,16 @@ dev = [
     "ruff>=0.15.0",
     "wily>=1.25.0",
 ]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-gen-files>=0.6.0",
+    "mkdocs-literate-nav>=0.6.2",
+    "mkdocs-material>=9.7.5",
+    "mkdocstrings[python]>=1.0.3",
+]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [build-system]
 requires = ["hatchling"]
