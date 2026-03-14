@@ -202,7 +202,8 @@ def readme_excludes_env(
 @pytest.mark.asyncio
 async def test_readme_exclude_examples(readme_excludes_env):
     """Verify that the exact exclude paths from the README Configuration
-    section correctly preserve local values during a pull."""
+    section correctly preserve local values during a pull.
+    """
     env = readme_excludes_env
     await ruff_sync.pull(
         ruff_sync.Arguments(

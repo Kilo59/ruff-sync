@@ -293,6 +293,7 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
 
     Returns:
         URL: The corresponding raw content URL.
+
     """
     # Handle blob URLs (e.g. .../blob/main/pyproject.toml)
     if "/blob/" in url.path:
@@ -347,6 +348,7 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
 
     Returns:
         URL: The corresponding raw content URL.
+
     """
     # Handle blob URLs (e.g. .../-/blob/main/pyproject.toml)
     if "/-/blob/" in url.path:
@@ -396,8 +398,7 @@ def is_git_url(url: URL) -> bool:
 
 
 def to_git_url(url: URL) -> URL | None:
-    """
-    Attempt to convert a browser or raw URL to a git (SSH) URL.
+    """Attempt to convert a browser or raw URL to a git (SSH) URL.
 
     Supports GitHub and GitLab.
     """
@@ -431,6 +432,7 @@ def resolve_raw_url(url: URL, branch: str = "main", path: str | None = None) -> 
 
     Returns:
         URL: The resolved raw content URL, or the original URL if no conversion applies.
+
     """
     # If it's a git URL, leave it alone; we'll handle it via git clone
     if is_git_url(url):
@@ -486,6 +488,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
 
     Returns:
         FetchResult: (content buffer, resolved path string)
+
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files

@@ -52,7 +52,8 @@ def test_source_config_deprecation(
     clear_ruff_sync_caches,
 ):
     """Test that source in [tool.ruff-sync] emits a deprecation warning
-    and that `to` takes precedence."""
+    and that `to` takes precedence.
+    """
     test_dir = pathlib.Path("/app")
     fs.create_dir(str(test_dir))
     monkeypatch.chdir(str(test_dir))
