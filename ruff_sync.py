@@ -159,15 +159,12 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--to",
-        type=pathlib.Path,
-        default=None,
         help="The directory or file to sync ruff configuration to. Default: .",
         required=False,
     )
     # Add --source as a deprecated alias
     common_parser.add_argument(
         "--source",
-        type=pathlib.Path,
         help="Deprecated alias for --to.",
         required=False,
         metavar="PATH",
@@ -920,9 +917,9 @@ def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) 
     """Resolve target path from CLI, config, or default."""
     if args.source:
         LOGGER.warning("DeprecationWarning: --source is deprecated. Use --to instead.")
-        return cast("pathlib.Path", args.source)
+        return pathlib.Path(args.source)
     if args.to:
-        return cast("pathlib.Path", args.to)
+        return pathlib.Path(args.to)
     if "to" in config:
         target = pathlib.Path(config["to"])
         # Resolve relative to the directory where we found the config file
@@ -973,7 +970,9 @@ def main() -> int:
     LOGGER.propagate = "PYTEST_CURRENT_TEST" in os.environ  # Allow capturing in tests
 
     # Determine target 'to' from CLI or use default '.'
-    initial_to = args.source or args.to or pathlib.Path()
+    # Defer Path conversion to avoid pyfakefs issues with captured Path class
+    arg_to = args.to or args.source
+    initial_to = pathlib.Path(arg_to) if arg_to else pathlib.Path()
     config: Config = get_config(initial_to)
 
     upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
