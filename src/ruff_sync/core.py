@@ -32,6 +32,23 @@ from tomlkit.toml_file import TOMLFile
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
 
+__all__: Final[list[str]] = [
+    "Config",
+    "FetchResult",
+    "check",
+    "fetch_upstream_config",
+    "get_ruff_config",
+    "get_ruff_tool_table",
+    "is_ruff_toml_file",
+    "merge_ruff_toml",
+    "pull",
+    "resolve_raw_url",
+    "to_git_url",
+    "toml_ruff_parse",
+]
+
+LOGGER = logging.getLogger(__name__)
+
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
 _GITHUB_TREE_PREFIX_PARTS_COUNT: Final[int] = 4
@@ -39,7 +56,6 @@ _GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
 _GITHUB_RAW_HOST: Final[str] = "raw.githubusercontent.com"
 _GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
 
-LOGGER = logging.getLogger(__name__)
 _HTTP_OK: Final = 200
 _HTTP_NOT_FOUND: Final[int] = 404
 

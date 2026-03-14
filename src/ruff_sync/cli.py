@@ -31,18 +31,19 @@ from ruff_sync.core import Config, check, pull, resolve_raw_url
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
+__all__: Final[list[str]] = [
+    "Arguments",
+    "Arguments",
+    "ColoredFormatter",
+    "get_config",
+    "main",
+]
+
 __version__ = "0.1.0.dev0"
 
-_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
-_GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
-_GITHUB_TREE_PREFIX_PARTS_COUNT: Final[int] = 4
-_GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
-_GITHUB_RAW_HOST: Final[str] = "raw.githubusercontent.com"
-_GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
-
 LOGGER = logging.getLogger(__name__)
-_HTTP_OK: Final = 200
-_HTTP_NOT_FOUND: Final[int] = 404
+
+_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 
 class ColoredFormatter(logging.Formatter):
