@@ -124,7 +124,7 @@ def get_config(
 ) -> Config:
     """Read [tool.ruff-sync] configuration from pyproject.toml."""
     local_toml = source / "pyproject.toml"
-    # TODO: use pydantic to validate the toml file
+    # TODO: use pydantic to validate the toml file  # noqa: TD002, TD003, FIX002
     cfg_result: dict[str, Any] = {}
     if local_toml.exists():
         toml = tomlkit.parse(local_toml.read_text())
@@ -494,7 +494,8 @@ async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: 
             response.raise_for_status()
 
     # Should not reach here if candidates is not empty
-    raise RuntimeError("Configuration discovery failed without error")
+    msg = "Configuration discovery failed without error"
+    raise RuntimeError(msg)
 
 
 def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
@@ -584,7 +585,8 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
                     except subprocess.CalledProcessError:
                         continue
 
-            raise FileNotFoundError(f"Configuration file not found in repository at {target_path}")
+            msg = f"Configuration file not found in repository at {target_path}"
+            raise FileNotFoundError(msg)
         except subprocess.CalledProcessError as e:
             LOGGER.exception(f"Git operation failed: {e.stderr}")
             raise
@@ -693,7 +695,8 @@ def get_ruff_config(
         tool.append("ruff", ruff)
         doc.append("tool", tool)
     if not isinstance(ruff, Table):
-        raise TypeError(f"Expected table, got {type(ruff)}")
+        msg = f"Expected table, got {type(ruff)}"
+        raise TypeError(msg)
     _apply_exclusions(ruff, exclude)
     return ruff
 

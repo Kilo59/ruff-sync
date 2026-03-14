@@ -196,7 +196,8 @@ def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None)
     for stage, toml_doc in toml_dict.items():
         file_name = f"{name}_{stage}.toml"
         if LIFECYCLE_TOML_DIR.joinpath(file_name).exists():
-            raise FileExistsError(f"{file_name} already exists")
+            msg = f"{file_name} already exists"
+            raise FileExistsError(msg)
         TOMLFile(LIFECYCLE_TOML_DIR / file_name).write(toml_doc)
         print(f"📄 {file_name}")
     print(f"🎉 Created tomls for '{name}' test case")

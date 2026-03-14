@@ -8,7 +8,7 @@ import pathlib
 import shutil
 import sys
 from pprint import pformat as pf
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import httpx
 import pytest
@@ -21,6 +21,7 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
+import ruff_sync.cli as ruff_sync_cli
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
@@ -88,7 +89,7 @@ lint.ignore = ["W191", "E111"]
 )
 def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
     original_toml_doc = tomlkit.parse(toml_s)
-    orginal_keys = set(original_toml_doc["tool"]["ruff"]["lint"].keys())  # type: ignore[index,union-attr]
+    orginal_keys = set(cast("Any", original_toml_doc)["tool"]["ruff"]["lint"].keys())
     print(f"{pf(orginal_keys)}")
 
     parsed_toml_doc = ruff_sync.toml_ruff_parse(toml_s, exclude=exclude)
@@ -101,9 +102,9 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
 
     expected_sections = orginal_keys - set(exclude)
     for section in expected_sections:
-        assert (
-            section in original_toml_doc["tool"]["ruff"]["lint"]  # type: ignore[index,operator]
-        ), f"{section} was not in original doc, fix test"
+        assert section in cast("Any", original_toml_doc)["tool"]["ruff"]["lint"], (
+            f"{section} was not in original doc, fix test"
+        )
 
         assert section in lint_config, f"{section} was incorrectly excluded"
 
@@ -133,9 +134,9 @@ select = ["F", "E"]
 "__init__.py" = ["F401"]
 """
     ruff_tbl = ruff_sync.get_ruff_tool_table(full_toml, exclude=["lint.per-file-ignores"])
-    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
+    assert "per-file-ignores" not in cast("Any", ruff_tbl)["lint"]
     # Other keys should be untouched
-    assert ruff_tbl["lint"]["select"] == ["F", "E"]  # type: ignore[index]
+    assert cast("Any", ruff_tbl)["lint"]["select"] == ["F", "E"]
     assert ruff_tbl["target-version"] == "py310"
 
 
@@ -168,9 +169,8 @@ ignore = ["E501"]
     )
     assert "target-version" not in ruff_tbl
     assert "line-length" in ruff_tbl
-    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
-    assert "ignore" not in ruff_tbl["lint"]  # type: ignore[operator]
-    assert ruff_tbl["lint"]["select"] == ["F"]  # type: ignore[index]
+    assert "per-file-ignores" not in cast("Any", ruff_tbl)["lint"]
+    assert cast("Any", ruff_tbl)["lint"]["select"] == ["F"]
 
 
 def test_get_ruff_tool_table_with_dotted_exclude():
@@ -193,8 +193,8 @@ select = ["F"]
     assert isinstance(ruff_tbl, Table)
     assert "line-length" not in ruff_tbl
     assert "target-version" in ruff_tbl
-    assert "per-file-ignores" not in ruff_tbl["lint"]  # type: ignore[operator]
-    assert ruff_tbl["lint"]["select"] == ["F"]  # type: ignore[index]
+    assert "per-file-ignores" not in cast("Any", ruff_tbl)["lint"]
+    assert cast("Any", ruff_tbl)["lint"]["select"] == ["F"]
 
 
 @pytest.mark.parametrize("toml_str", TOML_STRS_PARAMS)
@@ -357,8 +357,8 @@ def test_exclude_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com", "--exclude", "from-cli"])
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"exclude": ["from-config"]})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
@@ -375,8 +375,8 @@ def test_exclude_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"exclude": ["from-config"]})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"exclude": ["from-config"]})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
@@ -393,8 +393,8 @@ def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
@@ -412,8 +412,8 @@ def test_main_default_to_resolution(monkeypatch: pytest.MonkeyPatch):
 
     # No --to, --source, or even upstream (we'll mock config to provide upstream)
     monkeypatch.setattr(sys, "argv", ["ruff-sync"])
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"upstream": "http://example.com"})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"upstream": "http://example.com"})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
@@ -433,8 +433,8 @@ def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"upstream": "http://config.com"})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
@@ -455,9 +455,9 @@ def test_upstream_resolution_missing(
     # No CLI upstream argument
     monkeypatch.setattr(sys, "argv", ["ruff-sync"])
     # No upstream in config
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
     # Ensure sync is never called if upstream is missing
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     with pytest.raises(SystemExit) as excinfo:
         ruff_sync.main()
@@ -483,8 +483,8 @@ def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync"])
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"upstream": "http://config.com"})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"upstream": "http://config.com"})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
@@ -516,12 +516,12 @@ def test_verbosity_log_level(
         argv.append(f"-{'v' * verbose_count}")
 
     monkeypatch.setattr(sys, "argv", argv)
-    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     # Reset LOGGER state before test
-    monkeypatch.setattr(ruff_sync.LOGGER, "level", logging.NOTSET)
-    monkeypatch.setattr(ruff_sync.LOGGER, "handlers", [])
+    monkeypatch.setattr(ruff_sync_cli.LOGGER, "level", logging.NOTSET)
+    monkeypatch.setattr(ruff_sync_cli.LOGGER, "handlers", [])
 
     ruff_sync.main()
 

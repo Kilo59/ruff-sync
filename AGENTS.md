@@ -5,7 +5,7 @@
 **ruff-sync** is a CLI tool that synchronizes [Ruff](https://docs.astral.sh/ruff/) linter configuration across multiple Python projects. It downloads an upstream `pyproject.toml`, extracts the `[tool.ruff]` section, and merges it into a local project's `pyproject.toml` while preserving formatting, comments, and whitespace.
 
 - **GitHub Repository**: [`Kilo59/ruff-sync`](https://github.com/Kilo59/ruff-sync)
-- The entire application lives in a single module: `ruff_sync.py`.
+- The application uses a `src` layout in `src/ruff_sync/`.
 - Dev tasks are defined in `tasks.py` using [Invoke](https://www.pyinvoke.org/).
 
 ## GitHub Context
@@ -54,11 +54,14 @@ gh label list                           # See available labels
 
 ## Project Structure
 
-```
+```text
 .agents/               # Agent-specific instructions (Deep Standards)
   TESTING.md           # Mandatory testing patterns and rules
   workflows/           # Step-by-step guides for common tasks
-ruff_sync.py           # The entire application — CLI, merging logic, HTTP
+src/ruff_sync/         # The application source
+  __init__.py          # Public API
+  cli.py               # CLI, merging logic, HTTP
+  __main__.py          # -m support
 tasks.py               # Invoke tasks: lint, fmt, type-check, deps, new-case
 pyproject.toml         # Project config, dependencies, ruff/mypy settings
 tests/
@@ -114,7 +117,7 @@ uv run mypy .
 ```
 
 - mypy is configured in strict mode with `python_version = "3.10"`.
-- It checks `ruff_sync.py`, `tests/`, and `tasks.py`.
+- It checks `src/`, `tests/`, and `tasks.py`.
 - Tests have relaxed rules: `type-arg` and `no-untyped-def` are disabled for `tests.*`.
 - `tomlkit` returns complex union types — use `cast(Any, ...)` in tests when indexing parsed TOML documents to satisfy mypy without verbose type narrowing.
 
@@ -130,7 +133,7 @@ Or with coverage:
 uv run coverage run -m pytest -vv
 ```
 
-- Coverage is tracked for `ruff_sync.py` only.
+- Coverage is tracked for `src/ruff_sync/` only.
 - Tests use `respx` to mock HTTP calls and `pyfakefs` for filesystem mocking.
 - `pytest-asyncio` is in **strict** mode — async tests need the `@pytest.mark.asyncio` decorator.
 
@@ -165,13 +168,13 @@ uv run coverage run -m pytest -vv
 
 Defined in `tasks.py`. **ALWAYS** run these through uv: `uv run invoke <task>`
 
-| Task         | Alias        | Description                         |
-| ------------ | ------------ | ----------------------------------- |
-| `lint`       |              | Lint with ruff (auto-fixes by default) |
-| `fmt`        |              | Format with ruff format             |
-| `type-check` | `types`      | Type-check with mypy                |
-| `deps`       | `sync`       | Sync dependencies with uv           |
-| `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML fixtures (See [Workflow](.agents/workflows/add-test-case.md)) |
+| Task         | Alias                 | Description                            |
+| ------------ | --------------------- | -------------------------------------- |
+| `lint`       |                       | Lint with ruff (auto-fixes by default) |
+| `fmt`        |                       | Format with ruff format                |
+| `type-check` | `types`               | Type-check with mypy                   |
+| `deps`       | `sync`                | Sync dependencies with uv              |
+| `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML fixtures       |
 
 ## CI
 

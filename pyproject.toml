@@ -43,6 +43,11 @@ ruff-sync = "ruff_sync:main"
 dev = [
     "coverage>=7.4.4",
     "invoke>=2.2.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-gen-files>=0.6.0",
+    "mkdocs-literate-nav>=0.6.2",
+    "mkdocs-material>=9.7.5",
+    "mkdocstrings[python]>=1.0.3",
     "mypy>=1.10.0",
     "packaging>=26.0",
     "pre-commit>=3.7.0",
@@ -60,9 +65,12 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/ruff_sync"]
+
 [tool.mypy]
 python_version = "3.10"
-files = ["ruff_sync.py", "tests/", "tasks.py"]
+files = ["src", "tests/", "tasks.py"]
 strict = true
 warn_unused_configs = true
 ignore_missing_imports = true
@@ -103,8 +111,11 @@ select = [
     "D", # pydocstyle
     # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
+    "EM", # flake8-errmsg - raw string literals in error messages
+    "ERA", # eradicate - commented-out code
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
     "F", # Pyflakes
+    "FIX", # flake8-fixme - FIXME, TODO, HACK, etc.
     # https://beta.ruff.rs/docs/rules/#pycodestyle-e-w
     "E", # pycodestyle
     "W", # Warning
@@ -118,6 +129,7 @@ select = [
     "N", # pep8-naming
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG", # logging - logging best practices
+    "TD", # flake8-todos - TODO comments
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PERF", # perflint - performance related rules
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
@@ -207,7 +219,7 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.coverage.run]
 include = [
-    "ruff_sync.py",
+    "src/ruff_sync/*.py",
     ]
 
 [tool.pytest]

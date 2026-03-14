@@ -35,7 +35,7 @@ TEST_ROOT: Final = pathlib.Path(__file__).parent
 def test_manpage():
     """Test that the manpage can be generated with ruff-sync --help with no errors."""
     completed = subprocess.run(
-        [sys.executable, "ruff_sync.py", "--help"],
+        [sys.executable, "-m", "ruff_sync", "--help"],
         capture_output=True,
         text=True,
         check=False,
