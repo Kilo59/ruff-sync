@@ -35,7 +35,7 @@ TEST_ROOT: Final = pathlib.Path(__file__).parent
 def test_manpage():
     """Test that the manpage can be generated with ruff-sync --help with no errors."""
     completed = subprocess.run(
-        [sys.executable, "ruff_sync.py", "--help"],
+        [sys.executable, "-m", "ruff_sync", "--help"],
         capture_output=True,
         text=True,
         check=False,
@@ -202,7 +202,8 @@ def readme_excludes_env(
 @pytest.mark.asyncio
 async def test_readme_exclude_examples(readme_excludes_env):
     """Verify that the exact exclude paths from the README Configuration
-    section correctly preserve local values during a pull."""
+    section correctly preserve local values during a pull.
+    """
     env = readme_excludes_env
     await ruff_sync.pull(
         ruff_sync.Arguments(

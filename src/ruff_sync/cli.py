@@ -1,3 +1,9 @@
+"""Synchronize Ruff linter configuration across Python projects.
+
+This module provides a CLI tool and library for downloading, parsing, and merging
+Ruff configuration from upstream sources (like GitHub/GitLab) into local projects.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -25,7 +31,7 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import deprecated
 
-__version__ = "0.0.5"
+__version__ = "0.1.0.dev0"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
@@ -40,7 +46,7 @@ _HTTP_NOT_FOUND: Final[int] = 404
 
 
 class ColoredFormatter(logging.Formatter):
-    """Logging Formatter to add colors"""
+    """Logging Formatter to add colors."""
 
     RESET: ClassVar[str] = "\x1b[0m"
     COLORS: ClassVar[Mapping[int, str]] = {
@@ -52,9 +58,11 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def __init__(self, fmt: str = "%(message)s") -> None:
+        """Initialize the formatter with a format string."""
         super().__init__(fmt)
 
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[explicit-override]
+        """Format the log record with colors if the output is a TTY."""
         if sys.stderr.isatty():
             color = self.COLORS.get(record.levelno, self.RESET)
             return f"{color}{super().format(record)}{self.RESET}"
@@ -62,6 +70,8 @@ class ColoredFormatter(logging.Formatter):
 
 
 class Arguments(NamedTuple):
+    """CLI arguments for the ruff-sync tool."""
+
     command: str
     upstream: URL
     to: pathlib.Path
@@ -76,20 +86,26 @@ class Arguments(NamedTuple):
     @property
     @deprecated("Use 'to' instead")
     def source(self) -> pathlib.Path:
+        """Deprecated: use 'to' instead."""
         return self.to
 
     @classmethod
     @lru_cache(maxsize=1)
     def fields(cls) -> set[str]:
+        """Return the set of all field names, including deprecated ones."""
         return set(cls._fields) | {"source"}
 
 
 class FetchResult(NamedTuple):
+    """Result of fetching an upstream configuration."""
+
     buffer: StringIO
     resolved_upstream: URL
 
 
 class Config(TypedDict, total=False):
+    """Configuration schema for [tool.ruff-sync] in pyproject.toml."""
+
     upstream: str
     to: str
     source: str  # Deprecated
@@ -293,6 +309,7 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
 
     Returns:
         URL: The corresponding raw content URL.
+
     """
     # Handle blob URLs (e.g. .../blob/main/pyproject.toml)
     if "/blob/" in url.path:
@@ -347,6 +364,7 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
 
     Returns:
         URL: The corresponding raw content URL.
+
     """
     # Handle blob URLs (e.g. .../-/blob/main/pyproject.toml)
     if "/-/blob/" in url.path:
@@ -396,8 +414,7 @@ def is_git_url(url: URL) -> bool:
 
 
 def to_git_url(url: URL) -> URL | None:
-    """
-    Attempt to convert a browser or raw URL to a git (SSH) URL.
+    """Attempt to convert a browser or raw URL to a git (SSH) URL.
 
     Supports GitHub and GitLab.
     """
@@ -431,6 +448,7 @@ def resolve_raw_url(url: URL, branch: str = "main", path: str | None = None) -> 
 
     Returns:
         URL: The resolved raw content URL, or the original URL if no conversion applies.
+
     """
     # If it's a git URL, leave it alone; we'll handle it via git clone
     if is_git_url(url):
@@ -476,7 +494,8 @@ async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: 
             response.raise_for_status()
 
     # Should not reach here if candidates is not empty
-    raise RuntimeError("Configuration discovery failed without error")
+    msg = "Configuration discovery failed without error"
+    raise RuntimeError(msg)
 
 
 def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
@@ -486,6 +505,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
 
     Returns:
         FetchResult: (content buffer, resolved path string)
+
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
@@ -565,7 +585,8 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
                     except subprocess.CalledProcessError:
                         continue
 
-            raise FileNotFoundError(f"Configuration file not found in repository at {target_path}")
+            msg = f"Configuration file not found in repository at {target_path}"
+            raise FileNotFoundError(msg)
         except subprocess.CalledProcessError as e:
             LOGGER.exception(f"Git operation failed: {e.stderr}")
             raise
@@ -649,6 +670,7 @@ def get_ruff_config(
     exclude: Iterable[str] = (),
 ) -> TOMLDocument | Table | None:
     """Get the ruff section or document from a TOML string.
+
     If it does not exist and it is a pyproject.toml, create it.
     """
     if isinstance(toml, str):
@@ -673,7 +695,8 @@ def get_ruff_config(
         tool.append("ruff", ruff)
         doc.append("tool", tool)
     if not isinstance(ruff, Table):
-        raise TypeError(f"Expected table, got {type(ruff)}")
+        msg = f"Expected table, got {type(ruff)}"
+        raise TypeError(msg)
     _apply_exclusions(ruff, exclude)
     return ruff
 
@@ -1018,6 +1041,7 @@ def _resolve_args(
 
 
 def main() -> int:
+    """Run the ruff-sync CLI."""
     # Handle backward compatibility: default to 'pull' if no command provided
     if len(sys.argv) > 1 and sys.argv[1] not in (
         "pull",

@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.0.5"
+version = "0.1.0.dev0"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -55,14 +55,27 @@ dev = [
     "ruff>=0.15.0",
     "wily>=1.25.0",
 ]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-gen-files>=0.6.0",
+    "mkdocs-literate-nav>=0.6.2",
+    "mkdocs-material>=9.7.5",
+    "mkdocstrings[python]>=1.0.3",
+]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/ruff_sync"]
+
 [tool.mypy]
 python_version = "3.10"
-files = ["ruff_sync.py", "tests/", "tasks.py"]
+files = ["src", "tests/", "tasks.py"]
 strict = true
 warn_unused_configs = true
 ignore_missing_imports = true
@@ -72,18 +85,22 @@ show_error_codes = true
 implicit_reexport = false
 disallow_any_generics = true
 enable_error_code = ['ignore-without-code', 'explicit-override']
+exclude = 'site/.*'
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
 [tool.ruff-sync]
+upstream = "https://github.com/Kilo59/ruff-sync/"
+to = "pyproject.toml"
 exclude = [
     "target-version",
     "line-length",
     "lint.per-file-ignores",
     "lint.ignore",
-    "extend-exclude",
+    "lint.flake8-tidy-imports.banned-api",
+    "lint.isort.required-imports",
 ]
 
 [tool.ruff]
@@ -99,8 +116,12 @@ select = [
     # https://beta.ruff.rs/docs/rules/#flake8-comprehensions-c4
     # https://beta.ruff.rs/docs/rules/#mccabe-c90
     "C", # Complexity (mccabe+) & comprehensions
+    # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "D", # pydocstyle
     # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
+    "EM", # flake8-errmsg - raw string literals in error messages
+    "ERA", # eradicate - commented-out code
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
     "F", # Pyflakes
     # https://beta.ruff.rs/docs/rules/#pycodestyle-e-w
@@ -152,6 +173,35 @@ ignore = [
     "TRY003", # overkill for such a small project
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "D100", # missing docstring in module
+    "D103", # missing docstring in function
+    "D400", # first line should end with a period
+    "D401", # first line of docstring should be in imperative mood
+    "D415", # first line should end with a period, question mark, or exclamation point
+    "D200", # one-line docstring should fit on one line
+    "D212", # multi-line docstring summary should start at the first line
+    "D205", # 1 blank line required between summary line and description
+    "S101", # assert statements should be used in tests
+    "S311", # random numbers in tests do not need to be cryptographically secure
+    "S603", # subprocess without shell
+    "S607", # protects against modification of PATH
+    "S608", # don't care about sql injection in tests
+    "S105", # hard-code passwords in tests should be fake
+    "S106", # hard-code passwords in tests should be fake
+    "PLR2004", # magic values in test comparison is less of a concern
+    "PLC0415", # lazy imports needed for some tests and fixture setup
+    "FBT001", # boolean typed positional arguments common in parametrized tests
+    "FBT003", # Boolean positional value in test code is common and less of a concern
+    "TRY003", # don't care about long exception messages in tests
+    "PLW1510", # subprocess check not needed in tests
+    "PT013", # pytest import style, prevents importing param and or types in from style
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.format]
 # Format code snippets in docstrings.
 docstring-code-format = true
@@ -175,9 +225,7 @@ datetime = "dt"
 required-imports = ["from __future__ import annotations"]
 
 [tool.coverage.run]
-include = [
-    "ruff_sync.py",
-    ]
+include = ["src/ruff_sync/*.py"]
 
 [tool.pytest]
 log_level = "INFO"
