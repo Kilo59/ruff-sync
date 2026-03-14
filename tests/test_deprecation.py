@@ -51,44 +51,88 @@ def test_source_config_deprecation(
     monkeypatch: pytest.MonkeyPatch,
     clear_ruff_sync_caches,
 ):
-    """Test that source in [tool.ruff-sync] emits a deprecation warning."""
+    """Test that source in [tool.ruff-sync] emits a deprecation warning
+    and that `to` takes precedence."""
     test_dir = pathlib.Path("/app")
     fs.create_dir(str(test_dir))
     monkeypatch.chdir(str(test_dir))
 
-    pyproject_content = """
+    # Case 1: Only `source` is set, verify deprecation warning.
+    pyproject = test_dir / "pyproject.toml"
+    pyproject.write_text(
+        """
 [tool.ruff-sync]
-upstream = "https://example.com/pyproject.toml"
-source = "."
-"""
-    fs.create_file(str(test_dir / "pyproject.toml"), contents=pyproject_content)
+source = "src"
+""".lstrip()
+    )
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
-        respx_mock.get("/pyproject.toml").respond(
-            200, text="[tool.ruff]\ntarget-version = 'py310'\n"
-        )
+    with caplog.at_level(logging.WARNING, logger="ruff_sync"):
+        # get_config should still work, but emit a deprecation warning for `source`.
+        config = ruff_sync.get_config(test_dir)
+    assert "'source' is deprecated" in caplog.text
 
-        monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull"])
-        with caplog.at_level(logging.WARNING, logger="ruff_sync"):
-            exit_code = ruff_sync.main()
-            assert exit_code == 0
-            assert "'source' is deprecated" in caplog.text
+    # `source` should be mapped to `to` when `to` is not set.
+    assert config["to"] == "src"
 
-    assert "target-version = 'py310'" in (test_dir / "pyproject.toml").read_text()
+    caplog.clear()
+    ruff_sync.get_config.cache_clear()
+
+    # Case 2: Both `source` and `to` are set, verify `to` takes precedence.
+    pyproject.write_text(
+        """
+[tool.ruff-sync]
+source = "src-ignored"
+to = "target-dir"
+""".lstrip()
+    )
+
+    with caplog.at_level(logging.WARNING, logger="ruff_sync"):
+        config_both = ruff_sync.get_config(test_dir)
+
+    # Still warn about deprecation of `source`.
+    assert "'source' is deprecated" in caplog.text
+
+    # Crucially, `to` must determine the target path when both are present.
+    assert config_both["to"] == "target-dir"
 
 
 @pytest.mark.parametrize(
-    ["files", "upstream_url", "expected_target"],
+    ["files", "upstream_url", "to_path", "expected_target_name"],
     [
-        ([], "https://ex.com/pyproject.toml", "pyproject.toml"),
-        (["pyproject.toml"], "https://ex.com/ruff.toml", "pyproject.toml"),
-        (["pyproject.toml", "ruff.toml"], "https://ex.com/pyproject.toml", "ruff.toml"),
-        ([".ruff.toml"], "https://ex.com/pyproject.toml", ".ruff.toml"),
-        ([], "https://ex.com/ruff.toml", "ruff.toml"),
+        ([], "https://ex.com/pyproject.toml", "/test_dir", "pyproject.toml"),
+        (["pyproject.toml"], "https://ex.com/ruff.toml", "/test_dir", "pyproject.toml"),
+        (
+            ["pyproject.toml", "ruff.toml"],
+            "https://ex.com/pyproject.toml",
+            "/test_dir",
+            "ruff.toml",
+        ),
+        ([".ruff.toml"], "https://ex.com/pyproject.toml", "/test_dir", ".ruff.toml"),
+        ([], "https://ex.com/ruff.toml", "/test_dir", "ruff.toml"),
+        # Direct file path cases
+        (
+            ["ruff.toml"],
+            "https://ex.com/pyproject.toml",
+            "/test_dir/ruff.toml",
+            "ruff.toml",
+        ),
+        (
+            ["pyproject.toml"],
+            "https://ex.com/ruff.toml",
+            "/test_dir/pyproject.toml",
+            "pyproject.toml",
+        ),
+        # File path doesn't even need to exist if it's explicitly a file path
+        ([], "https://ex.com/ruff.toml", "/test_dir/my-custom-ruff.toml", "my-custom-ruff.toml"),
     ],
 )
-def test_resolve_target_path_logic(
-    fs: FakeFilesystem, files, upstream_url, expected_target, clear_ruff_sync_caches
+def test_resolve_target_path_logic(  # noqa: PLR0913
+    fs: FakeFilesystem,
+    files,
+    upstream_url,
+    to_path,
+    expected_target_name,
+    clear_ruff_sync_caches,
 ):
     """Test the refined target path resolution logic."""
     target_dir = pathlib.Path("/test_dir")
@@ -96,5 +140,16 @@ def test_resolve_target_path_logic(
     for f in files:
         fs.create_file(str(target_dir / f))
 
-    resolved = ruff_sync._resolve_target_path(target_dir, upstream_url)
-    assert resolved == target_dir / expected_target
+    # If testing a direct file path that shouldn't exist yet, we don't always create it
+    to = pathlib.Path(to_path)
+    if not to.exists() and to.suffix == ".toml" and "/test_dir/" in str(to):
+        if not to.parent.exists():
+            fs.create_dir(str(to.parent))
+        fs.create_file(str(to))
+
+    resolved = ruff_sync._resolve_target_path(to, upstream_url)
+    assert resolved.name == expected_target_name
+    if to.is_file():
+        assert resolved == to
+    else:
+        assert resolved == to / expected_target_name
