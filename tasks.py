@@ -1,3 +1,12 @@
+"""Development tasks for ruff-sync.
+
+This module provides Invoke tasks for linting, formatting, type checking, and
+managing releases of the ruff-sync package.
+
+https://www.pyinvoke.org/
+https://docs.pyinvoke.org/en/stable/
+"""
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +32,7 @@ LIFECYCLE_TOML_DIR: Final[pathlib.Path] = TESTS_DIR / "lifecycle_tomls"
 
 @task
 def fmt(ctx: Context, *, check: bool = False) -> None:
-    """Format code with ruff format"""
+    """Format code with ruff format."""
     cmds = ["ruff", "format", "."]
     if check:
         cmds.append("--check")
@@ -37,7 +46,7 @@ def fmt(ctx: Context, *, check: bool = False) -> None:
     }
 )
 def lint(ctx: Context, *, check: bool = False, unsafe_fixes: bool = False) -> None:
-    """Lint and fix code with ruff"""
+    """Lint and fix code with ruff."""
     cmds = ["ruff", "check", "."]
     if not check:
         cmds.append("--fix")
@@ -50,7 +59,7 @@ def lint(ctx: Context, *, check: bool = False, unsafe_fixes: bool = False) -> No
     aliases=["types"],
 )
 def type_check(ctx: Context, *, install_types: bool = False, check: bool = False) -> None:
-    """Type check code with mypy"""
+    """Type check code with mypy."""
     cmds = ["mypy"]
     if install_types:
         cmds.append("--install-types")
@@ -61,7 +70,7 @@ def type_check(ctx: Context, *, install_types: bool = False, check: bool = False
 
 @task(aliases=["sync"])
 def deps(ctx: Context) -> None:
-    """Sync dependencies with uv lock file"""
+    """Sync dependencies with uv lock file."""
     ctx.run("uv sync", echo=True, pty=True)
 
 
@@ -170,7 +179,7 @@ def release(
 
 @task(aliases=["new-case"])
 def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None) -> None:
-    """Create new lifecycle toml test cases using the no_changes tomls as a template"""
+    """Create new lifecycle toml test cases using the no_changes tomls as a template."""
     toml_dict: dict[Literal["initial", "upstream", "final"], TOMLDocument] = {
         "initial": TOMLFile(LIFECYCLE_TOML_DIR / "no_changes_initial.toml").read(),
         "upstream": TOMLFile(LIFECYCLE_TOML_DIR / "no_changes_upstream.toml").read(),

@@ -1,3 +1,9 @@
+"""Synchronize Ruff linter configuration across Python projects.
+
+This module provides a CLI tool and library for downloading, parsing, and merging
+Ruff configuration from upstream sources (like GitHub/GitLab) into local projects.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -40,7 +46,7 @@ _HTTP_NOT_FOUND: Final[int] = 404
 
 
 class ColoredFormatter(logging.Formatter):
-    """Logging Formatter to add colors"""
+    """Logging Formatter to add colors."""
 
     RESET: ClassVar[str] = "\x1b[0m"
     COLORS: ClassVar[Mapping[int, str]] = {
@@ -52,9 +58,11 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def __init__(self, fmt: str = "%(message)s") -> None:
+        """Initialize the formatter with a format string."""
         super().__init__(fmt)
 
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[explicit-override]
+        """Format the log record with colors if the output is a TTY."""
         if sys.stderr.isatty():
             color = self.COLORS.get(record.levelno, self.RESET)
             return f"{color}{super().format(record)}{self.RESET}"
@@ -62,6 +70,8 @@ class ColoredFormatter(logging.Formatter):
 
 
 class Arguments(NamedTuple):
+    """CLI arguments for the ruff-sync tool."""
+
     command: str
     upstream: URL
     to: pathlib.Path
@@ -76,20 +86,26 @@ class Arguments(NamedTuple):
     @property
     @deprecated("Use 'to' instead")
     def source(self) -> pathlib.Path:
+        """Deprecated: use 'to' instead."""
         return self.to
 
     @classmethod
     @lru_cache(maxsize=1)
     def fields(cls) -> set[str]:
+        """Return the set of all field names, including deprecated ones."""
         return set(cls._fields) | {"source"}
 
 
 class FetchResult(NamedTuple):
+    """Result of fetching an upstream configuration."""
+
     buffer: StringIO
     resolved_upstream: URL
 
 
 class Config(TypedDict, total=False):
+    """Configuration schema for [tool.ruff-sync] in pyproject.toml."""
+
     upstream: str
     to: str
     source: str  # Deprecated
@@ -652,6 +668,7 @@ def get_ruff_config(
     exclude: Iterable[str] = (),
 ) -> TOMLDocument | Table | None:
     """Get the ruff section or document from a TOML string.
+
     If it does not exist and it is a pyproject.toml, create it.
     """
     if isinstance(toml, str):
@@ -1021,6 +1038,7 @@ def _resolve_args(
 
 
 def main() -> int:
+    """Run the ruff-sync CLI."""
     # Handle backward compatibility: default to 'pull' if no command provided
     if len(sys.argv) > 1 and sys.argv[1] not in (
         "pull",
