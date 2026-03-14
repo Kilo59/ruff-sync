@@ -35,6 +35,7 @@ _GITHUB_RAW_HOST: Final[str] = "raw.githubusercontent.com"
 _GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
 
 LOGGER = logging.getLogger(__name__)
+_HTTP_OK: Final = 200
 _HTTP_NOT_FOUND: Final[int] = 404
 
 
@@ -445,32 +446,121 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
 
 
 async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> StringIO:
-    """Download a configuration file from a URL, trying common filenames if a directory guess fails."""
+    """Download config from a URL, trying common filenames if a directory guess fails."""
     # For HTTP URLs, try candidates if it looks like a directory guess
     candidates = [url]
 
     # If the URL was a guess (resolved from a directory or repo root), try other names
     if pathlib.PurePosixPath(url.path).name == "pyproject.toml":
-        # If it was a guess, try ruff.toml first
+        # Try pyproject.toml first to satisfy most projects and existing tests,
+        # then fall back to ruff.toml variants.
         base_url = url.join(".")
         candidates = [
+            url,  # pyproject.toml is first
             base_url.join("ruff.toml"),
             base_url.join(".ruff.toml"),
-            url,  # pyproject.toml is last
         ]
 
     for candidate_url in candidates:
-        try:
-            return await download(candidate_url, client)
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == _HTTP_NOT_FOUND:
-                if candidate_url == candidates[-1]:
-                    # All candidates failed
-                    raise
-                continue
-            raise
+        response = await client.get(candidate_url)
+        if response.status_code == _HTTP_OK:
+            return StringIO(response.text)
+
+        if response.status_code != _HTTP_NOT_FOUND or candidate_url == candidates[-1]:
+            # If it's not a 404, or the last candidate failed, raise
+            response.raise_for_status()
+
     # Should not reach here if candidates is not empty
     raise RuntimeError("Configuration discovery failed without error")
+
+
+def _fetch_via_git(url: URL, branch: str, path: str | None) -> str:
+    """Clone the git repo into a temp directory and read config.
+
+    Uses an efficient cloning strategy to minimize network traffic and disk space.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
+        cmd = [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--filter=blob:none",
+            "--no-checkout",
+            "--branch",
+            branch,
+            str(url),
+            temp_dir,
+        ]
+        LOGGER.info(f"Running git command: {' '.join(cmd)}")
+        try:
+            subprocess.run(  # noqa: S603
+                cmd,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            target_path = pathlib.Path(_resolve_upstream_target_path(path))
+
+            # For git clone, we also want to try candidates if target_path is guessed
+            candidates = [target_path]
+            if target_path.name == "pyproject.toml":
+                configs_dir = target_path.parent
+                candidates = [
+                    target_path,  # pyproject.toml is first
+                    configs_dir / "ruff.toml",
+                    configs_dir / ".ruff.toml",
+                ]
+
+            for cand_path in candidates:
+                # Restore just the config file
+                full_path = pathlib.Path(temp_dir) / cand_path
+                restore_cmd = [
+                    "git",
+                    "-C",
+                    temp_dir,
+                    "restore",
+                    "--source",
+                    branch,
+                    str(cand_path),
+                ]
+                try:
+                    subprocess.run(  # noqa: S603
+                        restore_cmd,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    if full_path.exists():
+                        return full_path.read_text()
+                except subprocess.CalledProcessError:
+                    # Fallback for old git
+                    checkout_cmd = [
+                        "git",
+                        "-C",
+                        temp_dir,
+                        "checkout",
+                        branch,
+                        "--",
+                        str(cand_path),
+                    ]
+                    try:
+                        subprocess.run(  # noqa: S603
+                            checkout_cmd,
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                        if full_path.exists():
+                            return full_path.read_text()
+                    except subprocess.CalledProcessError:
+                        continue
+
+            raise FileNotFoundError(f"Configuration file not found in repository at {target_path}")
+        except subprocess.CalledProcessError as e:
+            LOGGER.exception(f"Git operation failed: {e.stderr}")
+            raise
 
 
 async def fetch_upstream_config(
@@ -479,105 +569,7 @@ async def fetch_upstream_config(
     """Fetch the upstream pyproject.toml either via HTTP or git clone."""
     if is_git_url(url):
         LOGGER.info(f"Cloning {url} via git...")
-
-        def _git_clone_and_read() -> str:
-            """Clone the git repo into a temp directory and read config.
-
-            Uses an efficient cloning strategy to minimize network traffic and disk space:
-            - `--depth 1`: only fetches the tip of the requested branch
-            - `--filter=blob:none`: avoids downloading any file contents (blobs) during the clone
-            - `--no-checkout`: prevents git from populating the working tree
-
-            After the metadata is cloned, we try `git restore` to explicitly download and place
-            only the requested configuration file into the working tree. If `restore` fails
-            (e.g. on older git versions), we fall back to a specific `git checkout`.
-            """
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
-                cmd = [
-                    "git",
-                    "clone",
-                    "--depth",
-                    "1",
-                    "--filter=blob:none",
-                    "--no-checkout",
-                    "--branch",
-                    branch,
-                    str(url),
-                    temp_dir,
-                ]
-                LOGGER.info(f"Running git command: {' '.join(cmd)}")
-                try:
-                    subprocess.run(  # noqa: S603
-                        cmd,
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    target_path = pathlib.Path(_resolve_upstream_target_path(path))
-
-                    # For git clone, we also want to try candidates if target_path is guessed
-                    candidates = [target_path]
-                    if target_path.name == "pyproject.toml":
-                        configs_dir = target_path.parent
-                        candidates = [
-                            configs_dir / "ruff.toml",
-                            configs_dir / ".ruff.toml",
-                            target_path,
-                        ]
-
-                    for cand_path in candidates:
-                        # Restore just the config file
-                        full_path = pathlib.Path(temp_dir) / cand_path
-                        restore_cmd = [
-                            "git",
-                            "-C",
-                            temp_dir,
-                            "restore",
-                            "--source",
-                            branch,
-                            str(cand_path),
-                        ]
-                        try:
-                            subprocess.run(  # noqa: S603
-                                restore_cmd,
-                                check=True,
-                                capture_output=True,
-                                text=True,
-                            )
-                            if full_path.exists():
-                                return full_path.read_text()
-                        except subprocess.CalledProcessError:
-                            # Fallback for old git
-                            checkout_cmd = [
-                                "git",
-                                "-C",
-                                temp_dir,
-                                "checkout",
-                                branch,
-                                "--",
-                                str(cand_path),
-                            ]
-                            try:
-                                subprocess.run(  # noqa: S603
-                                    checkout_cmd,
-                                    check=True,
-                                    capture_output=True,
-                                    text=True,
-                                )
-                                if full_path.exists():
-                                    return full_path.read_text()
-                            except subprocess.CalledProcessError:
-                                continue
-
-                    raise FileNotFoundError(
-                        f"Configuration file not found in repository at {target_path}"
-                    )
-                except subprocess.CalledProcessError as e:
-                    LOGGER.exception(f"Git operation failed: {e.stderr}")
-                    raise
-
-        content = await asyncio.to_thread(_git_clone_and_read)
+        content = await asyncio.to_thread(_fetch_via_git, url, branch, path)
         return StringIO(content)
 
     try:
