@@ -393,13 +393,14 @@ def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
+    # Mock get_config to return a config without 'exclude' (use defaults)
     monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
     monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
 
     ruff_sync.main()
 
     assert len(captured_args) == 1
-    assert captured_args[0].exclude == ruff_sync._DEFAULT_EXCLUDE
+    assert set(captured_args[0].exclude) == ruff_sync_cli._DEFAULT_EXCLUDE
 
 
 def test_main_default_to_resolution(monkeypatch: pytest.MonkeyPatch):
@@ -526,7 +527,7 @@ def test_verbosity_log_level(
     ruff_sync.main()
 
     # Verify that the computed log level matches what we expect for this verbosity
-    assert ruff_sync.LOGGER.level == expected_level
+    assert ruff_sync_cli.LOGGER.level == expected_level
 
     # Verify that the verbose flag value propagates into Arguments.verbose
     assert len(captured_args) == 1
@@ -558,7 +559,7 @@ target-version = "py311"
                 command="pull",
                 upstream=URL("https://example.com/pyproject.toml"),
                 to=ff_path,
-                exclude=ruff_sync._DEFAULT_EXCLUDE,
+                exclude=ruff_sync_cli._DEFAULT_EXCLUDE,
                 verbose=0,
             )
         )

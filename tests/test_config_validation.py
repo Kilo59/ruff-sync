@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ruff_sync import LOGGER, get_config
+from ruff_sync import get_config
+from ruff_sync.cli import LOGGER
 
 if TYPE_CHECKING:
     import pathlib

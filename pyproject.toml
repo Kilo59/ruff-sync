@@ -80,18 +80,22 @@ show_error_codes = true
 implicit_reexport = false
 disallow_any_generics = true
 enable_error_code = ['ignore-without-code', 'explicit-override']
+exclude = 'site/.*'
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
 [tool.ruff-sync]
+upstream = "https://github.com/Kilo59/ruff-sync/"
+to = "pyproject.toml"
 exclude = [
     "target-version",
     "line-length",
     "lint.per-file-ignores",
     "lint.ignore",
-    "extend-exclude",
+    "lint.flake8-tidy-imports.banned-api",
+    "lint.isort.required-imports",
 ]
 
 [tool.ruff]
@@ -218,9 +222,7 @@ datetime = "dt"
 required-imports = ["from __future__ import annotations"]
 
 [tool.coverage.run]
-include = [
-    "src/ruff_sync/*.py",
-    ]
+include = ["src/ruff_sync/*.py"]
 
 [tool.pytest]
 log_level = "INFO"

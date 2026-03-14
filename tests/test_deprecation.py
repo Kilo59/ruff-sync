@@ -10,6 +10,7 @@ import respx
 from httpx import URL
 
 import ruff_sync
+import ruff_sync.cli
 
 if TYPE_CHECKING:
     from pyfakefs.fake_filesystem import FakeFilesystem
@@ -206,7 +207,7 @@ def test_resolve_target_path_logic(  # noqa: PLR0913
             fs.create_dir(str(to.parent))
         fs.create_file(str(to))
 
-    resolved = ruff_sync._resolve_target_path(to, upstream_url)
+    resolved = ruff_sync.cli._resolve_target_path(to, upstream_url)
     assert resolved.name == expected_target_name
     if to.is_file():
         assert resolved == to
