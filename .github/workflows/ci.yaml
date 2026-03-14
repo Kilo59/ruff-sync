@@ -85,9 +85,13 @@ jobs:
       - name: Install and test packaged program
         run: |
           uv tool install $(ls dist/*.whl)
-          ruff-sync --version
+          echo "ruff-sync $(ruff-sync --version)"
           ruff-sync https://github.com/Kilo59/ruff-sync
+          echo "ruff-sync check https://github.com/Kilo59/ruff-sync"
           ruff-sync check https://github.com/Kilo59/ruff-sync
+          echo "git diff"
+          git diff
+          echo "! ruff-sync check --semantic https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink"
           ! ruff-sync check --semantic https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
 
   publish:
