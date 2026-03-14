@@ -94,7 +94,7 @@ async def test_ruff_sync(prep_env):
         ruff_sync.Arguments(
             command="pull",
             upstream=prep_env.upstream_url,
-            source=prep_env.source_path,
+            to=prep_env.source_path,
             exclude=set(),
             verbose=0,
         )
@@ -113,7 +113,7 @@ async def test_ruff_check(prep_env):
         ruff_sync.Arguments(
             command="check",
             upstream=prep_env.upstream_url,
-            source=prep_env.source_path,
+            to=prep_env.source_path,
             exclude=set(),
             verbose=0,
             semantic=False,
@@ -129,7 +129,7 @@ async def test_ruff_check(prep_env):
         ruff_sync.Arguments(
             command="pull",
             upstream=prep_env.upstream_url,
-            source=prep_env.source_path,
+            to=prep_env.source_path,
             exclude=set(),
             verbose=0,
         )
@@ -140,7 +140,7 @@ async def test_ruff_check(prep_env):
         ruff_sync.Arguments(
             command="check",
             upstream=prep_env.upstream_url,
-            source=prep_env.source_path,
+            to=prep_env.source_path,
             exclude=set(),
             verbose=0,
             semantic=False,
@@ -154,7 +154,7 @@ async def test_ruff_check(prep_env):
         ruff_sync.Arguments(
             command="check",
             upstream=prep_env.upstream_url,
-            source=prep_env.source_path,
+            to=prep_env.source_path,
             exclude=set(),
             verbose=0,
             semantic=True,
@@ -208,7 +208,7 @@ async def test_readme_exclude_examples(readme_excludes_env):
         ruff_sync.Arguments(
             command="pull",
             upstream=env.upstream_url,
-            source=env.source_path,
+            to=env.source_path,
             exclude=README_EXCLUDES,
             verbose=0,
         )
