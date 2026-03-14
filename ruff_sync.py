@@ -84,6 +84,11 @@ class Arguments(NamedTuple):
         return set(cls._fields) | {"source"}
 
 
+class FetchResult(NamedTuple):
+    buffer: StringIO
+    resolved_upstream: URL
+
+
 class Config(TypedDict, total=False):
     upstream: str
     to: str
@@ -233,7 +238,7 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
-def _resolve_target_path(to: pathlib.Path, upstream_url: str | None = None) -> pathlib.Path:
+def _resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None) -> pathlib.Path:
     """Resolve the target path for configuration files.
 
     If 'to' is a file, it's used directly.
@@ -445,7 +450,7 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> StringIO:
+async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> FetchResult:
     """Download config from a URL, trying common filenames if a directory guess fails."""
     # For HTTP URLs, try candidates if it looks like a directory guess
     candidates = [url]
@@ -464,7 +469,7 @@ async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: 
     for candidate_url in candidates:
         response = await client.get(candidate_url)
         if response.status_code == _HTTP_OK:
-            return StringIO(response.text)
+            return FetchResult(StringIO(response.text), candidate_url)
 
         if response.status_code != _HTTP_NOT_FOUND or candidate_url == candidates[-1]:
             # If it's not a 404, or the last candidate failed, raise
@@ -474,10 +479,13 @@ async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: 
     raise RuntimeError("Configuration discovery failed without error")
 
 
-def _fetch_via_git(url: URL, branch: str, path: str | None) -> str:
+def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
     """Clone the git repo into a temp directory and read config.
 
     Uses an efficient cloning strategy to minimize network traffic and disk space.
+
+    Returns:
+        FetchResult: (content buffer, resolved path string)
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
@@ -533,7 +541,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> str:
                         text=True,
                     )
                     if full_path.exists():
-                        return full_path.read_text()
+                        return FetchResult(StringIO(full_path.read_text()), URL(str(cand_path)))
                 except subprocess.CalledProcessError:
                     # Fallback for old git
                     checkout_cmd = [
@@ -553,7 +561,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> str:
                             text=True,
                         )
                         if full_path.exists():
-                            return full_path.read_text()
+                            return FetchResult(StringIO(full_path.read_text()), URL(str(cand_path)))
                     except subprocess.CalledProcessError:
                         continue
 
@@ -565,12 +573,11 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> str:
 
 async def fetch_upstream_config(
     url: URL, client: httpx.AsyncClient, branch: str, path: str | None
-) -> StringIO:
+) -> FetchResult:
     """Fetch the upstream pyproject.toml either via HTTP or git clone."""
     if is_git_url(url):
         LOGGER.info(f"Cloning {url} via git...")
-        content = await asyncio.to_thread(_fetch_via_git, url, branch, path)
-        return StringIO(content)
+        return await asyncio.to_thread(_fetch_via_git, url, branch, path)
 
     try:
         return await _download_with_discovery(url, client, branch)
@@ -597,7 +604,7 @@ async def fetch_upstream_config(
         raise httpx.HTTPStatusError(msg, request=err.request, response=err.response) from None
 
 
-def is_ruff_toml_file(path_or_url: str) -> bool:
+def is_ruff_toml_file(path_or_url: str | URL) -> bool:
     """Return True if the path or URL indicates a ruff.toml file.
 
     This handles:
@@ -605,14 +612,14 @@ def is_ruff_toml_file(path_or_url: str) -> bool:
     - URLs with query strings or fragments (e.g. "ruff.toml?ref=main", "ruff.toml#L10")
     by examining only the path component (or the part before any query/fragment).
     """
-    parsed = urlparse(path_or_url)
+    parsed = urlparse(str(path_or_url))
 
     # If it's a URL with a scheme/netloc, use the parsed path component.
     # Otherwise, fall back to stripping any query/fragment from the raw string.
     if parsed.scheme or parsed.netloc:
         path = parsed.path
     else:
-        path = path_or_url.split("?", 1)[0].split("#", 1)[0]
+        path = str(path_or_url).split("?", 1)[0].split("#", 1)[0]
 
     return pathlib.Path(path).name in ("ruff.toml", ".ruff.toml")
 
@@ -785,7 +792,7 @@ async def check(
     """Check if the local pyproject.toml / ruff.toml is in sync with the upstream."""
     print("🔍 Checking Ruff sync status...")
 
-    _source_toml_path = _resolve_target_path(args.to, str(args.upstream)).resolve(strict=False)
+    _source_toml_path = _resolve_target_path(args.to, args.upstream).resolve(strict=False)
     if not _source_toml_path.exists():
         print(
             f"❌ Configuration file {_source_toml_path} does not exist. "
@@ -797,16 +804,16 @@ async def check(
     source_doc = source_toml_file.read()
 
     async with httpx.AsyncClient() as client:
-        file_buffer = await fetch_upstream_config(
+        fetch_result = await fetch_upstream_config(
             args.upstream, client, branch=args.branch, path=args.path
         )
-        LOGGER.info(f"Loaded upstream file from {args.upstream}")
+        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(str(args.upstream))
+    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
     upstream_ruff_toml = get_ruff_config(
-        file_buffer.read(),
+        fetch_result.buffer.read(),
         is_ruff_toml=is_upstream_ruff_toml,
         create_if_missing=False,
         exclude=args.exclude,
@@ -873,7 +880,7 @@ async def pull(
 ) -> int:
     """Pull the upstream ruff config and apply it to the source."""
     print("🔄 Syncing Ruff...")
-    _source_toml_path = _resolve_target_path(args.to, str(args.upstream)).resolve(strict=False)
+    _source_toml_path = _resolve_target_path(args.to, args.upstream).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
     if _source_toml_path.exists():
@@ -897,16 +904,16 @@ async def pull(
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
-        file_buffer = await fetch_upstream_config(
+        fetch_result = await fetch_upstream_config(
             args.upstream, client, branch=args.branch, path=args.path
         )
-        LOGGER.info(f"Loaded upstream file from {args.upstream}")
+        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(str(args.upstream))
+    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
     upstream_ruff_toml = get_ruff_config(
-        file_buffer.read(),
+        fetch_result.buffer.read(),
         is_ruff_toml=is_upstream_ruff_toml,
         create_if_missing=False,
         exclude=args.exclude,

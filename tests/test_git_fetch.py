@@ -30,9 +30,10 @@ async def test_fetch_upstream_config_git(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(subprocess, "run", mock_run)
 
     async with AsyncClient() as client:
-        result = await fetch_upstream_config(url, client, branch="main", path="")
+        fetch_result = await fetch_upstream_config(url, client, branch="main", path="")
 
-        assert result.read() == "[tool.ruff]\nselect = ['E']"
+        assert isinstance(fetch_result.resolved_upstream, URL)
+        assert str(fetch_result.resolved_upstream) == "pyproject.toml"
 
         # Verify the subprocess arguments
         assert len(call_args_list) == 2
@@ -83,9 +84,11 @@ async def test_fetch_upstream_config_git_with_path(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(subprocess, "run", mock_run)
 
     async with AsyncClient() as client:
-        result = await fetch_upstream_config(url, client, branch="main", path="sub/dir")
+        fetch_result = await fetch_upstream_config(url, client, branch="main", path="sub/dir")
 
-        assert result.read() == "[tool.ruff]\nselect = ['F']"
+        assert fetch_result.buffer.read() == "[tool.ruff]\nselect = ['F']"
+        assert isinstance(fetch_result.resolved_upstream, URL)
+        assert str(fetch_result.resolved_upstream) == "sub/dir/pyproject.toml"
 
         assert len(call_args_list) == 2
         clone_args = call_args_list[0]

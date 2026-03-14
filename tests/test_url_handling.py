@@ -223,8 +223,9 @@ async def test_fetch_upstream_config_with_ruff_toml_fallback(respx_mock):
     async with AsyncClient() as client:
         # The URL passed to fetch_upstream_config is usually the one resolved by resolve_raw_url
         url = URL(pyproject_url)
-        result = await fetch_upstream_config(url, client, branch="main", path="configs")
-        assert result.read() == "line-length = 100"
+        fetch_result = await fetch_upstream_config(url, client, branch="main", path="configs")
+        assert fetch_result.buffer.read() == "line-length = 100"
+        assert str(fetch_result.resolved_upstream) == ruff_url
 
 
 @pytest.mark.asyncio
