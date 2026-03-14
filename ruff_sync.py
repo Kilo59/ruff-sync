@@ -25,7 +25,7 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import deprecated
 
-__version__ = "0.0.5.dev1"
+__version__ = "0.0.5.dev2"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
