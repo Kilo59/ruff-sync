@@ -67,6 +67,7 @@ jobs:
   pre-publish:
     name: Test package installation
     needs: [static-analysis, tests]
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -79,19 +80,29 @@ jobs:
         run: uv python install 3.10
 
       - name: Build package
-        run: uv build
-
-      - name: Install and test packaged program
         run: |
+          echo "Building ruff-sync package..."
+          uv build
+
+      - name: Install packaged program
+        run: |
+          echo "Installing built wheel..."
           uv tool install $(ls dist/*.whl)
-          echo "$(ruff-sync --version)"
-          echo "ruff-sync https://github.com/Kilo59/ruff-sync"
+          echo "Version: $(ruff-sync --version)"
+
+      - name: Test package installation (Pull)
+        run: |
+          echo "Testing ruff-sync pull against Kilo59/ruff-sync..."
           ruff-sync https://github.com/Kilo59/ruff-sync
-          echo "ruff-sync check https://github.com/Kilo59/ruff-sync"
+
+      - name: Test package installation (Check)
+        run: |
+          echo "Testing ruff-sync check against Kilo59/ruff-sync..."
           ruff-sync check https://github.com/Kilo59/ruff-sync
-          echo "git diff"
-          git diff
-          echo "! ruff-sync check --semantic https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink"
+
+      - name: Verify semantic check failure
+        run: |
+          echo "Verifying that --semantic check fails for kitchen-sink config (expected failure)..."
           ! ruff-sync check --semantic https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
 
   publish:
