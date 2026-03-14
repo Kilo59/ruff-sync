@@ -86,7 +86,7 @@ class Arguments(NamedTuple):
 
 class FetchResult(NamedTuple):
     buffer: StringIO
-    resolved_upstream: URL | str
+    resolved_upstream: URL
 
 
 class Config(TypedDict, total=False):
@@ -541,7 +541,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
                         text=True,
                     )
                     if full_path.exists():
-                        return FetchResult(StringIO(full_path.read_text()), str(cand_path))
+                        return FetchResult(StringIO(full_path.read_text()), URL(str(cand_path)))
                 except subprocess.CalledProcessError:
                     # Fallback for old git
                     checkout_cmd = [
@@ -561,7 +561,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
                             text=True,
                         )
                         if full_path.exists():
-                            return FetchResult(StringIO(full_path.read_text()), str(cand_path))
+                            return FetchResult(StringIO(full_path.read_text()), URL(str(cand_path)))
                     except subprocess.CalledProcessError:
                         continue
 
@@ -604,7 +604,7 @@ async def fetch_upstream_config(
         raise httpx.HTTPStatusError(msg, request=err.request, response=err.response) from None
 
 
-def is_ruff_toml_file(path_or_url: str) -> bool:
+def is_ruff_toml_file(path_or_url: str | URL) -> bool:
     """Return True if the path or URL indicates a ruff.toml file.
 
     This handles:
@@ -612,14 +612,14 @@ def is_ruff_toml_file(path_or_url: str) -> bool:
     - URLs with query strings or fragments (e.g. "ruff.toml?ref=main", "ruff.toml#L10")
     by examining only the path component (or the part before any query/fragment).
     """
-    parsed = urlparse(path_or_url)
+    parsed = urlparse(str(path_or_url))
 
     # If it's a URL with a scheme/netloc, use the parsed path component.
     # Otherwise, fall back to stripping any query/fragment from the raw string.
     if parsed.scheme or parsed.netloc:
         path = parsed.path
     else:
-        path = path_or_url.split("?", 1)[0].split("#", 1)[0]
+        path = str(path_or_url).split("?", 1)[0].split("#", 1)[0]
 
     return pathlib.Path(path).name in ("ruff.toml", ".ruff.toml")
 
@@ -809,7 +809,7 @@ async def check(
         )
         LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(str(fetch_result.resolved_upstream))
+    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
     upstream_ruff_toml = get_ruff_config(
@@ -909,7 +909,7 @@ async def pull(
         )
         LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(str(fetch_result.resolved_upstream))
+    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
     upstream_ruff_toml = get_ruff_config(
