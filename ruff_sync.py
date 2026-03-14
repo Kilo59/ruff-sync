@@ -4,6 +4,7 @@ import asyncio
 import difflib
 import json
 import logging
+import os
 import pathlib
 import re
 import subprocess
@@ -122,13 +123,6 @@ def get_config(
     return cast("Config", cfg_result)
 
 
-@lru_cache(maxsize=1)
-def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
-    if isinstance(source, str):
-        source = pathlib.Path(source)
-    return source.resolve(strict=True)
-
-
 def _get_cli_parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="ruff-sync",
@@ -166,7 +160,7 @@ def _get_cli_parser() -> ArgumentParser:
     common_parser.add_argument(
         "--to",
         type=pathlib.Path,
-        default=".",
+        default=pathlib.Path(),
         help="The directory or file to sync ruff configuration to. Default: .",
         required=False,
     )
@@ -956,7 +950,7 @@ def main() -> int:
     handler = logging.StreamHandler()
     handler.setFormatter(ColoredFormatter())
     LOGGER.addHandler(handler)
-    LOGGER.propagate = True  # Allow capturing in tests
+    LOGGER.propagate = "PYTEST_CURRENT_TEST" in os.environ  # Allow capturing in tests
 
     # Determine target 'to' from CLI
     to_val: pathlib.Path
