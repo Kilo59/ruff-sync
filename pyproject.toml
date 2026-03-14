@@ -78,7 +78,13 @@ module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
 [tool.ruff-sync]
-exclude = ["target-version", "line-length", "lint.per-file-ignores", "lint.ignore"]
+exclude = [
+    "target-version",
+    "line-length",
+    "lint.per-file-ignores",
+    "lint.ignore",
+    "extend-exclude",
+]
 
 [tool.ruff]
 target-version = "py310"
