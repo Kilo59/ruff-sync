@@ -28,11 +28,10 @@ jobs:
           DIFF=$(wily diff ruff_sync.py tasks.py tests/ --no-detail -r origin/${{ github.event.pull_request.base.ref }})
           echo "$DIFF"
 
-          # Build multine output
-          DIFF="${DIFF//'%'/'%25'}"
-          DIFF="${DIFF//$'\n'/'%0A'}"
-          DIFF="${DIFF//$'\r'/'%0D'}"
-          echo "diff=$DIFF" >> "$GITHUB_OUTPUT"
+          # Build multiline output
+          echo "diff<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$DIFF" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Add Wily PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.number && steps.wily.outputs.diff != ''
