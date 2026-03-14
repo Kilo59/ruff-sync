@@ -101,8 +101,6 @@ select = [
     "C", # Complexity (mccabe+) & comprehensions
     # https://docs.astral.sh/ruff/rules/#pydocstyle-d
     "D", # pydocstyle
-    # https://docs.astral.sh/ruff/rules/#pydoclint-doc
-    "DOC", # pydoclint - docstring linting
     # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
@@ -181,6 +179,9 @@ ignore = [
     "PLW1510", # subprocess check not needed in tests
     "PT013", # pytest import style, prevents importing param and or types in from style
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.format]
 # Format code snippets in docstrings.
