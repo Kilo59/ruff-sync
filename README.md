@@ -236,13 +236,24 @@ git commit -am "sync ruff config from upstream"
 
 While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
 
+`ruff-sync` is flexible with URLs. You can point it at a repository root, a specific directory (tree), a direct file (blob), or even a raw content URL.
+
 #### Kitchen Sink
 
 An exhaustive configuration that explicitly enables and documents almost all available Ruff rules. Great for establishing a strict baseline.
 
 ```console
-# You can point directly to the directory; ruff-sync automatically finds the config file
+# Directory URL (recommended)
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
+
+# Direct file URL (blob)
+ruff-sync https://github.com/Kilo59/ruff-sync/blob/main/configs/kitchen-sink/ruff.toml
+
+# Raw content URL
+ruff-sync https://raw.githubusercontent.com/Kilo59/ruff-sync/main/configs/kitchen-sink/ruff.toml
+
+# Git SSH URL (clones the repo)
+ruff-sync git@github.com:Kilo59/ruff-sync.git --path configs/kitchen-sink
 ```
 
 #### FastAPI & Async
@@ -250,6 +261,10 @@ ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
 Tailored for modern web applications. Includes rules for `asyncio`, security (`flake8-bandit`), and Pydantic-friendly naming conventions.
 
 ```console
+# Repository Root (if the config is at the root)
+ruff-sync https://github.com/my-org/fastapi-standards
+
+# Directory URL
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
 ```
 

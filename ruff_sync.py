@@ -29,11 +29,13 @@ __version__ = "0.0.5"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
+_GITHUB_TREE_PREFIX_PARTS_COUNT: Final[int] = 4
 _GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
 _GITHUB_RAW_HOST: Final[str] = "raw.githubusercontent.com"
 _GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
 
 LOGGER = logging.getLogger(__name__)
+_HTTP_NOT_FOUND: Final[int] = 404
 
 
 class ColoredFormatter(logging.Formatter):
@@ -293,6 +295,20 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
         LOGGER.info(f"Converting GitHub blob URL to raw content URL: {raw_url}")
         return raw_url
 
+    # Handle tree URLs (e.g. .../tree/main/path/to/dir)
+    if "/tree/" in url.path:
+        parts = [p for p in url.path.split("/") if p]
+        if len(parts) >= _GITHUB_TREE_PREFIX_PARTS_COUNT and parts[2] == "tree":
+            org, repo, _, url_branch = parts[:4]
+            url_path = "/".join(parts[4:])
+            target_path = _resolve_upstream_target_path(url_path or path)
+            raw_url = url.copy_with(
+                host=_GITHUB_RAW_HOST,
+                path=str(pathlib.PurePosixPath("/", org, repo, url_branch, target_path)),
+            )
+            LOGGER.info(f"Converting GitHub tree URL to raw content URL: {raw_url}")
+            return raw_url
+
     # Handle repository URLs (e.g. https://github.com/org/repo)
     # We assume if it has exactly two path components, it's a repo URL.
     path_parts = [p for p in url.path.split("/") if p]
@@ -332,6 +348,24 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
         raw_url = url.copy_with(path=new_path)
         LOGGER.info(f"Converting GitLab blob URL to raw content URL: {raw_url}")
         return raw_url
+
+    # Handle tree URLs (e.g. .../-/tree/main/path/to/dir)
+    if "/-/tree/" in url.path:
+        parts = [p for p in url.path.split("/") if p]
+        try:
+            sep_idx = parts.index("-")
+            if len(parts) > sep_idx + 2 and parts[sep_idx + 1] == "tree":
+                prefix = "/" + "/".join(parts[:sep_idx])
+                url_branch = parts[sep_idx + 2]
+                url_path = "/".join(parts[sep_idx + 3 :])
+                target_path = _resolve_upstream_target_path(url_path or path)
+                raw_url = url.copy_with(
+                    path=str(pathlib.PurePosixPath(prefix, "-", "raw", url_branch, target_path))
+                )
+                LOGGER.info(f"Converting GitLab tree URL to raw content URL: {raw_url}")
+                return raw_url
+        except ValueError:
+            pass
 
     # Handle repository URLs (e.g. https://gitlab.com/org/repo)
     # If the path doesn't contain the separator '/-/', we assume it's a project root.
@@ -410,6 +444,35 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
+async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> StringIO:
+    """Download a configuration file from a URL, trying common filenames if a directory guess fails."""
+    # For HTTP URLs, try candidates if it looks like a directory guess
+    candidates = [url]
+
+    # If the URL was a guess (resolved from a directory or repo root), try other names
+    if pathlib.PurePosixPath(url.path).name == "pyproject.toml":
+        # If it was a guess, try ruff.toml first
+        base_url = url.join(".")
+        candidates = [
+            base_url.join("ruff.toml"),
+            base_url.join(".ruff.toml"),
+            url,  # pyproject.toml is last
+        ]
+
+    for candidate_url in candidates:
+        try:
+            return await download(candidate_url, client)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == _HTTP_NOT_FOUND:
+                if candidate_url == candidates[-1]:
+                    # All candidates failed
+                    raise
+                continue
+            raise
+    # Should not reach here if candidates is not empty
+    raise RuntimeError("Configuration discovery failed without error")
+
+
 async def fetch_upstream_config(
     url: URL, client: httpx.AsyncClient, branch: str, path: str | None
 ) -> StringIO:
@@ -418,7 +481,7 @@ async def fetch_upstream_config(
         LOGGER.info(f"Cloning {url} via git...")
 
         def _git_clone_and_read() -> str:
-            """Clone the git repo into a temp directory and read pyproject.toml.
+            """Clone the git repo into a temp directory and read config.
 
             Uses an efficient cloning strategy to minimize network traffic and disk space:
             - `--depth 1`: only fetches the tip of the requested branch
@@ -426,7 +489,7 @@ async def fetch_upstream_config(
             - `--no-checkout`: prevents git from populating the working tree
 
             After the metadata is cloned, we try `git restore` to explicitly download and place
-            only the requested `pyproject.toml` file into the working tree. If `restore` fails
+            only the requested configuration file into the working tree. If `restore` fails
             (e.g. on older git versions), we fall back to a specific `git checkout`.
             """
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -453,61 +516,74 @@ async def fetch_upstream_config(
                     )
                     target_path = pathlib.Path(_resolve_upstream_target_path(path))
 
-                    # Restore just the pyproject_toml file
-                    restore_cmd = [
-                        "git",
-                        "-C",
-                        temp_dir,
-                        "restore",
-                        "--source",
-                        branch,
-                        str(target_path),
-                    ]
-                    LOGGER.info(f"Running git restore: {' '.join(restore_cmd)}")
+                    # For git clone, we also want to try candidates if target_path is guessed
+                    candidates = [target_path]
+                    if target_path.name == "pyproject.toml":
+                        configs_dir = target_path.parent
+                        candidates = [
+                            configs_dir / "ruff.toml",
+                            configs_dir / ".ruff.toml",
+                            target_path,
+                        ]
 
-                    try:
-                        subprocess.run(  # noqa: S603
-                            restore_cmd,
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                    except subprocess.CalledProcessError:
-                        LOGGER.info("git restore failed, falling back to git checkout")
-                        checkout_cmd = [
+                    for cand_path in candidates:
+                        # Restore just the config file
+                        full_path = pathlib.Path(temp_dir) / cand_path
+                        restore_cmd = [
                             "git",
                             "-C",
                             temp_dir,
-                            "checkout",
+                            "restore",
+                            "--source",
                             branch,
-                            "--",
-                            str(target_path),
+                            str(cand_path),
                         ]
-                        LOGGER.info(f"Running git checkout: {' '.join(checkout_cmd)}")
-                        subprocess.run(  # noqa: S603
-                            checkout_cmd,
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                except subprocess.CalledProcessError as e:
-                    LOGGER.exception(f"Git operation failed: {e.stderr}")
-                    raise
+                        try:
+                            subprocess.run(  # noqa: S603
+                                restore_cmd,
+                                check=True,
+                                capture_output=True,
+                                text=True,
+                            )
+                            if full_path.exists():
+                                return full_path.read_text()
+                        except subprocess.CalledProcessError:
+                            # Fallback for old git
+                            checkout_cmd = [
+                                "git",
+                                "-C",
+                                temp_dir,
+                                "checkout",
+                                branch,
+                                "--",
+                                str(cand_path),
+                            ]
+                            try:
+                                subprocess.run(  # noqa: S603
+                                    checkout_cmd,
+                                    check=True,
+                                    capture_output=True,
+                                    text=True,
+                                )
+                                if full_path.exists():
+                                    return full_path.read_text()
+                            except subprocess.CalledProcessError:
+                                continue
 
-                full_target_path = pathlib.Path(temp_dir) / target_path
-                if not full_target_path.exists():
                     raise FileNotFoundError(
                         f"Configuration file not found in repository at {target_path}"
                     )
-                return full_target_path.read_text()
+                except subprocess.CalledProcessError as e:
+                    LOGGER.exception(f"Git operation failed: {e.stderr}")
+                    raise
 
         content = await asyncio.to_thread(_git_clone_and_read)
         return StringIO(content)
 
     try:
-        return await download(url, client)
-    except httpx.HTTPStatusError as e:
-        msg = f"HTTP error {e.response.status_code} when downloading from {url}"
+        return await _download_with_discovery(url, client, branch)
+    except httpx.HTTPStatusError as err:
+        msg = f"HTTP error {err.response.status_code} when downloading from {url}"
         git_url = to_git_url(url)
         if git_url:
             # sys.argv[1] might be -v or something else when running via pytest
@@ -526,7 +602,7 @@ async def fetch_upstream_config(
             msg += "\n\n💡 Check the URL and your permissions."
 
         # Re-raise with a more helpful message while preserving the original exception context
-        raise httpx.HTTPStatusError(msg, request=e.request, response=e.response) from None
+        raise httpx.HTTPStatusError(msg, request=err.request, response=err.response) from None
 
 
 def is_ruff_toml_file(path_or_url: str) -> bool:
