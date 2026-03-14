@@ -990,11 +990,12 @@ wheels = [
 
 [[package]]
 name = "ruff-sync"
-version = "0.0.5.dev1"
+version = "0.0.5.dev2"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "tomlkit" },
+    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -1018,6 +1019,7 @@ dev = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "tomlkit", specifier = ">=0.12.3,<2.0.0" },
+    { name = "typing-extensions", specifier = ">=4.5.0" },
 ]
 
 [package.metadata.requires-dev]

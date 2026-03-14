@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.0.5.dev1"
+version = "0.0.5.dev2"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
     "httpx>=0.27.0,<1.0.0",
     "tomlkit>=0.12.3,<2.0.0",
+    "typing-extensions>=4.5.0",
 ]
 
 [project.urls]
@@ -77,7 +78,13 @@ module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
 [tool.ruff-sync]
-exclude = ["target-version", "line-length", "lint.per-file-ignores", "lint.ignore"]
+exclude = [
+    "target-version",
+    "line-length",
+    "lint.per-file-ignores",
+    "lint.ignore",
+    "extend-exclude",
+]
 
 [tool.ruff]
 target-version = "py310"

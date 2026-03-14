@@ -26,7 +26,6 @@
 - [CI Integration](#ci-integration)
 - [Example Workflow](#example-workflow)
 - [Detailed Check Logic](#detailed-check-logic)
-- [Contributing](#contributing)
 - [Dogfooding](#dogfooding)
 - [License](#license)
 
@@ -160,7 +159,7 @@ exclude = [
 ```
 
 This sets the default upstream and exclusions so you don't need to pass them on the command line every time.
-*Note: Any explicitly provided CLI arguments will override the values in `pyproject.toml`.*
+_Note: Any explicitly provided CLI arguments will override the values in `pyproject.toml`._
 
 ### Advanced Configuration
 
@@ -182,8 +181,11 @@ exclude = [
 branch = "develop"
 
 # A directory prefix to use when looking for a configuration file in a repository. (Default: "")
-# Useful if the upstream pyproject.toml is not at the repository root.
+# Useful if the upstream config is not at the repository root.
 path = "config/ruff"
+
+# The local target directory or file to sync into. (Default: ".")
+to = "."
 ```
 
 ## CI Integration
@@ -232,7 +234,7 @@ git commit -am "sync ruff config from upstream"
 
 ### Curated Examples
 
-While `ruff-sync` is designed to sync from *any* repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
+While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
 
 For example, to sync an exhaustive "kitchen-sink" configuration that explicitly enables all rules and documents them:
 
@@ -257,8 +259,7 @@ By default, `ruff-sync` requires an existing configuration file (`pyproject.toml
 ruff-sync pull https://github.com/my-org/standards --init
 ```
 
-`ruff-sync` seamlessly supports both `pyproject.toml` and standalone `ruff.toml` (or `.ruff.toml`) files. If your upstream source or your local target is a `ruff.toml`, it will automatically adapt and sync the root configuration rather than looking for a `[tool.ruff]` section.
-
+`ruff-sync` seamlessly supports both `pyproject.toml` and standalone `ruff.toml` (or `.ruff.toml`) files. If your local target is a directory, it will look for configuration files in the following order: `ruff.toml` -> `.ruff.toml` -> `pyproject.toml`. If your upstream source or your local target is a `ruff.toml`, it will automatically adapt and sync the root configuration rather than looking for a `[tool.ruff]` section.
 
 ## Detailed Check Logic
 
@@ -266,9 +267,9 @@ When you run `ruff-sync check`, it follows this process to determine if your pro
 
 ```mermaid
 flowchart TD
-    Start([Start]) --> Local[Read Local pyproject.toml]
-    Local --> Upstream[Download Upstream pyproject.toml]
-    Upstream --> Extract[Extract tool.ruff section]
+    Start([Start]) --> Local[Read Local Configuration]
+    Local --> Upstream[Download Upstream Configuration]
+    Upstream --> Extract[Extract tool.ruff section if needed]
     Extract --> Exclude[Apply Exclusions]
     Exclude --> Merge[Perform in-memory Merge]
 

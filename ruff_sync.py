@@ -4,6 +4,7 @@ import asyncio
 import difflib
 import json
 import logging
+import os
 import pathlib
 import re
 import subprocess
@@ -22,8 +23,9 @@ from httpx import URL
 from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
+from typing_extensions import deprecated
 
-__version__ = "0.0.5.dev1"
+__version__ = "0.0.5.dev2"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
@@ -59,7 +61,7 @@ class ColoredFormatter(logging.Formatter):
 class Arguments(NamedTuple):
     command: str
     upstream: URL
-    source: pathlib.Path
+    to: pathlib.Path
     exclude: Iterable[str]
     verbose: int
     branch: str = "main"
@@ -68,15 +70,21 @@ class Arguments(NamedTuple):
     diff: bool = True
     init: bool = False
 
+    @property
+    @deprecated("Use 'to' instead")
+    def source(self) -> pathlib.Path:
+        return self.to
+
     @classmethod
     @lru_cache(maxsize=1)
     def fields(cls) -> set[str]:
-        return set(cls._fields)
+        return set(cls._fields) | {"source"}
 
 
 class Config(TypedDict, total=False):
     upstream: str
-    source: str
+    to: str
+    source: str  # Deprecated
     exclude: list[str]
     verbose: int
     branch: str
@@ -101,17 +109,18 @@ def get_config(
             allowed_keys = set(Config.__annotations__.keys())
             for arg, value in config.items():
                 if arg in allowed_keys:
+                    if arg == "source":
+                        LOGGER.warning(
+                            "DeprecationWarning: [tool.ruff-sync] 'source' is deprecated. "
+                            "Use 'to' instead."
+                        )
                     cfg_result[arg] = value
                 else:
                     LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
+            # Ensure 'to' is populated if 'source' was used
+            if "source" in cfg_result and "to" not in cfg_result:
+                cfg_result["to"] = cfg_result["source"]
     return cast("Config", cfg_result)
-
-
-@lru_cache(maxsize=1)
-def _resolve_source(source: str | pathlib.Path) -> pathlib.Path:
-    if isinstance(source, str):
-        source = pathlib.Path(source)
-    return source.resolve(strict=True)
 
 
 def _get_cli_parser() -> ArgumentParser:
@@ -149,11 +158,16 @@ def _get_cli_parser() -> ArgumentParser:
         " Optional if defined in [tool.ruff-sync].",
     )
     common_parser.add_argument(
-        "--source",
-        type=pathlib.Path,
-        default=".",
-        help="The directory to sync the pyproject.toml file to. Default: .",
+        "--to",
+        help="The directory or file to sync ruff configuration to. Default: .",
         required=False,
+    )
+    # Add --source as a deprecated alias
+    common_parser.add_argument(
+        "--source",
+        help="Deprecated alias for --to.",
+        required=False,
+        metavar="PATH",
     )
     common_parser.add_argument(
         "--exclude",
@@ -216,8 +230,31 @@ def _get_cli_parser() -> ArgumentParser:
     return parser
 
 
-def _get_target_path(path: str | None) -> str:
+def _resolve_target_path(to: pathlib.Path, upstream_url: str | None = None) -> pathlib.Path:
     """Resolve the target path for configuration files.
+
+    If 'to' is a file, it's used directly.
+    Otherwise, it looks for existing ruff/pyproject.toml in the 'to' directory.
+    If none found, it defaults to pyproject.toml unless the upstream is a ruff.toml.
+    """
+    if to.is_file():
+        return to
+
+    # If it's a directory, look for common config files
+    for filename in ("ruff.toml", ".ruff.toml", "pyproject.toml"):
+        candidate = to / filename
+        if candidate.exists():
+            return candidate
+
+    # If upstream is specified and is a ruff.toml, default to ruff.toml
+    if upstream_url and is_ruff_toml_file(upstream_url):
+        return to / "ruff.toml"
+
+    return to / "pyproject.toml"
+
+
+def _resolve_upstream_target_path(path: str | None) -> str:
+    """Resolve the target path for configuration files in upstream repositories.
 
     If the path indicates a .toml file, it's treated as a direct file path.
     Otherwise, it appends 'pyproject.toml' to the path.
@@ -261,7 +298,7 @@ def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
     path_parts = [p for p in url.path.split("/") if p]
     if len(path_parts) == _GITHUB_REPO_PATH_PARTS_COUNT:
         org, repo = path_parts
-        target_path = _get_target_path(path)
+        target_path = _resolve_upstream_target_path(path)
         raw_url = url.copy_with(
             host=_GITHUB_RAW_HOST,
             path=str(pathlib.PurePosixPath("/", org, repo, branch, target_path)),
@@ -302,7 +339,7 @@ def _convert_gitlab_url(url: URL, branch: str = "main", path: str = "") -> URL:
         # Avoid empty paths or just a slash
         path_prefix = url.path.rstrip("/")
         if path_prefix:
-            target_path = _get_target_path(path)
+            target_path = _resolve_upstream_target_path(path)
             raw_url = url.copy_with(
                 path=str(pathlib.PurePosixPath(path_prefix, "-", "raw", branch, target_path))
             )
@@ -414,7 +451,7 @@ async def fetch_upstream_config(
                         capture_output=True,
                         text=True,
                     )
-                    target_path = pathlib.Path(_get_target_path(path))
+                    target_path = pathlib.Path(_resolve_upstream_target_path(path))
 
                     # Restore just the pyproject_toml file
                     restore_cmd = [
@@ -674,25 +711,13 @@ def merge_ruff_toml(
     return source
 
 
-def _resolve_target_path(args: Arguments) -> pathlib.Path:
-    if args.source.is_file():
-        return args.source
-    if (args.source / "ruff.toml").exists():
-        return args.source / "ruff.toml"
-    if (args.source / ".ruff.toml").exists():
-        return args.source / ".ruff.toml"
-    if args.upstream and is_ruff_toml_file(str(args.upstream)):
-        return args.source / "ruff.toml"
-    return args.source / "pyproject.toml"
-
-
 async def check(
     args: Arguments,
 ) -> int:
     """Check if the local pyproject.toml / ruff.toml is in sync with the upstream."""
     print("🔍 Checking Ruff sync status...")
 
-    _source_toml_path = _resolve_target_path(args).resolve(strict=False)
+    _source_toml_path = _resolve_target_path(args.to, str(args.upstream)).resolve(strict=False)
     if not _source_toml_path.exists():
         print(
             f"❌ Configuration file {_source_toml_path} does not exist. "
@@ -780,7 +805,7 @@ async def pull(
 ) -> int:
     """Pull the upstream ruff config and apply it to the source."""
     print("🔄 Syncing Ruff...")
-    _source_toml_path = _resolve_target_path(args).resolve(strict=False)
+    _source_toml_path = _resolve_target_path(args.to, str(args.upstream)).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
     if _source_toml_path.exists():
@@ -888,13 +913,33 @@ def _resolve_path(args: Any, config: Mapping[str, Any]) -> str:
     return ""
 
 
-def _resolve_args(args: Any, config: Mapping[str, Any]) -> tuple[URL, Iterable[str], str, str]:
-    """Resolve upstream, exclude, branch, and path from CLI and config."""
+def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
+    """Resolve target path from CLI, config, or default."""
+    if args.source:
+        LOGGER.warning("DeprecationWarning: --source is deprecated. Use --to instead.")
+        return pathlib.Path(args.source)
+    if args.to:
+        return pathlib.Path(args.to)
+    if "to" in config:
+        target = pathlib.Path(config["to"])
+        # Resolve relative to the directory where we found the config file
+        base_dir = initial_to.parent if initial_to.is_file() else initial_to
+        resolved = base_dir / target
+        LOGGER.info(f"🎯 Using target path from [tool.ruff-sync]: {resolved}")
+        return resolved
+    return initial_to
+
+
+def _resolve_args(
+    args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
+) -> tuple[URL, pathlib.Path, Iterable[str], str, str]:
+    """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
+    to = _resolve_to(args, config, initial_to)
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return upstream, exclude, branch, path
+    return upstream, to, exclude, branch, path
 
 
 def main() -> int:
@@ -922,11 +967,15 @@ def main() -> int:
     handler = logging.StreamHandler()
     handler.setFormatter(ColoredFormatter())
     LOGGER.addHandler(handler)
-    LOGGER.propagate = False  # Avoid double logging if root is also configured
+    LOGGER.propagate = "PYTEST_CURRENT_TEST" in os.environ  # Allow capturing in tests
 
-    config: Config = get_config(args.source)
+    # Determine target 'to' from CLI or use default '.'
+    # Defer Path conversion to avoid pyfakefs issues with captured Path class
+    arg_to = args.to or args.source
+    initial_to = pathlib.Path(arg_to) if arg_to else pathlib.Path()
+    config: Config = get_config(initial_to)
 
-    upstream, exclude, branch, path = _resolve_args(args, config)
+    upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
     # Convert non-raw github/gitlab upstream url to the raw equivalent
     upstream = resolve_raw_url(upstream, branch=branch, path=path)
@@ -935,7 +984,7 @@ def main() -> int:
     exec_args = Arguments(
         command=args.command,
         upstream=upstream,
-        source=args.source,
+        to=to_val,
         exclude=exclude,
         verbose=args.verbose,
         branch=branch,
