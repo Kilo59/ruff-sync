@@ -60,10 +60,19 @@ def test_is_ruff_toml_file(path_or_url: str, expected: bool):
             "https://raw.githubusercontent.com/org/repo/main/pyproject.toml",
             "https://raw.githubusercontent.com/org/repo/main/pyproject.toml",
         ),
-        # Unknown GitHub pattern
+        # Tree URLs (GitHub)
+        (
+            "https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink",
+            "https://raw.githubusercontent.com/Kilo59/ruff-sync/main/configs/kitchen-sink/pyproject.toml",
+        ),
+        (
+            "https://github.com/org/repo/tree/develop/subdir",
+            "https://raw.githubusercontent.com/org/repo/develop/subdir/pyproject.toml",
+        ),
+        # Tree URLs (GitHub)
         (
             "https://github.com/org/repo/tree/main/subdir/pyproject.toml",
-            "https://github.com/org/repo/tree/main/subdir/pyproject.toml",
+            "https://raw.githubusercontent.com/org/repo/main/subdir/pyproject.toml",
         ),
         # Another unknown pattern
         (
@@ -96,8 +105,13 @@ def test_is_ruff_toml_file(path_or_url: str, expected: bool):
         ),
         # GitLab other pattern (tree)
         (
+            "https://gitlab.com/gitlab-org/gitlab/-/tree/master/subdir",
+            "https://gitlab.com/gitlab-org/gitlab/-/raw/master/subdir/pyproject.toml",
+        ),
+        # GitLab other pattern (tree)
+        (
             "https://gitlab.com/gitlab-org/gitlab/-/tree/master",
-            "https://gitlab.com/gitlab-org/gitlab/-/tree/master",
+            "https://gitlab.com/gitlab-org/gitlab/-/raw/master/pyproject.toml",
         ),
     ],
 )
@@ -191,6 +205,26 @@ def test_to_git_url(input_url: str, expected_git_url: str | None):
         assert result is None
     else:
         assert str(result) == expected_git_url
+
+
+@pytest.mark.asyncio
+async def test_fetch_upstream_config_with_ruff_toml_fallback(respx_mock):
+    # Given a directory guess result that would normally point to pyproject.toml
+    # If pyproject.toml does not exist but ruff.toml does, it should find ruff.toml
+    base_url = "https://raw.githubusercontent.com/org/repo/main/configs"
+    pyproject_url = f"{base_url}/pyproject.toml"
+    ruff_url = f"{base_url}/ruff.toml"
+
+    # Mock: ruff.toml exists, others don't
+    respx_mock.get(ruff_url).mock(return_value=httpx.Response(200, text="line-length = 100"))
+    respx_mock.get(f"{base_url}/.ruff.toml").mock(return_value=httpx.Response(404))
+    respx_mock.get(pyproject_url).mock(return_value=httpx.Response(404))
+
+    async with AsyncClient() as client:
+        # The URL passed to fetch_upstream_config is usually the one resolved by resolve_raw_url
+        url = URL(pyproject_url)
+        result = await fetch_upstream_config(url, client, branch="main", path="configs")
+        assert result.read() == "line-length = 100"
 
 
 @pytest.mark.asyncio

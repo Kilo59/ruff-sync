@@ -16,7 +16,7 @@
 
 ---
 
-### Table of Contents
+## Table of Contents
 
 - [The Problem](#the-problem)
 - [How It Works](#how-it-works)
@@ -71,9 +71,9 @@ Ruff's `extend` is perfect inside a monorepo, but if your projects live in **sep
 └─────────────────────────────┘
 ```
 
-1. You point `ruff-sync` at the URL of your canonical `pyproject.toml`.
-2. It downloads the file, extracts the `[tool.ruff]` section.
-3. It **merges** the upstream config into your local `pyproject.toml` — updating values that changed, adding new rules, but preserving your local comments, whitespace, and any sections you've chosen to exclude (like `per-file-ignores`).
+1. You point `ruff-sync` at the URL of your canonical configuration (repository, directory, or direct file).
+2. It downloads the file and extracts the configuration (from `[tool.ruff]` in `pyproject.toml` or the top-level in `ruff.toml`).
+3. It **merges** the upstream config into your local project — updating values that changed, adding new rules, but preserving your local comments, whitespace, and any sections you've chosen to exclude (like `per-file-ignores`).
 
 No package registry. No publishing step. Just a URL.
 
@@ -102,8 +102,9 @@ pip install ruff-sync
 ### Usage
 
 ```console
-# Sync from a GitHub/GitLab repository (defaults to main/pyproject.toml)
+# Sync from a GitHub/GitLab repository (root or specific directory)
 ruff-sync https://github.com/my-org/standards
+ruff-sync https://github.com/my-org/standards/tree/main/configs/shared
 
 # Or a direct blob/file URL (auto-converts to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
@@ -131,7 +132,8 @@ Run `ruff-sync --help` for full details on all available options.
 ## Key Features
 
 - 🏗️ **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
-- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
+- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs, tree (directory) URLs, or blob (file) URLs to raw content URLs.
+- 🔍 **Smart configuration discovery** — Point at a directory and `ruff-sync` will automatically find your config. It checks `pyproject.toml`, `ruff.toml`, and `.ruff.toml` (in that order).
 - 📥 **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform an efficient shallow clone (using `--filter=blob:none` and `--no-checkout`) to safely extract the configuration with minimal network traffic.
 - 🛡️ **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - 🌍 **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml` or `ruff.toml`.
@@ -236,18 +238,46 @@ git commit -am "sync ruff config from upstream"
 
 While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
 
-For example, to sync an exhaustive "kitchen-sink" configuration that explicitly enables all rules and documents them:
+`ruff-sync` is flexible with URLs. You can point it at a repository root, a specific directory (tree), a direct file (blob), or even a raw content URL.
+
+#### Kitchen Sink
+
+An exhaustive configuration that explicitly enables and documents almost all available Ruff rules. Great for establishing a strict baseline.
 
 ```console
+# Directory URL (recommended)
+ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
+
+# Direct file URL (blob)
 ruff-sync https://github.com/Kilo59/ruff-sync/blob/main/configs/kitchen-sink/ruff.toml
+
+# Raw content URL
+ruff-sync https://raw.githubusercontent.com/Kilo59/ruff-sync/main/configs/kitchen-sink/ruff.toml
+
+# Git SSH URL (clones the repo)
+ruff-sync git@github.com:Kilo59/ruff-sync.git --path configs/kitchen-sink
 ```
 
-Or configure it using `pyproject.toml` so it's always the default for your local project:
+#### FastAPI & Async
+
+Tailored for modern web applications. Includes rules for `asyncio`, security (`flake8-bandit`), and Pydantic-friendly naming conventions.
+
+```console
+# Repository Root (if the config is at the root)
+ruff-sync https://github.com/my-org/fastapi-standards
+
+# Directory URL
+ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
+```
+
+#### Default Syncing
+
+Set your preferred standard as the default in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
 upstream = "https://github.com/Kilo59/ruff-sync"
-path = "configs/kitchen-sink"
+path = "configs/fastapi"
 ```
 
 ## Bootstrapping a New Project
