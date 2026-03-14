@@ -16,7 +16,7 @@
 
 ---
 
-### Table of Contents
+## Table of Contents
 
 - [The Problem](#the-problem)
 - [How It Works](#how-it-works)
@@ -236,18 +236,31 @@ git commit -am "sync ruff config from upstream"
 
 While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
 
-For example, to sync an exhaustive "kitchen-sink" configuration that explicitly enables all rules and documents them:
+#### Kitchen Sink
+
+An exhaustive configuration that explicitly enables and documents almost all available Ruff rules. Great for establishing a strict baseline.
 
 ```console
-ruff-sync https://github.com/Kilo59/ruff-sync/blob/main/configs/kitchen-sink/ruff.toml
+# You can point directly to the directory; ruff-sync automatically finds the config file
+ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
 ```
 
-Or configure it using `pyproject.toml` so it's always the default for your local project:
+#### FastAPI & Async
+
+Tailored for modern web applications. Includes rules for `asyncio`, security (`flake8-bandit`), and Pydantic-friendly naming conventions.
+
+```console
+ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
+```
+
+#### Default Syncing
+
+Set your preferred standard as the default in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
 upstream = "https://github.com/Kilo59/ruff-sync"
-path = "configs/kitchen-sink"
+path = "configs/fastapi"
 ```
 
 ## Bootstrapping a New Project
