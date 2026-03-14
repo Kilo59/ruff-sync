@@ -24,7 +24,7 @@ PROJECT_ROOT: Final = pathlib.Path(__file__).parent.parent
 PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 
 PYTHON_VERSION: Final = Version(sys.version.split()[0])
-# TODO: get this from pyproject.toml  # noqa: TD002, TD003, FIX002
+# TODO: get this from pyproject.toml
 MIN_PYTHON_VERSION: Final = Version("3.10")
 
 

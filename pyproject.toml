@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.0.5"
+version = "0.1.0.dev0"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -119,7 +119,6 @@ select = [
     "ERA", # eradicate - commented-out code
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
     "F", # Pyflakes
-    "FIX", # flake8-fixme - FIXME, TODO, HACK, etc.
     # https://beta.ruff.rs/docs/rules/#pycodestyle-e-w
     "E", # pycodestyle
     "W", # Warning
@@ -133,7 +132,6 @@ select = [
     "N", # pep8-naming
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG", # logging - logging best practices
-    "TD", # flake8-todos - TODO comments
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh
     "PERF", # perflint - performance related rules
     # https://docs.astral.sh/ruff/rules/#pygrep-hooks-pgh

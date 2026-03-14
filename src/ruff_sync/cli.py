@@ -31,7 +31,7 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import deprecated
 
-__version__ = "0.0.5"
+__version__ = "0.1.0.dev0"
 
 _DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
@@ -124,7 +124,7 @@ def get_config(
 ) -> Config:
     """Read [tool.ruff-sync] configuration from pyproject.toml."""
     local_toml = source / "pyproject.toml"
-    # TODO: use pydantic to validate the toml file  # noqa: TD002, TD003, FIX002
+    # TODO: use pydantic to validate the toml file
     cfg_result: dict[str, Any] = {}
     if local_toml.exists():
         toml = tomlkit.parse(local_toml.read_text())
