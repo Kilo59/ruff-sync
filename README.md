@@ -71,9 +71,9 @@ Ruff's `extend` is perfect inside a monorepo, but if your projects live in **sep
 └─────────────────────────────┘
 ```
 
-1. You point `ruff-sync` at the URL of your canonical `pyproject.toml`.
-2. It downloads the file, extracts the `[tool.ruff]` section.
-3. It **merges** the upstream config into your local `pyproject.toml` — updating values that changed, adding new rules, but preserving your local comments, whitespace, and any sections you've chosen to exclude (like `per-file-ignores`).
+1. You point `ruff-sync` at the URL of your canonical configuration (repository, directory, or direct file).
+2. It downloads the file and extracts the configuration (from `[tool.ruff]` in `pyproject.toml` or the top-level in `ruff.toml`).
+3. It **merges** the upstream config into your local project — updating values that changed, adding new rules, but preserving your local comments, whitespace, and any sections you've chosen to exclude (like `per-file-ignores`).
 
 No package registry. No publishing step. Just a URL.
 
@@ -102,8 +102,9 @@ pip install ruff-sync
 ### Usage
 
 ```console
-# Sync from a GitHub/GitLab repository (defaults to main/pyproject.toml)
+# Sync from a GitHub/GitLab repository (root or specific directory)
 ruff-sync https://github.com/my-org/standards
+ruff-sync https://github.com/my-org/standards/tree/main/configs/shared
 
 # Or a direct blob/file URL (auto-converts to raw)
 ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
@@ -131,7 +132,8 @@ Run `ruff-sync --help` for full details on all available options.
 ## Key Features
 
 - 🏗️ **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
-- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs or blob URLs to raw content URLs.
+- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs, tree (directory) URLs, or blob (file) URLs to raw content URLs.
+- 🔍 **Smart configuration discovery** — Point at a directory and `ruff-sync` will automatically find your config. It checks `pyproject.toml`, `ruff.toml`, and `.ruff.toml` (in that order).
 - 📥 **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform an efficient shallow clone (using `--filter=blob:none` and `--no-checkout`) to safely extract the configuration with minimal network traffic.
 - 🛡️ **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
 - 🌍 **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml` or `ruff.toml`.
