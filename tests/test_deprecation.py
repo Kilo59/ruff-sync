@@ -95,6 +95,38 @@ to = "target-dir"
     # Crucially, `to` must determine the target path when both are present.
     assert config_both["to"] == "target-dir"
 
+    caplog.clear()
+    ruff_sync.get_config.cache_clear()
+
+    # Case 3: Test that the final resolved path in Arguments uses config[to]
+    # when CLI '--to' is not provided.
+    pyproject.write_text(
+        """
+[tool.ruff-sync]
+upstream = "https://example.com/pyproject.toml"
+to = "sub-project"
+""".lstrip()
+    )
+
+    # Mock the upstream request
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
+
+        # No --to or --source on CLI, but use --init to allow creating the sub-project file
+        monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull", "--init"])
+
+        # We need to make sure sub-project directory exists since main() will call
+        # get_config(to_val). Wait, get_config(initial_to) finds the config in
+        # the CWD (initial_to = Path())
+        # Then _resolve_to(args, config, initial_to) returns initial_to / "sub-project".
+
+        exit_code = ruff_sync.main()
+        assert exit_code == 0
+
+    # The file should have been created in sub-project/pyproject.toml
+    # (assuming sub-project/ directory was created or handled by pull())
+    assert (test_dir / "sub-project" / "pyproject.toml").exists()
+
 
 @pytest.mark.parametrize(
     ["files", "upstream_url", "to_path", "expected_target_name"],

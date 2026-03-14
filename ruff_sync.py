@@ -160,7 +160,7 @@ def _get_cli_parser() -> ArgumentParser:
     common_parser.add_argument(
         "--to",
         type=pathlib.Path,
-        default=pathlib.Path(),
+        default=None,
         help="The directory or file to sync ruff configuration to. Default: .",
         required=False,
     )
@@ -916,13 +916,33 @@ def _resolve_path(args: Any, config: Mapping[str, Any]) -> str:
     return ""
 
 
-def _resolve_args(args: Any, config: Mapping[str, Any]) -> tuple[URL, Iterable[str], str, str]:
-    """Resolve upstream, exclude, branch, and path from CLI and config."""
+def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
+    """Resolve target path from CLI, config, or default."""
+    if args.source:
+        LOGGER.warning("DeprecationWarning: --source is deprecated. Use --to instead.")
+        return cast("pathlib.Path", args.source)
+    if args.to:
+        return cast("pathlib.Path", args.to)
+    if "to" in config:
+        target = pathlib.Path(config["to"])
+        # Resolve relative to the directory where we found the config file
+        base_dir = initial_to.parent if initial_to.is_file() else initial_to
+        resolved = base_dir / target
+        LOGGER.info(f"🎯 Using target path from [tool.ruff-sync]: {resolved}")
+        return resolved
+    return initial_to
+
+
+def _resolve_args(
+    args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
+) -> tuple[URL, pathlib.Path, Iterable[str], str, str]:
+    """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
+    to = _resolve_to(args, config, initial_to)
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return upstream, exclude, branch, path
+    return upstream, to, exclude, branch, path
 
 
 def main() -> int:
@@ -952,17 +972,11 @@ def main() -> int:
     LOGGER.addHandler(handler)
     LOGGER.propagate = "PYTEST_CURRENT_TEST" in os.environ  # Allow capturing in tests
 
-    # Determine target 'to' from CLI
-    to_val: pathlib.Path
-    if args.source:
-        LOGGER.warning("DeprecationWarning: --source is deprecated. Use --to instead.")
-        to_val = args.source
-    else:
-        to_val = args.to
+    # Determine target 'to' from CLI or use default '.'
+    initial_to = args.source or args.to or pathlib.Path()
+    config: Config = get_config(initial_to)
 
-    config: Config = get_config(to_val)
-
-    upstream, exclude, branch, path = _resolve_args(args, config)
+    upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
     # Convert non-raw github/gitlab upstream url to the raw equivalent
     upstream = resolve_raw_url(upstream, branch=branch, path=path)
