@@ -84,6 +84,11 @@ class Arguments(NamedTuple):
         return set(cls._fields) | {"source"}
 
 
+class FetchResult(NamedTuple):
+    buffer: StringIO
+    resolved_upstream: URL | str
+
+
 class Config(TypedDict, total=False):
     upstream: str
     to: str
@@ -445,9 +450,7 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-async def _download_with_discovery(
-    url: URL, client: httpx.AsyncClient, branch: str
-) -> tuple[StringIO, URL]:
+async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> FetchResult:
     """Download config from a URL, trying common filenames if a directory guess fails."""
     # For HTTP URLs, try candidates if it looks like a directory guess
     candidates = [url]
@@ -466,7 +469,7 @@ async def _download_with_discovery(
     for candidate_url in candidates:
         response = await client.get(candidate_url)
         if response.status_code == _HTTP_OK:
-            return StringIO(response.text), candidate_url
+            return FetchResult(StringIO(response.text), candidate_url)
 
         if response.status_code != _HTTP_NOT_FOUND or candidate_url == candidates[-1]:
             # If it's not a 404, or the last candidate failed, raise
@@ -476,13 +479,13 @@ async def _download_with_discovery(
     raise RuntimeError("Configuration discovery failed without error")
 
 
-def _fetch_via_git(url: URL, branch: str, path: str | None) -> tuple[str, str]:
+def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
     """Clone the git repo into a temp directory and read config.
 
     Uses an efficient cloning strategy to minimize network traffic and disk space.
 
     Returns:
-        tuple[str, str]: (content, resolved_path)
+        FetchResult: (content buffer, resolved path string)
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Use --no-checkout and --filter=blob:none to avoid downloading unnecessary files
@@ -538,7 +541,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> tuple[str, str]:
                         text=True,
                     )
                     if full_path.exists():
-                        return full_path.read_text(), str(cand_path)
+                        return FetchResult(StringIO(full_path.read_text()), str(cand_path))
                 except subprocess.CalledProcessError:
                     # Fallback for old git
                     checkout_cmd = [
@@ -558,7 +561,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> tuple[str, str]:
                             text=True,
                         )
                         if full_path.exists():
-                            return full_path.read_text(), str(cand_path)
+                            return FetchResult(StringIO(full_path.read_text()), str(cand_path))
                     except subprocess.CalledProcessError:
                         continue
 
@@ -570,12 +573,11 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> tuple[str, str]:
 
 async def fetch_upstream_config(
     url: URL, client: httpx.AsyncClient, branch: str, path: str | None
-) -> tuple[StringIO, URL | str]:
+) -> FetchResult:
     """Fetch the upstream pyproject.toml either via HTTP or git clone."""
     if is_git_url(url):
         LOGGER.info(f"Cloning {url} via git...")
-        content, resolved_path = await asyncio.to_thread(_fetch_via_git, url, branch, path)
-        return StringIO(content), resolved_path
+        return await asyncio.to_thread(_fetch_via_git, url, branch, path)
 
     try:
         return await _download_with_discovery(url, client, branch)
@@ -802,16 +804,16 @@ async def check(
     source_doc = source_toml_file.read()
 
     async with httpx.AsyncClient() as client:
-        file_buffer, resolved_upstream = await fetch_upstream_config(
+        fetch_result = await fetch_upstream_config(
             args.upstream, client, branch=args.branch, path=args.path
         )
-        LOGGER.info(f"Loaded upstream file from {resolved_upstream}")
+        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(str(resolved_upstream))
+    is_upstream_ruff_toml = is_ruff_toml_file(str(fetch_result.resolved_upstream))
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
     upstream_ruff_toml = get_ruff_config(
-        file_buffer.read(),
+        fetch_result.buffer.read(),
         is_ruff_toml=is_upstream_ruff_toml,
         create_if_missing=False,
         exclude=args.exclude,
@@ -902,16 +904,16 @@ async def pull(
 
     # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
-        file_buffer, resolved_upstream = await fetch_upstream_config(
+        fetch_result = await fetch_upstream_config(
             args.upstream, client, branch=args.branch, path=args.path
         )
-        LOGGER.info(f"Loaded upstream file from {resolved_upstream}")
+        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(str(resolved_upstream))
+    is_upstream_ruff_toml = is_ruff_toml_file(str(fetch_result.resolved_upstream))
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
     upstream_ruff_toml = get_ruff_config(
-        file_buffer.read(),
+        fetch_result.buffer.read(),
         is_ruff_toml=is_upstream_ruff_toml,
         create_if_missing=False,
         exclude=args.exclude,
