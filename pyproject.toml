@@ -99,6 +99,10 @@ select = [
     # https://beta.ruff.rs/docs/rules/#flake8-comprehensions-c4
     # https://beta.ruff.rs/docs/rules/#mccabe-c90
     "C", # Complexity (mccabe+) & comprehensions
+    # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "D", # pydocstyle
+    # https://docs.astral.sh/ruff/rules/#pydoclint-doc
+    "DOC", # pydoclint - docstring linting
     # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
@@ -150,6 +154,32 @@ ignore = [
     "G004", # f-string is performant enough
     # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
     "TRY003", # overkill for such a small project
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "D100", # missing docstring in module
+    "D103", # missing docstring in function
+    "D400", # first line should end with a period
+    "D401", # first line of docstring should be in imperative mood
+    "D415", # first line should end with a period, question mark, or exclamation point
+    "D200", # one-line docstring should fit on one line
+    "D212", # multi-line docstring summary should start at the first line
+    "D205", # 1 blank line required between summary line and description
+    "S101", # assert statements should be used in tests
+    "S311", # random numbers in tests do not need to be cryptographically secure
+    "S603", # subprocess without shell
+    "S607", # protects against modification of PATH
+    "S608", # don't care about sql injection in tests
+    "S105", # hard-code passwords in tests should be fake
+    "S106", # hard-code passwords in tests should be fake
+    "PLR2004", # magic values in test comparison is less of a concern
+    "PLC0415", # lazy imports needed for some tests and fixture setup
+    "FBT001", # boolean typed positional arguments common in parametrized tests
+    "FBT003", # Boolean positional value in test code is common and less of a concern
+    "TRY003", # don't care about long exception messages in tests
+    "PLW1510", # subprocess check not needed in tests
+    "PT013", # pytest import style, prevents importing param and or types in from style
 ]
 
 [tool.ruff.format]
