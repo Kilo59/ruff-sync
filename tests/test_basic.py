@@ -402,6 +402,28 @@ def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
     assert captured_args[0].exclude == ruff_sync._DEFAULT_EXCLUDE
 
 
+def test_main_default_to_resolution(monkeypatch: pytest.MonkeyPatch):
+    """Verify that main() resolves 'to' as a Path object by default."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    async def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        await asyncio.sleep(0)
+
+    # No --to, --source, or even upstream (we'll mock config to provide upstream)
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    monkeypatch.setattr(ruff_sync, "get_config", lambda _: {"upstream": "http://example.com"})
+    monkeypatch.setattr(ruff_sync, "pull", mock_sync)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    # This specifically checks that it's a Path object, not a string
+    assert isinstance(captured_args[0].to, pathlib.Path)
+    # And that it represents the current directory
+    assert str(captured_args[0].to) == "."
+
+
 def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
     """CLI upstream should override config."""
     captured_args: list[ruff_sync.Arguments] = []

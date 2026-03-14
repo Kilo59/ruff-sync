@@ -127,6 +127,24 @@ to = "sub-project"
     # (assuming sub-project/ directory was created or handled by pull())
     assert (test_dir / "sub-project" / "pyproject.toml").exists()
 
+    # Case 4: Test that 'to = "."' in config resolves relative to the config file
+    pyproject.write_text(
+        """
+[tool.ruff-sync]
+upstream = "https://example.com/pyproject.toml"
+to = "."
+""".lstrip()
+    )
+    ruff_sync.get_config.cache_clear()
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull"])
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
+        exit_code = ruff_sync.main()
+        assert exit_code == 0
+
+    assert (test_dir / "pyproject.toml").exists()
+
 
 @pytest.mark.parametrize(
     ["files", "upstream_url", "to_path", "expected_target_name"],
@@ -141,6 +159,10 @@ to = "sub-project"
         ),
         ([".ruff.toml"], "https://ex.com/pyproject.toml", "/test_dir", ".ruff.toml"),
         ([], "https://ex.com/ruff.toml", "/test_dir", "ruff.toml"),
+        # Current directory cases
+        ([], "https://ex.com/pyproject.toml", ".", "pyproject.toml"),
+        (["ruff.toml"], "https://ex.com/pyproject.toml", ".", "ruff.toml"),
+        ([], "https://ex.com/pyproject.toml", pathlib.Path(), "pyproject.toml"),
         # Direct file path cases
         (
             ["ruff.toml"],
@@ -160,6 +182,7 @@ to = "sub-project"
 )
 def test_resolve_target_path_logic(  # noqa: PLR0913
     fs: FakeFilesystem,
+    monkeypatch: pytest.MonkeyPatch,
     files,
     upstream_url,
     to_path,
@@ -171,9 +194,12 @@ def test_resolve_target_path_logic(  # noqa: PLR0913
     fs.create_dir(str(target_dir))
     for f in files:
         fs.create_file(str(target_dir / f))
+    to = pathlib.Path(to_path)
+    # For relative paths (like "."), we need to be in the target_dir for .exists() to work
+    if not to.is_absolute():
+        monkeypatch.chdir(str(target_dir))
 
     # If testing a direct file path that shouldn't exist yet, we don't always create it
-    to = pathlib.Path(to_path)
     if not to.exists() and to.suffix == ".toml" and "/test_dir/" in str(to):
         if not to.parent.exists():
             fs.create_dir(str(to.parent))
