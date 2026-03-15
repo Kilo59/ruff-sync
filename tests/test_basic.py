@@ -569,5 +569,42 @@ target-version = "py311"
     assert "per-file-ignores" not in updated_toml
 
 
+def test_ruff_config_file_name_tried_order() -> None:
+    """Test that tried_order returns the expected sequence of filenames."""
+    order = ruff_sync.RuffConfigFileName.tried_order()
+    assert order == [
+        ruff_sync.RuffConfigFileName.RUFF_TOML,
+        ruff_sync.RuffConfigFileName.DOT_RUFF_TOML,
+        ruff_sync.RuffConfigFileName.PYPROJECT_TOML,
+    ]
+
+
+def test_ruff_config_file_name_str() -> None:
+    """Test that string conversion returns the literal filename."""
+    assert str(ruff_sync.RuffConfigFileName.PYPROJECT_TOML) == "pyproject.toml"
+    assert str(ruff_sync.RuffConfigFileName.RUFF_TOML) == "ruff.toml"
+    assert str(ruff_sync.RuffConfigFileName.DOT_RUFF_TOML) == ".ruff.toml"
+
+
+def test_ruff_config_file_name_path_join() -> None:
+    """Test that the Enum members can be used directly in path joining."""
+    path = pathlib.Path("base/path")
+    # Path / Enum works because it's a str mixin
+    assert path / ruff_sync.RuffConfigFileName.PYPROJECT_TOML == pathlib.Path(
+        "base/path/pyproject.toml"
+    )
+    assert path / ruff_sync.RuffConfigFileName.RUFF_TOML == pathlib.Path("base/path/ruff.toml")
+    assert path / ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == pathlib.Path("base/path/.ruff.toml")
+
+
+def test_ruff_config_file_name_equality() -> None:
+    """Test equality comparisons."""
+    # intentional non-overlapping comparison
+    assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML == "pyproject.toml"  # type: ignore[comparison-overlap]
+    assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"
+    assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"
+    assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])

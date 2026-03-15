@@ -11,14 +11,14 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: teal
+      primary: amber
       accent: deep-purple
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: teal
+      primary: amber
       accent: deep-purple
       toggle:
         icon: material/brightness-4
@@ -108,4 +108,5 @@ nav:
   - Usage: usage.md
   - Configuration: configuration.md
   - CI Integration: ci-integration.md
+  - Troubleshooting: troubleshooting.md
   - API Reference: reference/

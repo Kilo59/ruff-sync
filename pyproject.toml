@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.0.dev0"
+version = "0.1.0.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -31,7 +31,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/Kilo59/ruff-sync"
-Documentation = "https://github.com/Kilo59/ruff-sync#readme"
+Documentation = "https://kilo59.github.io/ruff-sync/"
 Repository = "https://github.com/Kilo59/ruff-sync"
 Issues = "https://github.com/Kilo59/ruff-sync/issues"
 Changelog = "https://github.com/Kilo59/ruff-sync/releases"

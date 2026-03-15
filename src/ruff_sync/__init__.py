@@ -14,6 +14,7 @@ from .cli import (
 from .core import (
     Config,
     FetchResult,
+    RuffConfigFileName,
     check,
     fetch_upstream_config,
     get_ruff_config,
@@ -30,6 +31,7 @@ __all__ = [
     "Arguments",
     "Config",
     "FetchResult",
+    "RuffConfigFileName",
     "__version__",
     "check",
     "fetch_upstream_config",

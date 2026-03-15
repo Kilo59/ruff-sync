@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import difflib
+import enum
 import json
 import logging
 import pathlib
@@ -30,6 +31,7 @@ from httpx import URL
 from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
@@ -37,6 +39,7 @@ if TYPE_CHECKING:
 __all__: Final[list[str]] = [
     "Config",
     "FetchResult",
+    "RuffConfigFileName",
     "check",
     "fetch_upstream_config",
     "get_ruff_config",
@@ -61,6 +64,25 @@ _GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
 
 _HTTP_OK: Final = 200
 _HTTP_NOT_FOUND: Final[int] = 404
+
+
+@enum.unique
+class RuffConfigFileName(str, enum.Enum):
+    """Enumeration of Ruff configuration filenames."""
+
+    PYPROJECT_TOML = "pyproject.toml"
+    RUFF_TOML = "ruff.toml"
+    DOT_RUFF_TOML = ".ruff.toml"
+
+    @classmethod
+    def tried_order(cls) -> list[RuffConfigFileName]:
+        """Return the order in which configuration files should be tried."""
+        return [cls.RUFF_TOML, cls.DOT_RUFF_TOML, cls.PYPROJECT_TOML]
+
+    @override
+    def __str__(self) -> str:
+        """Return the filename as a string."""
+        return self.value
 
 
 class FetchResult(NamedTuple):
@@ -96,16 +118,16 @@ def resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None)
         return to
 
     # If it's a directory, look for common config files
-    for filename in ("ruff.toml", ".ruff.toml", "pyproject.toml"):
+    for filename in RuffConfigFileName.tried_order():
         candidate = to / filename
         if candidate.exists():
             return candidate
 
     # If upstream is specified and is a ruff.toml, default to ruff.toml
     if upstream_url and is_ruff_toml_file(upstream_url):
-        return to / "ruff.toml"
+        return to / RuffConfigFileName.RUFF_TOML
 
-    return to / "pyproject.toml"
+    return to / RuffConfigFileName.PYPROJECT_TOML
 
 
 def _resolve_upstream_target_path(path: str | None) -> str:
@@ -115,14 +137,14 @@ def _resolve_upstream_target_path(path: str | None) -> str:
     Otherwise, it appends 'pyproject.toml' to the path.
     """
     if not path:
-        return "pyproject.toml"
+        return RuffConfigFileName.PYPROJECT_TOML
 
     # Use PurePosixPath to handle URL-style paths consistently
     posix_path = pathlib.PurePosixPath(path.strip("/"))
     if posix_path.suffix == ".toml":
         return str(posix_path)
 
-    return str(posix_path / "pyproject.toml")
+    return str(posix_path / RuffConfigFileName.PYPROJECT_TOML)
 
 
 def _convert_github_url(url: URL, branch: str = "main", path: str = "") -> URL:
@@ -299,21 +321,41 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
+@overload
+def _get_discovery_candidates(base: URL) -> list[URL]: ...
+
+
+@overload
+def _get_discovery_candidates(base: pathlib.Path) -> list[pathlib.Path]: ...
+
+
+def _get_discovery_candidates(base: URL | pathlib.Path) -> list[URL] | list[pathlib.Path]:
+    """Return a list of candidate configuration files, prioritizing the requested one."""
+    # If it's a URL, use PurePosixPath. If it's a Path, use it directly.
+    name = base.path if isinstance(base, URL) else base.name
+    if pathlib.PurePosixPath(name).name != RuffConfigFileName.PYPROJECT_TOML:
+        return [base]  # type: ignore[return-value]
+
+    # Try pyproject.toml first, then fall back to ruff.toml variants.
+    if isinstance(base, URL):
+        base_url = base.join(".")
+        return [base] + [
+            base_url.join(str(f))
+            for f in RuffConfigFileName.tried_order()
+            if str(f) != RuffConfigFileName.PYPROJECT_TOML
+        ]
+
+    configs_dir = base.parent
+    return [base] + [
+        configs_dir / str(f)
+        for f in RuffConfigFileName.tried_order()
+        if str(f) != RuffConfigFileName.PYPROJECT_TOML
+    ]
+
+
 async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> FetchResult:
     """Download config from a URL, trying common filenames if a directory guess fails."""
-    # For HTTP URLs, try candidates if it looks like a directory guess
-    candidates = [url]
-
-    # If the URL was a guess (resolved from a directory or repo root), try other names
-    if pathlib.PurePosixPath(url.path).name == "pyproject.toml":
-        # Try pyproject.toml first to satisfy most projects and existing tests,
-        # then fall back to ruff.toml variants.
-        base_url = url.join(".")
-        candidates = [
-            url,  # pyproject.toml is first
-            base_url.join("ruff.toml"),
-            base_url.join(".ruff.toml"),
-        ]
+    candidates = _get_discovery_candidates(url)
 
     for candidate_url in candidates:
         response = await client.get(candidate_url)
@@ -361,16 +403,7 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
                 text=True,
             )
             target_path = pathlib.Path(_resolve_upstream_target_path(path))
-
-            # For git clone, we also want to try candidates if target_path is guessed
-            candidates = [target_path]
-            if target_path.name == "pyproject.toml":
-                configs_dir = target_path.parent
-                candidates = [
-                    target_path,  # pyproject.toml is first
-                    configs_dir / "ruff.toml",
-                    configs_dir / ".ruff.toml",
-                ]
+            candidates = _get_discovery_candidates(target_path)
 
             for cand_path in candidates:
                 # Restore just the config file
@@ -473,7 +506,10 @@ def is_ruff_toml_file(path_or_url: str | URL) -> bool:
     else:
         path = str(path_or_url).split("?", 1)[0].split("#", 1)[0]
 
-    return pathlib.Path(path).name in ("ruff.toml", ".ruff.toml")
+    return pathlib.Path(path).name in (
+        RuffConfigFileName.RUFF_TOML,
+        RuffConfigFileName.DOT_RUFF_TOML,
+    )
 
 
 @overload
