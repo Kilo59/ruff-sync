@@ -7,16 +7,18 @@ from __future__ import annotations
 
 from .cli import (
     Arguments,
+    __version__,
+    get_config,
+    main,
+)
+from .core import (
     Config,
     FetchResult,
-    __version__,
     check,
     fetch_upstream_config,
-    get_config,
     get_ruff_config,
     get_ruff_tool_table,
     is_ruff_toml_file,
-    main,
     merge_ruff_toml,
     pull,
     resolve_raw_url,

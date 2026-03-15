@@ -12,14 +12,14 @@ theme:
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: teal
-      accent: cyan
+      accent: deep-purple
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: teal
-      accent: cyan
+      accent: deep-purple
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -31,10 +31,21 @@ theme:
     - navigation.sections
     - navigation.tabs
     - navigation.top
+    - navigation.tracking
+    - navigation.path
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Kilo59/ruff-sync
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/ruff-sync/
 
 markdown_extensions:
   - admonition

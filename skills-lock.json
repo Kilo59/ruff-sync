@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "mkdocs-generation": {
+      "source": "smithery.ai",
+      "sourceType": "well-known",
+      "computedHash": "7bfeecf1d09f53c140a9b9c9d64bc9a13ffbb8af1200a68015feb1c48b7acf7f"
+    }
+  }
+}

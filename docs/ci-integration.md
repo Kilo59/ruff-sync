@@ -10,12 +10,12 @@ The best way to use `ruff-sync` in CI is with the `check` command. If the config
 
 We recommend using `uv` to run `ruff-sync` in GitHub Actions.
 
+#### Basic Check
+
 ```yaml
 name: "Standards Check"
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -24,12 +24,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uvx ruff-sync check --semantic
+```
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+#### Automated Sync PRs
 
-      - name: Check Ruff Sync
-        run: uvx ruff-sync check --semantic
+Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.
+
+```yaml
+name: "Upstream Sync"
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Every Monday at midnight
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Pull upstream
+        run: uvx ruff-sync pull
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: sync ruff configuration from upstream"
+          title: "chore: sync ruff configuration"
+          body: "This PR synchronizes the Ruff configuration with the upstream source."
+          branch: "ruff-sync-update"
 ```
 
 ### GitLab CI
@@ -40,20 +65,42 @@ ruff-sync-check:
   script:
     - pip install ruff-sync
     - ruff-sync check --semantic
+  only:
+    - merge_requests
+    - main
 ```
 
-## Best Practices
+---
+
+## 🛠️ Pre-commit Integration
+
+You can use `ruff-sync` with `pre-commit` to ensure your configuration is always in sync before pushing.
+
+Add this to your `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-sync-check
+        name: ruff-sync-check
+        entry: uvx ruff-sync check --semantic
+        language: system
+        files: ^pyproject\.toml$
+        pass_filenames: false
+```
+
+!!! note
+    Running `ruff-sync check` in pre-commit is fast because it only performs a network request if the local `pyproject.toml` is older than the upstream or if no cache exists.
+
+---
+
+## 💡 Best Practices
 
 ### Use `--semantic`
 
-By default, `ruff-sync check` does a strict comparison of the TOML files. This means that if you manually reformat `pyproject.toml` or add a comment, the check will fail even if the actual Ruff rules are the same.
-
-In CI, you usually only care about the functional configuration. Using `--semantic` ensures that minor formatting changes don't break your builds.
+In CI, you usually only care about the functional configuration. Using `--semantic` ensures that minor formatting changes don't break your builds, while still guaranteeing that the actual rules are identical.
 
 ### Use a Dedicated Workflow
 
 Running `ruff-sync` as a separate job in your linting workflow makes it easy to identify when a failure is due to configuration drift rather than a code quality issue.
-
-### Automated PRs
-
-Instead of just checking, some organizations prefer to have a bot automatically open a PR when the upstream configuration changes. You can achieve this by running `ruff-sync pull` and using an action like `create-pull-request`.
