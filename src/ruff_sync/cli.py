@@ -102,6 +102,16 @@ class Arguments(NamedTuple):
         return set(cls._fields) | {"source"}
 
 
+class ResolvedArgs(NamedTuple):
+    """Internal container for resolved arguments."""
+
+    upstream: tuple[URL, ...]
+    to: pathlib.Path
+    exclude: Iterable[str]
+    branch: str
+    path: str
+
+
 @lru_cache(maxsize=1)
 def get_config(
     source: pathlib.Path,
@@ -329,16 +339,14 @@ def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) 
     return initial_to
 
 
-def _resolve_args(
-    args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
-) -> tuple[tuple[URL, ...], pathlib.Path, Iterable[str], str, str]:
+def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> ResolvedArgs:
     """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
     to = _resolve_to(args, config, initial_to)
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return upstream, to, exclude, branch, path
+    return ResolvedArgs(upstream, to, exclude, branch, path)
 
 
 def main() -> int:
