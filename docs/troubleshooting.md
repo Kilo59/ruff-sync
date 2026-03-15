@@ -4,6 +4,21 @@ Common issues and questions when using `ruff-sync`.
 
 ## Common Issues
 
+### Debug Logging
+
+If `ruff-sync` is not behaving as expected, you can increase the verbosity of the logs to see what's happening under the hood.
+
+**Usage**:
+
+- `-v`: Shows `INFO` level logs (e.g., which configuration file is being used, where upstreams are being sourced from).
+- `-vv`: Shows `DEBUG` level logs (e.g., detailed TOML merging operations and raw HTTP/Git requests).
+
+Example:
+
+```bash
+ruff-sync pull -vv
+```
+
 ### Upstream URL not found
 
 **Error**: `Error: Upstream Required. No upstream URL found in pyproject.toml or provided as argument.`
