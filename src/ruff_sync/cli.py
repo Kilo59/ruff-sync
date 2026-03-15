@@ -79,7 +79,7 @@ class Arguments(NamedTuple):
     """CLI arguments for the ruff-sync tool."""
 
     command: str
-    upstream: URL
+    upstream: tuple[URL, ...]
     to: pathlib.Path
     exclude: Iterable[str]
     verbose: int
@@ -173,9 +173,9 @@ def _get_cli_parser() -> ArgumentParser:
     common_parser.add_argument(
         "upstream",
         type=URL,
-        nargs="?",
-        help=f"The URL to download the {RuffConfigFileName.PYPROJECT_TOML} file from."
-        " Optional if defined in [tool.ruff-sync].",
+        nargs="*",
+        help=f"One or more URLs to download the {RuffConfigFileName.PYPROJECT_TOML} file from."
+        " Optional if defined in [tool.ruff-sync]. Upstreams are merged sequentially.",
     )
     common_parser.add_argument(
         "--to",
@@ -253,20 +253,26 @@ def _get_cli_parser() -> ArgumentParser:
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
-def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> URL:
-    """Resolve upstream URL from CLI or config."""
+def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
+    """Resolve upstream URL(s) from CLI or config."""
     if args.upstream:
-        return cast("URL", args.upstream)
+        return tuple(cast("Iterable[URL]", args.upstream))
     if "upstream" in config:
         config_upstream = config["upstream"]
-        if not isinstance(config_upstream, str):
-            PARSER.error(
-                "❌ upstream in [tool.ruff-sync] must be a string, "
-                f"got {type(config_upstream).__name__}"
-            )
-        upstream = URL(config_upstream)
-        LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream}")
-        return upstream
+        if isinstance(config_upstream, str):
+            upstream = (URL(config_upstream),)
+            LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream[0]}")
+            return upstream
+        if isinstance(config_upstream, list):
+            upstreams = tuple(URL(u) for u in config_upstream)
+            LOGGER.info(f"📂 Using {len(upstreams)} upstreams from [tool.ruff-sync]")
+            return upstreams
+
+        PARSER.error(
+            "❌ upstream in [tool.ruff-sync] must be a string or a list of strings, "
+            f"got {type(config_upstream).__name__}"
+        )
+
     PARSER.error(
         "❌ the following arguments are required: upstream "
         f"(or define it in [tool.ruff-sync] in {RuffConfigFileName.PYPROJECT_TOML}) 💥"
@@ -325,7 +331,7 @@ def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) 
 
 def _resolve_args(
     args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
-) -> tuple[URL, pathlib.Path, Iterable[str], str, str]:
+) -> tuple[tuple[URL, ...], pathlib.Path, Iterable[str], str, str]:
     """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
     to = _resolve_to(args, config, initial_to)
@@ -372,7 +378,7 @@ def main() -> int:
     upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
     # Convert non-raw github/gitlab upstream url to the raw equivalent
-    upstream = resolve_raw_url(upstream, branch=branch, path=path)
+    upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
 
     # Create Arguments object
     exec_args = Arguments(

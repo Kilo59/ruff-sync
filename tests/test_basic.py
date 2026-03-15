@@ -272,7 +272,7 @@ async def test_sync_updates_ruff_config(
     await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=fake_fs_source,
             exclude=(),
             verbose=0,
@@ -440,7 +440,7 @@ def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
     ruff_sync.main()
 
     assert len(captured_args) == 1
-    assert str(captured_args[0].upstream) == "http://cli.com"
+    assert str(captured_args[0].upstream[0]) == "http://cli.com"
 
 
 def test_upstream_resolution_missing(
@@ -490,7 +490,45 @@ def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
     ruff_sync.main()
 
     assert len(captured_args) == 1
-    assert str(captured_args[0].upstream) == "http://config.com"
+    assert str(captured_args[0].upstream[0]) == "http://config.com"
+
+
+def test_upstream_resolution_multiple_cli(monkeypatch: pytest.MonkeyPatch):
+    """Multiple CLI upstreams should be returned as a tuple."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    async def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        await asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://u1.com", "http://u2.com"])
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
+
+
+def test_upstream_resolution_multiple_config(monkeypatch: pytest.MonkeyPatch):
+    """Multiple upstreams in config should be returned as a tuple."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    async def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        await asyncio.sleep(0)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    monkeypatch.setattr(
+        ruff_sync_cli, "get_config", lambda _: {"upstream": ["http://u1.com", "http://u2.com"]}
+    )
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
 
 
 @pytest.mark.parametrize(
@@ -557,7 +595,7 @@ target-version = "py311"
         await ruff_sync.pull(
             ruff_sync.Arguments(
                 command="pull",
-                upstream=URL("https://example.com/pyproject.toml"),
+                upstream=(URL("https://example.com/pyproject.toml"),),
                 to=ff_path,
                 exclude=ruff_sync_cli._DEFAULT_EXCLUDE,
                 verbose=0,

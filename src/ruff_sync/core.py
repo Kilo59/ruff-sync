@@ -95,7 +95,7 @@ class FetchResult(NamedTuple):
 class Config(TypedDict, total=False):
     """Configuration schema for [tool.ruff-sync] in pyproject.toml."""
 
-    upstream: str
+    upstream: str | list[str]
     to: str
     source: str  # Deprecated
     exclude: list[str]
@@ -709,7 +709,9 @@ async def check(
     """
     print("🔍 Checking Ruff sync status...")
 
-    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
+    _source_toml_path = resolve_target_path(
+        args.to, args.upstream[0] if args.upstream else None
+    ).resolve(strict=False)
     if not _source_toml_path.exists():
         print(
             f"❌ Configuration file {_source_toml_path} does not exist. "
@@ -720,29 +722,32 @@ async def check(
     source_toml_file = TOMLFile(_source_toml_path)
     source_doc = source_toml_file.read()
 
-    async with httpx.AsyncClient() as client:
-        fetch_result = await fetch_upstream_config(
-            args.upstream, client, branch=args.branch, path=args.path
-        )
-        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
-
-    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
-    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-
-    upstream_ruff_toml = get_ruff_config(
-        fetch_result.buffer.read(),
-        is_ruff_toml=is_upstream_ruff_toml,
-        create_if_missing=False,
-        exclude=args.exclude,
-    )
-
     # Create a copy for comparison
     source_doc_copy = tomlkit.parse(source_doc.as_string())
-    merged_doc = merge_ruff_toml(
-        source_doc_copy,
-        upstream_ruff_toml,
-        is_ruff_toml=is_source_ruff_toml,
-    )
+    merged_doc = source_doc_copy
+
+    async with httpx.AsyncClient() as client:
+        for upstream_url in args.upstream:
+            fetch_result = await fetch_upstream_config(
+                upstream_url, client, branch=args.branch, path=args.path
+            )
+            LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
+
+            is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
+            is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+
+            upstream_ruff_toml = get_ruff_config(
+                fetch_result.buffer.read(),
+                is_ruff_toml=is_upstream_ruff_toml,
+                create_if_missing=False,
+                exclude=args.exclude,
+            )
+
+            merged_doc = merge_ruff_toml(
+                merged_doc,
+                upstream_ruff_toml,
+                is_ruff_toml=is_source_ruff_toml,
+            )
 
     if args.semantic:
         if is_source_ruff_toml:
@@ -815,7 +820,9 @@ async def pull(
         >>> # asyncio.run(pull(args))
     """
     print("🔄 Syncing Ruff...")
-    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
+    _source_toml_path = resolve_target_path(
+        args.to, args.upstream[0] if args.upstream else None
+    ).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
     if _source_toml_path.exists():
@@ -837,28 +844,28 @@ async def pull(
         )
         return 1
 
-    # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
-        fetch_result = await fetch_upstream_config(
-            args.upstream, client, branch=args.branch, path=args.path
-        )
-        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
+        for upstream_url in args.upstream:
+            fetch_result = await fetch_upstream_config(
+                upstream_url, client, branch=args.branch, path=args.path
+            )
+            LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
-    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+            is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
+            is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
 
-    upstream_ruff_toml = get_ruff_config(
-        fetch_result.buffer.read(),
-        is_ruff_toml=is_upstream_ruff_toml,
-        create_if_missing=False,
-        exclude=args.exclude,
-    )
-    merged_toml = merge_ruff_toml(
-        source_doc,
-        upstream_ruff_toml,
-        is_ruff_toml=is_source_ruff_toml,
-    )
-    source_toml_file.write(merged_toml)
+            upstream_ruff_toml = get_ruff_config(
+                fetch_result.buffer.read(),
+                is_ruff_toml=is_upstream_ruff_toml,
+                create_if_missing=False,
+                exclude=args.exclude,
+            )
+
+            source_doc = merge_ruff_toml(
+                source_doc, upstream_ruff_toml, is_ruff_toml=is_source_ruff_toml
+            )
+
+    source_toml_file.write(source_doc)
     try:
         rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
     except ValueError:

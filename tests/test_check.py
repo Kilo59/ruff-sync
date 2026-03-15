@@ -35,7 +35,7 @@ target-version = "py310"
 
         args = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -72,7 +72,7 @@ target-version = "py311"
 
         args = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -119,7 +119,7 @@ line-length = 90
         # Strict check: merging upstream produces no text change → in sync
         args_strict = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -131,7 +131,7 @@ line-length = 90
         # Semantic check also passes — values are identical
         args_semantic = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -166,7 +166,7 @@ target-version = "py311"
 
         args_semantic = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -201,7 +201,7 @@ target-version = "py311"
 
         args_semantic = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
