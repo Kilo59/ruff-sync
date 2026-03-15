@@ -1,23 +1,30 @@
 # Installation
 
-`ruff-sync` is a Python CLI tool. We recommend using `uv` for the best experience, but it works with standard Python package managers as well.
+`ruff-sync` is a Python CLI tool. We recommend using **uv** for the best experience—it's fast, reliable, and allows you to run tools without managing global environments.
 
-## Recommended: Using `uv`
+## ⚡ Recommended: Using `uv`
 
-If you are using [uv](https://docs.astral.sh/uv/), you can run `ruff-sync` without installing it globally:
+If you have [uv](https://docs.astral.sh/uv/) installed, the easiest way to use `ruff-sync` is with `uvx`:
 
 ```bash
 uvx ruff-sync pull
 ```
 
-Or add it to your project's development dependencies:
+This will download and run the latest version of `ruff-sync` in a temporary environment.
+
+### Adding to your project
+
+To keep the version consistent across your team, add it to your development dependencies:
 
 ```bash
 uv add --dev ruff-sync
+# Then run it with:
 uv run ruff-sync pull
 ```
 
-## Other Methods
+---
+
+## 🛠️ Other Installation Methods
 
 === "pipx"
 
