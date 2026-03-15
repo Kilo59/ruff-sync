@@ -169,8 +169,9 @@ Here are all the possible values that can be provided in `[tool.ruff-sync]` alon
 
 ```toml
 [tool.ruff-sync]
-# The source of truth URL for your Ruff configuration. (Required, unless passed via CLI)
-upstream = "https://github.com/my-org/standards"
+# The source of truth URL(s) for your Ruff configuration. (Required, unless passed via CLI)
+# Accepts a single string URL or a list of URLs.
+upstream = ["https://github.com/my-org/standards", "https://github.com/my-org/team-tweaks"]
 
 # A list of config keys to exclude from being synced. (Default: ["lint.per-file-ignores"])
 # Use simple names for top-level keys, and dotted paths for nested keys.
@@ -298,10 +299,13 @@ When you run `ruff-sync check`, it follows this process to determine if your pro
 ```mermaid
 flowchart TD
     Start([Start]) --> Local[Read Local Configuration]
-    Local --> Upstream[Download Upstream Configuration]
-    Upstream --> Extract[Extract tool.ruff section if needed]
+    Local --> Upstreams{For each Upstream}
+    Upstreams --> Download[Download/Clone Configuration]
+    Download --> Extract[Extract section if needed]
     Extract --> Exclude[Apply Exclusions]
-    Exclude --> Merge[Perform in-memory Merge]
+    Exclude --> Merge[Merge into in-memory Doc]
+    Merge --> Upstreams
+    Upstreams -- Done --> Comparison
 
     subgraph Comparison [Comparison Logic]
         direction TB
