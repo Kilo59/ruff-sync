@@ -107,12 +107,14 @@ class Config(TypedDict, total=False):
     init: bool
 
 
-def resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None) -> pathlib.Path:
+def resolve_target_path(
+    to: pathlib.Path, upstreams: Iterable[str | URL] | None = None
+) -> pathlib.Path:
     """Resolve the target path for configuration files.
 
     If 'to' is a file, it's used directly.
     Otherwise, it looks for existing ruff/pyproject.toml in the 'to' directory.
-    If none found, it defaults to pyproject.toml unless the upstream is a ruff.toml.
+    If none found, it defaults to pyproject.toml unless the first upstream is a ruff.toml.
     """
     if to.is_file():
         return to
@@ -123,8 +125,11 @@ def resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None)
         if candidate.exists():
             return candidate
 
+    # Use the first upstream URL as a hint for the default file name
+    first_upstream = next(iter(upstreams), None) if upstreams else None
+
     # If upstream is specified and is a ruff.toml, default to ruff.toml
-    if upstream_url and is_ruff_toml_file(upstream_url):
+    if first_upstream and is_ruff_toml_file(first_upstream):
         return to / RuffConfigFileName.RUFF_TOML
 
     return to / RuffConfigFileName.PYPROJECT_TOML
@@ -737,9 +742,7 @@ async def check(
     """
     print("🔍 Checking Ruff sync status...")
 
-    _source_toml_path = resolve_target_path(
-        args.to, args.upstream[0] if args.upstream else None
-    ).resolve(strict=False)
+    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
     if not _source_toml_path.exists():
         print(
             f"❌ Configuration file {_source_toml_path} does not exist. "
@@ -834,9 +837,7 @@ async def pull(
         >>> # asyncio.run(pull(args))
     """
     print("🔄 Syncing Ruff...")
-    _source_toml_path = resolve_target_path(
-        args.to, args.upstream[0] if args.upstream else None
-    ).resolve(strict=False)
+    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
     if _source_toml_path.exists():
