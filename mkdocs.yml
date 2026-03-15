@@ -8,6 +8,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: assets/logo.png
+  favicon: assets/logo.png
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -105,8 +107,10 @@ plugins:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Usage: usage.md
-  - Configuration: configuration.md
-  - CI Integration: ci-integration.md
+  - Usage:
+      - Usage: usage.md
+      - Configuration: configuration.md
+      - Pre-commit: pre-commit.md
+      - CI Integration: ci-integration.md
   - Troubleshooting: troubleshooting.md
   - API Reference: reference/

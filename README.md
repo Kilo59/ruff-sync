@@ -23,6 +23,7 @@
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
 - [Configuration](#configuration)
+- [Pre-commit Integration](#pre-commit-integration)
 - [CI Integration](#ci-integration)
 - [Example Workflow](#example-workflow)
 - [Detailed Check Logic](#detailed-check-logic)
@@ -191,6 +192,19 @@ path = "config/ruff"
 # The local target directory or file to sync into. (Default: ".")
 to = "."
 ```
+
+## Pre-commit Integration
+
+Ensure your configuration is always in sync before every commit. Add this to your `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/Kilo59/ruff-sync
+  rev: v0.1.0  # Use the latest version
+  hooks:
+    - id: ruff-sync-check
+```
+
+See the [Pre-commit Guide](https://kilo59.github.io/ruff-sync/pre-commit/) for more details.
 
 ## CI Integration
 

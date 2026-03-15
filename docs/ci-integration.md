@@ -72,23 +72,9 @@ ruff-sync-check:
 
 ---
 
-## 🛠️ Pre-commit Integration
-
 You can use `ruff-sync` with `pre-commit` to ensure your configuration is always in sync before pushing.
 
-Add this to your `.pre-commit-config.yaml`:
-
-```yaml
-repos:
-  - repo: local
-    hooks:
-      - id: ruff-sync-check
-        name: ruff-sync-check
-        entry: uvx ruff-sync check --semantic
-        language: system
-        files: ^pyproject\.toml$
-        pass_filenames: false
-```
+See the [Pre-commit Guide](pre-commit.md) for details on using the official hooks.
 
 !!! note
     Running `ruff-sync check` in pre-commit is fast because it only performs a network request if the local `pyproject.toml` is older than the upstream or if no cache exists.
