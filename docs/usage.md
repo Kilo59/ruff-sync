@@ -9,10 +9,10 @@
 The `pull` command downloads the upstream configuration and merges it into your local file.
 
 ```bash
-ruff-sync pull [UPSTREAM_URL] [--to PATH] [--exclude KEY...] [--init]
+ruff-sync pull [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
 ```
 
-* **`UPSTREAM_URL`**: The URL to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local config.
+* **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local config.
 * **`--to`**: Where to save the merged config (defaults to `.`).
 * **`--exclude`**: Dotted paths of keys to keep local (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` if it doesn't exist.
@@ -22,7 +22,7 @@ ruff-sync pull [UPSTREAM_URL] [--to PATH] [--exclude KEY...] [--init]
 The `check` command verifies if your local configuration matches the upstream one.
 
 ```bash
-ruff-sync check [UPSTREAM_URL] [--semantic] [--diff]
+ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff]
 ```
 
 * **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order.
@@ -92,7 +92,9 @@ graph TD
     I --> L[Extract tool.ruff]
     K --> L
     L --> M[Apply Exclusions]
-    M --> N[Merge into local TOML]
-    N --> O[Save File]
+    M --> N[Merge into in-memory TOML]
+    N --> Loop{More Upstreams?}
+    Loop -- Yes --> F
+    Loop -- No --> O[Save File]
     O --> P[End]
 ```

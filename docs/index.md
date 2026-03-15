@@ -15,6 +15,7 @@
 * **⚡ Fast & Lightweight**: Zero-config needed for most projects.
 * **✨ Formatting Preserved**: Uses `tomlkit` to keep your comments, indentation, and whitespace exactly as they are.
 * **🛡️ Smart Merging**: Safely merges nested tables (like `lint.per-file-ignores`) without overwriting local overrides.
+* **📂 Upstream Layers**: Combine and merge configurations from several sources sequentially.
 * **🔗 Flexible Sources**: Sync from GitHub, GitLab, raw URLs, or local files.
 * **✅ CI Ready**: Built-in `check` command with semantic diffs for automated pipelines.
 

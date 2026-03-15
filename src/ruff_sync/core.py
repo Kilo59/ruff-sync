@@ -95,7 +95,7 @@ class FetchResult(NamedTuple):
 class Config(TypedDict, total=False):
     """Configuration schema for [tool.ruff-sync] in pyproject.toml."""
 
-    upstream: str
+    upstream: str | list[str]
     to: str
     source: str  # Deprecated
     exclude: list[str]
@@ -107,12 +107,14 @@ class Config(TypedDict, total=False):
     init: bool
 
 
-def resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None) -> pathlib.Path:
+def resolve_target_path(
+    to: pathlib.Path, upstreams: Iterable[str | URL] | None = None
+) -> pathlib.Path:
     """Resolve the target path for configuration files.
 
     If 'to' is a file, it's used directly.
     Otherwise, it looks for existing ruff/pyproject.toml in the 'to' directory.
-    If none found, it defaults to pyproject.toml unless the upstream is a ruff.toml.
+    If none found, it defaults to pyproject.toml unless the first upstream is a ruff.toml.
     """
     if to.is_file():
         return to
@@ -123,8 +125,11 @@ def resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None)
         if candidate.exists():
             return candidate
 
+    # Use the first upstream URL as a hint for the default file name
+    first_upstream = next(iter(upstreams), None) if upstreams else None
+
     # If upstream is specified and is a ruff.toml, default to ruff.toml
-    if upstream_url and is_ruff_toml_file(upstream_url):
+    if first_upstream and is_ruff_toml_file(first_upstream):
         return to / RuffConfigFileName.RUFF_TOML
 
     return to / RuffConfigFileName.PYPROJECT_TOML
@@ -686,6 +691,34 @@ def merge_ruff_toml(
     return source
 
 
+async def _merge_multiple_upstreams(
+    target_doc: TOMLDocument,
+    is_target_ruff_toml: bool,
+    args: Arguments,
+    client: httpx.AsyncClient,
+) -> TOMLDocument:
+    """Sequentially fetch and merge all upstreams into the target document."""
+    for upstream_url in args.upstream:
+        fetch_result = await fetch_upstream_config(
+            upstream_url, client, branch=args.branch, path=args.path
+        )
+        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
+
+        is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
+
+        upstream_ruff_toml = get_ruff_config(
+            fetch_result.buffer.read(),
+            is_ruff_toml=is_upstream_ruff_toml,
+            create_if_missing=False,
+            exclude=args.exclude,
+        )
+
+        target_doc = merge_ruff_toml(
+            target_doc, upstream_ruff_toml, is_ruff_toml=is_target_ruff_toml
+        )
+    return target_doc
+
+
 async def check(
     args: Arguments,
 ) -> int:
@@ -720,30 +753,19 @@ async def check(
     source_toml_file = TOMLFile(_source_toml_path)
     source_doc = source_toml_file.read()
 
-    async with httpx.AsyncClient() as client:
-        fetch_result = await fetch_upstream_config(
-            args.upstream, client, branch=args.branch, path=args.path
-        )
-        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
-
-    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
-    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-
-    upstream_ruff_toml = get_ruff_config(
-        fetch_result.buffer.read(),
-        is_ruff_toml=is_upstream_ruff_toml,
-        create_if_missing=False,
-        exclude=args.exclude,
-    )
-
     # Create a copy for comparison
     source_doc_copy = tomlkit.parse(source_doc.as_string())
-    merged_doc = merge_ruff_toml(
-        source_doc_copy,
-        upstream_ruff_toml,
-        is_ruff_toml=is_source_ruff_toml,
-    )
+    merged_doc = source_doc_copy
 
+    async with httpx.AsyncClient() as client:
+        merged_doc = await _merge_multiple_upstreams(
+            merged_doc,
+            is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
+            args=args,
+            client=client,
+        )
+
+    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
     if args.semantic:
         if is_source_ruff_toml:
             source_ruff = source_doc
@@ -837,28 +859,15 @@ async def pull(
         )
         return 1
 
-    # NOTE: there's no particular reason to use async here.
     async with httpx.AsyncClient() as client:
-        fetch_result = await fetch_upstream_config(
-            args.upstream, client, branch=args.branch, path=args.path
+        source_doc = await _merge_multiple_upstreams(
+            source_doc,
+            is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
+            args=args,
+            client=client,
         )
-        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
-    is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
-    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-
-    upstream_ruff_toml = get_ruff_config(
-        fetch_result.buffer.read(),
-        is_ruff_toml=is_upstream_ruff_toml,
-        create_if_missing=False,
-        exclude=args.exclude,
-    )
-    merged_toml = merge_ruff_toml(
-        source_doc,
-        upstream_ruff_toml,
-        is_ruff_toml=is_source_ruff_toml,
-    )
-    source_toml_file.write(merged_toml)
+    source_toml_file.write(source_doc)
     try:
         rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
     except ValueError:

@@ -150,6 +150,7 @@ uv run coverage run -m pytest -vv
 - Use `pathlib` over `os.path` (enforced by `PTH` rules).
 - Prefer f-strings for logging (we ignore `G004`).
 - Do not create custom exception classes for simple errors (`TRY003` is ignored).
+- **Prefer `NamedTuple` for return types** over plain tuples to improve readability and type safety.
 
 ### TOML Handling
 

@@ -6,7 +6,7 @@
 
 | Key | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `upstream` | `str` | *Required* | The URL of the upstream `pyproject.toml` or `ruff.toml`. |
+| `upstream` | `str \| list[str]` | *Required* | The URL(s) of the upstream `pyproject.toml` or `ruff.toml`. |
 | `to` | `str` | `"."` | The local directory or file where configuration should be merged. |
 | `exclude` | `list[str]` | `["lint.per-file-ignores"]` | A list of configuration keys to preserve locally. |
 | `branch` | `str` | `"main"` | The default branch to use when resolving repository URLs. |
@@ -56,6 +56,18 @@ If your projects are on different Python versions but share linting rules:
 ```toml
 [tool.ruff-sync]
 exclude = ["target-version"]
+```
+
+#### Sequential merging of multiple sources
+
+You can specify multiple upstream sources as a list. They will be merged in order, with later sources overriding earlier ones.
+
+```toml
+[tool.ruff-sync]
+upstream = [
+    "https://github.com/my-org/shared-config",
+    "https://github.com/my-org/team-overrides",
+]
 ```
 
 ## Deprecation Notes

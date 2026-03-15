@@ -51,6 +51,7 @@ LIFECYCLE_GROUPS: Final[set[str]] = {
 }
 # Groups that require custom exclude handling — tested separately below.
 LIFECYCLE_GROUPS.discard("readme_excludes")
+LIFECYCLE_GROUPS.discard("multi_upstream")
 
 
 class _PrepEnv(NamedTuple):
@@ -93,7 +94,7 @@ async def test_ruff_sync(prep_env):
     await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=prep_env.upstream_url,
+            upstream=(prep_env.upstream_url,),
             to=prep_env.source_path,
             exclude=set(),
             verbose=0,
@@ -112,7 +113,7 @@ async def test_ruff_check(prep_env):
     exit_code = await ruff_sync.check(
         ruff_sync.Arguments(
             command="check",
-            upstream=prep_env.upstream_url,
+            upstream=(prep_env.upstream_url,),
             to=prep_env.source_path,
             exclude=set(),
             verbose=0,
@@ -128,7 +129,7 @@ async def test_ruff_check(prep_env):
     await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=prep_env.upstream_url,
+            upstream=(prep_env.upstream_url,),
             to=prep_env.source_path,
             exclude=set(),
             verbose=0,
@@ -139,7 +140,7 @@ async def test_ruff_check(prep_env):
     exit_code = await ruff_sync.check(
         ruff_sync.Arguments(
             command="check",
-            upstream=prep_env.upstream_url,
+            upstream=(prep_env.upstream_url,),
             to=prep_env.source_path,
             exclude=set(),
             verbose=0,
@@ -153,7 +154,7 @@ async def test_ruff_check(prep_env):
     exit_code = await ruff_sync.check(
         ruff_sync.Arguments(
             command="check",
-            upstream=prep_env.upstream_url,
+            upstream=(prep_env.upstream_url,),
             to=prep_env.source_path,
             exclude=set(),
             verbose=0,
@@ -208,7 +209,7 @@ async def test_readme_exclude_examples(readme_excludes_env):
     await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=env.upstream_url,
+            upstream=(env.upstream_url,),
             to=env.source_path,
             exclude=README_EXCLUDES,
             verbose=0,
@@ -222,6 +223,50 @@ async def test_readme_exclude_examples(readme_excludes_env):
     assert tomlkit.parse(env.expected_toml) == tomlkit.parse(result)
     # Exact string check — comments, whitespace, and formatting preserved
     assert env.expected_toml == result
+
+
+@pytest.mark.asyncio
+async def test_ruff_sync_multi_upstream(fs: FakeFilesystem):
+    """Test merging of multiple upstreams sequentially."""
+    fs.add_real_directory(LIFECYCLE_TOML_DIR)
+
+    source_path = pathlib.Path(
+        fs.create_file(  # type: ignore[arg-type]
+            "my_dir/pyproject.toml",
+            contents=LIFECYCLE_TOML_DIR.joinpath("multi_upstream_initial.toml").read_text(),
+        ).path
+    )
+    u1_url = URL("https://example.com/up1.toml")
+    u2_url = URL("https://example.com/up2.toml")
+    expected_toml = LIFECYCLE_TOML_DIR.joinpath("multi_upstream_final.toml").read_text()
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/up1.toml").respond(
+            200,
+            content_type="text/plain",
+            content=LIFECYCLE_TOML_DIR.joinpath("multi_upstream_up1.toml").read_text(),
+        )
+        respx_mock.get("/up2.toml").respond(
+            200,
+            content_type="text/plain",
+            content=LIFECYCLE_TOML_DIR.joinpath("multi_upstream_up2.toml").read_text(),
+        )
+
+        await ruff_sync.pull(
+            ruff_sync.Arguments(
+                command="pull",
+                upstream=(u1_url, u2_url),
+                to=source_path,
+                exclude=set(),
+                verbose=0,
+            )
+        )
+
+    result = source_path.read_text()
+    print(f"Updated toml\n\n{result}")
+
+    assert tomlkit.parse(expected_toml) == tomlkit.parse(result)
+    assert expected_toml == result
 
 
 if __name__ == "__main__":

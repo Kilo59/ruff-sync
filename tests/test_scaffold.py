@@ -59,7 +59,7 @@ async def test_pull_without_init_fails_on_missing_file(
     result = await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=target_dir,
             exclude=(),
             verbose=0,
@@ -86,7 +86,7 @@ async def test_pull_with_init_scaffolds_pyproject_toml(
     result = await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=target_dir,
             exclude=(),
             verbose=0,
@@ -112,7 +112,7 @@ async def test_pull_with_init_scaffolds_ruff_toml(mock_http: respx.MockRouter, f
     result = await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=target_dir,
             exclude=(),
             verbose=0,
@@ -148,7 +148,7 @@ async def test_pull_init_uses_existing_pyproject_toml(
     result = await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=target_dir,
             exclude=(),
             verbose=0,
@@ -189,7 +189,7 @@ async def test_pull_prefers_dot_ruff_toml_over_pyproject_toml(
     result = await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=target_dir,
             exclude=(),
             verbose=0,
@@ -232,7 +232,7 @@ async def test_pull_updates_existing_dot_ruff_toml(
     result = await ruff_sync.pull(
         ruff_sync.Arguments(
             command="pull",
-            upstream=upstream,
+            upstream=(upstream,),
             to=target_dir,
             exclude=(),
             verbose=0,

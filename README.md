@@ -132,6 +132,7 @@ Run `ruff-sync --help` for full details on all available options.
 ## Key Features
 
 - 🏗️ **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
+- 📂 **Upstream Layers** — Merge configurations from several sources sequentially (e.g., base company config + team-specific overrides).
 - 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs, tree (directory) URLs, or blob (file) URLs to raw content URLs.
 - 🔍 **Smart configuration discovery** — Point at a directory and `ruff-sync` will automatically find your config. It checks `pyproject.toml`, `ruff.toml`, and `.ruff.toml` (in that order).
 - 📥 **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform an efficient shallow clone (using `--filter=blob:none` and `--no-checkout`) to safely extract the configuration with minimal network traffic.
@@ -169,8 +170,9 @@ Here are all the possible values that can be provided in `[tool.ruff-sync]` alon
 
 ```toml
 [tool.ruff-sync]
-# The source of truth URL for your Ruff configuration. (Required, unless passed via CLI)
-upstream = "https://github.com/my-org/standards"
+# The source of truth URL(s) for your Ruff configuration. (Required, unless passed via CLI)
+# Accepts a single string URL or a list of URLs.
+upstream = ["https://github.com/my-org/standards", "https://github.com/my-org/team-tweaks"]
 
 # A list of config keys to exclude from being synced. (Default: ["lint.per-file-ignores"])
 # Use simple names for top-level keys, and dotted paths for nested keys.
@@ -298,10 +300,13 @@ When you run `ruff-sync check`, it follows this process to determine if your pro
 ```mermaid
 flowchart TD
     Start([Start]) --> Local[Read Local Configuration]
-    Local --> Upstream[Download Upstream Configuration]
-    Upstream --> Extract[Extract tool.ruff section if needed]
+    Local --> Upstreams{For each Upstream}
+    Upstreams --> Download[Download/Clone Configuration]
+    Download --> Extract[Extract section if needed]
     Extract --> Exclude[Apply Exclusions]
-    Exclude --> Merge[Perform in-memory Merge]
+    Exclude --> Merge[Merge into in-memory Doc]
+    Merge --> Upstreams
+    Upstreams -- Done --> Comparison
 
     subgraph Comparison [Comparison Logic]
         direction TB

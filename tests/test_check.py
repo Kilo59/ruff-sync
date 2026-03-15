@@ -35,7 +35,7 @@ target-version = "py310"
 
         args = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -72,7 +72,7 @@ target-version = "py311"
 
         args = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -119,7 +119,7 @@ line-length = 90
         # Strict check: merging upstream produces no text change → in sync
         args_strict = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -131,7 +131,7 @@ line-length = 90
         # Semantic check also passes — values are identical
         args_semantic = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -166,7 +166,7 @@ target-version = "py311"
 
         args_semantic = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -201,7 +201,7 @@ target-version = "py311"
 
         args_semantic = ruff_sync.Arguments(
             command="check",
-            upstream=upstream_url,
+            upstream=(upstream_url,),
             to=source_path,
             exclude=set(),
             verbose=0,
@@ -217,6 +217,65 @@ target-version = "py311"
         # Check for JSON-style diff content
         assert '-  "target-version": "py310"' in captured.out
         assert '+  "target-version": "py311"' in captured.out
+
+
+@pytest.mark.asyncio
+async def test_check_multi_upstream(fs: FakeFilesystem, capsys):
+    """Check supports multiple upstreams and bases status on the fully merged result."""
+    # Setup
+    local_content = """
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F"]
+"""
+    upstream1_content = """
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E"]
+"""
+    upstream2_content = """
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F"]
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    u1_url = URL("https://example.com/u1/pyproject.toml")
+    u2_url = URL("https://example.com/u2/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/u1/pyproject.toml").respond(200, content=upstream1_content)
+        respx_mock.get("/u2/pyproject.toml").respond(200, content=upstream2_content)
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(u1_url, u2_url),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+        )
+
+        # 1. Fully merged config matches local -> success
+        assert await ruff_sync.check(args) == 0
+
+        # 2. Local config deviates from the *merged* result -> failure
+        # (e.g. local matches only upstream1, but upstream2 should have overridden it)
+        source_path.write_text(upstream1_content)
+        assert await ruff_sync.check(args) == 1
+
+        captured = capsys.readouterr()
+        assert "is out of sync!" in captured.out
+        assert "+line-length = 100" in captured.out
+        assert '+select = ["E", "F"]' in captured.out
 
 
 if __name__ == "__main__":
