@@ -10,7 +10,7 @@ Common issues and questions when using `ruff-sync`.
 
 **Solution**:
 
-1. Ensure you have a `[tool.ruff-sync]` section in your `pyproject.toml` with an `upstream` key.
+1. Ensure you have a `[tool.ruff-sync]` section in your `pyproject.toml` with an `upstream` key. See the [Configuration](configuration.md) guide for details.
 2. Or provide the URL directly as an argument: `ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml`
 
 ### Local file not found (with `check`)

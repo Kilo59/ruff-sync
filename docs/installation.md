@@ -4,17 +4,21 @@
 
 ## ⚡ Recommended: Using `uv`
 
-If you have [uv](https://docs.astral.sh/uv/) installed, the easiest way to use `ruff-sync` is with `uvx`:
+The easiest way to use `ruff-sync` is by installing it as a [uv tool](https://docs.astral.sh/uv/guides/tools/)
 
 ```bash
-uvx ruff-sync pull
+uv tool install ruff-sync
 ```
 
-This will download and run the latest version of `ruff-sync` in a temporary environment.
+Once installed, you can simply run:
 
-### Adding to your project
+```bash
+ruff-sync pull
+```
 
-To keep the version consistent across your team, add it to your development dependencies:
+### Alternative: Development Dependency
+
+If you want to keep the version consistent across your team and locked to your project, add it to your development dependencies:
 
 ```bash
 uv add --dev ruff-sync
