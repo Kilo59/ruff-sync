@@ -30,7 +30,10 @@ Automatically pulls and applies the upstream configuration if a drift is detecte
 
 ## Configuration
 
-The hooks will respect the configuration defined in your `pyproject.toml` under `[tool.ruff-sync]`.
+The hooks will automatically respect the configuration defined in your `pyproject.toml` under `[tool.ruff-sync]`. Any arguments passed via `args` in `.pre-commit-config.yaml` will override these settings.
+
+> [!NOTE]
+> For a full list of configuration options, see the [Configuration Guide](configuration.md).
 
 ### Example `.pre-commit-config.yaml`
 
@@ -40,8 +43,11 @@ repos:
     rev: v0.1.0
     hooks:
       - id: ruff-sync-check
-        # You can override the default --semantic flag if you want strict checking
-        # args: []
+        # Common arguments:
+        # --semantic: ignore cosmetic changes (default in check hook)
+        # --no-diff: hide the unified diff
+        # --to PATH: sync to a specific file or directory
+        args: ["--semantic", "--no-diff"]
 ```
 
 ## Why use `ruff-sync-check`?
@@ -51,6 +57,8 @@ Running `ruff-sync check` in pre-commit is fast because:
 1. It only checks the `[tool.ruff]` section.
 2. It uses caching (if configured via HTTP headers).
 3. By default, it uses `--semantic` to ignore formatting-only differences, reducing false positives.
+
+For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see [Advanced Usage](usage.md#advanced-usage).
 
 ## Manual Execution
 
