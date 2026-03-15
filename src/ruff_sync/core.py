@@ -613,7 +613,17 @@ def merge_ruff_toml(
     upstream_ruff_doc: TOMLDocument | Table | None,
     is_ruff_toml: bool = False,
 ) -> TOMLDocument:
-    """Merge the source and upstream tool ruff config with better whitespace preservation."""
+    r"""Merge the source and upstream tool ruff config with better whitespace preservation.
+
+    Examples:
+        >>> from tomlkit import parse
+        >>> source = parse("[tool.ruff]\nline-length = 80")
+        >>> upstream = parse("[tool.ruff]\nline-length = 100")["tool"]["ruff"]
+        >>> merged = merge_ruff_toml(source, upstream)
+        >>> print(merged.as_string())
+        [tool.ruff]
+        line-length = 100
+    """
     if not upstream_ruff_doc:
         LOGGER.warning("No upstream ruff config section found.")
         return source
@@ -643,7 +653,24 @@ def merge_ruff_toml(
 async def check(
     args: Arguments,
 ) -> int:
-    """Check if the local pyproject.toml / ruff.toml is in sync with the upstream."""
+    """Check if the local pyproject.toml / ruff.toml is in sync with the upstream.
+
+    Returns:
+        int: 0 if in sync, 1 if out of sync.
+
+    Examples:
+        >>> import asyncio
+        >>> from ruff_sync.cli import Arguments
+        >>> from httpx import URL
+        >>> import pathlib
+        >>> args = Arguments(
+        ...     command="check",
+        ...     upstream=URL("https://github.com/org/repo/blob/main/pyproject.toml"),
+        ...     to=pathlib.Path("pyproject.toml"),
+        ...     exclude=[],
+        ... )
+        >>> # asyncio.run(check(args))
+    """
     print("🔍 Checking Ruff sync status...")
 
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
@@ -732,7 +759,25 @@ async def check(
 async def pull(
     args: Arguments,
 ) -> int:
-    """Pull the upstream ruff config and apply it to the source."""
+    """Pull the upstream ruff config and apply it to the source.
+
+    Returns:
+        int: 0 on success, 1 on failure.
+
+    Examples:
+        >>> import asyncio
+        >>> from ruff_sync.cli import Arguments
+        >>> from httpx import URL
+        >>> import pathlib
+        >>> args = Arguments(
+        ...     command="pull",
+        ...     upstream=URL("https://github.com/org/repo/blob/main/pyproject.toml"),
+        ...     to=pathlib.Path("pyproject.toml"),
+        ...     exclude=["lint.isort"],
+        ...     init=True,
+        ... )
+        >>> # asyncio.run(pull(args))
+    """
     print("🔄 Syncing Ruff...")
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
 

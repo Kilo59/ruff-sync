@@ -100,7 +100,14 @@ class Arguments(NamedTuple):
 def get_config(
     source: pathlib.Path,
 ) -> Config:
-    """Read [tool.ruff-sync] configuration from pyproject.toml."""
+    """Read [tool.ruff-sync] configuration from pyproject.toml.
+
+    Examples:
+        >>> import pathlib
+        >>> config = get_config(pathlib.Path("."))
+        >>> if "upstream" in config:
+        ...     print(f"Syncing from {config['upstream']}")
+    """
     local_toml = source / "pyproject.toml"
     # TODO: use pydantic to validate the toml file
     cfg_result: dict[str, Any] = {}
