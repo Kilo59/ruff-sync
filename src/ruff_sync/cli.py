@@ -13,6 +13,7 @@ import pathlib
 import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from functools import lru_cache
+from importlib import metadata
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,7 +45,10 @@ __all__: Final[list[str]] = [
     "main",
 ]
 
-__version__ = "0.1.0"
+try:
+    __version__ = metadata.version("ruff-sync")
+except metadata.PackageNotFoundError:
+    __version__ = "0.0.0-dev"
 
 LOGGER = logging.getLogger(__name__)
 
