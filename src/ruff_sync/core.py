@@ -137,7 +137,7 @@ def _resolve_upstream_target_path(path: str | None) -> str:
     Otherwise, it appends 'pyproject.toml' to the path.
     """
     if not path:
-        return str(RuffConfigFileName.PYPROJECT_TOML)
+        return RuffConfigFileName.PYPROJECT_TOML
 
     # Use PurePosixPath to handle URL-style paths consistently
     posix_path = pathlib.PurePosixPath(path.strip("/"))
