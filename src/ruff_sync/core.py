@@ -686,6 +686,34 @@ def merge_ruff_toml(
     return source
 
 
+async def _merge_multiple_upstreams(
+    target_doc: TOMLDocument,
+    is_target_ruff_toml: bool,
+    args: Arguments,
+    client: httpx.AsyncClient,
+) -> TOMLDocument:
+    """Sequentially fetch and merge all upstreams into the target document."""
+    for upstream_url in args.upstream:
+        fetch_result = await fetch_upstream_config(
+            upstream_url, client, branch=args.branch, path=args.path
+        )
+        LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
+
+        is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
+
+        upstream_ruff_toml = get_ruff_config(
+            fetch_result.buffer.read(),
+            is_ruff_toml=is_upstream_ruff_toml,
+            create_if_missing=False,
+            exclude=args.exclude,
+        )
+
+        target_doc = merge_ruff_toml(
+            target_doc, upstream_ruff_toml, is_ruff_toml=is_target_ruff_toml
+        )
+    return target_doc
+
+
 async def check(
     args: Arguments,
 ) -> int:
@@ -727,28 +755,14 @@ async def check(
     merged_doc = source_doc_copy
 
     async with httpx.AsyncClient() as client:
-        for upstream_url in args.upstream:
-            fetch_result = await fetch_upstream_config(
-                upstream_url, client, branch=args.branch, path=args.path
-            )
-            LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
+        merged_doc = await _merge_multiple_upstreams(
+            merged_doc,
+            is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
+            args=args,
+            client=client,
+        )
 
-            is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
-            is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-
-            upstream_ruff_toml = get_ruff_config(
-                fetch_result.buffer.read(),
-                is_ruff_toml=is_upstream_ruff_toml,
-                create_if_missing=False,
-                exclude=args.exclude,
-            )
-
-            merged_doc = merge_ruff_toml(
-                merged_doc,
-                upstream_ruff_toml,
-                is_ruff_toml=is_source_ruff_toml,
-            )
-
+    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
     if args.semantic:
         if is_source_ruff_toml:
             source_ruff = source_doc
@@ -845,25 +859,12 @@ async def pull(
         return 1
 
     async with httpx.AsyncClient() as client:
-        for upstream_url in args.upstream:
-            fetch_result = await fetch_upstream_config(
-                upstream_url, client, branch=args.branch, path=args.path
-            )
-            LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
-
-            is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
-            is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-
-            upstream_ruff_toml = get_ruff_config(
-                fetch_result.buffer.read(),
-                is_ruff_toml=is_upstream_ruff_toml,
-                create_if_missing=False,
-                exclude=args.exclude,
-            )
-
-            source_doc = merge_ruff_toml(
-                source_doc, upstream_ruff_toml, is_ruff_toml=is_source_ruff_toml
-            )
+        source_doc = await _merge_multiple_upstreams(
+            source_doc,
+            is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
+            args=args,
+            client=client,
+        )
 
     source_toml_file.write(source_doc)
     try:

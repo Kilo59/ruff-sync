@@ -531,6 +531,91 @@ def test_upstream_resolution_multiple_config(monkeypatch: pytest.MonkeyPatch):
     assert captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
 
 
+def test_upstream_resolution_cli_precedence_over_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CLI upstreams should override any upstreams defined in config."""
+    captured_args: list[ruff_sync.Arguments] = []
+
+    async def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        await asyncio.sleep(0)
+
+    # Both CLI and config specify upstreams; CLI should win.
+    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
+    monkeypatch.setattr(
+        ruff_sync_cli,
+        "get_config",
+        lambda _: {"upstream": ["http://config.com"]},
+    )
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+
+    ruff_sync.main()
+
+    assert len(captured_args) == 1
+    assert captured_args[0].upstream == (URL("http://cli.com"),)
+
+
+@pytest.mark.parametrize(
+    "bad_upstream",
+    [
+        42,
+        {"url": "http://example.com"},
+        ["http://ok.com", 123],
+    ],
+)
+def test_upstream_resolution_invalid_config_types(
+    monkeypatch: pytest.MonkeyPatch,
+    bad_upstream: Any,
+) -> None:
+    """Invalid `upstream` types in config should trigger PARSER.error."""
+    errors: list[str] = []
+
+    def fake_error(message: str) -> None:
+        errors.append(message)
+        # argparse.ArgumentParser.error normally exits with SystemExit(2)
+        raise SystemExit(2)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])  # no CLI upstreams
+    monkeypatch.setattr(
+        ruff_sync_cli,
+        "get_config",
+        lambda _: {"upstream": bad_upstream},
+    )
+    monkeypatch.setattr(ruff_sync_cli.PARSER, "error", fake_error)
+
+    with pytest.raises(SystemExit):
+        ruff_sync.main()
+
+    assert errors, "PARSER.error should be called for invalid upstream types"
+    assert "string or a list of strings" in errors[0] or "must be strings" in errors[0]
+
+
+def test_upstream_resolution_empty_list_in_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An empty upstream list in config should be treated as an error."""
+    errors: list[str] = []
+
+    def fake_error(message: str) -> None:
+        errors.append(message)
+        raise SystemExit(2)
+
+    monkeypatch.setattr(sys, "argv", ["ruff-sync"])  # no CLI upstreams
+    monkeypatch.setattr(
+        ruff_sync_cli,
+        "get_config",
+        lambda _: {"upstream": []},
+    )
+    monkeypatch.setattr(ruff_sync_cli.PARSER, "error", fake_error)
+
+    with pytest.raises(SystemExit):
+        ruff_sync.main()
+
+    assert errors, "PARSER.error should be called when no upstreams are resolved"
+    assert "cannot be empty" in errors[0]
+
+
 @pytest.mark.parametrize(
     ["verbose_count", "expected_level"],
     [

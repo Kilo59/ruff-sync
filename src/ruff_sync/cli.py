@@ -266,7 +266,15 @@ PARSER: Final[ArgumentParser] = _get_cli_parser()
 def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
     """Resolve upstream URL(s) from CLI or config."""
     if args.upstream:
-        return tuple(cast("Iterable[URL]", args.upstream))
+        upstreams = tuple(cast("Iterable[URL]", args.upstream))
+        # Log CLI upstreams for consistency with config sourcing
+        summary = (
+            f"{upstreams[0]}... ({len(upstreams)} total)"
+            if len(upstreams) > 1
+            else str(upstreams[0])
+        )
+        LOGGER.info(f"📂 Using upstream(s) from CLI: {summary}")
+        return upstreams
     if "upstream" in config:
         config_upstream = config["upstream"]
         if isinstance(config_upstream, str):
@@ -274,6 +282,13 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
             LOGGER.info(f"📂 Using upstream from [tool.ruff-sync]: {upstream[0]}")
             return upstream
         if isinstance(config_upstream, list):
+            if not config_upstream:
+                PARSER.error("❌ [tool.ruff-sync].upstream list cannot be empty.")
+            if not all(isinstance(u, str) for u in config_upstream):
+                PARSER.error(
+                    "❌ all items in [tool.ruff-sync].upstream must be strings, "
+                    f"got {[type(u).__name__ for u in config_upstream]}"
+                )
             upstreams = tuple(URL(u) for u in config_upstream)
             LOGGER.info(f"📂 Using {len(upstreams)} upstreams from [tool.ruff-sync]")
             return upstreams
