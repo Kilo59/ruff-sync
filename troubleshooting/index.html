@@ -633,6 +633,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#debug-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#upstream-url-not-found" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -969,6 +980,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#debug-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#upstream-url-not-found" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1087,6 +1109,16 @@
 <h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
 <p>Common issues and questions when using <code>ruff-sync</code>.</p>
 <h2 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h2>
+<h3 id="debug-logging">Debug Logging<a class="headerlink" href="#debug-logging" title="Permanent link">&para;</a></h3>
+<p>If <code>ruff-sync</code> is not behaving as expected, you can increase the verbosity of the logs to see what's happening under the hood.</p>
+<p><strong>Usage</strong>:</p>
+<ul>
+<li><code>-v</code>: Shows <code>INFO</code> level logs (e.g., which configuration file is being used, where upstreams are being sourced from).</li>
+<li><code>-vv</code>: Shows <code>DEBUG</code> level logs (e.g., detailed TOML merging operations and raw HTTP/Git requests).</li>
+</ul>
+<p>Example:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>-vv
+</span></code></pre></div>
 <h3 id="upstream-url-not-found">Upstream URL not found<a class="headerlink" href="#upstream-url-not-found" title="Permanent link">&para;</a></h3>
 <p><strong>Error</strong>: <code>Error: Upstream Required. No upstream URL found in pyproject.toml or provided as argument.</code></p>
 <p><strong>Solution</strong>:</p>
@@ -1102,7 +1134,7 @@ The <code>check</code> command expects a local <code>pyproject.toml</code>, <cod
 <p><code>ruff-sync</code> uses <code>tomlkit</code> to perform a smart merge. It generally doesn't produce "conflicts" in the traditional sense, but if you have a key locally that is ALSO in the upstream, the upstream will generally win UNLESS you exclude it.</p>
 <p><strong>Solution</strong>:
 Use the <code>--exclude</code> flag to keep your local settings:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>--exclude<span class="w"> </span>lint.line-length
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>--exclude<span class="w"> </span>lint.line-length
 </span></code></pre></div>
 <h2 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h2>
 <h3 id="does-it-support-rufftoml">Does it support <code>ruff.toml</code>?<a class="headerlink" href="#does-it-support-rufftoml" title="Permanent link">&para;</a></h3>
