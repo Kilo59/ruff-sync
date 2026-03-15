@@ -33,7 +33,6 @@ if TYPE_CHECKING:
 
 __all__: Final[list[str]] = [
     "Arguments",
-    "Arguments",
     "ColoredFormatter",
     "get_config",
     "main",

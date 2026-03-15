@@ -182,7 +182,7 @@ to = "."
         ([], "https://ex.com/ruff.toml", "/test_dir/my-custom-ruff.toml", "my-custom-ruff.toml"),
     ],
 )
-def testresolve_target_path_logic(  # noqa: PLR0913
+def test_resolve_target_path_logic(  # noqa: PLR0913
     fs: FakeFilesystem,
     monkeypatch: pytest.MonkeyPatch,
     files,
