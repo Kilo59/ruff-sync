@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/ci-integration/">
+        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/pre-commit/">
       
       
-        <link rel="prev" href="../pre-commit/">
+        <link rel="prev" href="../configuration/">
       
       
-        <link rel="next" href="../troubleshooting/">
+        <link rel="next" href="../ci-integration/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>CI Integration - ruff-sync</title>
+        <title>Pre-commit - ruff-sync</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ci-integration" class="md-skip">
+        <a href="#pre-commit-integration" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CI Integration
+              Pre-commit
             
           </span>
         </div>
@@ -563,34 +563,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../pre-commit/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pre-commit
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -610,7 +582,7 @@
   <span class="md-ellipsis">
     
   
-    CI Integration
+    Pre-commit
   
 
     
@@ -628,7 +600,7 @@
   <span class="md-ellipsis">
     
   
-    CI Integration
+    Pre-commit
   
 
     
@@ -654,34 +626,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#usage-in-ci" class="md-nav__link">
+  <a href="#official-hooks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage in CI
+        Official Hooks
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Usage in CI">
+    <nav class="md-nav" aria-label="Official Hooks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#github-actions" class="md-nav__link">
+  <a href="#ruff-sync-check" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GitHub Actions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GitHub Actions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#basic-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Check
+        ruff-sync-check
       
     </span>
   </a>
@@ -689,26 +649,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#automated-sync-prs" class="md-nav__link">
+  <a href="#ruff-sync-pull" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automated Sync PRs
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gitlab-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitLab CI
+        ruff-sync-pull
       
     </span>
   </a>
@@ -721,33 +665,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        💡 Best Practices
+        Configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="💡 Best Practices">
+    <nav class="md-nav" aria-label="Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#use-semantic" class="md-nav__link">
+  <a href="#example-pre-commit-configyaml" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use --semantic
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#use-a-dedicated-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use a Dedicated Workflow
+        Example .pre-commit-config.yaml
       
     </span>
   </a>
@@ -759,10 +692,60 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#why-use-ruff-sync-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why use ruff-sync-check?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Execution
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1031,34 +1014,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#usage-in-ci" class="md-nav__link">
+  <a href="#official-hooks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage in CI
+        Official Hooks
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Usage in CI">
+    <nav class="md-nav" aria-label="Official Hooks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#github-actions" class="md-nav__link">
+  <a href="#ruff-sync-check" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GitHub Actions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GitHub Actions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#basic-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Check
+        ruff-sync-check
       
     </span>
   </a>
@@ -1066,26 +1037,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#automated-sync-prs" class="md-nav__link">
+  <a href="#ruff-sync-pull" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automated Sync PRs
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gitlab-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitLab CI
+        ruff-sync-pull
       
     </span>
   </a>
@@ -1098,33 +1053,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        💡 Best Practices
+        Configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="💡 Best Practices">
+    <nav class="md-nav" aria-label="Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#use-semantic" class="md-nav__link">
+  <a href="#example-pre-commit-configyaml" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use --semantic
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#use-a-dedicated-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use a Dedicated Workflow
+        Example .pre-commit-config.yaml
       
     </span>
   </a>
@@ -1133,6 +1077,28 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-ruff-sync-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why use ruff-sync-check?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Execution
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1204,75 +1170,54 @@
   
 
 
-<h1 id="ci-integration">CI Integration<a class="headerlink" href="#ci-integration" title="Permanent link">&para;</a></h1>
-<p><code>ruff-sync</code> is designed to be run in CI pipelines to ensure that all repositories in an organization stay in sync with the central standards.</p>
-<h2 id="usage-in-ci">Usage in CI<a class="headerlink" href="#usage-in-ci" title="Permanent link">&para;</a></h2>
-<p>The best way to use <code>ruff-sync</code> in CI is with the <code>check</code> command. If the configuration has drifted, <code>ruff-sync check</code> will exit with a non-zero code, failing the build.</p>
-<h3 id="github-actions">GitHub Actions<a class="headerlink" href="#github-actions" title="Permanent link">&para;</a></h3>
-<p>We recommend using <code>uv</code> to run <code>ruff-sync</code> in GitHub Actions.</p>
-<h4 id="basic-check">Basic Check<a class="headerlink" href="#basic-check" title="Permanent link">&para;</a></h4>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Standards</span><span class="nv"> </span><span class="s">Check&quot;</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">on</span><span class="p">:</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">pull_request</span><span class="p">:</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">branches</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">main</span><span class="p p-Indicator">]</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">jobs</span><span class="p">:</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">ruff-sync</span><span class="p">:</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">astral-sh/setup-uv@v5</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx ruff-sync check --semantic</span>
+<h1 id="pre-commit-integration">Pre-commit Integration<a class="headerlink" href="#pre-commit-integration" title="Permanent link">&para;</a></h1>
+<p>Using <code>ruff-sync</code> with <a href="https://pre-commit.com/">pre-commit</a> ensures that your Ruff configuration stays in sync with your organization's standards automatically.</p>
+<h2 id="official-hooks">Official Hooks<a class="headerlink" href="#official-hooks" title="Permanent link">&para;</a></h2>
+<p><code>ruff-sync</code> provides two official hooks:</p>
+<h3 id="ruff-sync-check"><code>ruff-sync-check</code><a class="headerlink" href="#ruff-sync-check" title="Permanent link">&para;</a></h3>
+<p>Verifies that your local <code>pyproject.toml</code> or <code>ruff.toml</code> matches the upstream configuration. It is recommended to use this hook to prevent accidental drift.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/Kilo59/ruff-sync</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1.0</span><span class="w">  </span><span class="c1"># Use the latest version</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">hooks</span><span class="p">:</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync-check</span>
 </span></code></pre></div>
-<h4 id="automated-sync-prs">Automated Sync PRs<a class="headerlink" href="#automated-sync-prs" title="Permanent link">&para;</a></h4>
-<p>Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Upstream</span><span class="nv"> </span><span class="s">Sync&quot;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">on</span><span class="p">:</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">schedule</span><span class="p">:</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">cron</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;0</span><span class="nv"> </span><span class="s">0</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">1&#39;</span><span class="w"> </span><span class="c1"># Every Monday at midnight</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">workflow_dispatch</span><span class="p">:</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nt">jobs</span><span class="p">:</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">sync</span><span class="p">:</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">astral-sh/setup-uv@v5</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pull upstream</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx ruff-sync pull</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create Pull Request</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">peter-evans/create-pull-request@v6</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">        </span><span class="nt">with</span><span class="p">:</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">          </span><span class="nt">commit-message</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;chore:</span><span class="nv"> </span><span class="s">sync</span><span class="nv"> </span><span class="s">ruff</span><span class="nv"> </span><span class="s">configuration</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">upstream&quot;</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">          </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;chore:</span><span class="nv"> </span><span class="s">sync</span><span class="nv"> </span><span class="s">ruff</span><span class="nv"> </span><span class="s">configuration&quot;</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">          </span><span class="nt">body</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;This</span><span class="nv"> </span><span class="s">PR</span><span class="nv"> </span><span class="s">synchronizes</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">Ruff</span><span class="nv"> </span><span class="s">configuration</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">upstream</span><span class="nv"> </span><span class="s">source.&quot;</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">          </span><span class="nt">branch</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ruff-sync-update&quot;</span>
+<h3 id="ruff-sync-pull"><code>ruff-sync-pull</code><a class="headerlink" href="#ruff-sync-pull" title="Permanent link">&para;</a></h3>
+<p>Automatically pulls and applies the upstream configuration if a drift is detected.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/Kilo59/ruff-sync</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1.0</span><span class="w">  </span><span class="c1"># Use the latest version</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">hooks</span><span class="p">:</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync-pull</span>
 </span></code></pre></div>
-<h3 id="gitlab-ci">GitLab CI<a class="headerlink" href="#gitlab-ci" title="Permanent link">&para;</a></h3>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">ruff-sync-check</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python:3.12</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">script</span><span class="p">:</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install ruff-sync</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync check --semantic</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="nt">only</span><span class="p">:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">merge_requests</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<p>The hooks will automatically respect the configuration defined in your <code>pyproject.toml</code> under <code>[tool.ruff-sync]</code>. Any arguments passed via <code>args</code> in <code>.pre-commit-config.yaml</code> will override these settings.</p>
+<blockquote>
+<p>[!NOTE]
+For a full list of configuration options, see the <a href="../configuration/">Configuration Guide</a>.</p>
+</blockquote>
+<h3 id="example-pre-commit-configyaml">Example <code>.pre-commit-config.yaml</code><a class="headerlink" href="#example-pre-commit-configyaml" title="Permanent link">&para;</a></h3>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">repos</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/Kilo59/ruff-sync</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1.0</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">hooks</span><span class="p">:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync-check</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="c1"># Common arguments:</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="c1"># --semantic: ignore cosmetic changes (default in check hook)</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="c1"># --no-diff: hide the unified diff</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="c1"># --to PATH: sync to a specific file or directory</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;--semantic&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;--no-diff&quot;</span><span class="p p-Indicator">]</span>
 </span></code></pre></div>
-<hr />
-<p>You can use <code>ruff-sync</code> with <code>pre-commit</code> to ensure your configuration is always in sync before pushing.</p>
-<p>See the <a href="../pre-commit/">Pre-commit Guide</a> for details on using the official hooks.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Running <code>ruff-sync check</code> in pre-commit is fast because it only performs a network request if the local <code>pyproject.toml</code> is older than the upstream or if no cache exists.</p>
-</div>
-<hr />
-<h2 id="best-practices">💡 Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-<h3 id="use-semantic">Use <code>--semantic</code><a class="headerlink" href="#use-semantic" title="Permanent link">&para;</a></h3>
-<p>In CI, you usually only care about the functional configuration. Using <code>--semantic</code> ensures that minor formatting changes don't break your builds, while still guaranteeing that the actual rules are identical.</p>
-<h3 id="use-a-dedicated-workflow">Use a Dedicated Workflow<a class="headerlink" href="#use-a-dedicated-workflow" title="Permanent link">&para;</a></h3>
-<p>Running <code>ruff-sync</code> as a separate job in your linting workflow makes it easy to identify when a failure is due to configuration drift rather than a code quality issue.</p>
+<h2 id="why-use-ruff-sync-check">Why use <code>ruff-sync-check</code>?<a class="headerlink" href="#why-use-ruff-sync-check" title="Permanent link">&para;</a></h2>
+<p>Running <code>ruff-sync check</code> in pre-commit is fast because:</p>
+<ol>
+<li>It only checks the <code>[tool.ruff]</code> section.</li>
+<li>It uses caching (if configured via HTTP headers).</li>
+<li>By default, it uses <code>--semantic</code> to ignore formatting-only differences, reducing false positives.</li>
+</ol>
+<p>For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see <a href="../usage/#advanced-usage">Advanced Usage</a>.</p>
+<h2 id="manual-execution">Manual Execution<a class="headerlink" href="#manual-execution" title="Permanent link">&para;</a></h2>
+<p>You can always run the hooks manually using:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>ruff-sync-check<span class="w"> </span>--all-files
+</span></code></pre></div>
 
 
 
