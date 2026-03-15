@@ -1111,17 +1111,17 @@
 <h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
 <h3 id="pull"><code>pull</code><a class="headerlink" href="#pull" title="Permanent link">&para;</a></h3>
 <p>The <code>pull</code> command downloads the upstream configuration and merges it into your local file.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span><span class="o">[</span>UPSTREAM_URL<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span>
 </span></code></pre></div>
 <ul>
-<li><strong><code>UPSTREAM_URL</code></strong>: The URL to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local config.</li>
+<li><strong><code>UPSTREAM_URL...</code></strong>: One or more URLs to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local config.</li>
 <li><strong><code>--to</code></strong>: Where to save the merged config (defaults to <code>.</code>).</li>
 <li><strong><code>--exclude</code></strong>: Dotted paths of keys to keep local (e.g., <code>lint.isort</code>).</li>
 <li><strong><code>--init</code></strong>: Create a new <code>pyproject.toml</code> if it doesn't exist.</li>
 </ul>
 <h3 id="check"><code>check</code><a class="headerlink" href="#check" title="Permanent link">&para;</a></h3>
 <p>The <code>check</code> command verifies if your local configuration matches the upstream one.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>--semantic</code></strong>: Ignore "non-functional" differences like whitespace, comments, or key order.</li>
@@ -1172,8 +1172,10 @@
     I --&gt; L[Extract tool.ruff]
     K --&gt; L
     L --&gt; M[Apply Exclusions]
-    M --&gt; N[Merge into local TOML]
-    N --&gt; O[Save File]
+    M --&gt; N[Merge into in-memory TOML]
+    N --&gt; Loop{More Upstreams?}
+    Loop -- Yes --&gt; F
+    Loop -- No --&gt; O[Save File]
     O --&gt; P[End]</code></pre>
 
 
