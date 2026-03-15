@@ -26,7 +26,13 @@ import tomlkit
 from httpx import URL
 from typing_extensions import deprecated
 
-from ruff_sync.core import Config, check, pull, resolve_raw_url
+from ruff_sync.core import (
+    Config,
+    RuffConfigFileName,
+    check,
+    pull,
+    resolve_raw_url,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -38,7 +44,7 @@ __all__: Final[list[str]] = [
     "main",
 ]
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0.dev1"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -108,7 +114,7 @@ def get_config(
         >>> if "upstream" in config:
         ...     print(f"Syncing from {config['upstream']}")
     """
-    local_toml = source / "pyproject.toml"
+    local_toml = source / RuffConfigFileName.PYPROJECT_TOML
     # TODO: use pydantic to validate the toml file
     cfg_result: dict[str, Any] = {}
     if local_toml.exists():
@@ -137,19 +143,24 @@ def _get_cli_parser() -> ArgumentParser:
         prog="ruff-sync",
         description=(
             "Synchronize Ruff linter configuration across Python projects.\n\n"
-            "Downloads a pyproject.toml from an upstream URL, extracts the\n"
-            "[tool.ruff] section, and merges it into the local pyproject.toml\n"
+            f"Downloads a {RuffConfigFileName.PYPROJECT_TOML} from an upstream URL, "
+            "extracts the\n"
+            "[tool.ruff] section, and merges it into the local "
+            f"{RuffConfigFileName.PYPROJECT_TOML}\n"
             "while preserving formatting, comments, and whitespace.\n\n"
             "Defaults to the 'pull' subcommand when none is specified."
         ),
         epilog=(
             "Examples:\n"
-            "  ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml\n"
-            "  ruff-sync check https://github.com/org/repo/blob/main/pyproject.toml\n"
+            f"  ruff-sync pull https://github.com/org/repo/blob/main/"
+            f"{RuffConfigFileName.PYPROJECT_TOML}\n"
+            f"  ruff-sync check https://github.com/org/repo/blob/main/"
+            f"{RuffConfigFileName.PYPROJECT_TOML}\n"
             "  ruff-sync pull git@github.com:org/repo.git\n"
             "  ruff-sync pull ssh://git@gitlab.com/org/repo.git\n"
             "  ruff-sync check --semantic  # ignore formatting-only differences\n\n"
-            "The upstream URL can also be set in [tool.ruff-sync] in pyproject.toml\n"
+            f"The upstream URL can also be set in [tool.ruff-sync] in "
+            f"{RuffConfigFileName.PYPROJECT_TOML}\n"
             "so you can simply run: ruff-sync pull"
         ),
         formatter_class=RawDescriptionHelpFormatter,
@@ -163,7 +174,7 @@ def _get_cli_parser() -> ArgumentParser:
         "upstream",
         type=URL,
         nargs="?",
-        help="The URL to download the pyproject.toml file from."
+        help=f"The URL to download the {RuffConfigFileName.PYPROJECT_TOML} file from."
         " Optional if defined in [tool.ruff-sync].",
     )
     common_parser.add_argument(
@@ -198,7 +209,7 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--path",
-        help="The parent path where pyproject.toml is located. Default: root",
+        help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located. Default: root",
         default=None,
     )
 
@@ -258,7 +269,7 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> URL:
         return upstream
     PARSER.error(
         "❌ the following arguments are required: upstream "
-        "(or define it in [tool.ruff-sync] in pyproject.toml) 💥"
+        f"(or define it in [tool.ruff-sync] in {RuffConfigFileName.PYPROJECT_TOML}) 💥"
     )
 
 
