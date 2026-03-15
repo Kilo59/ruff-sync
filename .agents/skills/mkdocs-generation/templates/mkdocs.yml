@@ -1,0 +1,59 @@
+# MkDocs Configuration Template
+# Replace placeholders: [SITE_NAME], [DESCRIPTION], [GITHUB_USER], [REPO_NAME], [PACKAGE_NAME]
+
+site_name: [SITE_NAME]
+site_description: [DESCRIPTION]
+site_url: https://[GITHUB_USER].github.io/[REPO_NAME]/
+repo_url: https://github.com/[GITHUB_USER]/[REPO_NAME]
+repo_name: [GITHUB_USER]/[REPO_NAME]
+
+extra:
+  version:
+    provider: mike
+    default: latest
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: false
+            members_order: source
+            show_if_no_docstring: true
+            show_signature_annotations: true
+            separate_signature: true
+            merge_init_into_class: true
+            show_root_heading: true
+            show_root_full_path: false
+            filters:
+              - "!^_"  # Exclude private members
+
+# Simple navigation (flat structure)
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - API Reference: api.md
+
+# Complex navigation example (nested structure)
+# nav:
+#   - Home: index.md
+#   - Guide:
+#       - Getting Started: guide/getting-started.md
+#       - CLI: guide/cli.md
+#       - Advanced: guide/advanced.md
+#   - API Reference:
+#       - Overview: api/index.md
+#       - Core:
+#           - Client: api/client.md
+#           - Models: api/models.md
