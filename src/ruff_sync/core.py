@@ -1,3 +1,5 @@
+"""Core logic for ruff-sync."""
+
 from __future__ import annotations
 
 import asyncio
@@ -43,6 +45,7 @@ __all__: Final[list[str]] = [
     "merge_ruff_toml",
     "pull",
     "resolve_raw_url",
+    "resolve_target_path",
     "to_git_url",
     "toml_ruff_parse",
 ]
@@ -82,7 +85,7 @@ class Config(TypedDict, total=False):
     init: bool
 
 
-def _resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None) -> pathlib.Path:
+def resolve_target_path(to: pathlib.Path, upstream_url: str | URL | None = None) -> pathlib.Path:
     """Resolve the target path for configuration files.
 
     If 'to' is a file, it's used directly.
@@ -643,7 +646,7 @@ async def check(
     """Check if the local pyproject.toml / ruff.toml is in sync with the upstream."""
     print("🔍 Checking Ruff sync status...")
 
-    _source_toml_path = _resolve_target_path(args.to, args.upstream).resolve(strict=False)
+    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
     if not _source_toml_path.exists():
         print(
             f"❌ Configuration file {_source_toml_path} does not exist. "
@@ -731,7 +734,7 @@ async def pull(
 ) -> int:
     """Pull the upstream ruff config and apply it to the source."""
     print("🔄 Syncing Ruff...")
-    _source_toml_path = _resolve_target_path(args.to, args.upstream).resolve(strict=False)
+    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
     if _source_toml_path.exists():
