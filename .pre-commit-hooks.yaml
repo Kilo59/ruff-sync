@@ -1,0 +1,17 @@
+- id: ruff-sync-pull
+  name: ruff-sync-pull
+  description: Pull and apply upstream ruff configuration.
+  entry: ruff-sync pull
+  language: python
+  files: ^pyproject\.toml$
+  pass_filenames: false
+  additional_dependencies: ["ruff-sync"]
+
+- id: ruff-sync-check
+  name: ruff-sync-check
+  description: Check if ruff configuration is in sync with upstream.
+  entry: ruff-sync check --semantic
+  language: python
+  files: ^pyproject\.toml$
+  pass_filenames: false
+  additional_dependencies: ["ruff-sync"]
