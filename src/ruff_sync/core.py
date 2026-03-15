@@ -321,21 +321,41 @@ async def download(url: URL, client: httpx.AsyncClient) -> StringIO:
     return StringIO(response.text)
 
 
-async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> FetchResult:
-    """Download config from a URL, trying common filenames if a directory guess fails."""
-    # For HTTP URLs, try candidates if it looks like a directory guess
-    candidates = [url]
+@overload
+def _get_discovery_candidates(base: URL) -> list[URL]: ...
 
-    # If the URL was a guess (resolved from a directory or repo root), try other names
-    if pathlib.PurePosixPath(url.path).name == RuffConfigFileName.PYPROJECT_TOML:
-        # Try pyproject.toml first to satisfy most projects and existing tests,
-        # then fall back to ruff.toml variants.
-        base_url = url.join(".")
-        candidates = [url] + [
+
+@overload
+def _get_discovery_candidates(base: pathlib.Path) -> list[pathlib.Path]: ...
+
+
+def _get_discovery_candidates(base: URL | pathlib.Path) -> list[URL] | list[pathlib.Path]:
+    """Return a list of candidate configuration files, prioritizing the requested one."""
+    # If it's a URL, use PurePosixPath. If it's a Path, use it directly.
+    name = base.path if isinstance(base, URL) else base.name
+    if pathlib.PurePosixPath(name).name != RuffConfigFileName.PYPROJECT_TOML:
+        return [base]  # type: ignore[return-value]
+
+    # Try pyproject.toml first, then fall back to ruff.toml variants.
+    if isinstance(base, URL):
+        base_url = base.join(".")
+        return [base] + [
             base_url.join(str(f))
             for f in RuffConfigFileName.tried_order()
             if str(f) != RuffConfigFileName.PYPROJECT_TOML
         ]
+
+    configs_dir = base.parent
+    return [base] + [
+        configs_dir / str(f)
+        for f in RuffConfigFileName.tried_order()
+        if str(f) != RuffConfigFileName.PYPROJECT_TOML
+    ]
+
+
+async def _download_with_discovery(url: URL, client: httpx.AsyncClient, branch: str) -> FetchResult:
+    """Download config from a URL, trying common filenames if a directory guess fails."""
+    candidates = _get_discovery_candidates(url)
 
     for candidate_url in candidates:
         response = await client.get(candidate_url)
@@ -383,16 +403,8 @@ def _fetch_via_git(url: URL, branch: str, path: str | None) -> FetchResult:
                 text=True,
             )
             target_path = pathlib.Path(_resolve_upstream_target_path(path))
+            candidates = _get_discovery_candidates(target_path)
 
-            # For git clone, we also want to try candidates if target_path is guessed
-            candidates = [target_path]
-            if target_path.name == RuffConfigFileName.PYPROJECT_TOML:
-                configs_dir = target_path.parent
-                candidates = [target_path] + [
-                    configs_dir / str(f)
-                    for f in RuffConfigFileName.tried_order()
-                    if str(f) != RuffConfigFileName.PYPROJECT_TOML
-                ]
             for cand_path in candidates:
                 # Restore just the config file
                 full_path = pathlib.Path(temp_dir) / cand_path

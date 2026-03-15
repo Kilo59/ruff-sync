@@ -18,7 +18,7 @@ Common issues and questions when using `ruff-sync`.
 **Error**: `FileNotFoundError: pyproject.toml not found`
 
 **Solution**:
-The `check` command expects a local `pyproject.toml` or `ruff.toml` to exist. If you are setting up a new project, use `pull --init` first.
+The `check` command expects a local `pyproject.toml`, `ruff.toml`, or `.ruff.toml` to exist. If you are setting up a new project, use `pull --init` first.
 
 ### Merge conflicts in TOML
 
@@ -35,7 +35,7 @@ ruff-sync pull --exclude lint.line-length
 
 ### Does it support `ruff.toml`?
 
-Yes, `ruff-sync` automatically detects and supports both `pyproject.toml` and `ruff.toml`.
+Yes, `ruff-sync` automatically detects and supports `pyproject.toml`, `ruff.toml`, and `.ruff.toml`.
 
 ### Can I sync from a private repository?
 
