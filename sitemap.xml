@@ -2,34 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/ci-integration/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/configuration/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/installation/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/usage/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/reference/SUMMARY/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/cli/</loc>
-         <lastmod>2026-03-14</lastmod>
+         <lastmod>2026-03-15</lastmod>
+    </url>
+    <url>
+         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/core/</loc>
+         <lastmod>2026-03-15</lastmod>
     </url>
 </urlset>
