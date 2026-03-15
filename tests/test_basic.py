@@ -8,7 +8,7 @@ import pathlib
 import shutil
 import sys
 from pprint import pformat as pf
-from typing import TYPE_CHECKING, Any, Final, cast
+from typing import TYPE_CHECKING, Any, Final, NamedTuple, cast
 
 import httpx
 import pytest
@@ -24,7 +24,7 @@ import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     from _pytest.mark.structures import ParameterSet
     from pyfakefs.fake_filesystem import FakeFilesystem
@@ -65,6 +65,38 @@ def pyproject_toml_s() -> str:
     s = ROOT_PYPROJECT_TOML_PATH.read_text()
     assert s, f"{ROOT_PYPROJECT_TOML_PATH} was empty"
     return s
+
+
+class CLIPatch(NamedTuple):
+    """Container for CLI patch data."""
+
+    captured_args: list[ruff_sync.Arguments]
+    errors: list[str]
+    set_config: Callable[[dict[str, Any]], None]
+
+
+@pytest.fixture
+def patch_cli(monkeypatch: pytest.MonkeyPatch) -> CLIPatch:
+    """Fixture to patch CLI components and capture arguments/errors."""
+    captured_args: list[ruff_sync.Arguments] = []
+    errors: list[str] = []
+
+    async def mock_sync(args: ruff_sync.Arguments) -> Any:
+        captured_args.append(args)
+        await asyncio.sleep(0)
+
+    def fake_error(message: str) -> None:
+        errors.append(message)
+        raise SystemExit(2)
+
+    def set_config(config: dict[str, Any]) -> None:
+        monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: config)
+
+    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli, "check", mock_sync)
+    monkeypatch.setattr(ruff_sync_cli.PARSER, "error", fake_error)
+
+    return CLIPatch(captured_args, errors, set_config)
 
 
 @pytest.fixture
@@ -348,117 +380,78 @@ def test_loading_ruff_sync_config(
     assert expected_config == config
 
 
-def test_exclude_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
+def test_exclude_resolution_cli_precedence(patch_cli: CLIPatch):
     """CLI exclude should override all others."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com", "--exclude", "from-cli"])
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"exclude": ["from-config"]})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync", "http://example.com", "--exclude", "from-cli"]
+    patch_cli.set_config({"exclude": ["from-config"]})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert captured_args[0].exclude == ["from-cli"]
+    assert len(patch_cli.captured_args) == 1
+    assert patch_cli.captured_args[0].exclude == ["from-cli"]
 
 
-def test_exclude_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
+def test_exclude_resolution_config_precedence(patch_cli: CLIPatch):
     """[tool.ruff-sync] exclude should override default."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"exclude": ["from-config"]})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync", "http://example.com"]
+    patch_cli.set_config({"exclude": ["from-config"]})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert captured_args[0].exclude == ["from-config"]
+    assert len(patch_cli.captured_args) == 1
+    assert patch_cli.captured_args[0].exclude == ["from-config"]
 
 
-def test_exclude_resolution_default(monkeypatch: pytest.MonkeyPatch):
+def test_exclude_resolution_default(patch_cli: CLIPatch):
     """Default exclude should apply when neither CLI nor Config provides it."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://example.com"])
+    sys.argv = ["ruff-sync", "http://example.com"]
     # Mock get_config to return a config without 'exclude' (use defaults)
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    patch_cli.set_config({})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert set(captured_args[0].exclude) == ruff_sync_cli._DEFAULT_EXCLUDE
+    assert len(patch_cli.captured_args) == 1
+    assert set(patch_cli.captured_args[0].exclude) == ruff_sync_cli._DEFAULT_EXCLUDE
 
 
-def test_main_default_to_resolution(monkeypatch: pytest.MonkeyPatch):
+def test_main_default_to_resolution(patch_cli: CLIPatch):
     """Verify that main() resolves 'to' as a Path object by default."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
     # No --to, --source, or even upstream (we'll mock config to provide upstream)
-    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"upstream": "http://example.com"})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync"]
+    patch_cli.set_config({"upstream": "http://example.com"})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
+    assert len(patch_cli.captured_args) == 1
     # This specifically checks that it's a Path object, not a string
-    assert isinstance(captured_args[0].to, pathlib.Path)
+    assert isinstance(patch_cli.captured_args[0].to, pathlib.Path)
     # And that it represents the current directory
-    assert str(captured_args[0].to) == "."
+    assert str(patch_cli.captured_args[0].to) == "."
 
 
-def test_upstream_resolution_cli_precedence(monkeypatch: pytest.MonkeyPatch):
+def test_upstream_resolution_cli_precedence(patch_cli: CLIPatch):
     """CLI upstream should override config."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"upstream": "http://config.com"})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync", "http://cli.com"]
+    patch_cli.set_config({"upstream": "http://config.com"})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert str(captured_args[0].upstream[0]) == "http://cli.com"
+    assert len(patch_cli.captured_args) == 1
+    assert str(patch_cli.captured_args[0].upstream[0]) == "http://cli.com"
 
 
 def test_upstream_resolution_missing(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Error when no upstream is provided via CLI or config."""
-    captured_args: list[ruff_sync.Arguments] = []
 
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
 
+def test_upstream_required(patch_cli: CLIPatch):
+    """If no upstream is provided, ruff-sync should error and exit."""
     # No CLI upstream argument
-    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
+    sys.argv = ["ruff-sync"]
     # No upstream in config
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
-    # Ensure sync is never called if upstream is missing
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    patch_cli.set_config({})
 
     with pytest.raises(SystemExit) as excinfo:
         ruff_sync.main()
@@ -466,94 +459,58 @@ def test_upstream_resolution_missing(
     # Non-zero exit code on failure
     assert excinfo.value.code != 0
 
-    captured = capsys.readouterr()
     # Error message should indicate that an upstream is required
-    assert "upstream" in captured.err
-    assert "[tool.ruff-sync]" in captured.err
+    assert patch_cli.errors, "PARSER.error should be called when upstream is missing"
+    assert "upstream" in patch_cli.errors[0]
+    assert "[tool.ruff-sync]" in patch_cli.errors[0]
 
     # When erroring early, sync must not be invoked
-    assert captured_args == []
+    assert patch_cli.captured_args == []
 
 
-def test_upstream_resolution_config_precedence(monkeypatch: pytest.MonkeyPatch):
+def test_upstream_resolution_config_precedence(patch_cli: CLIPatch):
     """[tool.ruff-sync] upstream should be used if CLI one is missing."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {"upstream": "http://config.com"})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync"]
+    patch_cli.set_config({"upstream": "http://config.com"})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert str(captured_args[0].upstream[0]) == "http://config.com"
+    assert len(patch_cli.captured_args) == 1
+    assert str(patch_cli.captured_args[0].upstream[0]) == "http://config.com"
 
 
-def test_upstream_resolution_multiple_cli(monkeypatch: pytest.MonkeyPatch):
+def test_upstream_resolution_multiple_cli(patch_cli: CLIPatch):
     """Multiple CLI upstreams should be returned as a tuple."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://u1.com", "http://u2.com"])
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync", "http://u1.com", "http://u2.com"]
+    patch_cli.set_config({})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
+    assert len(patch_cli.captured_args) == 1
+    assert patch_cli.captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
 
 
-def test_upstream_resolution_multiple_config(monkeypatch: pytest.MonkeyPatch):
+def test_upstream_resolution_multiple_config(patch_cli: CLIPatch):
     """Multiple upstreams in config should be returned as a tuple."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync"])
-    monkeypatch.setattr(
-        ruff_sync_cli, "get_config", lambda _: {"upstream": ["http://u1.com", "http://u2.com"]}
-    )
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync"]
+    patch_cli.set_config({"upstream": ["http://u1.com", "http://u2.com"]})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
+    assert len(patch_cli.captured_args) == 1
+    assert patch_cli.captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
 
 
-def test_upstream_resolution_cli_precedence_over_config(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_upstream_resolution_cli_precedence_over_config(patch_cli: CLIPatch) -> None:
     """CLI upstreams should override any upstreams defined in config."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    async def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        await asyncio.sleep(0)
-
     # Both CLI and config specify upstreams; CLI should win.
-    monkeypatch.setattr(sys, "argv", ["ruff-sync", "http://cli.com"])
-    monkeypatch.setattr(
-        ruff_sync_cli,
-        "get_config",
-        lambda _: {"upstream": ["http://config.com"]},
-    )
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = ["ruff-sync", "http://cli.com"]
+    patch_cli.set_config({"upstream": ["http://config.com"]})
 
     ruff_sync.main()
 
-    assert len(captured_args) == 1
-    assert captured_args[0].upstream == (URL("http://cli.com"),)
+    assert len(patch_cli.captured_args) == 1
+    assert patch_cli.captured_args[0].upstream == (URL("http://cli.com"),)
 
 
 @pytest.mark.parametrize(
@@ -565,55 +522,33 @@ def test_upstream_resolution_cli_precedence_over_config(
     ],
 )
 def test_upstream_resolution_invalid_config_types(
-    monkeypatch: pytest.MonkeyPatch,
+    patch_cli: CLIPatch,
     bad_upstream: Any,
 ) -> None:
     """Invalid `upstream` types in config should trigger PARSER.error."""
-    errors: list[str] = []
-
-    def fake_error(message: str) -> None:
-        errors.append(message)
-        # argparse.ArgumentParser.error normally exits with SystemExit(2)
-        raise SystemExit(2)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync"])  # no CLI upstreams
-    monkeypatch.setattr(
-        ruff_sync_cli,
-        "get_config",
-        lambda _: {"upstream": bad_upstream},
-    )
-    monkeypatch.setattr(ruff_sync_cli.PARSER, "error", fake_error)
+    sys.argv = ["ruff-sync"]  # no CLI upstreams
+    patch_cli.set_config({"upstream": bad_upstream})
 
     with pytest.raises(SystemExit):
         ruff_sync.main()
 
-    assert errors, "PARSER.error should be called for invalid upstream types"
-    assert "string or a list of strings" in errors[0] or "must be strings" in errors[0]
+    assert patch_cli.errors, "PARSER.error should be called for invalid upstream types"
+    assert (
+        "string or a list of strings" in patch_cli.errors[0]
+        or "must be strings" in patch_cli.errors[0]
+    )
 
 
-def test_upstream_resolution_empty_list_in_config(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_upstream_resolution_empty_list_in_config(patch_cli: CLIPatch) -> None:
     """An empty upstream list in config should be treated as an error."""
-    errors: list[str] = []
-
-    def fake_error(message: str) -> None:
-        errors.append(message)
-        raise SystemExit(2)
-
-    monkeypatch.setattr(sys, "argv", ["ruff-sync"])  # no CLI upstreams
-    monkeypatch.setattr(
-        ruff_sync_cli,
-        "get_config",
-        lambda _: {"upstream": []},
-    )
-    monkeypatch.setattr(ruff_sync_cli.PARSER, "error", fake_error)
+    sys.argv = ["ruff-sync"]  # no CLI upstreams
+    patch_cli.set_config({"upstream": []})
 
     with pytest.raises(SystemExit):
         ruff_sync.main()
 
-    assert errors, "PARSER.error should be called when no upstreams are resolved"
-    assert "cannot be empty" in errors[0]
+    assert patch_cli.errors, "PARSER.error should be called when no upstreams are resolved"
+    assert "cannot be empty" in patch_cli.errors[0]
 
 
 @pytest.mark.parametrize(
@@ -626,22 +561,18 @@ def test_upstream_resolution_empty_list_in_config(
     ],
 )
 def test_verbosity_log_level(
-    monkeypatch: pytest.MonkeyPatch, verbose_count: int, expected_level: int
+    monkeypatch: pytest.MonkeyPatch,
+    patch_cli: CLIPatch,
+    verbose_count: int,
+    expected_level: int,
 ):
     """Test that the log level is correctly set based on the verbose count."""
-    captured_args: list[ruff_sync.Arguments] = []
-
-    def mock_sync(args: ruff_sync.Arguments) -> Any:
-        captured_args.append(args)
-        return asyncio.sleep(0)
-
     argv = ["ruff-sync", "http://example.com"]
     if verbose_count > 0:
         argv.append(f"-{'v' * verbose_count}")
 
-    monkeypatch.setattr(sys, "argv", argv)
-    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
-    monkeypatch.setattr(ruff_sync_cli, "pull", mock_sync)
+    sys.argv = argv
+    patch_cli.set_config({})
 
     # Reset LOGGER state before test
     monkeypatch.setattr(ruff_sync_cli.LOGGER, "level", logging.NOTSET)
@@ -653,8 +584,8 @@ def test_verbosity_log_level(
     assert ruff_sync_cli.LOGGER.level == expected_level
 
     # Verify that the verbose flag value propagates into Arguments.verbose
-    assert len(captured_args) == 1
-    assert captured_args[0].verbose == verbose_count
+    assert len(patch_cli.captured_args) == 1
+    assert patch_cli.captured_args[0].verbose == verbose_count
 
 
 @pytest.mark.asyncio
