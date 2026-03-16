@@ -4,15 +4,15 @@
 
 ## Reference
 
-| Key | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `upstream` | `str \| list[str]` | *Required* | The URL(s) of the upstream `pyproject.toml` or `ruff.toml`. |
-| `to` | `str` | `"."` | The local directory or file where configuration should be merged. |
-| `exclude` | `list[str]` | `["lint.per-file-ignores"]` | A list of configuration keys to preserve locally. |
-| `branch` | `str` | `"main"` | The default branch to use when resolving repository URLs. |
-| `path` | `str` | `""` | The directory path within the repository where the config is located. |
-| `semantic` | `bool` | `false` | Whether `check` should default to semantic matching. |
-| `diff` | `bool` | `true` | Whether `check` should show a diff by default. |
+| Key        | Type               | Default                     | Description                                                           |
+| :--------- | :----------------- | :-------------------------- | :-------------------------------------------------------------------- |
+| `upstream` | `str \| list[str]` | _Required_                  | The URL(s) of the upstream `pyproject.toml` or `ruff.toml`.           |
+| `to`       | `str`              | `"."`                       | The local directory or file where configuration should be merged.     |
+| `exclude`  | `list[str]`        | `["lint.per-file-ignores"]` | A list of configuration keys to preserve locally.                     |
+| `branch`   | `str`              | `"main"`                    | The default branch to use when resolving repository URLs.             |
+| `path`     | `str`              | `""`                        | The directory path within the repository where the config is located. |
+| `semantic` | `bool`             | `false`                     | Whether `check` should default to semantic matching.                  |
+| `diff`     | `bool`             | `true`                      | Whether `check` should show a diff by default.                        |
 
 ## Exclude Patterns
 

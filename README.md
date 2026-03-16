@@ -36,11 +36,11 @@ If you maintain more than one Python project, you've probably copy-pasted your `
 
 ### How Other Ecosystems Solve This
 
-| Ecosystem | Mechanism | Limitation for Ruff users |
-|-----------|-----------|---------------------------|
-| **ESLint** | [Shareable configs](https://eslint.org/docs/latest/extend/shareable-configs) — publish an npm package, then `extends: ["my-org-config"]` | Requires a package registry (npm). Python doesn't have an equivalent convention. |
-| **Prettier** | [Shared configs](https://prettier.io/docs/sharing-configurations) — same npm-package pattern, referenced via `"prettier": "@my-org/prettier-config"` in `package.json` | Same — tightly coupled to npm. |
-| **Ruff** | [`extend`](https://docs.astral.sh/ruff/configuration/#config-file-discovery) — extend from a _local_ file path (great for monorepos) | Only supports local paths. No native remote URL support ([requested in astral-sh/ruff#12352](https://github.com/astral-sh/ruff/issues/12352)). |
+| Ecosystem    | Mechanism                                                                                                                                                              | Limitation for Ruff users                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ESLint**   | [Shareable configs](https://eslint.org/docs/latest/extend/shareable-configs) — publish an npm package, then `extends: ["my-org-config"]`                               | Requires a package registry (npm). Python doesn't have an equivalent convention.                                                               |
+| **Prettier** | [Shared configs](https://prettier.io/docs/sharing-configurations) — same npm-package pattern, referenced via `"prettier": "@my-org/prettier-config"` in `package.json` | Same — tightly coupled to npm.                                                                                                                 |
+| **Ruff**     | [`extend`](https://docs.astral.sh/ruff/configuration/#config-file-discovery) — extend from a _local_ file path (great for monorepos)                                   | Only supports local paths. No native remote URL support ([requested in astral-sh/ruff#12352](https://github.com/astral-sh/ruff/issues/12352)). |
 
 Ruff's `extend` is perfect inside a monorepo, but if your projects live in **separate repositories**, there's no built-in way to inherit config from a central source.
 
@@ -199,7 +199,7 @@ Ensure your configuration is always in sync before every commit. Add this to you
 
 ```yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.0  # Use the latest version
+  rev: v0.1.0 # Use the latest version
   hooks:
     - id: ruff-sync-check
 ```

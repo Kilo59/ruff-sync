@@ -12,10 +12,10 @@ The `pull` command downloads the upstream configuration and merges it into your 
 ruff-sync pull [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
 ```
 
-* **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local config.
-* **`--to`**: Where to save the merged config (defaults to `.`).
-* **`--exclude`**: Dotted paths of keys to keep local (e.g., `lint.isort`).
-* **`--init`**: Create a new `pyproject.toml` if it doesn't exist.
+- **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local config.
+- **`--to`**: Where to save the merged config (defaults to `.`).
+- **`--exclude`**: Dotted paths of keys to keep local (e.g., `lint.isort`).
+- **`--init`**: Create a new `pyproject.toml` if it doesn't exist.
 
 ### `check`
 
@@ -25,8 +25,8 @@ The `check` command verifies if your local configuration matches the upstream on
 ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff]
 ```
 
-* **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order.
-* **`--diff` / `--no-diff`**: Control the display of the unified diff.
+- **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order.
+- **`--diff` / `--no-diff`**: Control the display of the unified diff.
 
 ---
 
@@ -37,9 +37,8 @@ One of the core features of `ruff-sync` is its ability to respect your file's ex
 Unlike other tools that might rewrite your TOML and strip away comments or change indentation, `ruff-sync` uses `tomlkit` to perform a **lossless merge**.
 
 !!! info "What is preserved?"
-    *   **Comments**: All comments in your local file are kept.
-    *   **Whitespace**: Your indentation and line breaks are respected.
-    *   **Key Order**: The order of your existing keys in `[tool.ruff]` is preserved where possible.
+_ **Comments**: All comments in your local file are kept.
+_ **Whitespace**: Your indentation and line breaks are respected. \* **Key Order**: The order of your existing keys in `[tool.ruff]` is preserved where possible.
 
 ---
 

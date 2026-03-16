@@ -15,6 +15,7 @@ docs/
 ```
 
 **mkdocs.yml nav:**
+
 ```yaml
 nav:
   - Home: index.md
@@ -24,6 +25,7 @@ nav:
 ```
 
 **index.md:**
+
 ```markdown
 # Todoist MCP Server
 
@@ -66,6 +68,7 @@ docs/
 ```
 
 **mkdocs.yml nav:**
+
 ```yaml
 nav:
   - Home: index.md
@@ -116,11 +119,11 @@ import asyncio
 from pydmp import DMPPanel
 
 async def main():
-    panel = DMPPanel()
-    await panel.connect("192.168.1.100", "00001", "YOURKEY")
-    await panel.update_status()
-    areas = await panel.get_areas()
-    await panel.disconnect()
+panel = DMPPanel()
+await panel.connect("192.168.1.100", "00001", "YOURKEY")
+await panel.update_status()
+areas = await panel.get_areas()
+await panel.disconnect()
 
 asyncio.run(main())
 \`\`\`
@@ -173,20 +176,22 @@ The CLI expects a YAML config file:
 
 \`\`\`yaml
 panel:
-  host: 192.168.1.100
-  account: "00001"
-  remote_key: "YOURKEY"
+host: 192.168.1.100
+account: "00001"
+remote_key: "YOURKEY"
 \`\`\`
 
 ## Commands
 
 ### Areas & Zones
+
 \`\`\`bash
 pydmp get-areas [--json|-j]
 pydmp get-zones [--json|-j]
 \`\`\`
 
 ### Arm/Disarm
+
 \`\`\`bash
 pydmp arm "1,2,3" [--bypass-faulted|-b] [--force-arm|-f]
 pydmp disarm <AREA> [--json|-j]
@@ -195,10 +200,13 @@ pydmp disarm <AREA> [--json|-j]
 ## Examples
 
 \`\`\`bash
+
 # View areas with debug logs
+
 pydmp --debug get-areas
 
 # Arm area 1
+
 pydmp arm "1" --bypass-faulted
 \`\`\`
 ```
@@ -216,6 +224,7 @@ docs = [
 ```
 
 Install and build:
+
 ```bash
 pip install -e ".[docs]"
 mkdocs serve

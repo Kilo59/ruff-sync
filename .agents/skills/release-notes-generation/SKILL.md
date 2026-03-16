@@ -43,6 +43,7 @@ uv run invoke release --draft --skip-tests
 
 > [!NOTE]
 > `invoke release` will:
+>
 > 1. Check if you are on `main`.
 > 2. Check for clean git state.
 > 3. Create a GitHub Release with `--generate-notes`.
@@ -52,6 +53,7 @@ uv run invoke release --draft --skip-tests
 GitHub's automatically generated notes are a good start but often lack professional categorization and narrative. Use the following structure for final refinement:
 
 #### Categorization
+
 - **🚀 Features**: New capabilities added to `ruff_sync`.
 - **🐞 Bug Fixes**: Issues resolved in CLI, merging logic, or HTTP handling.
 - **✨ Improvements**: Enhancements to existing features, performance, or logging.
@@ -59,6 +61,7 @@ GitHub's automatically generated notes are a good start but often lack professio
 - **🛠️ Maintenance**: Dependency updates, CI changes, or test refactoring.
 
 #### Writing Style
+
 - Use clear, action-oriented language (e.g., "Add support...", "Fix issue where...", "Refactor...").
 - Link to PRs and contributors using their GitHub handles.
 - Include a "Breaking Changes" section if applicable (use `[!WARNING]` alerts).

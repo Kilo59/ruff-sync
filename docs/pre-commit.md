@@ -12,7 +12,7 @@ Verifies that your local `pyproject.toml` or `ruff.toml` matches the upstream co
 
 ```yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.0  # Use the latest version
+  rev: v0.1.0 # Use the latest version
   hooks:
     - id: ruff-sync-check
 ```
@@ -23,7 +23,7 @@ Automatically pulls and applies the upstream configuration if a drift is detecte
 
 ```yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.0  # Use the latest version
+  rev: v0.1.0 # Use the latest version
   hooks:
     - id: ruff-sync-pull
 ```

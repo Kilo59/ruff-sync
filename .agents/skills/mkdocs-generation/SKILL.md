@@ -40,6 +40,7 @@ mike>=2.0
 ## Directory Structure
 
 **Simple (flat)**:
+
 ```
 docs/
 ├── index.md           # Home/overview
@@ -49,6 +50,7 @@ docs/
 ```
 
 **Complex (nested)**:
+
 ```
 docs/
 ├── index.md
@@ -69,6 +71,7 @@ docs/
 See `templates/mkdocs.yml` for the full configuration template.
 
 Key sections:
+
 1. **Site metadata**: name, description, URLs
 2. **Versioning**: mike provider for multi-version docs
 3. **Theme**: Material with navigation features
@@ -88,6 +91,7 @@ Create minimal markdown files that reference Python modules:
 ```
 
 mkdocstrings auto-generates documentation from docstrings. Configure in `mkdocs.yml`:
+
 - `docstring_style: google` - Use Google-style docstrings
 - `show_source: false` - Hide source code
 - `merge_init_into_class: true` - Combine `__init__` with class docs

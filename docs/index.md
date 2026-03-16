@@ -12,12 +12,12 @@
 
 ## 🚀 Key Features
 
-* **⚡ Fast & Lightweight**: Zero-config needed for most projects.
-* **✨ Formatting Preserved**: Uses `tomlkit` to keep your comments, indentation, and whitespace exactly as they are.
-* **🛡️ Smart Merging**: Safely merges nested tables (like `lint.per-file-ignores`) without overwriting local overrides.
-* **📂 Upstream Layers**: Combine and merge configurations from several sources sequentially.
-* **🔗 Flexible Sources**: Sync from GitHub, GitLab, raw URLs, or local files.
-* **✅ CI Ready**: Built-in `check` command with semantic diffs for automated pipelines.
+- **⚡ Fast & Lightweight**: Zero-config needed for most projects.
+- **✨ Formatting Preserved**: Uses `tomlkit` to keep your comments, indentation, and whitespace exactly as they are.
+- **🛡️ Smart Merging**: Safely merges nested tables (like `lint.per-file-ignores`) without overwriting local overrides.
+- **📂 Upstream Layers**: Combine and merge configurations from several sources sequentially.
+- **🔗 Flexible Sources**: Sync from GitHub, GitLab, raw URLs, or local files.
+- **✅ CI Ready**: Built-in `check` command with semantic diffs for automated pipelines.
 
 ---
 
@@ -32,7 +32,7 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 `ruff-sync` lets you define a "source of truth" (a URL to a `pyproject.toml` or `ruff.toml`) and pull the `[tool.ruff]` section into your local projects with a single command.
 
 !!! tip "Zero Drift"
-    Use `ruff-sync check` in your CI to guarantee that no repository ever drifts from your organization's standards.
+Use `ruff-sync check` in your CI to guarantee that no repository ever drifts from your organization's standards.
 
 ---
 

@@ -22,6 +22,7 @@ This document defines the mandatory testing standards and patterns for the `ruff
 ## 3. Best Practices and Patterns
 
 ### 3.1 Use Pytest Fixtures
+
 Avoid re-defining common TOML strings or setup logic in every test function. Use fixtures to provide consistent test data.
 
 ```python
@@ -34,6 +35,7 @@ lint.select = ["F", "E"]
 ```
 
 ### 3.2 Parameterization
+
 Use `@pytest.mark.parametrize` to test the same logic against multiple scenarios. Use `pytest.param(..., id="case_name")` to ensure test reports are readable.
 
 ```python
@@ -49,9 +51,11 @@ def test_merge_scenarios(source, upstream, expected_keys):
 ```
 
 ### 3.3 No Autouse Fixtures
+
 `autouse=True` fixtures are **never allowed**. They hide setup logic and can cause non-obvious side effects or dependencies between tests. All fixtures used by a test must be explicitly requested in the test function's arguments.
 
 ### 3.4 Main Entry Point
+
 Every test file **must** end with a main entry point block. This ensures each file is independently executable as a script (`python tests/test_foo.py`).
 
 ```python
@@ -60,6 +64,7 @@ if __name__ == "__main__":
 ```
 
 **Why this matters:**
+
 1.  **Direct Execution**: Developers can run a single test file using standard Python without needing to remember complex `pytest` filter flags.
 2.  **IDE Workflow Integration**: Many IDEs (like VS Code or PyCharm) allow you to run the "Current File" with a single click or keyboard shortcut. Having a main block ensures this works out of the box with the correct verbosity and scope.
 3.  **Cleaner Diffs**: By terminating the file with this standard block, it prevents "no newline at end of file" warnings and ensures that new tests added above it produce clean, isolated diff segments. It also ensures that when debugging with `--icdiff` or similar tools, the output is scoped correctly to the specific file.
@@ -69,8 +74,11 @@ if __name__ == "__main__":
 `tomlkit` is central to this project but its dynamic type system can be tricky for mypy.
 
 ### The "Proxy" Problem
+
 `tomlkit` often returns "proxy" objects (like dotted keys) that don't always behave like standard dicts.
+
 - **Assertion Pattern**: To satisfy mypy when indexing into a parsed document in tests, use the `cast(Any, ...)` pattern:
+
   ```python
   from typing import Any, cast
   import tomlkit
@@ -80,6 +88,7 @@ if __name__ == "__main__":
   ruff_cfg = cast(Any, doc)["tool"]["ruff"]
   assert ruff_cfg["target-version"] == "py310"
   ```
+
 - **Comparison**: Use `list()` or `.unwrap()` if you need to compare `tomlkit` arrays/objects to standard Python types.
 
 ## 4. Lifecycle TOML Fixtures
@@ -87,13 +96,17 @@ if __name__ == "__main__":
 For end-to-end (E2E) testing of the sync/merge logic, use the "Lifecycle" pattern.
 
 ### Fixture Triples
+
 Each test case consists of three files in `tests/lifecycle_tomls/`:
+
 1.  `<case_name>_initial.toml`: The starting project state.
 2.  `<case_name>_upstream.toml`: The remote ruff config to sync from.
 3.  `<case_name>_final.toml`: The expected result after merge.
 
 ### Scaffolding New Cases
+
 Use the provided Invoke task to create a new case from a template:
+
 ```bash
 uv run invoke new-case --name <case_name> --description "Description of the edge case"
 ```
@@ -125,5 +138,6 @@ def test_my_edge_case():
 ## 6. Code Coverage
 
 We target **high coverage** for `ruff_sync.py`.
+
 - Run coverage locally: `uv run coverage run -m pytest -vv && uv run coverage report`
 - New features MUST include unit tests in `tests/test_basic.py` or specialized files like `tests/test_whitespace.py` if they involve formatting logic.
