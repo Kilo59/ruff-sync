@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 import respx
 from httpx import URL, Response
+from tomlkit import document
 
 from ruff_sync.cli import Arguments
 from ruff_sync.core import _merge_multiple_upstreams
@@ -12,14 +15,13 @@ from ruff_sync.core import _merge_multiple_upstreams
 async def test_merge_multiple_upstreams_is_concurrent(respx_mock: respx.Router):
     # Setup mock data
     # We use a real TOMLDocument for the target to avoid issues with AsyncMock vs tomlkit
-    from tomlkit import document
 
     target_doc = document()
 
     args = Arguments(
         command="pull",
         upstream=(URL("http://one.toml"), URL("http://two.toml")),
-        to=".",
+        to=pathlib.Path(),
         exclude=[],
         verbose=0,
         branch="main",
@@ -60,7 +62,7 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router)
     args = Arguments(
         command="pull",
         upstream=(URL("http://ok.toml"), URL("http://fail.toml")),
-        to=".",
+        to=pathlib.Path(),
         exclude=[],
         verbose=0,
         branch="main",
