@@ -20,7 +20,7 @@
         
       
       
-      <link rel="icon" href="assets/logo.png">
+      <link rel="icon" href="assets/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
@@ -492,10 +492,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-configure-your-project" class="md-nav__link">
+  <a href="#1-initialize-a-new-project-optional" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Configure your project
+        1. Initialize a new project (Optional)
       
     </span>
   </a>
@@ -503,10 +503,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-pull-the-configuration" class="md-nav__link">
+  <a href="#2-configure-an-existing-project" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Pull the configuration
+        2. Configure an existing project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-pull-the-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Pull the configuration
       
     </span>
   </a>
@@ -1037,10 +1048,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-configure-your-project" class="md-nav__link">
+  <a href="#1-initialize-a-new-project-optional" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Configure your project
+        1. Initialize a new project (Optional)
       
     </span>
   </a>
@@ -1048,10 +1059,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-pull-the-configuration" class="md-nav__link">
+  <a href="#2-configure-an-existing-project" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Pull the configuration
+        2. Configure an existing project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-pull-the-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Pull the configuration
       
     </span>
   </a>
@@ -1103,11 +1125,13 @@
 <h2 id="key-features">🚀 Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>⚡ Fast &amp; Lightweight</strong>: Zero-config needed for most projects.</li>
-<li><strong>✨ Formatting Preserved</strong>: Uses <code>tomlkit</code> to keep your comments, indentation, and whitespace exactly as they are.</li>
-<li><strong>🛡️ Smart Merging</strong>: Safely merges nested tables (like <code>lint.per-file-ignores</code>) without overwriting local overrides.</li>
+<li><strong>✨ Formatting Preserved</strong>: Keeps all comments and whitespace via <code>tomlkit</code>.</li>
+<li><strong>🛡️ Smart Merging</strong>: Safely merges nested tables without overwriting local overrides.</li>
 <li><strong>📂 Upstream Layers</strong>: Combine and merge configurations from several sources sequentially.</li>
-<li><strong>🔗 Flexible Sources</strong>: Sync from GitHub, GitLab, raw URLs, or local files.</li>
-<li><strong>✅ CI Ready</strong>: Built-in <code>check</code> command with semantic diffs for automated pipelines.</li>
+<li><strong>🌐 Flexible Sources</strong>: Sync from GitHub, GitLab, raw URLs, or local files.</li>
+<li><strong>📥 Efficient Git Support</strong>: Shallow clones and sparse checkouts for fast extraction.</li>
+<li><strong>🚀 Zero-Config Bootstrapping</strong>: Use <code>--init</code> to scaffold a new project in one command.</li>
+<li><strong>✅ CI Ready</strong>: Built-in <code>check</code> command with semantic comparison logic.</li>
 </ul>
 <hr />
 <h2 id="the-problem">🧐 The Problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
@@ -1121,13 +1145,18 @@
 </div>
 <hr />
 <h2 id="quick-start">🏁 Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<h3 id="1-configure-your-project">1. Configure your project<a class="headerlink" href="#1-configure-your-project" title="Permanent link">&para;</a></h3>
-<p>Add the upstream URL to your <code>pyproject.toml</code>:</p>
-<div class="language-toml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/my-org/standards/blob/main/pyproject.toml&quot;</span>
+<h3 id="1-initialize-a-new-project-optional">1. Initialize a new project (Optional)<a class="headerlink" href="#1-initialize-a-new-project-optional" title="Permanent link">&para;</a></h3>
+<p>If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>pull<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
 </span></code></pre></div>
-<h3 id="2-pull-the-configuration">2. Pull the configuration<a class="headerlink" href="#2-pull-the-configuration" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>pull
+<h3 id="2-configure-an-existing-project">2. Configure an existing project<a class="headerlink" href="#2-configure-an-existing-project" title="Permanent link">&para;</a></h3>
+<p>Add the upstream URL to your <code>pyproject.toml</code> to make it the default:</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tool.ruff-sync]</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/my-org/standards/blob/main/pyproject.toml&quot;</span>
+</span></code></pre></div>
+<h3 id="3-pull-the-configuration">3. Pull the configuration<a class="headerlink" href="#3-pull-the-configuration" title="Permanent link">&para;</a></h3>
+<p>Once configured, simply run:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>pull
 </span></code></pre></div>
 <p>This will download the upstream file, extract the <code>[tool.ruff]</code> section, and merge it into your local file while <strong>preserving your artisanal comments and formatting</strong>.</p>
 

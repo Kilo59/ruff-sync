@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../assets/logo.png">
+      <link rel="icon" href="../assets/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
@@ -744,6 +744,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#handle-exclusions-properly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handle Exclusions Properly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#use-a-dedicated-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1121,6 +1132,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#handle-exclusions-properly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handle Exclusions Properly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#use-a-dedicated-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1271,6 +1293,9 @@
 <h2 id="best-practices">💡 Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="use-semantic">Use <code>--semantic</code><a class="headerlink" href="#use-semantic" title="Permanent link">&para;</a></h3>
 <p>In CI, you usually only care about the functional configuration. Using <code>--semantic</code> ensures that minor formatting changes don't break your builds, while still guaranteeing that the actual rules are identical.</p>
+<h3 id="handle-exclusions-properly">Handle Exclusions Properly<a class="headerlink" href="#handle-exclusions-properly" title="Permanent link">&para;</a></h3>
+<p>If your project intentionally diverges from the upstream (e.g., using different <code>per-file-ignores</code> or ignoring a specific rule), ensure those overrides are listed in the <code>[tool.ruff-sync]</code> <code>exclude</code> list in your <code>pyproject.toml</code>.</p>
+<p>The <code>check</code> command respects your local <code>exclude</code> list. If you exclude a setting, <code>ruff-sync check</code> will completely ignore it when comparing against the upstream, ensuring that intended deviations never cause CI to fail!</p>
 <h3 id="use-a-dedicated-workflow">Use a Dedicated Workflow<a class="headerlink" href="#use-a-dedicated-workflow" title="Permanent link">&para;</a></h3>
 <p>Running <code>ruff-sync</code> as a separate job in your linting workflow makes it easy to identify when a failure is due to configuration drift rather than a code quality issue.</p>
 

@@ -22,7 +22,7 @@
         
       
       
-      <link rel="icon" href="../assets/logo.png">
+      <link rel="icon" href="../assets/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
@@ -1296,13 +1296,17 @@
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;target-version&quot;</span><span class="p">]</span>
 </span></code></pre></div>
 <h4 id="sequential-merging-of-multiple-sources">Sequential merging of multiple sources<a class="headerlink" href="#sequential-merging-of-multiple-sources" title="Permanent link">&para;</a></h4>
-<p>You can specify multiple upstream sources as a list. They will be merged in order, with later sources overriding earlier ones.</p>
+<p>You can specify multiple upstream sources as a list. They will be merged in order—from top to bottom—with later sources overriding or extending earlier ones.</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[tool.ruff-sync]</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/shared-config&quot;</span><span class="p">,</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/team-overrides&quot;</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/shared-config&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1"># 1. Base rules</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/team-overrides&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1"># 2. Team-specific tweaks (wins)</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">]</span>
 </span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Last One Wins</p>
+<p>The merge logic follows a "last one wins" approach for simple keys (like <code>line-length</code>), while performing a deep merge for configuration tables like <code>lint.per-file-ignores</code>.</p>
+</div>
 <h2 id="deprecation-notes">Deprecation Notes<a class="headerlink" href="#deprecation-notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The key <code>source</code> in <code>[tool.ruff-sync]</code> is deprecated and will be removed in a future version. Use <code>to</code> instead.</li>
