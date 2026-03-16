@@ -350,31 +350,52 @@ flowchart TD
 
 ## Dogfooding
 
-To see `ruff-sync` in action, you can ["dogfood" it on this project's own config](./scripts).
+To see **ruff-sync** in action, you can "dogfood" it using this project's own configuration.
 
-[**Check if this project is in sync with its upstream:**](./scripts/check_dogfood.sh)
+### Check if the project is in sync with its upstream
 
-```console
+Run the following script:
+
+```bash
 ./scripts/check_dogfood.sh
 ```
 
-[**Or sync from a large upstream like Pydantic's config:**](./scripts/pull_dogfood.sh)
+### Sync from a large upstream configuration
 
-```console
-# Using a HTTP URL
+You can pull a configuration from a well-known upstream project like **Pydantic**.
+
+**Using a HTTP URL**
+
+```bash
 ./scripts/pull_dogfood.sh
-# Using a Git URL
+```
+
+**Using a Git URL**
+
+```bash
 ./scripts/gitclone_dogfood.sh
 ```
 
-This will download Pydantic's Ruff configuration and merge it into the local `pyproject.toml`. You can then use `git diff` to see how it merged the keys while preserving the existing structure and comments.
+This will download **Pydantic's Ruff configuration** and merge it into the local `pyproject.toml`.
 
-**To revert the changes after testing:**
+You can then run:
 
-```console
+```bash
+git diff
+```
+
+to see how the keys were merged while preserving the existing structure and comments.
+
+### Reverting changes after testing
+
+If you want to revert the changes:
+
+```bash
 git checkout pyproject.toml
 ```
 
+---
+
 ## License
 
-[MIT](LICENSE.md)
+This project is licensed under the **MIT License**.
