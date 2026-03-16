@@ -197,6 +197,7 @@ ignore = [
     "TRY003", # don't care about long exception messages in tests
     "PLW1510", # subprocess check not needed in tests
     "PT013", # pytest import style, prevents importing param and or types in from style
+    "TC002", # Move third-party import into type-checking block
 ]
 
 [tool.ruff.lint.pydocstyle]

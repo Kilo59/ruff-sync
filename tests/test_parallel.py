@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-from io import StringIO
-from unittest.mock import AsyncMock, patch
-
 import pytest
-from httpx import URL
+import respx
+from httpx import URL, Response
 
 from ruff_sync.cli import Arguments
-from ruff_sync.core import FetchResult, _merge_multiple_upstreams
+from ruff_sync.core import _merge_multiple_upstreams
 
 
 @pytest.mark.asyncio
-async def test_merge_multiple_upstreams_is_concurrent():
+async def test_merge_multiple_upstreams_is_concurrent(respx_mock: respx.Router):
     # Setup mock data
-    target_doc = AsyncMock()
+    # We use a real TOMLDocument for the target to avoid issues with AsyncMock vs tomlkit
+    from tomlkit import document
+
+    target_doc = document()
+
     args = Arguments(
         command="pull",
         upstream=(URL("http://one.toml"), URL("http://two.toml")),
@@ -23,27 +25,25 @@ async def test_merge_multiple_upstreams_is_concurrent():
         branch="main",
         path="",
     )
-    client = AsyncMock()
 
-    # Mock return values for fetch_upstream_config
-    res1 = FetchResult(StringIO("[tool.ruff]\nline-length = 80"), URL("http://one.toml"))
-    res2 = FetchResult(StringIO("[tool.ruff]\nline-length = 100"), URL("http://two.toml"))
+    # Mock HTTP responses using respx
+    respx_mock.get("http://one.toml").return_value = Response(
+        200, text="[tool.ruff]\nline-length = 80"
+    )
+    respx_mock.get("http://two.toml").return_value = Response(
+        200, text="[tool.ruff]\nline-length = 100"
+    )
 
-    # We want to verify that fetch_upstream_config is called for all upstreams
-    # before we start merging.
+    import httpx
 
-    with patch("ruff_sync.core.fetch_upstream_config") as mock_fetch:
-        mock_fetch.side_effect = [res1, res2]
+    async with httpx.AsyncClient() as client:
+        result_doc = await _merge_multiple_upstreams(target_doc, False, args, client)
 
-        with patch("ruff_sync.core.get_ruff_config") as mock_get_cfg:
-            mock_get_cfg.return_value = {"line-length": 80}  # simplified
+        # Verify both URLs were fetched
+        assert respx_mock.get("http://one.toml").called
+        assert respx_mock.get("http://two.toml").called
 
-            with patch("ruff_sync.core.merge_ruff_toml") as mock_merge:
-                mock_merge.return_value = target_doc
-
-                await _merge_multiple_upstreams(target_doc, False, args, client)
-
-                # Check that fetch was called twice
-                assert mock_fetch.call_count == 2
-                # Check that merge was called twice
-                assert mock_merge.call_count == 2
+        # Verify the sequential merge result (the last one wins for specific keys)
+        # Assuming merge_ruff_toml works as expected
+        ruff_config = result_doc.get("tool", {}).get("ruff", {})
+        assert ruff_config.get("line-length") == 100

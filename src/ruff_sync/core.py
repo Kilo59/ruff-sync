@@ -42,6 +42,7 @@ __all__: Final[list[str]] = [
     "RuffConfigFileName",
     "check",
     "fetch_upstream_config",
+    "fetch_upstreams_concurrently",
     "get_ruff_config",
     "get_ruff_tool_table",
     "is_ruff_toml_file",
@@ -691,6 +692,43 @@ def merge_ruff_toml(
     return source
 
 
+async def fetch_upstreams_concurrently(
+    upstreams: Iterable[URL],
+    client: httpx.AsyncClient,
+    branch: str = "main",
+    path: str | None = None,
+) -> list[FetchResult]:
+    """Fetch multiple upstream configurations concurrently.
+
+    Uses asyncio.TaskGroup if available (Python 3.11+), otherwise falls
+    back to asyncio.gather.
+
+    Args:
+        upstreams: The URLs to fetch.
+        client: The HTTPX async client to use.
+        branch: The default branch for repo-root URLs.
+        path: The directory prefix for pyproject.toml in repo-root URLs.
+
+    Returns:
+        A list of FetchResult objects in the same order as the input upstreams.
+    """
+    if sys.version_info >= (3, 11):
+        # Use structured concurrency on Python 3.11+
+        results: list[FetchResult | None] = [None] * len(list(upstreams))
+        async with asyncio.TaskGroup() as tg:
+            for i, url in enumerate(upstreams):
+
+                async def _fetch_and_store(idx: int, u: URL) -> None:
+                    results[idx] = await fetch_upstream_config(u, client, branch, path)
+
+                tg.create_task(_fetch_and_store(i, url))
+        return cast("list[FetchResult]", results)
+
+    # Fallback for Python 3.10
+    tasks = [fetch_upstream_config(url, client, branch, path) for url in upstreams]
+    return list(await asyncio.gather(*tasks))
+
+
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
@@ -699,15 +737,12 @@ async def _merge_multiple_upstreams(
 ) -> TOMLDocument:
     """Fetch and merge all upstreams into the target document.
 
-    Downloads are performed concurrently using asyncio.gather, while merging
-    remains sequential to preserve layering order.
+    Downloads are performed concurrently via fetch_upstreams_concurrently,
+    while merging remains sequential to preserve layering order.
     """
-    # Trigger all fetches concurrently
-    fetch_tasks = [
-        fetch_upstream_config(upstream_url, client, branch=args.branch, path=args.path)
-        for upstream_url in args.upstream
-    ]
-    fetch_results = await asyncio.gather(*fetch_tasks)
+    fetch_results = await fetch_upstreams_concurrently(
+        args.upstream, client, branch=args.branch, path=args.path
+    )
 
     # Sequentially merge the results in the original order
     for fetch_result in fetch_results:
