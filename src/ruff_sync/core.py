@@ -697,11 +697,20 @@ async def _merge_multiple_upstreams(
     args: Arguments,
     client: httpx.AsyncClient,
 ) -> TOMLDocument:
-    """Sequentially fetch and merge all upstreams into the target document."""
-    for upstream_url in args.upstream:
-        fetch_result = await fetch_upstream_config(
-            upstream_url, client, branch=args.branch, path=args.path
-        )
+    """Fetch and merge all upstreams into the target document.
+
+    Downloads are performed concurrently using asyncio.gather, while merging
+    remains sequential to preserve layering order.
+    """
+    # Trigger all fetches concurrently
+    fetch_tasks = [
+        fetch_upstream_config(upstream_url, client, branch=args.branch, path=args.path)
+        for upstream_url in args.upstream
+    ]
+    fetch_results = await asyncio.gather(*fetch_tasks)
+
+    # Sequentially merge the results in the original order
+    for fetch_result in fetch_results:
         LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
         is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)
