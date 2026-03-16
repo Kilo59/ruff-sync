@@ -16,12 +16,13 @@ import respx
 import tomlkit
 from httpx import URL
 from pytest import param
-from tomlkit import TOMLDocument
+from tomlkit import TOMLDocument, document
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
+from ruff_sync.core import UpstreamError, _merge_multiple_upstreams
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Sequence
@@ -658,6 +659,71 @@ def test_ruff_config_file_name_equality() -> None:
     assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"
     assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"
     assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML
+
+
+@pytest.mark.asyncio
+async def test_merge_multiple_upstreams_is_concurrent(respx_mock: respx.Router):
+    # Setup mock data
+    target_doc = document()
+
+    args = ruff_sync.Arguments(
+        command="pull",
+        upstream=(URL("http://one.toml"), URL("http://two.toml")),
+        to=pathlib.Path(),
+        exclude=[],
+        verbose=0,
+        branch="main",
+        path="",
+    )
+
+    # Mock HTTP responses using respx
+    respx_mock.get("http://one.toml").return_value = httpx.Response(
+        200, text="[tool.ruff]\nline-length = 80"
+    )
+    respx_mock.get("http://two.toml").return_value = httpx.Response(
+        200, text="[tool.ruff]\nline-length = 100"
+    )
+
+    async with httpx.AsyncClient() as client:
+        result_doc = await _merge_multiple_upstreams(target_doc, False, args, client)
+
+        # Verify both URLs were fetched
+        assert respx_mock.get("http://one.toml").called
+        assert respx_mock.get("http://two.toml").called
+
+        # Verify the sequential merge result (the last one wins for specific keys)
+        ruff_config = result_doc.get("tool", {}).get("ruff", {})
+        assert ruff_config.get("line-length") == 100
+
+
+@pytest.mark.asyncio
+async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router):
+    target_doc = document()
+
+    args = ruff_sync.Arguments(
+        command="pull",
+        upstream=(URL("http://ok.toml"), URL("http://fail.toml")),
+        to=pathlib.Path(),
+        exclude=[],
+        verbose=0,
+        branch="main",
+        path="",
+    )
+
+    # Mock HTTP responses using respx
+    respx_mock.get("http://ok.toml").return_value = httpx.Response(
+        200, text="[tool.ruff]\nline-length = 80"
+    )
+    respx_mock.get("http://fail.toml").return_value = httpx.Response(404)
+
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(UpstreamError) as excinfo:
+            await _merge_multiple_upstreams(target_doc, False, args, client)
+
+        assert len(excinfo.value.errors) == 1
+        url, err = excinfo.value.errors[0]
+        assert str(url) == "http://fail.toml"
+        assert isinstance(err, httpx.HTTPStatusError)
 
 
 if __name__ == "__main__":
