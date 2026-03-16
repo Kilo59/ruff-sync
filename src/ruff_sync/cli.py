@@ -428,7 +428,7 @@ def main() -> int:
         return asyncio.run(pull(exec_args))
     except UpstreamError as e:
         for url, err in e.errors:
-            LOGGER.error(f"❌ Failed to fetch {url}: {err}")
+            LOGGER.error(f"❌ Failed to fetch {url}: {err}")  # noqa: TRY400
         return 1
 
 

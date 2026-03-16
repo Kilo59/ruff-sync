@@ -742,14 +742,15 @@ async def fetch_upstreams_concurrently(
                     for url in upstream_list
                 ]
             return [t.result() for t in tasks]
-        except* Exception as eg:  # noqa: invalid-syntax
-            # Match exceptions back to their URLs
-            errors: list[tuple[URL, Exception]] = []
-            for i, t in enumerate(tasks):
-                if t.done():
-                    exc = t.exception()
-                    if isinstance(exc, Exception):
-                        errors.append((upstream_list[i], exc))
+        except Exception as eg:
+            # TODO: Use `except*` once Python 3.11+ is the minimum supported version.
+            # On Python 3.11+, TaskGroup raises an ExceptionGroup.
+            # Catching it as Exception is safe and compatible with Python 3.10 syntax.
+            errors = [
+                (upstream_list[i], t.exception())
+                for i, t in enumerate(tasks)
+                if t.done() and isinstance(t.exception(), Exception)
+            ]
             if errors:
                 raise UpstreamError(errors) from eg
             raise
