@@ -102,33 +102,59 @@ pip install ruff-sync
 
 ### Usage
 
+**The Basic Sync**
+
 ```console
-# Sync from a GitHub/GitLab repository (root or specific directory)
-ruff-sync https://github.com/my-org/standards
-ruff-sync https://github.com/my-org/standards/tree/main/configs/shared
+# Pull rules from a central repository into your current project
+ruff-sync pull https://github.com/my-org/standards
+```
 
-# Or a direct blob/file URL (auto-converts to raw)
-ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
+**Persistent Configuration**
 
-# Clone from any git repository (using SSH or HTTP, defaults to --depth 1)
-# You can use the --branch flag to specify a branch (default: main)
-ruff-sync git@github.com:my-org/standards.git
-ruff-sync ssh://git@gitlab.com/my-org/standards.git
+```console
+# If configured in pyproject.toml (see Configuration), simply run:
+ruff-sync pull
+```
 
-# Or if configured in pyproject.toml (see Configuration), simply run:
-ruff-sync
+**Initializing a New Project**
 
+```console
+# Scaffold a new pyproject.toml if your directory is empty
+ruff-sync pull https://github.com/my-org/standards --init
+```
+
+**Syncing Subdirectories or Specific Files**
+
+```console
+ruff-sync pull https://github.com/my-org/standards/tree/main/configs/shared
+ruff-sync pull https://github.com/my-org/standards/blob/main/pyproject.toml
+```
+
+**Using Git (SSH/HTTP)**
+
+```console
+# Clones efficiently (depth 1, blob:none) to extract the config
+ruff-sync pull git@github.com:my-org/standards.git
+```
+
+**Excluding Specific Rules**
+
+```console
 # Exclude specific sections from being overwritten using dotted paths
-ruff-sync --exclude lint.per-file-ignores lint.ignore
+ruff-sync pull --exclude lint.ignore
+```
 
-# Check if your local config is in sync (useful in CI)
+**Checking for Drift (CI)**
+
+```console
+# Verify local config matches upstream. Exits 1 if out of sync.
 ruff-sync check https://github.com/my-org/standards
 
-# Semantic check — ignore cosmetic differences like comments and whitespace
+# Semantic check — ignores cosmetic differences like comments and whitespace
 ruff-sync check --semantic
 ```
 
-Run `ruff-sync --help` for full details on all available options.
+See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for more detailed examples and advanced workflows.
 
 ## Key Features
 

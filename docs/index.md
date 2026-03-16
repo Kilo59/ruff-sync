@@ -13,11 +13,13 @@
 ## 🚀 Key Features
 
 * **⚡ Fast & Lightweight**: Zero-config needed for most projects.
-* **✨ Formatting Preserved**: Uses `tomlkit` to keep your comments, indentation, and whitespace exactly as they are.
-* **🛡️ Smart Merging**: Safely merges nested tables (like `lint.per-file-ignores`) without overwriting local overrides.
+* **✨ Formatting Preserved**: Keeps all comments and whitespace via `tomlkit`.
+* **🛡️ Smart Merging**: Safely merges nested tables without overwriting local overrides.
 * **📂 Upstream Layers**: Combine and merge configurations from several sources sequentially.
-* **🔗 Flexible Sources**: Sync from GitHub, GitLab, raw URLs, or local files.
-* **✅ CI Ready**: Built-in `check` command with semantic diffs for automated pipelines.
+* **🌐 Flexible Sources**: Sync from GitHub, GitLab, raw URLs, or local files.
+* **📥 Efficient Git Support**: Shallow clones and sparse checkouts for fast extraction.
+* **🚀 Zero-Config Bootstrapping**: Use `--init` to scaffold a new project in one command.
+* **✅ CI Ready**: Built-in `check` command with semantic comparison logic.
 
 ---
 
@@ -38,16 +40,26 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 
 ## 🏁 Quick Start
 
-### 1. Configure your project
+### 1. Initialize a new project (Optional)
 
-Add the upstream URL to your `pyproject.toml`:
+If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:
+
+```bash
+uv run ruff-sync pull https://github.com/my-org/standards --init
+```
+
+### 2. Configure an existing project
+
+Add the upstream URL to your `pyproject.toml` to make it the default:
 
 ```toml
 [tool.ruff-sync]
 upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 ```
 
-### 2. Pull the configuration
+### 3. Pull the configuration
+
+Once configured, simply run:
 
 ```bash
 uv run ruff-sync pull

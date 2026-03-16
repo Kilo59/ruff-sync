@@ -7,6 +7,7 @@ repos:
       - id: check-yaml
         args: ["--unsafe"]
         exclude: .agents/skills/mkdocs-generation/templates/mkdocs.yml
+      - id: check-toml
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: no-commit-to-branch
