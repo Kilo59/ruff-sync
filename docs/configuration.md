@@ -60,15 +60,18 @@ exclude = ["target-version"]
 
 #### Sequential merging of multiple sources
 
-You can specify multiple upstream sources as a list. They will be merged in order, with later sources overriding earlier ones.
+You can specify multiple upstream sources as a list. They will be merged in order—from top to bottom—with later sources overriding or extending earlier ones.
 
 ```toml
 [tool.ruff-sync]
 upstream = [
-    "https://github.com/my-org/shared-config",
-    "https://github.com/my-org/team-overrides",
+    "https://github.com/my-org/shared-config",  # 1. Base rules
+    "https://github.com/my-org/team-overrides", # 2. Team-specific tweaks (wins)
 ]
 ```
+
+!!! tip "Last One Wins"
+    The merge logic follows a "last one wins" approach for simple keys (like `line-length`), while performing a deep merge for configuration tables like `lint.per-file-ignores`.
 
 ## Deprecation Notes
 
