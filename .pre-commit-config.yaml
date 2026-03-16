@@ -2,40 +2,68 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: check-ast
-      - id: check-json
-      - id: check-yaml
+      - id: check-ast              # validates Python syntax before committing
+      - id: check-json             # validates JSON file structure
+      - id: check-yaml             # validates YAML file structure
         args: ["--unsafe"]
         exclude: .agents/skills/mkdocs-generation/templates/mkdocs.yml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: no-commit-to-branch
+      - id: check-toml             # validates pyproject.toml and other TOML files
+      - id: check-merge-conflict   # blocks files that still have <<< merge conflict markers
+      - id: check-added-large-files  # prevents files over 1MB from being committed
+        args: ["--maxkb=1024"]
+      - id: check-case-conflict    # catches filename casing issues across Windows/Mac/Linux
+      - id: detect-private-key     # blocks accidental commit of SSH keys and API secrets
+      - id: mixed-line-ending      # enforces LF line endings for cross-platform consistency
+        args: ["--fix=lf"]
+      - id: end-of-file-fixer      # ensures every file ends with a newline
+      - id: trailing-whitespace    # removes trailing whitespace from all lines
+      - id: no-commit-to-branch    # prevents direct commits to develop and main branches
         args: [--branch, develop, --branch, main]
+
+  # Ruff: fast Python linter and formatter (replaces flake8, isort, black)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.15.5"
     hooks:
-      - id: ruff-check
+      - id: ruff-check             # lints Python code and auto-fixes where possible
         args: ["--fix"]
-      - id: ruff-format
+      - id: ruff-format            # formats Python code consistently
+
+  # Prettier: opinionated formatter for YAML, JSON, and Markdown
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        types_or: [yaml, json]
+        types_or: [yaml, json, markdown]   # formats all three file types
         exclude: .agents/skills/mkdocs-generation/templates/mkdocs.yml
+
+  # Actionlint: static analysis for GitHub Actions workflow files
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.11
     hooks:
       - id: actionlint
         exclude: .github/workflows/complexity.yaml
+
+  # Conventional Commits: enforces structured commit messages like feat:, fix:, chore:
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]       # runs only on the commit message stage
+        args: [feat, fix, docs, style, refactor, test, chore, ci, build]
+
+  # Gitleaks: scans for hardcoded secrets, tokens, and credentials
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+
 # https://pre-commit.ci/
 ci:
   autofix_commit_msg: |
     [pre-commit.ci] auto fixes from pre-commit.com hooks
-
     for more information, see https://pre-commit.ci
-  autofix_prs: true
-  autoupdate_branch: "main"
+  autofix_prs: true              # automatically opens a PR with fixes
+  autoupdate_branch: "main"      # targets main branch for dependency updates
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
-  autoupdate_schedule: weekly
-  submodules: false
+  autoupdate_schedule: weekly    # checks for hook version updates every week
+  submodules: false              # does not run hooks inside git submodules
