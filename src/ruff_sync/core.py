@@ -714,19 +714,16 @@ async def fetch_upstreams_concurrently(
     """
     if sys.version_info >= (3, 11):
         # Use structured concurrency on Python 3.11+
-        results: list[FetchResult | None] = [None] * len(list(upstreams))
         async with asyncio.TaskGroup() as tg:
-            for i, url in enumerate(upstreams):
-
-                async def _fetch_and_store(idx: int, u: URL) -> None:
-                    results[idx] = await fetch_upstream_config(u, client, branch, path)
-
-                tg.create_task(_fetch_and_store(i, url))
-        return cast("list[FetchResult]", results)
+            tasks = [
+                tg.create_task(fetch_upstream_config(url, client, branch, path))
+                for url in upstreams
+            ]
+        return [t.result() for t in tasks]
 
     # Fallback for Python 3.10
-    tasks = [fetch_upstream_config(url, client, branch, path) for url in upstreams]
-    return list(await asyncio.gather(*tasks))
+    fetch_tasks = [fetch_upstream_config(url, client, branch, path) for url in upstreams]
+    return list(await asyncio.gather(*fetch_tasks))
 
 
 async def _merge_multiple_upstreams(
