@@ -40,6 +40,7 @@ __all__: Final[list[str]] = [
     "Config",
     "FetchResult",
     "RuffConfigFileName",
+    "UpstreamError",
     "check",
     "fetch_upstream_config",
     "fetch_upstreams_concurrently",
@@ -91,6 +92,21 @@ class FetchResult(NamedTuple):
 
     buffer: StringIO
     resolved_upstream: URL
+
+
+class UpstreamError(Exception):
+    """Raised when one or more upstream fetches fail.
+
+    Attributes:
+        errors: A list of tuples containing the URL and the Exception that occurred.
+    """
+
+    def __init__(self, errors: list[tuple[URL, Exception]]) -> None:
+        """Initialize UpstreamError with a list of fetch failures."""
+        self.errors = errors
+        error_count = len(errors)
+        msg = f"❌ {error_count} upstream fetch{'es' if error_count > 1 else ''} failed"
+        super().__init__(msg)
 
 
 class Config(TypedDict, total=False):
@@ -711,19 +727,45 @@ async def fetch_upstreams_concurrently(
 
     Returns:
         A list of FetchResult objects in the same order as the input upstreams.
+
+    Raises:
+        UpstreamError: If one or more upstreams fail to fetch.
     """
+    upstream_list = list(upstreams)
     if sys.version_info >= (3, 11):
         # Use structured concurrency on Python 3.11+
-        async with asyncio.TaskGroup() as tg:
-            tasks = [
-                tg.create_task(fetch_upstream_config(url, client, branch, path))
-                for url in upstreams
-            ]
-        return [t.result() for t in tasks]
+        tasks: list[asyncio.Task[FetchResult]] = []
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tasks = [
+                    tg.create_task(fetch_upstream_config(url, client, branch, path))
+                    for url in upstream_list
+                ]
+            return [t.result() for t in tasks]
+        except* Exception as eg:  # noqa: invalid-syntax
+            # Match exceptions back to their URLs
+            errors: list[tuple[URL, Exception]] = []
+            for i, t in enumerate(tasks):
+                if t.done():
+                    exc = t.exception()
+                    if isinstance(exc, Exception):
+                        errors.append((upstream_list[i], exc))
+            if errors:
+                raise UpstreamError(errors) from eg
+            raise
+    else:
+        # Fallback for Python 3.10
+        fetch_tasks = [fetch_upstream_config(url, client, branch, path) for url in upstream_list]
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
-    # Fallback for Python 3.10
-    fetch_tasks = [fetch_upstream_config(url, client, branch, path) for url in upstreams]
-    return list(await asyncio.gather(*fetch_tasks))
+        errors_list = [
+            (upstream_list[i], res) for i, res in enumerate(results) if isinstance(res, Exception)
+        ]
+        if errors_list:
+            raise UpstreamError(errors_list)
+
+        # Type-safe return without cast
+        return [r for r in results if isinstance(r, FetchResult)]
 
 
 async def _merge_multiple_upstreams(
