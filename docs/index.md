@@ -38,16 +38,26 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 
 ## 🏁 Quick Start
 
-### 1. Configure your project
+### 1. Initialize a new project (Optional)
 
-Add the upstream URL to your `pyproject.toml`:
+If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:
+
+```bash
+uv run ruff-sync pull https://github.com/my-org/standards --init
+```
+
+### 2. Configure an existing project
+
+Add the upstream URL to your `pyproject.toml` to make it the default:
 
 ```toml
 [tool.ruff-sync]
 upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 ```
 
-### 2. Pull the configuration
+### 3. Pull the configuration
+
+Once configured, simply run:
 
 ```bash
 uv run ruff-sync pull

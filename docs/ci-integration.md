@@ -87,6 +87,12 @@ See the [Pre-commit Guide](pre-commit.md) for details on using the official hook
 
 In CI, you usually only care about the functional configuration. Using `--semantic` ensures that minor formatting changes don't break your builds, while still guaranteeing that the actual rules are identical.
 
+### Handle Exclusions Properly
+
+If your project intentionally diverges from the upstream (e.g., using different `per-file-ignores` or ignoring a specific rule), ensure those overrides are listed in the `[tool.ruff-sync]` `exclude` list in your `pyproject.toml`.
+
+The `check` command respects your local `exclude` list. If you exclude a setting, `ruff-sync check` will completely ignore it when comparing against the upstream, ensuring that intended deviations never cause CI to fail!
+
 ### Use a Dedicated Workflow
 
 Running `ruff-sync` as a separate job in your linting workflow makes it easy to identify when a failure is due to configuration drift rather than a code quality issue.
