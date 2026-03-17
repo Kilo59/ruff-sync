@@ -16,12 +16,17 @@ import respx
 import tomlkit
 from httpx import URL
 from pytest import param
-from tomlkit import TOMLDocument
+from tomlkit import TOMLDocument, document
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
+from ruff_sync.core import (
+    UpstreamError,
+    _merge_multiple_upstreams,
+    fetch_upstreams_concurrently,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Sequence
@@ -658,6 +663,169 @@ def test_ruff_config_file_name_equality() -> None:
     assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"
     assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"
     assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML
+
+
+@pytest.mark.asyncio
+async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.Router):
+    """Verify that multiple upstreams are merged in the given order."""
+    # Setup mock data
+    target_doc = document()
+
+    args = ruff_sync.Arguments(
+        command="pull",
+        upstream=(URL("http://one.toml"), URL("http://two.toml")),
+        to=pathlib.Path(),
+        exclude=[],
+        verbose=0,
+        branch="main",
+        path="",
+    )
+
+    # Mock HTTP responses using respx
+    respx_mock.get("http://one.toml").return_value = httpx.Response(
+        200, text="[tool.ruff]\nline-length = 80"
+    )
+    respx_mock.get("http://two.toml").return_value = httpx.Response(
+        200, text="[tool.ruff]\nline-length = 100"
+    )
+
+    async with httpx.AsyncClient() as client:
+        result_doc = await _merge_multiple_upstreams(target_doc, False, args, client)
+
+        # Verify both URLs were fetched
+        assert respx_mock.get("http://one.toml").called
+        assert respx_mock.get("http://two.toml").called
+
+        # Verify the sequential merge result (the last one wins for specific keys)
+        ruff_config = result_doc.get("tool", {}).get("ruff", {})
+        assert ruff_config.get("line-length") == 100
+
+
+@pytest.mark.asyncio
+async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.Router):
+    """Verify that fetch_upstreams_concurrently actually runs tasks in parallel."""
+    events = []
+
+    async def side_effect_one(request: httpx.Request) -> httpx.Response:
+        events.append("start_one")
+        await asyncio.sleep(0.05)
+        events.append("end_one")
+        return httpx.Response(200, text="[tool.ruff]\n")
+
+    async def side_effect_two(request: httpx.Request) -> httpx.Response:
+        events.append("start_two")
+        await asyncio.sleep(0.05)
+        events.append("end_two")
+        return httpx.Response(200, text="[tool.ruff]\n")
+
+    respx_mock.get("http://one.toml").mock(side_effect=side_effect_one)
+    respx_mock.get("http://two.toml").mock(side_effect=side_effect_two)
+
+    async with httpx.AsyncClient() as client:
+        loop = asyncio.get_running_loop()
+        start_time = loop.time()
+        await fetch_upstreams_concurrently([URL("http://one.toml"), URL("http://two.toml")], client)
+        elapsed = loop.time() - start_time
+        # Two 0.05s sleeps (one per upstream) should overlap if run concurrently,
+        # so total runtime should be clearly less than their sum.
+        assert elapsed < 0.08
+
+    # We don't assume a specific global ordering, only concurrency properties.
+
+    # 1) All four events (two starts, two ends) should be present.
+    assert len(events) == 4
+
+    # Group events by their "stream id" (suffix after the first underscore).
+    # This assumes events look like "start_<id>" / "end_<id>".
+    per_stream: dict[str, dict[str, int]] = {}
+    for idx, event in enumerate(events):
+        kind, _, stream_id = event.partition("_")
+        assert kind in {"start", "end"}
+        assert stream_id, f"event {event!r} does not contain a stream id"
+        per_stream.setdefault(stream_id, {})[kind] = idx
+
+    # We expect exactly two streams, each with a start and an end.
+    assert len(per_stream) == 2
+    for stream_id, positions in per_stream.items():
+        assert "start" in positions and "end" in positions, (
+            f"stream {stream_id!r} did not record both start and end events"
+        )
+        # 2) Each start must happen before its corresponding end.
+        assert positions["start"] < positions["end"]
+
+
+@pytest.mark.asyncio
+async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router):
+    target_doc = document()
+
+    args = ruff_sync.Arguments(
+        command="pull",
+        upstream=(URL("http://ok.toml"), URL("http://fail.toml")),
+        to=pathlib.Path(),
+        exclude=[],
+        verbose=0,
+        branch="main",
+        path="",
+    )
+
+    # Mock HTTP responses using respx
+    respx_mock.get("http://ok.toml").return_value = httpx.Response(
+        200, text="[tool.ruff]\nline-length = 80"
+    )
+    respx_mock.get("http://fail.toml").return_value = httpx.Response(404)
+
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(UpstreamError) as excinfo:
+            await _merge_multiple_upstreams(target_doc, False, args, client)
+
+        assert len(excinfo.value.errors) == 1
+        url, err = excinfo.value.errors[0]
+        assert str(url) == "http://fail.toml"
+        assert isinstance(err, httpx.HTTPStatusError)
+
+
+def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Ensure UpstreamError from a failed fetch surfaces as exit code 1 with logged failures."""
+    # Successful upstream
+    respx_mock.get("http://ok.toml").respond(
+        status_code=200,
+        text="[tool.ruff]\nline-length = 88\n",
+    )
+    # Failing upstream
+    respx_mock.get("http://fail.toml").respond(status_code=404)
+
+    # Patch sys.argv to simulate CLI call
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "pull",
+            "http://ok.toml",
+            "http://fail.toml",
+            "--to",
+            ".",
+        ],
+    )
+
+    # Mock get_config to avoid reading from the real filesystem
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke the CLI entry point
+    exit_code = ruff_sync.main()
+
+    assert exit_code == 1
+
+    captured = capsys.readouterr()
+    combined_output = captured.out + captured.err
+
+    # Assert that the failing upstream is mentioned in the logs
+    assert "http://fail.toml" in combined_output
+    assert "Failed to fetch" in combined_output
 
 
 if __name__ == "__main__":

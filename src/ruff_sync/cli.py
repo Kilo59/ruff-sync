@@ -30,6 +30,7 @@ from typing_extensions import deprecated
 from ruff_sync.core import (
     Config,
     RuffConfigFileName,
+    UpstreamError,
     check,
     pull,
     resolve_raw_url,
@@ -421,9 +422,14 @@ def main() -> int:
         init=getattr(args, "init", False),
     )
 
-    if exec_args.command == "check":
-        return asyncio.run(check(exec_args))
-    return asyncio.run(pull(exec_args))
+    try:
+        if exec_args.command == "check":
+            return asyncio.run(check(exec_args))
+        return asyncio.run(pull(exec_args))
+    except UpstreamError as e:
+        for url, err in e.errors:
+            LOGGER.error(f"❌ Failed to fetch {url}: {err}")  # noqa: TRY400
+        return 1
 
 
 if __name__ == "__main__":

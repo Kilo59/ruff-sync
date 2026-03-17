@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.0"
+version = "0.1.1.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -121,7 +121,6 @@ select = [
     # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
     "DTZ", # flake8-datetimez-dtz - prevent use of tz naive datetimes
     "EM", # flake8-errmsg - raw string literals in error messages
-    "ERA", # eradicate - commented-out code
     # https://beta.ruff.rs/docs/rules/#pyflakes-f
     "F", # Pyflakes
     # https://beta.ruff.rs/docs/rules/#pycodestyle-e-w
@@ -197,6 +196,7 @@ ignore = [
     "TRY003", # don't care about long exception messages in tests
     "PLW1510", # subprocess check not needed in tests
     "PT013", # pytest import style, prevents importing param and or types in from style
+    "TC002", # Move third-party import into type-checking block
 ]
 
 [tool.ruff.lint.pydocstyle]

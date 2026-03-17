@@ -46,6 +46,30 @@ Use the `--exclude` flag to keep your local settings:
 ruff-sync pull --exclude lint.line-length
 ```
 
+### Multi-upstream Fetch Failures
+
+**Error**: `❌ <N> upstream fetches failed`
+
+This happens when one or more of the specified upstream URLs cannot be reached, do not exist, or return an error (e.g., 404 or 403). `ruff-sync` fetches all upstreams concurrently for speed, but requires ALL of them to succeed before it will attempt to merge.
+
+**Solution**:
+1. Check each URL in the terminal output to see which specific one failed.
+2. Verify you have network access and the correct permissions for each source.
+3. If an HTTP source is blocked or private, consider using a Git SSH URL instead.
+
+### Git SSH Workaround for Fetch Errors
+
+If you see an HTTP `403 Forbidden` or `404 Not Found` when trying to fetch from GitHub or GitLab, it might be due to authentication requirements.
+
+**Solution**:
+Use the git-clone alternative suggested in the error message:
+
+```bash
+ruff-sync pull git@github.com:org/repo.git
+```
+
+This uses your local SSH keys and is often more reliable for internal or private repositories.
+
 ## FAQ
 
 ### Does it support `ruff.toml`?

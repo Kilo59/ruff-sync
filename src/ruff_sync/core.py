@@ -40,8 +40,10 @@ __all__: Final[list[str]] = [
     "Config",
     "FetchResult",
     "RuffConfigFileName",
+    "UpstreamError",
     "check",
     "fetch_upstream_config",
+    "fetch_upstreams_concurrently",
     "get_ruff_config",
     "get_ruff_tool_table",
     "is_ruff_toml_file",
@@ -90,6 +92,21 @@ class FetchResult(NamedTuple):
 
     buffer: StringIO
     resolved_upstream: URL
+
+
+class UpstreamError(Exception):
+    """Raised when one or more upstream fetches fail.
+
+    Attributes:
+        errors: A tuple of tuples containing the URL and the BaseException that occurred.
+    """
+
+    def __init__(self, errors: Iterable[tuple[URL, BaseException]]) -> None:
+        """Initialize UpstreamError with a list of fetch failures."""
+        self.errors: Final[tuple[tuple[URL, BaseException], ...]] = tuple(errors)
+        error_count = len(self.errors)
+        msg = f"❌ {error_count} upstream fetch{'es' if error_count > 1 else ''} failed"
+        super().__init__(msg)
 
 
 class Config(TypedDict, total=False):
@@ -691,17 +708,94 @@ def merge_ruff_toml(
     return source
 
 
+async def fetch_upstreams_concurrently(
+    upstreams: Iterable[URL],
+    client: httpx.AsyncClient,
+    branch: str = "main",
+    path: str | None = None,
+) -> list[FetchResult]:
+    """Fetch multiple upstream configurations concurrently.
+
+    Uses asyncio.TaskGroup if available (Python 3.11+), otherwise falls
+    back to asyncio.gather.
+
+    Args:
+        upstreams: The URLs to fetch.
+        client: The HTTPX async client to use.
+        branch: The default branch for repo-root URLs.
+        path: The directory prefix for pyproject.toml in repo-root URLs.
+
+    Returns:
+        A list of FetchResult objects in the same order as the input upstreams.
+
+    Raises:
+        UpstreamError: If one or more upstreams fail to fetch.
+    """
+    upstream_list = list(upstreams)
+    if sys.version_info >= (3, 11):
+        # Use structured concurrency on Python 3.11+
+        tasks: list[asyncio.Task[FetchResult]] = []
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tasks = [
+                    tg.create_task(fetch_upstream_config(url, client, branch, path))
+                    for url in upstream_list
+                ]
+            return [t.result() for t in tasks]
+        except BaseException as eg:
+            if isinstance(eg, (asyncio.CancelledError, KeyboardInterrupt)):
+                raise
+            # TODO: Use `except*` once Python 3.11+ is the minimum supported version.
+            # On Python 3.11+, TaskGroup raises an ExceptionGroup.
+            # Catching it as Exception is safe and compatible with Python 3.10 syntax.
+            errors = [
+                (upstream_list[i], t.exception())
+                for i, t in enumerate(tasks)
+                if t.done() and t.exception() is not None
+            ]
+            if errors:
+                raise UpstreamError(errors) from eg
+            raise
+    else:
+        # Fallback for Python 3.10
+        fetch_tasks = [fetch_upstream_config(url, client, branch, path) for url in upstream_list]
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+
+        errors_list: list[tuple[URL, BaseException]] = []
+        fetch_results: list[FetchResult] = []
+
+        for i, res in enumerate(results):
+            if isinstance(res, BaseException):
+                errors_list.append((upstream_list[i], res))
+            elif isinstance(res, FetchResult):
+                fetch_results.append(res)
+            else:
+                msg = f"Unexpected result type from fetch: {type(res)}"
+                raise TypeError(msg)
+
+        if errors_list:
+            raise UpstreamError(errors_list)
+
+        return fetch_results
+
+
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
     args: Arguments,
     client: httpx.AsyncClient,
 ) -> TOMLDocument:
-    """Sequentially fetch and merge all upstreams into the target document."""
-    for upstream_url in args.upstream:
-        fetch_result = await fetch_upstream_config(
-            upstream_url, client, branch=args.branch, path=args.path
-        )
+    """Fetch and merge all upstreams into the target document.
+
+    Downloads are performed concurrently via fetch_upstreams_concurrently,
+    while merging remains sequential to preserve layering order.
+    """
+    fetch_results = await fetch_upstreams_concurrently(
+        args.upstream, client, branch=args.branch, path=args.path
+    )
+
+    # Sequentially merge the results in the original order
+    for fetch_result in fetch_results:
         LOGGER.info(f"Loaded upstream file from {fetch_result.resolved_upstream}")
 
         is_upstream_ruff_toml = is_ruff_toml_file(fetch_result.resolved_upstream)

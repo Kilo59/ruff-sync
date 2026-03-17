@@ -109,7 +109,7 @@ Downloads the upstream configuration and merges it into your local file.
 ruff-sync pull [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
 ```
 
-* **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local `[tool.ruff-sync]` config. Multiple URLs form a fallback/merge chain.
+* **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local `[tool.ruff-sync]` config. Multiple URLs form a fallback/merge chain. All upstreams are fetched **concurrently**, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.
 * **`--to PATH`**: Where to save the merged config (defaults to the current directory `.`).
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist.
@@ -134,24 +134,12 @@ The following diagram illustrates how `ruff-sync` handles the synchronization pr
 
 ```mermaid
 graph TD
-    A[Start] --> B{Upstream URL provided?}
-    B -- No --> C[Read from pyproject.toml]
-    B -- Yes --> D[Use provided URL]
-    C --> E{Upstream URL found?}
-    D --> F[Identify Source Type]
-    E -- No --> G[Error: Upstream Required]
-    E -- Yes --> F
-    F -- GitHub/GitLab URL --> H[Convert to Raw URL]
-    F -- Git SSH URL --> I[Git Clone / Sparse Checkout]
-    F -- Other URL --> J[Direct HTTP Download]
-    H --> K[Download Content]
-    J --> K
-    I --> L[Extract tool.ruff]
-    K --> L
-    L --> M[Apply Exclusions]
-    M --> N[Merge into in-memory TOML]
-    N --> Loop{More Upstreams?}
-    Loop -- Yes --> F
-    Loop -- No --> O[Save File]
-    O --> P[End]
+    A[Start] --> B[Resolve all Upstream URLs]
+    B --> C[Fetch all Upstreams Concurrently]
+    C --> D{Any Failures?}
+    D -- Yes --> E[Raise UpstreamError]
+    D -- No --> F[Initialize Target Doc]
+    F --> G[Merge Upstreams Sequentially]
+    G --> H[Save Final Configuration]
+    H --> I[End]
 ```
