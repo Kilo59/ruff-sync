@@ -741,6 +741,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#multi-upstream-fetch-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-upstream Fetch Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#git-ssh-workaround-for-fetch-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Git SSH Workaround for Fetch Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1088,6 +1110,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#multi-upstream-fetch-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-upstream Fetch Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#git-ssh-workaround-for-fetch-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Git SSH Workaround for Fetch Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1201,6 +1245,20 @@ The <code>check</code> command expects a local <code>pyproject.toml</code>, <cod
 Use the <code>--exclude</code> flag to keep your local settings:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>--exclude<span class="w"> </span>lint.line-length
 </span></code></pre></div>
+<h3 id="multi-upstream-fetch-failures">Multi-upstream Fetch Failures<a class="headerlink" href="#multi-upstream-fetch-failures" title="Permanent link">&para;</a></h3>
+<p><strong>Error</strong>: <code>❌ &lt;N&gt; upstream fetches failed</code></p>
+<p>This happens when one or more of the specified upstream URLs cannot be reached, do not exist, or return an error (e.g., 404 or 403). <code>ruff-sync</code> fetches all upstreams concurrently for speed, but requires ALL of them to succeed before it will attempt to merge.</p>
+<p><strong>Solution</strong>:
+1. Check each URL in the terminal output to see which specific one failed.
+2. Verify you have network access and the correct permissions for each source.
+3. If an HTTP source is blocked or private, consider using a Git SSH URL instead.</p>
+<h3 id="git-ssh-workaround-for-fetch-errors">Git SSH Workaround for Fetch Errors<a class="headerlink" href="#git-ssh-workaround-for-fetch-errors" title="Permanent link">&para;</a></h3>
+<p>If you see an HTTP <code>403 Forbidden</code> or <code>404 Not Found</code> when trying to fetch from GitHub or GitLab, it might be due to authentication requirements.</p>
+<p><strong>Solution</strong>:
+Use the git-clone alternative suggested in the error message:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>git@github.com:org/repo.git
+</span></code></pre></div>
+<p>This uses your local SSH keys and is often more reliable for internal or private repositories.</p>
 <h2 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h2>
 <h3 id="does-it-support-rufftoml">Does it support <code>ruff.toml</code>?<a class="headerlink" href="#does-it-support-rufftoml" title="Permanent link">&para;</a></h3>
 <p>Yes, <code>ruff-sync</code> automatically detects and supports <code>pyproject.toml</code>, <code>ruff.toml</code>, and <code>.ruff.toml</code>.</p>

@@ -1209,8 +1209,8 @@ For a full list of configuration options, see the <a href="../configuration/">Co
 <h2 id="why-use-ruff-sync-check">Why use <code>ruff-sync-check</code>?<a class="headerlink" href="#why-use-ruff-sync-check" title="Permanent link">&para;</a></h2>
 <p>Running <code>ruff-sync check</code> in pre-commit is fast because:</p>
 <ol>
-<li>It only checks the <code>[tool.ruff]</code> section.</li>
-<li>It uses caching (if configured via HTTP headers).</li>
+<li>It only checks the <code>[tool.ruff]</code> section of the configuration.</li>
+<li>It minimizes network overhead by only fetching exactly what it needs (e.g., using direct HTTP requests for single files or partial git cloning for repositories).</li>
 <li>By default, it uses <code>--semantic</code> to ignore formatting-only differences, reducing false positives.</li>
 </ol>
 <p>For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see <a href="../usage/#advanced-usage">Advanced Usage</a>.</p>

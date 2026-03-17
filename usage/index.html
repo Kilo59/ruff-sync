@@ -1377,7 +1377,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span>
 </span></code></pre></div>
 <ul>
-<li><strong><code>UPSTREAM_URL...</code></strong>: One or more URLs to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local <code>[tool.ruff-sync]</code> config. Multiple URLs form a fallback/merge chain.</li>
+<li><strong><code>UPSTREAM_URL...</code></strong>: One or more URLs to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local <code>[tool.ruff-sync]</code> config. Multiple URLs form a fallback/merge chain. All upstreams are fetched <strong>concurrently</strong>, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.</li>
 <li><strong><code>--to PATH</code></strong>: Where to save the merged config (defaults to the current directory <code>.</code>).</li>
 <li><strong><code>--exclude KEY...</code></strong>: Dotted paths of keys to keep local and never overwrite (e.g., <code>lint.isort</code>).</li>
 <li><strong><code>--init</code></strong>: Create a new <code>pyproject.toml</code> with the upstream configuration if it doesn't already exist.</li>
@@ -1395,26 +1395,14 @@
 <h2 id="logic-flow">🗺️ Logic Flow<a class="headerlink" href="#logic-flow" title="Permanent link">&para;</a></h2>
 <p>The following diagram illustrates how <code>ruff-sync</code> handles the synchronization process under the hood:</p>
 <pre class="mermaid"><code>graph TD
-    A[Start] --&gt; B{Upstream URL provided?}
-    B -- No --&gt; C[Read from pyproject.toml]
-    B -- Yes --&gt; D[Use provided URL]
-    C --&gt; E{Upstream URL found?}
-    D --&gt; F[Identify Source Type]
-    E -- No --&gt; G[Error: Upstream Required]
-    E -- Yes --&gt; F
-    F -- GitHub/GitLab URL --&gt; H[Convert to Raw URL]
-    F -- Git SSH URL --&gt; I[Git Clone / Sparse Checkout]
-    F -- Other URL --&gt; J[Direct HTTP Download]
-    H --&gt; K[Download Content]
-    J --&gt; K
-    I --&gt; L[Extract tool.ruff]
-    K --&gt; L
-    L --&gt; M[Apply Exclusions]
-    M --&gt; N[Merge into in-memory TOML]
-    N --&gt; Loop{More Upstreams?}
-    Loop -- Yes --&gt; F
-    Loop -- No --&gt; O[Save File]
-    O --&gt; P[End]</code></pre>
+    A[Start] --&gt; B[Resolve all Upstream URLs]
+    B --&gt; C[Fetch all Upstreams Concurrently]
+    C --&gt; D{Any Failures?}
+    D -- Yes --&gt; E[Raise UpstreamError]
+    D -- No --&gt; F[Initialize Target Doc]
+    F --&gt; G[Merge Upstreams Sequentially]
+    G --&gt; H[Save Final Configuration]
+    H --&gt; I[End]</code></pre>
 
 
 
