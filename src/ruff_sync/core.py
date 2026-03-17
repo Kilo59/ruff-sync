@@ -742,7 +742,9 @@ async def fetch_upstreams_concurrently(
                     for url in upstream_list
                 ]
             return [t.result() for t in tasks]
-        except Exception as eg:
+        except BaseException as eg:
+            if isinstance(eg, (asyncio.CancelledError, KeyboardInterrupt)):
+                raise
             # TODO: Use `except*` once Python 3.11+ is the minimum supported version.
             # On Python 3.11+, TaskGroup raises an ExceptionGroup.
             # Catching it as Exception is safe and compatible with Python 3.10 syntax.

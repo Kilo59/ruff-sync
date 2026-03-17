@@ -722,12 +722,36 @@ async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.Router):
     respx_mock.get("http://two.toml").mock(side_effect=side_effect_two)
 
     async with httpx.AsyncClient() as client:
+        loop = asyncio.get_running_loop()
+        start_time = loop.time()
         await fetch_upstreams_concurrently([URL("http://one.toml"), URL("http://two.toml")], client)
+        elapsed = loop.time() - start_time
+        # Two 0.05s sleeps (one per upstream) should overlap if run concurrently,
+        # so total runtime should be clearly less than their sum.
+        assert elapsed < 0.08
 
-    # If concurrent, both should start before either finishes
-    # Expected: ["start_one", "start_two", ...] or ["start_two", "start_one", ...]
-    assert events[0].startswith("start")
-    assert events[1].startswith("start")
+    # We don't assume a specific global ordering, only concurrency properties.
+
+    # 1) All four events (two starts, two ends) should be present.
+    assert len(events) == 4
+
+    # Group events by their "stream id" (suffix after the first underscore).
+    # This assumes events look like "start_<id>" / "end_<id>".
+    per_stream: dict[str, dict[str, int]] = {}
+    for idx, event in enumerate(events):
+        kind, _, stream_id = event.partition("_")
+        assert kind in {"start", "end"}
+        assert stream_id, f"event {event!r} does not contain a stream id"
+        per_stream.setdefault(stream_id, {})[kind] = idx
+
+    # We expect exactly two streams, each with a start and an end.
+    assert len(per_stream) == 2
+    for stream_id, positions in per_stream.items():
+        assert "start" in positions and "end" in positions, (
+            f"stream {stream_id!r} did not record both start and end events"
+        )
+        # 2) Each start must happen before its corresponding end.
+        assert positions["start"] < positions["end"]
 
 
 @pytest.mark.asyncio
