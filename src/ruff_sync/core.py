@@ -98,13 +98,13 @@ class UpstreamError(Exception):
     """Raised when one or more upstream fetches fail.
 
     Attributes:
-        errors: A list of tuples containing the URL and the Exception that occurred.
+        errors: A tuple of tuples containing the URL and the BaseException that occurred.
     """
 
-    def __init__(self, errors: list[tuple[URL, Exception]]) -> None:
+    def __init__(self, errors: Iterable[tuple[URL, BaseException]]) -> None:
         """Initialize UpstreamError with a list of fetch failures."""
-        self.errors = errors
-        error_count = len(errors)
+        self.errors: Final[tuple[tuple[URL, BaseException], ...]] = tuple(errors)
+        error_count = len(self.errors)
         msg = f"❌ {error_count} upstream fetch{'es' if error_count > 1 else ''} failed"
         super().__init__(msg)
 
@@ -749,7 +749,7 @@ async def fetch_upstreams_concurrently(
             errors = [
                 (upstream_list[i], t.exception())
                 for i, t in enumerate(tasks)
-                if t.done() and isinstance(t.exception(), Exception)
+                if t.done() and t.exception() is not None
             ]
             if errors:
                 raise UpstreamError(errors) from eg
@@ -759,14 +759,22 @@ async def fetch_upstreams_concurrently(
         fetch_tasks = [fetch_upstream_config(url, client, branch, path) for url in upstream_list]
         results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
-        errors_list = [
-            (upstream_list[i], res) for i, res in enumerate(results) if isinstance(res, Exception)
-        ]
+        errors_list: list[tuple[URL, BaseException]] = []
+        fetch_results: list[FetchResult] = []
+
+        for i, res in enumerate(results):
+            if isinstance(res, BaseException):
+                errors_list.append((upstream_list[i], res))
+            elif isinstance(res, FetchResult):
+                fetch_results.append(res)
+            else:
+                msg = f"Unexpected result type from fetch: {type(res)}"
+                raise TypeError(msg)
+
         if errors_list:
             raise UpstreamError(errors_list)
 
-        # Type-safe return without cast
-        return [r for r in results if isinstance(r, FetchResult)]
+        return fetch_results
 
 
 async def _merge_multiple_upstreams(

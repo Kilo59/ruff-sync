@@ -22,7 +22,11 @@ from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
-from ruff_sync.core import UpstreamError, _merge_multiple_upstreams
+from ruff_sync.core import (
+    UpstreamError,
+    _merge_multiple_upstreams,
+    fetch_upstreams_concurrently,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Sequence
@@ -662,7 +666,8 @@ def test_ruff_config_file_name_equality() -> None:
 
 
 @pytest.mark.asyncio
-async def test_merge_multiple_upstreams_is_concurrent(respx_mock: respx.Router):
+async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.Router):
+    """Verify that multiple upstreams are merged in the given order."""
     # Setup mock data
     target_doc = document()
 
@@ -694,6 +699,35 @@ async def test_merge_multiple_upstreams_is_concurrent(respx_mock: respx.Router):
         # Verify the sequential merge result (the last one wins for specific keys)
         ruff_config = result_doc.get("tool", {}).get("ruff", {})
         assert ruff_config.get("line-length") == 100
+
+
+@pytest.mark.asyncio
+async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.Router):
+    """Verify that fetch_upstreams_concurrently actually runs tasks in parallel."""
+    events = []
+
+    async def side_effect_one(request: httpx.Request) -> httpx.Response:
+        events.append("start_one")
+        await asyncio.sleep(0.05)
+        events.append("end_one")
+        return httpx.Response(200, text="[tool.ruff]\n")
+
+    async def side_effect_two(request: httpx.Request) -> httpx.Response:
+        events.append("start_two")
+        await asyncio.sleep(0.05)
+        events.append("end_two")
+        return httpx.Response(200, text="[tool.ruff]\n")
+
+    respx_mock.get("http://one.toml").mock(side_effect=side_effect_one)
+    respx_mock.get("http://two.toml").mock(side_effect=side_effect_two)
+
+    async with httpx.AsyncClient() as client:
+        await fetch_upstreams_concurrently([URL("http://one.toml"), URL("http://two.toml")], client)
+
+    # If concurrent, both should start before either finishes
+    # Expected: ["start_one", "start_two", ...] or ["start_two", "start_one", ...]
+    assert events[0].startswith("start")
+    assert events[1].startswith("start")
 
 
 @pytest.mark.asyncio
