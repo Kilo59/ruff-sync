@@ -76,9 +76,6 @@ You can use `ruff-sync` with `pre-commit` to ensure your configuration is always
 
 See the [Pre-commit Guide](pre-commit.md) for details on using the official hooks.
 
-!!! note
-    Running `ruff-sync check` in pre-commit is fast because it only performs a network request if the local `pyproject.toml` is older than the upstream or if no cache exists.
-
 ---
 
 ## 💡 Best Practices
