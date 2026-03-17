@@ -760,5 +760,49 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router)
         assert isinstance(err, httpx.HTTPStatusError)
 
 
+def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Ensure UpstreamError from a failed fetch surfaces as exit code 1 with logged failures."""
+    # Successful upstream
+    respx_mock.get("http://ok.toml").respond(
+        status_code=200,
+        text="[tool.ruff]\nline-length = 88\n",
+    )
+    # Failing upstream
+    respx_mock.get("http://fail.toml").respond(status_code=404)
+
+    # Patch sys.argv to simulate CLI call
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "pull",
+            "http://ok.toml",
+            "http://fail.toml",
+            "--to",
+            ".",
+        ],
+    )
+
+    # Mock get_config to avoid reading from the real filesystem
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke the CLI entry point
+    exit_code = ruff_sync.main()
+
+    assert exit_code == 1
+
+    captured = capsys.readouterr()
+    combined_output = captured.out + captured.err
+
+    # Assert that the failing upstream is mentioned in the logs
+    assert "http://fail.toml" in combined_output
+    assert "Failed to fetch" in combined_output
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
