@@ -18,6 +18,9 @@
 
 The `exclude` setting is powerful. It allows you to adopt most of an upstream configuration while keeping some parts specific to your repository.
 
+> [!TIP]
+> See [Strategic Exclusions](best-practices.md#use-strategic-exclusions) in our Best Practices guide for recommendations on what settings to keep local.
+
 Exclusions use dotted paths to target specific sections or keys.
 
 ### Examples

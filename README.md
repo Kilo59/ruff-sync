@@ -106,42 +106,42 @@ pip install ruff-sync
 
 ```console
 # Pull rules from a central repository into your current project
-ruff-sync pull https://github.com/my-org/standards
+ruff-sync https://github.com/my-org/standards
 ```
 
 **Persistent Configuration**
 
 ```console
 # If configured in pyproject.toml (see Configuration), simply run:
-ruff-sync pull
+ruff-sync
 ```
 
 **Initializing a New Project**
 
 ```console
 # Scaffold a new pyproject.toml if your directory is empty
-ruff-sync pull https://github.com/my-org/standards --init
+ruff-sync https://github.com/my-org/standards --init
 ```
 
 **Syncing Subdirectories or Specific Files**
 
 ```console
-ruff-sync pull https://github.com/my-org/standards/tree/main/configs/shared
-ruff-sync pull https://github.com/my-org/standards/blob/main/pyproject.toml
+ruff-sync https://github.com/my-org/standards/tree/main/configs/shared
+ruff-sync https://github.com/my-org/standards/blob/main/pyproject.toml
 ```
 
 **Using Git (SSH/HTTP)**
 
 ```console
 # Clones efficiently (depth 1, blob:none) to extract the config
-ruff-sync pull git@github.com:my-org/standards.git
+ruff-sync git@github.com:my-org/standards.git
 ```
 
 **Excluding Specific Rules**
 
 ```console
 # Exclude specific sections from being overwritten using dotted paths
-ruff-sync pull --exclude lint.ignore
+ruff-sync --exclude lint.ignore
 ```
 
 **Checking for Drift (CI)**
@@ -261,6 +261,10 @@ $ ruff-sync check --semantic
    ]
 ```
 
+> [!TIP]
+> See the [Best Practices](https://kilo59.github.io/ruff-sync/best-practices/) guide for recommendations on whether to make your CI checks blocking or informational.
+
+
 ## Example Workflow
 
 A typical setup for an organization:
@@ -328,7 +332,7 @@ By default, `ruff-sync` requires an existing configuration file (`pyproject.toml
 
 ```console
 # Create a new pyproject.toml (or ruff.toml) pre-configured with upstream settings
-ruff-sync pull https://github.com/my-org/standards --init
+ruff-sync https://github.com/my-org/standards --init
 ```
 
 `ruff-sync` seamlessly supports both `pyproject.toml` and standalone `ruff.toml` (or `.ruff.toml`) files. If your local target is a directory, it will look for configuration files in the following order: `ruff.toml` -> `.ruff.toml` -> `pyproject.toml`. If your upstream source or your local target is a `ruff.toml`, it will automatically adapt and sync the root configuration rather than looking for a `[tool.ruff]` section.

@@ -58,7 +58,7 @@ Running `ruff-sync check` in pre-commit is fast because:
 2. It minimizes network overhead by only fetching exactly what it needs (e.g., using direct HTTP requests for single files or partial git cloning for repositories).
 3. By default, it uses `--semantic` to ignore formatting-only differences, reducing false positives.
 
-For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see [Advanced Usage](usage.md#advanced-usage).
+For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see [Usage](usage.md).
 
 ## Manual Execution
 
