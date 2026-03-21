@@ -529,6 +529,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -572,6 +583,8 @@
   
     
     
+      
+        
       
         
       
@@ -671,6 +684,34 @@
     
   
     Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
   
 
     
@@ -1085,6 +1126,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1147,7 +1199,7 @@
 <h2 id="quick-start">🏁 Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <h3 id="1-initialize-a-new-project-optional">1. Initialize a new project (Optional)<a class="headerlink" href="#1-initialize-a-new-project-optional" title="Permanent link">&para;</a></h3>
 <p>If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>pull<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
 </span></code></pre></div>
 <h3 id="2-configure-an-existing-project">2. Configure an existing project<a class="headerlink" href="#2-configure-an-existing-project" title="Permanent link">&para;</a></h3>
 <p>Add the upstream URL to your <code>pyproject.toml</code> to make it the default:</p>
@@ -1156,9 +1208,15 @@
 </span></code></pre></div>
 <h3 id="3-pull-the-configuration">3. Pull the configuration<a class="headerlink" href="#3-pull-the-configuration" title="Permanent link">&para;</a></h3>
 <p>Once configured, simply run:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>pull
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync
 </span></code></pre></div>
 <p>This will download the upstream file, extract the <code>[tool.ruff]</code> section, and merge it into your local file while <strong>preserving your artisanal comments and formatting</strong>.</p>
+<hr />
+<h2 id="next-steps">📚 Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Check out our <a href="best-practices/">Best Practices</a> for recommendations on adopting <code>ruff-sync</code> across your organization.</li>
+<li>Read the <a href="usage/">Usage</a> guide for advanced examples.</li>
+</ul>
 
 
 

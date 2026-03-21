@@ -453,6 +453,8 @@
       
         
       
+        
+      
     
     
     
@@ -543,6 +545,34 @@
     
   
     Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
   
 
     
@@ -1226,24 +1256,24 @@
 <li><code>-vv</code>: Shows <code>DEBUG</code> level logs (e.g., detailed TOML merging operations and raw HTTP/Git requests).</li>
 </ul>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>-vv
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>-vv
 </span></code></pre></div>
 <h3 id="upstream-url-not-found">Upstream URL not found<a class="headerlink" href="#upstream-url-not-found" title="Permanent link">&para;</a></h3>
 <p><strong>Error</strong>: <code>Error: Upstream Required. No upstream URL found in pyproject.toml or provided as argument.</code></p>
 <p><strong>Solution</strong>:</p>
 <ol>
 <li>Ensure you have a <code>[tool.ruff-sync]</code> section in your <code>pyproject.toml</code> with an <code>upstream</code> key. See the <a href="../configuration/">Configuration</a> guide for details.</li>
-<li>Or provide the URL directly as an argument: <code>ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml</code></li>
+<li>Or provide the URL directly as an argument: <code>ruff-sync https://github.com/org/repo/blob/main/pyproject.toml</code></li>
 </ol>
 <h3 id="local-file-not-found-with-check">Local file not found (with <code>check</code>)<a class="headerlink" href="#local-file-not-found-with-check" title="Permanent link">&para;</a></h3>
 <p><strong>Error</strong>: <code>FileNotFoundError: pyproject.toml not found</code></p>
 <p><strong>Solution</strong>:
-The <code>check</code> command expects a local <code>pyproject.toml</code>, <code>ruff.toml</code>, or <code>.ruff.toml</code> to exist. If you are setting up a new project, use <code>pull --init</code> first.</p>
+The <code>check</code> command expects a local <code>pyproject.toml</code>, <code>ruff.toml</code>, or <code>.ruff.toml</code> to exist. If you are setting up a new project, use <code>ruff-sync --init</code> first.</p>
 <h3 id="merge-conflicts-in-toml">Merge conflicts in TOML<a class="headerlink" href="#merge-conflicts-in-toml" title="Permanent link">&para;</a></h3>
 <p><code>ruff-sync</code> uses <code>tomlkit</code> to perform a smart merge. It generally doesn't produce "conflicts" in the traditional sense, but if you have a key locally that is ALSO in the upstream, the upstream will generally win UNLESS you exclude it.</p>
 <p><strong>Solution</strong>:
 Use the <code>--exclude</code> flag to keep your local settings:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>--exclude<span class="w"> </span>lint.line-length
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>--exclude<span class="w"> </span>lint.line-length
 </span></code></pre></div>
 <h3 id="multi-upstream-fetch-failures">Multi-upstream Fetch Failures<a class="headerlink" href="#multi-upstream-fetch-failures" title="Permanent link">&para;</a></h3>
 <p><strong>Error</strong>: <code>❌ &lt;N&gt; upstream fetches failed</code></p>
@@ -1256,7 +1286,7 @@ Use the <code>--exclude</code> flag to keep your local settings:</p>
 <p>If you see an HTTP <code>403 Forbidden</code> or <code>404 Not Found</code> when trying to fetch from GitHub or GitLab, it might be due to authentication requirements.</p>
 <p><strong>Solution</strong>:
 Use the git-clone alternative suggested in the error message:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ruff-sync<span class="w"> </span>pull<span class="w"> </span>git@github.com:org/repo.git
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ruff-sync<span class="w"> </span>git@github.com:org/repo.git
 </span></code></pre></div>
 <p>This uses your local SSH keys and is often more reliable for internal or private repositories.</p>
 <h2 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h2>

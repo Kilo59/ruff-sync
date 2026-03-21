@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/pre-commit/">
       
       
-        <link rel="prev" href="../configuration/">
+        <link rel="prev" href="../best-practices/">
       
       
         <link rel="next" href="../ci-integration/">
@@ -455,6 +455,8 @@
       
         
       
+        
+      
     
     
     
@@ -546,6 +548,34 @@
     
   
     Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
   
 
     
@@ -1213,7 +1243,7 @@ For a full list of configuration options, see the <a href="../configuration/">Co
 <li>It minimizes network overhead by only fetching exactly what it needs (e.g., using direct HTTP requests for single files or partial git cloning for repositories).</li>
 <li>By default, it uses <code>--semantic</code> to ignore formatting-only differences, reducing false positives.</li>
 </ol>
-<p>For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see <a href="../usage/#advanced-usage">Advanced Usage</a>.</p>
+<p>For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see <a href="../usage/">Usage</a>.</p>
 <h2 id="manual-execution">Manual Execution<a class="headerlink" href="#manual-execution" title="Permanent link">&para;</a></h2>
 <p>You can always run the hooks manually using:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>ruff-sync-check<span class="w"> </span>--all-files

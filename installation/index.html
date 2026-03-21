@@ -572,6 +572,8 @@
       
         
       
+        
+      
     
     
     
@@ -662,6 +664,34 @@
     
   
     Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
   
 
     
@@ -1100,17 +1130,17 @@
 <p>The easiest way to use <code>ruff-sync</code> across all your projects is by installing it as a <a href="https://docs.astral.sh/uv/guides/tools/">uv tool</a>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>ruff-sync
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># Then simply run:</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>ruff-sync<span class="w"> </span>pull
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>ruff-sync
 </span></code></pre></div>
 <h3 id="one-off-invocation">One-off Invocation<a class="headerlink" href="#one-off-invocation" title="Permanent link">&para;</a></h3>
 <p>If you just want to run <code>ruff-sync</code> once without installing it, use <code>uvx</code>:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uvx<span class="w"> </span>ruff-sync<span class="w"> </span>pull
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uvx<span class="w"> </span>ruff-sync
 </span></code></pre></div>
 <h3 id="project-specific-development">Project-specific Development<a class="headerlink" href="#project-specific-development" title="Permanent link">&para;</a></h3>
 <p>To keep the version consistent across your team and locked to your project, add it to your development dependencies:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>add<span class="w"> </span>--dev<span class="w"> </span>ruff-sync
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Then run it with:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>pull
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync
 </span></code></pre></div>
 <hr />
 <h2 id="other-installation-methods">🛠️ Other Installation Methods<a class="headerlink" href="#other-installation-methods" title="Permanent link">&para;</a></h2>
