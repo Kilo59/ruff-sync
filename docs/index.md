@@ -45,7 +45,7 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:
 
 ```bash
-uv run ruff-sync pull https://github.com/my-org/standards --init
+uv run ruff-sync https://github.com/my-org/standards --init
 ```
 
 ### 2. Configure an existing project
@@ -62,7 +62,14 @@ upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 Once configured, simply run:
 
 ```bash
-uv run ruff-sync pull
+uv run ruff-sync
 ```
 
 This will download the upstream file, extract the `[tool.ruff]` section, and merge it into your local file while **preserving your artisanal comments and formatting**.
+
+---
+
+## 📚 Next Steps
+
+- Check out our [Best Practices](best-practices.md) for recommendations on adopting `ruff-sync` across your organization.
+- Read the [Usage](usage.md) guide for advanced examples.

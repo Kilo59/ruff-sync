@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Pull upstream
-        run: uvx ruff-sync pull
+        run: uvx ruff-sync
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
@@ -79,6 +79,9 @@ See the [Pre-commit Guide](pre-commit.md) for details on using the official hook
 ---
 
 ## 💡 Best Practices
+
+> [!TIP]
+> Read the complete [Best Practices](best-practices.md) guide for a broader look at organizing `ruff-sync` deployments, including when semantic checks should be blocking vs. informational.
 
 ### Use `--semantic`
 
