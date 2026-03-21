@@ -15,3 +15,12 @@ extend-select = [
     "NPY",
     "PD"
 ]
+# Ignore rules that conflict with `ruff format` (formatter-managed concerns).
+# Keep this in sync with other curated configs (e.g. fastapi/ruff.toml).
+ignore = [
+    "E111",  # indentation is handled by the formatter
+    "E114",  # indentation with comments is handled by the formatter
+    "E117",  # over-indented code is handled by the formatter
+    "E501",  # line length is handled by the formatter
+    "W191",  # tabs vs spaces is handled by the formatter
+]
