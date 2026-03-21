@@ -9,9 +9,9 @@ extend-include = ["*.ipynb"]
 # NPY is for NumPy specific checks.
 # PD is for pandas-vet (Data Science best practices).
 extend-select = [
-    "E", 
-    "F", 
+    "E",
+    "F",
     "I",
-    "NPY", 
-    "PD"   
+    "NPY",
+    "PD"
 ]
