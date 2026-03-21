@@ -80,6 +80,9 @@ See the [Pre-commit Guide](pre-commit.md) for details on using the official hook
 
 ## 💡 Best Practices
 
+> [!TIP]
+> Read the complete [Best Practices](best-practices.md) guide for a broader look at organizing `ruff-sync` deployments, including when semantic checks should be blocking vs. informational.
+
 ### Use `--semantic`
 
 In CI, you usually only care about the functional configuration. Using `--semantic` ensures that minor formatting changes don't break your builds, while still guaranteeing that the actual rules are identical.

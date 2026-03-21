@@ -66,3 +66,10 @@ uv run ruff-sync
 ```
 
 This will download the upstream file, extract the `[tool.ruff]` section, and merge it into your local file while **preserving your artisanal comments and formatting**.
+
+---
+
+## 📚 Next Steps
+
+- Check out our [Best Practices](best-practices.md) for recommendations on adopting `ruff-sync` across your organization.
+- Read the [Usage](usage.md) guide for advanced examples.

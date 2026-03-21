@@ -261,6 +261,10 @@ $ ruff-sync check --semantic
    ]
 ```
 
+> [!TIP]
+> See the [Best Practices](https://kilo59.github.io/ruff-sync/best-practices/) guide for recommendations on whether to make your CI checks blocking or informational.
+
+
 ## Example Workflow
 
 A typical setup for an organization:

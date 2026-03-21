@@ -4,6 +4,9 @@
 
 This guide covers common daily workflows, explains how `ruff-sync` merges configuration, and provides a full command reference.
 
+> [!TIP]
+> Looking for organization-wide setup advice? Check out our [Best Practices](best-practices.md) guide.
+
 ---
 
 ## 🌟 Common Workflows
