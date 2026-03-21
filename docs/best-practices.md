@@ -73,7 +73,7 @@ upstream = [
     # 1. Base company rules
     "https://github.com/my-org/standards/blob/main/base.toml",
 
-    # 2. Team-specific tweaks (These override the base rules)
+    # 2. Team-specific tweaks (these override the base rules)
     "https://github.com/my-org/standards/blob/main/team-alpha.toml",
 ]
 ```
