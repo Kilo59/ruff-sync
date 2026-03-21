@@ -13,7 +13,7 @@ This guide covers common daily workflows, explains how `ruff-sync` merges config
 If you want to pull rules from a central repository into your current project, run:
 
 ```bash
-ruff-sync pull https://github.com/my-org/standards
+ruff-sync https://github.com/my-org/standards
 ```
 
 This fetches the `pyproject.toml` from the `main` branch of `my-org/standards`, extracts the `[tool.ruff]` section, and surgically merges it into your local `pyproject.toml`.
@@ -30,7 +30,7 @@ upstream = "https://github.com/my-org/standards"
 Now, you can simply run:
 
 ```bash
-ruff-sync pull
+ruff-sync
 ```
 
 ### Initializing a New Project
@@ -38,7 +38,7 @@ ruff-sync pull
 If your local directory doesn't have a `pyproject.toml` yet, you can scaffold one:
 
 ```bash
-ruff-sync pull https://github.com/my-org/standards --init
+ruff-sync https://github.com/my-org/standards --init
 ```
 
 This creates a new `pyproject.toml` populated with the upstream configuration and automatically adds a `[tool.ruff-sync]` block so you won't need to specify the URL again.
@@ -48,7 +48,7 @@ This creates a new `pyproject.toml` populated with the upstream configuration an
 If the upstream repository stores its Python configuration in a specific subdirectory (like a `backend/` folder in a monorepo), use the `--path` argument:
 
 ```bash
-ruff-sync pull https://github.com/my-org/standards --path backend
+ruff-sync https://github.com/my-org/standards --path backend
 ```
 
 ### Excluding Specific Rules
@@ -56,7 +56,7 @@ ruff-sync pull https://github.com/my-org/standards --path backend
 Sometimes your project needs to deviate slightly from the upstream standard. You can exclude specific dotted paths to preserve your local settings:
 
 ```bash
-ruff-sync pull --exclude lint.ignore lint.select
+ruff-sync --exclude lint.ignore lint.select
 ```
 
 *(By default, `lint.per-file-ignores` is always excluded so your local file-specific ignores are safe).*
@@ -101,12 +101,12 @@ Unlike other tools that might blindly overwrite your file, strip away comments, 
 
 ## 📚 Command Reference
 
-### `pull`
+### `pull` (or just `ruff-sync`)
 
-Downloads the upstream configuration and merges it into your local file.
+Downloads the upstream configuration and merges it into your local file. Note that `pull` is the default command, so `ruff-sync` and `ruff-sync pull` are functionally identical and can be used interchangeably.
 
 ```bash
-ruff-sync pull [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
+ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
 ```
 
 * **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local `[tool.ruff-sync]` config. Multiple URLs form a fallback/merge chain. All upstreams are fetched **concurrently**, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.

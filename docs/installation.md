@@ -11,7 +11,7 @@ The easiest way to use `ruff-sync` across all your projects is by installing it 
 ```bash
 uv tool install ruff-sync
 # Then simply run:
-ruff-sync pull
+ruff-sync
 ```
 
 ### One-off Invocation
@@ -19,7 +19,7 @@ ruff-sync pull
 If you just want to run `ruff-sync` once without installing it, use `uvx`:
 
 ```bash
-uvx ruff-sync pull
+uvx ruff-sync
 ```
 
 ### Project-specific Development
@@ -29,7 +29,7 @@ To keep the version consistent across your team and locked to your project, add 
 ```bash
 uv add --dev ruff-sync
 # Then run it with:
-uv run ruff-sync pull
+uv run ruff-sync
 ```
 
 ---

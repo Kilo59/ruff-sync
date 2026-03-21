@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Pull upstream
-        run: uvx ruff-sync pull
+        run: uvx ruff-sync
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:

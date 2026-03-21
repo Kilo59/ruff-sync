@@ -16,7 +16,7 @@ If `ruff-sync` is not behaving as expected, you can increase the verbosity of th
 Example:
 
 ```bash
-ruff-sync pull -vv
+ruff-sync -vv
 ```
 
 ### Upstream URL not found
@@ -26,14 +26,14 @@ ruff-sync pull -vv
 **Solution**:
 
 1. Ensure you have a `[tool.ruff-sync]` section in your `pyproject.toml` with an `upstream` key. See the [Configuration](configuration.md) guide for details.
-2. Or provide the URL directly as an argument: `ruff-sync pull https://github.com/org/repo/blob/main/pyproject.toml`
+2. Or provide the URL directly as an argument: `ruff-sync https://github.com/org/repo/blob/main/pyproject.toml`
 
 ### Local file not found (with `check`)
 
 **Error**: `FileNotFoundError: pyproject.toml not found`
 
 **Solution**:
-The `check` command expects a local `pyproject.toml`, `ruff.toml`, or `.ruff.toml` to exist. If you are setting up a new project, use `pull --init` first.
+The `check` command expects a local `pyproject.toml`, `ruff.toml`, or `.ruff.toml` to exist. If you are setting up a new project, use `ruff-sync --init` first.
 
 ### Merge conflicts in TOML
 
@@ -43,7 +43,7 @@ The `check` command expects a local `pyproject.toml`, `ruff.toml`, or `.ruff.tom
 Use the `--exclude` flag to keep your local settings:
 
 ```bash
-ruff-sync pull --exclude lint.line-length
+ruff-sync --exclude lint.line-length
 ```
 
 ### Multi-upstream Fetch Failures
@@ -65,7 +65,7 @@ If you see an HTTP `403 Forbidden` or `404 Not Found` when trying to fetch from 
 Use the git-clone alternative suggested in the error message:
 
 ```bash
-ruff-sync pull git@github.com:org/repo.git
+ruff-sync git@github.com:org/repo.git
 ```
 
 This uses your local SSH keys and is often more reliable for internal or private repositories.
