@@ -2,15 +2,13 @@
 
 # Enable Jupyter notebook linting
 extend-include = ["*.ipynb"]
+extend-exclude = [".ipynb_checkpoints"]
 
 [lint]
-# E, F are standard Python errors/warnings.
 # I is for isort (sorting imports automatically).
 # NPY is for NumPy specific checks.
 # PD is for pandas-vet (Data Science best practices).
 extend-select = [
-    "E",
-    "F",
     "I",
     "NPY",
     "PD"
