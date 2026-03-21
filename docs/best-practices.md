@@ -63,7 +63,7 @@ See the [CI Integration Guide](ci-integration.md#automated-sync-prs) for an exam
 
 ## 🏢 Hierarchical Configuration
 
-For large organizations with distinct teams or sub-projects (like a frontend-heavy fullstack repo vs. a pure backend service), you can define multiple upstreams to create a hierarchy.
+For large organizations with distinct teams or sub-projects (like a frontend-heavy full stack repo vs. a pure backend service), you can define multiple upstreams to create a hierarchy.
 
 Because `ruff-sync` merges multiple upstreams sequentially (from top to bottom), the "last one wins." This allows you to have a strict company-wide base config, and a slightly looser (or tighter) team-specific config.
 
