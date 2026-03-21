@@ -5,13 +5,14 @@ extend-include = ["*.ipynb"]
 extend-exclude = [".ipynb_checkpoints"]
 
 [lint]
-# I is for isort (sorting imports automatically).
-# NPY is for NumPy specific checks.
-# PD is for pandas-vet (Data Science best practices).
+# Enable rules tailored for data science and engineering.
 extend-select = [
-    "I",
-    "NPY",
-    "PD"
+    # https://docs.astral.sh/ruff/rules/#isort-i
+    "I",      # isort: Import sorting
+    # https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
+    "NPY",    # NumPy-specific rules: NumPy conventions
+    # https://docs.astral.sh/ruff/rules/#pandas-vet-pd
+    "PD",     # pandas-vet: Pandas code checks
 ]
 # Ignore rules that conflict with `ruff format` (formatter-managed concerns).
 # Keep this in sync with other curated configs (e.g. fastapi/ruff.toml).
