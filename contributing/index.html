@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/best-practices/">
+        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/contributing/">
       
       
-        <link rel="prev" href="../pre-defined-configs/">
+        <link rel="prev" href="../troubleshooting/">
       
       
-        <link rel="next" href="../pre-commit/">
+        <link rel="next" href="../reference/ruff_sync/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Best Practices - ruff-sync</title>
+        <title>Contributing - ruff-sync</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#best-practices" class="md-skip">
+        <a href="#contributing" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Best Practices
+              Contributing
             
           </span>
         </div>
@@ -267,12 +267,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../usage/" class="md-tabs__link">
           
   
@@ -310,9 +308,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../contributing/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -459,10 +459,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -482,22 +480,21 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -515,7 +512,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -614,37 +611,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Best Practices
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
         
   
   
@@ -660,70 +630,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pin-upstream-versions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📌 Pin Upstream Versions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#use-strategic-exclusions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🎯 Use Strategic Exclusions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#semantic-checks-in-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🚦 Semantic Checks in CI
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hierarchical-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🏢 Hierarchical Configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -823,10 +729,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -842,6 +775,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#writing-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writing Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributing-a-curated-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contributing a Curated Config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-bugs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting Bugs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pull-request-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull Request Tips
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1105,10 +1124,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pin-upstream-versions" class="md-nav__link">
+  <a href="#getting-started" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📌 Pin Upstream Versions
+        Getting Started
       
     </span>
   </a>
@@ -1116,10 +1135,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-strategic-exclusions" class="md-nav__link">
+  <a href="#quality-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🎯 Use Strategic Exclusions
+        Quality Checks
       
     </span>
   </a>
@@ -1127,10 +1146,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#semantic-checks-in-ci" class="md-nav__link">
+  <a href="#writing-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🚦 Semantic Checks in CI
+        Writing Tests
       
     </span>
   </a>
@@ -1138,10 +1157,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hierarchical-configuration" class="md-nav__link">
+  <a href="#contributing-a-curated-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🏢 Hierarchical Configuration
+        Contributing a Curated Config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-bugs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting Bugs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pull-request-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull Request Tips
       
     </span>
   </a>
@@ -1166,46 +1207,6 @@
   
 
 
-  <nav class="md-path" aria-label="Navigation" >
-    <ol class="md-path__list">
-      
-        
-  
-  
-    <li class="md-path__item">
-      <a href=".." class="md-path__link">
-        
-  <span class="md-ellipsis">
-    Home
-  </span>
-
-      </a>
-    </li>
-  
-
-      
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
-        <a href="../usage/" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    Usage
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-    </ol>
-  </nav>
-
               
               <article class="md-content__inner md-typeset">
                 
@@ -1216,56 +1217,68 @@
   
 
 
-<h1 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h1>
-<p>When managing linter configurations across multiple projects with <code>ruff-sync</code>, following these best practices helps ensure a smooth, predictable, and manageable workflow for your entire organization.</p>
+<h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
+<p>Thank you for your interest in contributing to <code>ruff-sync</code>!</p>
+<p>This page covers the essentials. For the full contributor's guide, see <a href="https://github.com/Kilo59/ruff-sync/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> on GitHub.</p>
 <hr />
-<h2 id="pin-upstream-versions">📌 Pin Upstream Versions<a class="headerlink" href="#pin-upstream-versions" title="Permanent link">&para;</a></h2>
-<p>Instead of syncing directly from the <code>main</code> branch, it can be beneficial to <strong>pin to specific tags, releases, or stable branches</strong>.</p>
-<p>Linting rules evolve. If you sync from <code>main</code>, a new rule added to the central repository could instantly break CI across dozens of downstream projects the next time they run <code>ruff-sync</code> in an automated pipeline.</p>
-<p>Instead, configure your upstream like this:</p>
-<div class="language-toml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># Pin to a specific tag or commit for stability</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/my-org/standards/blob/v1.2.0/pyproject.toml&quot;</span>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Fork &amp; clone</strong> the repository.</li>
+<li><strong>Install <a href="https://docs.astral.sh/uv/">uv</a></strong>, then sync dependencies:
+   <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>invoke<span class="w"> </span>deps
+</span></code></pre></div></li>
+<li><strong>Install pre-commit hooks</strong>:
+   <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install
+</span></code></pre></div></li>
+</ol>
+<hr />
+<h2 id="quality-checks">Quality Checks<a class="headerlink" href="#quality-checks" title="Permanent link">&para;</a></h2>
+<p>Run these before every commit, in order:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>.<span class="w"> </span>--fix<span class="w">   </span><span class="c1"># Lint &amp; auto-fix</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>format<span class="w"> </span>.<span class="w">         </span><span class="c1"># Format</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>uv<span class="w"> </span>run<span class="w"> </span>mypy<span class="w"> </span>.<span class="w">                </span><span class="c1"># Type-check</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-vv<span class="w">            </span><span class="c1"># Tests</span>
 </span></code></pre></div>
-<p>When you are ready to roll out new linting rules, you can update the version across repositories in a controlled manner.</p>
+<blockquote>
+<p>[!IMPORTANT]
+Fix lint errors at the source — do <strong>not</strong> add <code># noqa</code> or suppress rules in config.</p>
+</blockquote>
 <hr />
-<h2 id="use-strategic-exclusions">🎯 Use Strategic Exclusions<a class="headerlink" href="#use-strategic-exclusions" title="Permanent link">&para;</a></h2>
-<p>Not every setting should be centralized. Some configurations are inherently project-specific.</p>
-<p>Use the <code>exclude</code> option to prevent <code>ruff-sync</code> from overwriting configurations that should remain local.</p>
-<p>For example, do not force all repositories to use the same Python target version, and allow projects to selectively ignore specific upstream rules that don't make sense locally:</p>
-<div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/my-org/standards&quot;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="c1"># Always preserve local file-level exceptions (excluded by default)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">,</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="c1"># Allow projects to define their own Python version</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="s2">&quot;target-version&quot;</span><span class="p">,</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="c1"># Preserve local ignored rules that don&#39;t apply to this specific project</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="s2">&quot;lint.ignore&quot;</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">]</span>
-</span></code></pre></div>
-<p>By excluding <code>lint.ignore</code>, a project can adopt the organization's standard <code>lint.select</code> list, but gracefully opt out of specific rules that cause issues in their specific domain without breaking the sync process.</p>
+<h2 id="writing-tests">Writing Tests<a class="headerlink" href="#writing-tests" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Use <code>pyfakefs</code> for filesystem, <code>respx</code> for HTTP mocking.</li>
+<li>Async tests need <code>@pytest.mark.asyncio</code>.</li>
+<li>TOML merge tests need both a <strong>structural</strong> (whitespace/comments preserved) and a <strong>semantic</strong> (values are correct) assertion.</li>
+<li>Scaffold new lifecycle TOML test cases with:
+  <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>run<span class="w"> </span>invoke<span class="w"> </span>new-case<span class="w"> </span>--name<span class="w"> </span>&lt;<span class="k">case</span>&gt;<span class="w"> </span>--description<span class="w"> </span><span class="s2">&quot;...&quot;</span>
+</span></code></pre></div></li>
+</ul>
+<p>See <a href="https://github.com/Kilo59/ruff-sync/blob/main/.agents/TESTING.md"><code>.agents/TESTING.md</code></a> for detailed testing standards.</p>
 <hr />
-<h2 id="semantic-checks-in-ci">🚦 Semantic Checks in CI<a class="headerlink" href="#semantic-checks-in-ci" title="Permanent link">&para;</a></h2>
-<p>To ensure your repository hasn't drifted from your organization's unified standards, you should run <code>ruff-sync check --semantic</code> in your Continuous Integration pipeline.</p>
-<p><strong>If you pin to a stable tag (as recommended above):</strong>
-Make this a <strong>blocking check</strong>. Since the upstream configuration won't change unexpectedly, any drift means a developer inadvertently modified the local rules. Failing the build ensures the repository stays perfectly compliant.</p>
-<p><strong>If you sync directly from a moving branch (like <code>main</code>):</strong>
-We recommend making this an <strong>informational, non-failing check</strong>. If a new rule is added upstream while a developer is working on a feature, blocking their PR can cause frustration. Instead, pair the informational check with a <strong>weekly automated workflow</strong> that pulls down the latest configuration and opens a pull request. This groups linter updates into a single controllable PR that can be reviewed and tested in isolation.</p>
-<p>See the <a href="../ci-integration/#automated-sync-prs">CI Integration Guide</a> for an example GitHub Actions workflow that automatically syncs the configuration and opens a PR.</p>
+<h2 id="contributing-a-curated-config">Contributing a Curated Config<a class="headerlink" href="#contributing-a-curated-config" title="Permanent link">&para;</a></h2>
+<p>We welcome new configurations in <a href="https://github.com/Kilo59/ruff-sync/tree/main/configs"><code>configs/</code></a>!</p>
+<p>👉 <strong><a href="https://github.com/Kilo59/ruff-sync/issues/83">Join the discussion on Issue #83</a></strong> before submitting.</p>
+<ol>
+<li>Create <code>configs/&lt;my-domain&gt;/ruff.toml</code> with inline comments on each rule.</li>
+<li>Optionally add a <code>README.md</code> explaining the config's goals.</li>
+<li>Open a PR referencing <a href="https://github.com/Kilo59/ruff-sync/issues/83">Issue #83</a>.</li>
+</ol>
+<p>See <a href="../pre-defined-configs/">Pre-defined Configs</a> for the existing examples.</p>
 <hr />
-<h2 id="hierarchical-configuration">🏢 Hierarchical Configuration<a class="headerlink" href="#hierarchical-configuration" title="Permanent link">&para;</a></h2>
-<p>For large organizations with distinct teams or sub-projects (like a frontend-heavy full stack repo vs. a pure backend service), you can define multiple upstreams to create a hierarchy.</p>
-<p>Because <code>ruff-sync</code> merges multiple upstreams sequentially (from top to bottom), the "last one wins." This allows you to have a strict company-wide base config, and a slightly looser (or tighter) team-specific config.</p>
-<div class="language-toml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="c1"># 1. Base company rules</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/standards/blob/main/base.toml&quot;</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="c1"># 2. Team-specific tweaks (these override the base rules)</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/standards/blob/main/team-alpha.toml&quot;</span><span class="p">,</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">]</span>
-</span></code></pre></div>
+<h2 id="reporting-bugs">Reporting Bugs<a class="headerlink" href="#reporting-bugs" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/Kilo59/ruff-sync/issues/new">Open an issue</a> with:
+- <code>ruff-sync --version</code> output.
+- <code>ruff --version</code> output.
+- Your operating system and Python version.
+- The command you ran and its full output.
+- Relevant <code>pyproject.toml</code> excerpts.</p>
+<hr />
+<h2 id="pull-request-tips">Pull Request Tips<a class="headerlink" href="#pull-request-tips" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Branch off <code>main</code>; keep commits focused.</li>
+<li>For significant changes, open an issue first.</li>
+<li>Ensure all CI checks pass before requesting review.</li>
+</ul>
 
 
 
