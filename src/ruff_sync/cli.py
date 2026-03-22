@@ -93,6 +93,7 @@ class Arguments(NamedTuple):
     semantic: bool = False
     diff: bool = True
     init: bool = False
+    pre_commit: bool = False
 
     @property
     @deprecated("Use 'to' instead")
@@ -137,14 +138,16 @@ def get_config(
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
             allowed_keys = set(Config.__annotations__.keys())
+            # For backward compatibility, allow pre-commit-sync as pre_commit_sync
             for arg, value in config.items():
-                if arg in allowed_keys:
-                    if arg == "source":
+                arg_norm = arg.replace("-", "_")
+                if arg_norm in allowed_keys:
+                    if arg_norm == "source":
                         LOGGER.warning(
                             "DeprecationWarning: [tool.ruff-sync] 'source' is deprecated. "
                             "Use 'to' instead."
                         )
-                    cfg_result[arg] = value
+                    cfg_result[arg_norm] = value
                 else:
                     LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
             # Ensure 'to' is populated if 'source' was used
@@ -226,6 +229,11 @@ def _get_cli_parser() -> ArgumentParser:
         "--path",
         help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located. Default: root",
         default=None,
+    )
+    common_parser.add_argument(
+        "--pre-commit",
+        action="store_true",
+        help="Sync the pre-commit ruff hook version with the project's Ruff version.",
     )
 
     # Pull subcommand (the default action)
@@ -420,6 +428,7 @@ def main() -> int:
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
+        pre_commit=bool(getattr(args, "pre_commit", False) or config.get("pre_commit_sync", False)),
     )
 
     try:
