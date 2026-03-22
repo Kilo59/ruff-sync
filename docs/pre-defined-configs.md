@@ -17,9 +17,16 @@ An exhaustive configuration that explicitly enables and documents almost all ava
 
 ### Usage
 
+Using the direct configuration directory URL:
+
 ```bash
-# Using the directory URL (recommended)
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
+```
+
+Alternatively, using the repository URL with the `--path` parameter:
+
+```bash
+ruff-sync https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
 ```
 
 ---
@@ -35,8 +42,16 @@ Tailored specifically for modern, asynchronous web applications. It focuses on p
 
 ### Usage
 
+Using the direct configuration directory URL:
+
 ```bash
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
+```
+
+Alternatively, using the repository URL with the `--path` parameter:
+
+```bash
+ruff-sync https://github.com/Kilo59/ruff-sync --path configs/fastapi
 ```
 
 ---
@@ -52,8 +67,16 @@ Optimized for data science workflows, focusing on readability and common pattern
 
 ### Usage
 
+Using the direct configuration directory URL:
+
 ```bash
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/data-science-engineering
+```
+
+Alternatively, using the repository URL with the `--path` parameter:
+
+```bash
+ruff-sync https://github.com/Kilo59/ruff-sync --path configs/data-science-engineering
 ```
 
 ---
