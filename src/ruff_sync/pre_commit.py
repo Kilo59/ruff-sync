@@ -42,6 +42,12 @@ def _get_pyproject_version(pyproject: pathlib.Path) -> str | None:
     try:
         data = tomlkit.parse(pyproject.read_text(encoding="utf-8"))
         deps = list(data.get("project", {}).get("dependencies", []))
+
+        opt_deps = data.get("project", {}).get("optional-dependencies", {})
+        for opt_group in opt_deps.values():
+            if isinstance(opt_group, list):
+                deps.extend(opt_group)
+
         groups = data.get("dependency-groups", {})
         for group_deps in groups.values():
             if isinstance(group_deps, list):
@@ -93,9 +99,16 @@ def sync_pre_commit(base_dir: pathlib.Path, dry_run: bool = False) -> bool:
 
     content = config_file.read_text(encoding="utf-8")
 
-    # Match the repo url and the following rev line
+    # Match the ruff-pre-commit repo and its rev key within the same YAML block,
+    # allowing for additional keys, comments, and varying layout between them.
+    # This looks for a "repo: https://github.com/astral-sh/ruff-pre-commit" line,
+    # followed by any number of indented lines, and then a "rev:" key at the same
+    # indentation level as the other entries in that repo block.
     pattern = re.compile(
-        r"(repo:\s*https://github\.com/astral-sh/ruff-pre-commit\s*\n\s*rev:\s*)(['\"]?[a-zA-Z0-9_.-]+['\"]?)"
+        r"(repo:\s*https://github\.com/astral-sh/ruff-pre-commit[^\n]*\n"
+        r"(?:[ \t].*\n)*?"
+        r"[ \t]*rev:\s*)(['\"]?[a-zA-Z0-9_.-]+['\"]?)",
+        re.MULTILINE,
     )
     match = pattern.search(content)
 
@@ -111,12 +124,12 @@ def sync_pre_commit(base_dir: pathlib.Path, dry_run: bool = False) -> bool:
         target_rev = target_rev[1:]
 
     if current_rev == target_rev:
-        LOGGER.info(f"✨ pre-commit ruff hook is already in sync ({current_rev})")
+        LOGGER.info(f"✨ pre-commit Ruff hook is already in sync ({current_rev})")
         return True
 
     if dry_run:
         LOGGER.warning(
-            f"❌ pre-commit ruff hook is out of sync "
+            f"❌ pre-commit Ruff hook is out of sync "
             f"(current: {current_rev}, expected: {target_rev})"
         )
         return False
@@ -129,7 +142,7 @@ def sync_pre_commit(base_dir: pathlib.Path, dry_run: bool = False) -> bool:
     else:
         new_rev_str = target_rev
 
-    LOGGER.info(f"🔄 Updating pre-commit ruff hook from {current_rev} to {target_rev}")
+    LOGGER.info(f"🔄 Updating pre-commit Ruff hook from {current_rev} to {target_rev}")
     new_content = content[: match.start(2)] + new_rev_str + content[match.end(2) :]
     config_file.write_text(new_content, encoding="utf-8")
 

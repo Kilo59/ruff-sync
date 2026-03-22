@@ -133,7 +133,7 @@ target-version = "py310"
         exit_code = await ruff_sync.check(args)
         assert exit_code == 2
 
-        assert "pre-commit ruff hook is out of sync" in caplog.text
+        assert "pre-commit Ruff hook is out of sync" in caplog.text
 
 
 @pytest.mark.asyncio

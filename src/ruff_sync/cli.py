@@ -238,7 +238,7 @@ def _get_cli_parser() -> ArgumentParser:
         "--pre-commit",
         action=BooleanOptionalAction,
         default=None,
-        help="Sync the pre-commit ruff hook version with the project's Ruff version.",
+        help="Sync the pre-commit Ruff hook version with the project's Ruff version.",
     )
 
     # Pull subcommand (the default action)

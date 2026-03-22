@@ -179,7 +179,7 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 # The source of truth for your Ruff configuration
 upstream = "https://github.com/my-org/standards"
 
-# Automatically sync the pre-commit ruff hook version
+# Automatically sync the pre-commit Ruff hook version
 pre-commit-version-sync = true
 
 # Use simple names for top-level keys, and dotted paths for nested keys
@@ -223,7 +223,7 @@ path = "config/ruff"
 # The local target directory or file to sync into. (Default: ".")
 to = "."
 
-# Keep the pre-commit ruff hook version in sync with the project's Ruff version. (Default: false)
+# Keep the pre-commit Ruff hook version in sync with the project's Ruff version. (Default: false)
 pre-commit-version-sync = true
 ```
 
