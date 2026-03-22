@@ -147,7 +147,8 @@ ruff-sync --exclude lint.ignore
 **Checking for Drift (CI)**
 
 ```console
-# Verify local config matches upstream. Exits 1 if out of sync.
+# Verify local config matches upstream. Exits 1 if config is out of sync.
+# If opted in via --pre-commit, exits 2 if only the pre-commit hook is out of sync.
 ruff-sync check https://github.com/my-org/standards
 
 # Semantic check — ignores cosmetic differences like comments and whitespace

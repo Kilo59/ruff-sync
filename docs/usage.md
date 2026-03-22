@@ -120,7 +120,11 @@ ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commi
 
 ### `check`
 
-Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found.
+Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found:
+
+* Exit **`0`**: Configuration is fully in sync.
+* Exit **`1`**: `pyproject.toml` or `ruff.toml` drifted from the upstream.
+* Exit **`2`**: Local config is in sync, but the `.pre-commit-config.yaml` hook drifted from the project's Ruff version (only applies if `--pre-commit` is enabled).
 
 ```bash
 ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff] [--pre-commit]
