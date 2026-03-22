@@ -70,6 +70,15 @@ path = "configs/fastapi"
 
 ---
 
-## 📝 contributing
+## 📝 Contributing
 
-Do you have a specialized Ruff configuration that you think would benefit the community? We welcome contributions of new curated configurations! Please see our [Contributing Guide](https://github.com/Kilo59/ruff-sync/blob/main/CONTRIBUTING.md) for more information.
+Do you have a specialized Ruff configuration that you think would benefit the community? We welcome contributions of new curated configurations!
+
+- **Join the Discussion**: [Issue #83: Community Curated Configs](https://github.com/Kilo59/ruff-sync/issues/83)
+- **Contribution Guide**: [Contributing to ruff-sync](https://github.com/Kilo59/ruff-sync/blob/main/CONTRIBUTING.md)
+
+We are particularly interested in configurations for:
+- Machine Learning & AI
+- CLI Tools
+- Embedded Systems & MicroPython
+- Large Monorepos
