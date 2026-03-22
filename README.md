@@ -298,9 +298,7 @@ git commit -am "sync ruff config from upstream"
 
 ### Curated Examples
 
-While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly.
-
-`ruff-sync` is flexible with URLs. You can point it at a repository root, a specific directory (tree), a direct file (blob), or even a raw content URL.
+While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly. See the [Pre-defined Configs Guide](https://kilo59.github.io/ruff-sync/pre-defined-configs/) for more detailed examples and advanced usage.
 
 #### Kitchen Sink
 
