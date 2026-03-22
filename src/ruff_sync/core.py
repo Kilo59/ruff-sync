@@ -916,16 +916,10 @@ async def check(
 
         if source_val == merged_val:
             print("✅ Ruff configuration is semantically in sync.")
-            if out_of_sync:
-                print("❌ However, pre-commit ruff hook is out of sync.")
-                return 1
-            return 0
+            return 2 if out_of_sync else 0
     elif source_doc.as_string() == merged_doc.as_string():
         print("✅ Ruff configuration is in sync.")
-        if out_of_sync:
-            print("❌ However, pre-commit ruff hook is out of sync.")
-            return 1
-        return 0
+        return 2 if out_of_sync else 0
 
     try:
         rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())

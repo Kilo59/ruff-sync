@@ -11,7 +11,7 @@ import logging
 import os
 import pathlib
 import sys
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from argparse import ArgumentParser, BooleanOptionalAction, RawDescriptionHelpFormatter
 from functools import lru_cache
 from importlib import metadata
 from typing import (
@@ -232,7 +232,8 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--pre-commit",
-        action="store_true",
+        action=BooleanOptionalAction,
+        default=None,
         help="Sync the pre-commit ruff hook version with the project's Ruff version.",
     )
 
@@ -416,6 +417,12 @@ def main() -> int:
     # Convert non-raw github/gitlab upstream url to the raw equivalent
     upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
 
+    pre_commit_arg = getattr(args, "pre_commit", None)
+    if pre_commit_arg is not None:
+        pre_commit_val = pre_commit_arg
+    else:
+        pre_commit_val = config.get("pre_commit_sync", False)
+
     # Create Arguments object
     exec_args = Arguments(
         command=args.command,
@@ -428,7 +435,7 @@ def main() -> int:
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
-        pre_commit=bool(getattr(args, "pre_commit", False) or config.get("pre_commit_sync", False)),
+        pre_commit=bool(pre_commit_val),
     )
 
     try:
