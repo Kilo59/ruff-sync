@@ -67,3 +67,20 @@ You can always run the hooks manually using:
 ```bash
 pre-commit run ruff-sync-check --all-files
 ```
+
+## Syncing the Ruff Hook Version
+
+In addition to syncing your Ruff configuration rules, `ruff-sync` can also automatically synchronize the version of the `astral-sh/ruff-pre-commit` hook in your `.pre-commit-config.yaml` to match the Ruff version installed in your project (e.g., from `uv.lock` or `pyproject.toml`).
+
+To enable this, use the `--pre-commit` flag:
+
+```bash
+ruff-sync --pre-commit
+```
+
+Or enable it permanently in your `pyproject.toml`:
+
+```toml
+[tool.ruff-sync]
+pre-commit-sync = true
+```

@@ -109,25 +109,27 @@ Unlike other tools that might blindly overwrite your file, strip away comments, 
 Downloads the upstream configuration and merges it into your local file. Note that `pull` is the default command, so `ruff-sync` and `ruff-sync pull` are functionally identical and can be used interchangeably.
 
 ```bash
-ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
+ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commit]
 ```
 
 * **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local `[tool.ruff-sync]` config. Multiple URLs form a fallback/merge chain. All upstreams are fetched **concurrently**, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.
 * **`--to PATH`**: Where to save the merged config (defaults to the current directory `.`).
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist.
+* **`--pre-commit`**: Sync the `astral-sh/ruff-pre-commit` hook version inside `.pre-commit-config.yaml` with the project's Ruff version.
 
 ### `check`
 
 Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found.
 
 ```bash
-ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff]
+ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff] [--pre-commit]
 ```
 
 * **`UPSTREAM_URL...`**: The source URL(s). Optional if defined locally.
 * **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order. Only errors if the actual Python-level data differs.
 * **`--diff` / `--no-diff`**: Control the display of the unified diff in the terminal.
+* **`--pre-commit`**: Verify that the `astral-sh/ruff-pre-commit` hook version matches the project's Ruff version in addition to checking configuration drift.
 
 ---
 
