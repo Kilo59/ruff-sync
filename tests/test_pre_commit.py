@@ -99,7 +99,7 @@ def test_sync_pre_commit_out_of_sync_update(fs, base_dir: pathlib.Path) -> None:
     rev: 'v0.14.0'
 """
     fs.create_file(base_dir / ".pre-commit-config.yaml", contents=config_content)
-    assert sync_pre_commit(base_dir, dry_run=False) is False
+    assert sync_pre_commit(base_dir, dry_run=False) is True
     updated_content = (base_dir / ".pre-commit-config.yaml").read_text()
     assert "rev: 'v0.15.0'" in updated_content
 
@@ -110,8 +110,8 @@ def test_sync_pre_commit_out_of_sync_update_no_v(fs, base_dir: pathlib.Path) -> 
     config_content = """repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "0.14.0"
-"""
+    """
     fs.create_file(base_dir / ".pre-commit-config.yaml", contents=config_content)
-    assert sync_pre_commit(base_dir, dry_run=False) is False
+    assert sync_pre_commit(base_dir, dry_run=False) is True
     updated_content = (base_dir / ".pre-commit-config.yaml").read_text()
     assert 'rev: "0.15.0"' in updated_content

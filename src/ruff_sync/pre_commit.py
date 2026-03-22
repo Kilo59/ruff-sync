@@ -47,10 +47,10 @@ def _get_pyproject_version(pyproject: pathlib.Path) -> str | None:
             if isinstance(group_deps, list):
                 deps.extend(group_deps)
 
-        # Simple extraction: look for ruff>=X.Y.Z, ruff==X.Y.Z, ruff~=X.Y.Z
+        # Simple extraction: look for ruff>=X.Y.Z, ruff == X.Y.Z, ruff~=X.Y.Z, etc.
         for dep in deps:
             if isinstance(dep, str) and dep.startswith("ruff"):
-                match = re.search(r"ruff[>=~^]+([0-9a-zA-Z.]+)", dep)
+                match = re.search(r"ruff\s*[>=~^]+\s*([0-9A-Za-z._-]+)", dep)
                 if match:
                     return match.group(1)
     except Exception as e:
@@ -133,4 +133,4 @@ def sync_pre_commit(base_dir: pathlib.Path, dry_run: bool = False) -> bool:
     new_content = content[: match.start(2)] + new_rev_str + content[match.end(2) :]
     config_file.write_text(new_content, encoding="utf-8")
 
-    return False
+    return True

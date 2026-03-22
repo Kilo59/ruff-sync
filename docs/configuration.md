@@ -13,7 +13,7 @@
 | `path` | `str` | `""` | The directory path within the repository where the config is located. |
 | `semantic` | `bool` | `false` | Whether `check` should default to semantic matching. |
 | `diff` | `bool` | `true` | Whether `check` should show a diff by default. |
-| `pre-commit-sync` | `bool` | `false` | Sync the pre-commit ruff hook version with the project's Ruff version. |
+| `pre-commit-sync` | `bool` | `false` | Sync the pre-commit Ruff hook version with the project's Ruff version. |
 
 ## Exclude Patterns
 
