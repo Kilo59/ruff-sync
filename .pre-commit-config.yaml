@@ -11,6 +11,8 @@ repos:
       - id: check-case-conflict
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
       - id: no-commit-to-branch
         args: [--branch, develop, --branch, main]
   - repo: https://github.com/astral-sh/ruff-pre-commit
