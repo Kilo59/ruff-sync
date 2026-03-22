@@ -1533,50 +1533,40 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
     H --&gt; PC{--pre-commit?}
     PC -- Yes --&gt; SyncPC[Sync pre-commit hook version]
     SyncPC --&gt; I[End]
-    PC -- No --&gt; I[End]</code></pre>
+    PC -- No --&gt; I[End]
+
+    %% Styling
+    style A fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style I fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style E fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D fill:#ca8a04,color:#fff,stroke:#a16207
+    style PC fill:#ca8a04,color:#fff,stroke:#a16207</code></pre>
 <h3 id="check-logic">Check Logic<a class="headerlink" href="#check-logic" title="Permanent link">&para;</a></h3>
 <p>When you run <code>ruff-sync check</code>, it follows this process to determine if your project has drifted from the upstream source:</p>
 <pre class="mermaid"><code>flowchart TD
     Start([Start]) --&gt; Local[Read Local Configuration]
     Local --&gt; Upstreams{For each Upstream}
-    Upstreams --&gt; Download[Download/Clone Configuration]
-    Download --&gt; Extract[Extract section if needed]
-    Extract --&gt; Exclude[Apply Exclusions]
-    Exclude --&gt; Merge[Merge into in-memory Doc]
-    Merge --&gt; Upstreams
-    Upstreams -- Done --&gt; Comparison
+    Upstreams --&gt; Fetch[Fetch &amp; Merge Upstream]
+    Fetch --&gt; Upstreams
+    Upstreams -- Done --&gt; Compare{Ruff Config Match?}
 
-    subgraph Comparison [Comparison Logic]
-        direction TB
-        SemanticNode{--semantic?}
-        SemanticNode -- Yes --&gt; Unwrap[Unwrap TOML objects to Python Dicts]
-        Unwrap --&gt; CompareVal[Compare Key/Value Pairs]
-        SemanticNode -- No --&gt; CompareFull[Compare Full File Strings]
-    end
+    Compare -- No --&gt; Diff[Generate Diff]
+    Diff --&gt; Fail([Exit 1: Out of Sync])
 
-    Merge --&gt; Comparison
-
-    CompareVal --&gt; ResultNode{Ruff Sync Match?}
-    CompareFull --&gt; ResultNode
-
-    ResultNode -- Yes --&gt; PCNode{--pre-commit?}
-    PCNode -- Yes --&gt; CheckPC[Check pre-commit hook version]
-    CheckPC -- Match --&gt; Success([Exit 0: In Sync])
-    CheckPC -- Mismatch --&gt; PCOut([Exit 2: Pre-commit Out of Sync])
-    PCNode -- No --&gt; Success
-
-    ResultNode -- No --&gt; Diff[Generate Diff]
-    Diff --&gt; Fail([Exit 1: Ruff Config Out of Sync])
+    Compare -- Yes --&gt; PC{--pre-commit?}
+    PC -- No --&gt; Success([Exit 0: In Sync])
+    PC -- Yes --&gt; CheckPC{Hook Version Match?}
+    CheckPC -- Yes --&gt; Success
+    CheckPC -- No --&gt; PCOut([Exit 2: Hook Drift])
 
     %% Styling
-    style Start fill:#4a90e2,color:#fff,stroke:#357abd
-    style Success fill:#48c774,color:#fff,stroke:#36975a
-    style Fail fill:#f14668,color:#fff,stroke:#b2334b
-    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
-    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style PCNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
-    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb</code></pre>
+    style Start fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style Success fill:#16a34a,color:#fff,stroke:#15803d
+    style Fail fill:#dc2626,color:#fff,stroke:#b91c1c
+    style PCOut fill:#ea580c,color:#fff,stroke:#c2410c
+    style Compare fill:#ca8a04,color:#fff,stroke:#a16207
+    style PC fill:#ca8a04,color:#fff,stroke:#a16207
+    style CheckPC fill:#ca8a04,color:#fff,stroke:#a16207</code></pre>
 
 
 
