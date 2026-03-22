@@ -367,7 +367,7 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(fs: FakeFilesyste
         assert '-target-version = "py310"' in captured.out
         assert '+target-version = "py311"' in captured.out
         # Pre-commit drift should NOT be reported if config drift was found and resulted in exit 1
-        assert "pre-commit Ruff hook is out of sync" not in captured.out
+        assert "⚠️ Pre-commit hook version is out of sync!" not in captured.out
 
 
 if __name__ == "__main__":

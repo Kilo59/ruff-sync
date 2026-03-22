@@ -847,6 +847,17 @@ def _print_diff(
     sys.stdout.writelines(diff)
 
 
+def _check_pre_commit_sync(args: Arguments) -> int | None:
+    """Return exit code 2 if pre-commit hook version is out of sync, otherwise None.
+
+    Shared helper to avoid duplicating the pre-commit synchronization logic.
+    """
+    if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
+        print("⚠️ Pre-commit hook version is out of sync!")
+        return 2
+    return None
+
+
 async def check(
     args: Arguments,
 ) -> int:
@@ -910,19 +921,15 @@ async def check(
 
         if source_val == merged_val:
             print("✅ Ruff configuration is semantically in sync.")
-            if getattr(args, "pre_commit", False) and not sync_pre_commit(
-                pathlib.Path.cwd(), dry_run=True
-            ):
-                print("⚠️ Pre-commit hook version is out of sync!")
-                return 2
+            exit_code = _check_pre_commit_sync(args)
+            if exit_code is not None:
+                return exit_code
             return 0
     elif source_doc.as_string() == merged_doc.as_string():
         print("✅ Ruff configuration is in sync.")
-        if getattr(args, "pre_commit", False) and not sync_pre_commit(
-            pathlib.Path.cwd(), dry_run=True
-        ):
-            print("⚠️ Pre-commit hook version is out of sync!")
-            return 2
+        exit_code = _check_pre_commit_sync(args)
+        if exit_code is not None:
+            return exit_code
         return 0
 
     try:
