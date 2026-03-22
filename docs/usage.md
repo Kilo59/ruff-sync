@@ -139,7 +139,9 @@ ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff] [--pre-commit]
 
 ## 🗺️ Logic Flow
 
-The following diagram illustrates how `ruff-sync` handles the synchronization process under the hood:
+### Pull Logic
+
+The following diagram illustrates how `ruff-sync` handles the `pull` synchronization process under the hood:
 
 ```mermaid
 graph TD
@@ -151,4 +153,45 @@ graph TD
     F --> G[Merge Upstreams Sequentially]
     G --> H[Save Final Configuration]
     H --> I[End]
+```
+
+### Check Logic
+
+When you run `ruff-sync check`, it follows this process to determine if your project has drifted from the upstream source:
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Local[Read Local Configuration]
+    Local --> Upstreams{For each Upstream}
+    Upstreams --> Download[Download/Clone Configuration]
+    Download --> Extract[Extract section if needed]
+    Extract --> Exclude[Apply Exclusions]
+    Exclude --> Merge[Merge into in-memory Doc]
+    Merge --> Upstreams
+    Upstreams -- Done --> Comparison
+
+    subgraph Comparison [Comparison Logic]
+        direction TB
+        SemanticNode{--semantic?}
+        SemanticNode -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
+        Unwrap --> CompareVal[Compare Key/Value Pairs]
+        SemanticNode -- No --> CompareFull[Compare Full File Strings]
+    end
+
+    Merge --> Comparison
+
+    CompareVal --> ResultNode{Match?}
+    CompareFull --> ResultNode
+
+    ResultNode -- Yes --> Success([Exit 0: In Sync])
+    ResultNode -- No --> Diff[Generate Diff]
+    Diff --> Fail([Exit 1: Out of Sync])
+
+    %% Styling
+    style Start fill:#4a90e2,color:#fff,stroke:#357abd
+    style Success fill:#48c774,color:#fff,stroke:#36975a
+    style Fail fill:#f14668,color:#fff,stroke:#b2334b
+    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
+    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```
