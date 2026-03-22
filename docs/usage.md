@@ -129,7 +129,7 @@ ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff] [--pre-commit]
 * **`UPSTREAM_URL...`**: The source URL(s). Optional if defined locally.
 * **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order. Only errors if the actual Python-level data differs.
 * **`--diff` / `--no-diff`**: Control the display of the unified diff in the terminal.
-* **`--pre-commit`**: Verify that the `astral-sh/ruff-pre-commit` hook version matches the project's Ruff version in addition to checking configuration drift.
+* **`--pre-commit`**: Verify that the `astral-sh/ruff-pre-commit` hook version matches the project's Ruff version in addition to checking configuration drift. If you have `pre-commit-sync = true` configured in your `pyproject.toml`, the `check` command will automatically respect this setting and you do not need to pass this flag.
 
 ---
 
