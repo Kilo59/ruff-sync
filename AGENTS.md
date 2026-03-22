@@ -87,7 +87,7 @@ uv run ruff check . --fix
 - Tests have additional overrides in `tests/ruff.toml` (extends the root config).
 - All Python files must include `from __future__ import annotations` (enforced by isort rule `I002`).
 - Use `uv run ruff check . --fix` to auto-fix issues. Use `--unsafe-fixes` only if explicitly asked.
-- **Do NOT disable or ignore rules** unless the user explicitly asks you to.
+- **Do NOT disable or ignore rules** unless the user explicitly asks you to. You must **fix the underlying code** to pass the linter, rather than appending `# noqa` directives or adding rules to `ignore` in `pyproject.toml`.
 
 #### Understanding a Rule
 
