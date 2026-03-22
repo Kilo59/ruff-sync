@@ -730,6 +730,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="🗺️ Logic Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pull-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -962,6 +990,8 @@
       
         
       
+        
+      
     
     
     
@@ -1061,6 +1091,34 @@
     
   
     core
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/ruff_sync/pre_commit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pre_commit
   
 
     
@@ -1274,6 +1332,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="🗺️ Logic Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pull-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1408,26 +1494,34 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <h2 id="command-reference">📚 Command Reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h2>
 <h3 id="pull-or-just-ruff-sync"><code>pull</code> (or just <code>ruff-sync</code>)<a class="headerlink" href="#pull-or-just-ruff-sync" title="Permanent link">&para;</a></h3>
 <p>Downloads the upstream configuration and merges it into your local file. Note that <code>pull</code> is the default command, so <code>ruff-sync</code> and <code>ruff-sync pull</code> are functionally identical and can be used interchangeably.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ruff-sync<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ruff-sync<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>UPSTREAM_URL...</code></strong>: One or more URLs to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local <code>[tool.ruff-sync]</code> config. Multiple URLs form a fallback/merge chain. All upstreams are fetched <strong>concurrently</strong>, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.</li>
 <li><strong><code>--to PATH</code></strong>: Where to save the merged config (defaults to the current directory <code>.</code>).</li>
 <li><strong><code>--exclude KEY...</code></strong>: Dotted paths of keys to keep local and never overwrite (e.g., <code>lint.isort</code>).</li>
 <li><strong><code>--init</code></strong>: Create a new <code>pyproject.toml</code> with the upstream configuration if it doesn't already exist.</li>
+<li><strong><code>--pre-commit</code></strong>: Sync the <code>astral-sh/ruff-pre-commit</code> hook version inside <code>.pre-commit-config.yaml</code> with the project's Ruff version.</li>
 </ul>
 <h3 id="check"><code>check</code><a class="headerlink" href="#check" title="Permanent link">&para;</a></h3>
-<p>Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span>
+<p>Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found:</p>
+<ul>
+<li>Exit <strong><code>0</code></strong>: Configuration is fully in sync.</li>
+<li>Exit <strong><code>1</code></strong>: <code>pyproject.toml</code> or <code>ruff.toml</code> drifted from the upstream.</li>
+<li>Exit <strong><code>2</code></strong>: Local config is in sync, but the <code>.pre-commit-config.yaml</code> hook drifted from the project's Ruff version (only applies if <code>--pre-commit</code> is enabled).</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>UPSTREAM_URL...</code></strong>: The source URL(s). Optional if defined locally.</li>
 <li><strong><code>--semantic</code></strong>: Ignore "non-functional" differences like whitespace, comments, or key order. Only errors if the actual Python-level data differs.</li>
 <li><strong><code>--diff</code> / <code>--no-diff</code></strong>: Control the display of the unified diff in the terminal.</li>
+<li><strong><code>--pre-commit</code></strong>: Verify that the <code>astral-sh/ruff-pre-commit</code> hook version matches the project's Ruff version in addition to checking configuration drift. If you have <code>pre-commit-version-sync = true</code> configured in your <code>pyproject.toml</code>, the <code>check</code> command will automatically respect this setting and you do not need to pass this flag.</li>
 </ul>
 <hr />
 <h2 id="logic-flow">🗺️ Logic Flow<a class="headerlink" href="#logic-flow" title="Permanent link">&para;</a></h2>
-<p>The following diagram illustrates how <code>ruff-sync</code> handles the synchronization process under the hood:</p>
+<h3 id="pull-logic">Pull Logic<a class="headerlink" href="#pull-logic" title="Permanent link">&para;</a></h3>
+<p>The following diagram illustrates how <code>ruff-sync</code> handles the <code>pull</code> synchronization process under the hood:</p>
 <pre class="mermaid"><code>graph TD
     A[Start] --&gt; B[Resolve all Upstream URLs]
     B --&gt; C[Fetch all Upstreams Concurrently]
@@ -1436,7 +1530,53 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
     D -- No --&gt; F[Initialize Target Doc]
     F --&gt; G[Merge Upstreams Sequentially]
     G --&gt; H[Save Final Configuration]
-    H --&gt; I[End]</code></pre>
+    H --&gt; PC{--pre-commit?}
+    PC -- Yes --&gt; SyncPC[Sync pre-commit hook version]
+    SyncPC --&gt; I[End]
+    PC -- No --&gt; I[End]</code></pre>
+<h3 id="check-logic">Check Logic<a class="headerlink" href="#check-logic" title="Permanent link">&para;</a></h3>
+<p>When you run <code>ruff-sync check</code>, it follows this process to determine if your project has drifted from the upstream source:</p>
+<pre class="mermaid"><code>flowchart TD
+    Start([Start]) --&gt; Local[Read Local Configuration]
+    Local --&gt; Upstreams{For each Upstream}
+    Upstreams --&gt; Download[Download/Clone Configuration]
+    Download --&gt; Extract[Extract section if needed]
+    Extract --&gt; Exclude[Apply Exclusions]
+    Exclude --&gt; Merge[Merge into in-memory Doc]
+    Merge --&gt; Upstreams
+    Upstreams -- Done --&gt; Comparison
+
+    subgraph Comparison [Comparison Logic]
+        direction TB
+        SemanticNode{--semantic?}
+        SemanticNode -- Yes --&gt; Unwrap[Unwrap TOML objects to Python Dicts]
+        Unwrap --&gt; CompareVal[Compare Key/Value Pairs]
+        SemanticNode -- No --&gt; CompareFull[Compare Full File Strings]
+    end
+
+    Merge --&gt; Comparison
+
+    CompareVal --&gt; ResultNode{Ruff Sync Match?}
+    CompareFull --&gt; ResultNode
+
+    ResultNode -- Yes --&gt; PCNode{--pre-commit?}
+    PCNode -- Yes --&gt; CheckPC[Check pre-commit hook version]
+    CheckPC -- Match --&gt; Success([Exit 0: In Sync])
+    CheckPC -- Mismatch --&gt; PCOut([Exit 2: Pre-commit Out of Sync])
+    PCNode -- No --&gt; Success
+
+    ResultNode -- No --&gt; Diff[Generate Diff]
+    Diff --&gt; Fail([Exit 1: Ruff Config Out of Sync])
+
+    %% Styling
+    style Start fill:#4a90e2,color:#fff,stroke:#357abd
+    style Success fill:#48c774,color:#fff,stroke:#36975a
+    style Fail fill:#f14668,color:#fff,stroke:#b2334b
+    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
+    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style PCNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
+    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb</code></pre>
 
 
 
