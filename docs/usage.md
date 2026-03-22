@@ -156,6 +156,13 @@ graph TD
     PC -- Yes --> SyncPC[Sync pre-commit hook version]
     SyncPC --> I[End]
     PC -- No --> I[End]
+
+    %% Styling
+    style A fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style I fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style E fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D fill:#ca8a04,color:#fff,stroke:#a16207
+    style PC fill:#ca8a04,color:#fff,stroke:#a16207
 ```
 
 ### Check Logic
@@ -180,11 +187,11 @@ flowchart TD
     CheckPC -- No --> PCOut([Exit 2: Hook Drift])
 
     %% Styling
-    style Start fill:#4a90e2,color:#fff,stroke:#357abd
-    style Success fill:#48c774,color:#fff,stroke:#36975a
-    style Fail fill:#f14668,color:#fff,stroke:#b2334b
-    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
-    style Compare fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style PC fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style CheckPC fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style Start fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style Success fill:#16a34a,color:#fff,stroke:#15803d
+    style Fail fill:#dc2626,color:#fff,stroke:#b91c1c
+    style PCOut fill:#ea580c,color:#fff,stroke:#c2410c
+    style Compare fill:#ca8a04,color:#fff,stroke:#a16207
+    style PC fill:#ca8a04,color:#fff,stroke:#a16207
+    style CheckPC fill:#ca8a04,color:#fff,stroke:#a16207
 ```
