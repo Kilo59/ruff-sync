@@ -176,6 +176,7 @@ Defined in `tasks.py`. **ALWAYS** run these through uv: `uv run invoke <task>`
 | `type-check` | `types`               | Type-check with mypy                   |
 | `deps`       | `sync`                | Sync dependencies with uv              |
 | `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML fixtures       |
+| `docs`       |                       | Build or serve documentation           |
 
 ## CI
 

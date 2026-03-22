@@ -20,6 +20,20 @@ This page covers the essentials. For the full contributor's guide, see [CONTRIBU
 
 ---
 
+## Documentation Preview
+
+You can preview the documentation locally using Invoke:
+
+```bash
+# Build and serve locally (localhost:8000)
+uv run invoke docs
+
+# Build only
+uv run invoke docs --build
+```
+
+---
+
 ## Quality Checks
 
 Run these before every commit, in order:

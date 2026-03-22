@@ -50,6 +50,7 @@ The project uses a `src` layout. All source code lives in `src/ruff_sync/`. Deve
 | `uv run invoke type-check` | `types` | Type-check with mypy |
 | `uv run invoke deps` | `sync` | Sync dependencies with uv |
 | `uv run invoke new-case` | `new-lifecycle-tomls` | Scaffold lifecycle TOML test fixtures |
+| `uv run invoke docs` | | Build or serve documentation |
 
 ---
 

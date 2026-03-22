@@ -201,3 +201,22 @@ def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None)
         TOMLFile(LIFECYCLE_TOML_DIR / file_name).write(toml_doc)
         print(f"📄 {file_name}")
     print(f"🎉 Created tomls for '{name}' test case")
+
+
+@task(
+    help={
+        "serve": "Build and serve the documentation locally (default if no flags)",
+        "build": "Build the documentation to the site/ directory",
+    }
+)
+def docs(ctx: Context, *, serve: bool = False, build: bool = False) -> None:
+    """Build or serve the documentation."""
+    # Default to serve if no flags provided
+    if not (serve or build):
+        serve = True
+    cmds = ["mkdocs"]
+    if build:
+        cmds.append("build")
+    elif serve:
+        cmds.append("serve")
+    ctx.run("uv run " + " ".join(cmds), echo=True, pty=True)
