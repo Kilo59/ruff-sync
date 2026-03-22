@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING, Final
+
+import tomlkit
 
 if TYPE_CHECKING:
     import pathlib
-import re
-
-import tomlkit
 
 __all__: Final[list[str]] = [
     "resolve_ruff_version",
