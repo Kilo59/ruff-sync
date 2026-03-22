@@ -147,7 +147,8 @@ ruff-sync --exclude lint.ignore
 **Checking for Drift (CI)**
 
 ```console
-# Verify local config matches upstream. Exits 1 if out of sync.
+# Verify local config matches upstream. Exits 1 if config is out of sync.
+# If opted in via --pre-commit, exits 2 if only the pre-commit hook is out of sync.
 ruff-sync check https://github.com/my-org/standards
 
 # Semantic check — ignores cosmetic differences like comments and whitespace
@@ -167,6 +168,7 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 - 🌍 **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml` or `ruff.toml`.
 - 🤖 **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - 🧠 **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
+- 🔗 **Pre-commit hook sync** — Use `--pre-commit` to automatically keep your `ruff-pre-commit` hook version in `.pre-commit-config.yaml` matching your project's Ruff version.
 
 ## Configuration
 
@@ -176,6 +178,9 @@ You can configure `ruff-sync` itself in your `pyproject.toml`:
 [tool.ruff-sync]
 # The source of truth for your Ruff configuration
 upstream = "https://github.com/my-org/standards"
+
+# Automatically sync the pre-commit Ruff hook version
+pre-commit-version-sync = true
 
 # Use simple names for top-level keys, and dotted paths for nested keys
 exclude = [
@@ -211,12 +216,15 @@ exclude = [
 # The branch, tag, or commit hash to use when resolving a Git repository URL. (Default: "main")
 branch = "develop"
 
-# A directory prefix to use when looking for a configuration file in a repository. (Default: "")
+# The directory path within the repository where the config is located. (Default: "")
 # Useful if the upstream config is not at the repository root.
 path = "config/ruff"
 
 # The local target directory or file to sync into. (Default: ".")
 to = "."
+
+# Keep the pre-commit Ruff hook version in sync with the project's Ruff version. (Default: false)
+pre-commit-version-sync = true
 ```
 
 ## Pre-commit Integration
@@ -362,18 +370,25 @@ flowchart TD
 
     Merge --> Comparison
 
-    CompareVal --> ResultNode{Match?}
+    CompareVal --> ResultNode{Ruff Sync Match?}
     CompareFull --> ResultNode
 
-    ResultNode -- Yes --> Success([Exit 0: In Sync])
+    ResultNode -- Yes --> PCNode{--pre-commit?}
+    PCNode -- Yes --> CheckPC[Check pre-commit hook version]
+    CheckPC -- Match --> Success([Exit 0: In Sync])
+    CheckPC -- Mismatch --> PCOut([Exit 2: Pre-commit Out of Sync])
+    PCNode -- No --> Success
+
     ResultNode -- No --> Diff[Generate Diff]
-    Diff --> Fail([Exit 1: Out of Sync])
+    Diff --> Fail([Exit 1: Ruff Config Out of Sync])
 
     %% Styling
     style Start fill:#4a90e2,color:#fff,stroke:#357abd
     style Success fill:#48c774,color:#fff,stroke:#36975a
     style Fail fill:#f14668,color:#fff,stroke:#b2334b
+    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
     style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style PCNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
     style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
     style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```

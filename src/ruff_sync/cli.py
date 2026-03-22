@@ -11,7 +11,7 @@ import logging
 import os
 import pathlib
 import sys
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from argparse import ArgumentParser, BooleanOptionalAction, RawDescriptionHelpFormatter
 from functools import lru_cache
 from importlib import metadata
 from typing import (
@@ -93,6 +93,7 @@ class Arguments(NamedTuple):
     semantic: bool = False
     diff: bool = True
     init: bool = False
+    pre_commit: bool = False
 
     @property
     @deprecated("Use 'to' instead")
@@ -138,13 +139,19 @@ def get_config(
         if config:
             allowed_keys = set(Config.__annotations__.keys())
             for arg, value in config.items():
-                if arg in allowed_keys:
-                    if arg == "source":
+                arg_norm = arg.replace("-", "_")
+
+                # Handle aliases for pre-commit
+                if arg_norm in ("pre_commit_sync", "pre_commit"):
+                    arg_norm = "pre_commit_version_sync"
+
+                if arg_norm in allowed_keys:
+                    if arg_norm == "source":
                         LOGGER.warning(
                             "DeprecationWarning: [tool.ruff-sync] 'source' is deprecated. "
                             "Use 'to' instead."
                         )
-                    cfg_result[arg] = value
+                    cfg_result[arg_norm] = value
                 else:
                     LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
             # Ensure 'to' is populated if 'source' was used
@@ -226,6 +233,12 @@ def _get_cli_parser() -> ArgumentParser:
         "--path",
         help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located. Default: root",
         default=None,
+    )
+    common_parser.add_argument(
+        "--pre-commit",
+        action=BooleanOptionalAction,
+        default=None,
+        help="Sync the pre-commit Ruff hook version with the project's Ruff version.",
     )
 
     # Pull subcommand (the default action)
@@ -408,6 +421,12 @@ def main() -> int:
     # Convert non-raw github/gitlab upstream url to the raw equivalent
     upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
 
+    pre_commit_arg = getattr(args, "pre_commit", None)
+    if pre_commit_arg is not None:
+        pre_commit_val = pre_commit_arg
+    else:
+        pre_commit_val = config.get("pre_commit_version_sync", False)
+
     # Create Arguments object
     exec_args = Arguments(
         command=args.command,
@@ -420,6 +439,7 @@ def main() -> int:
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
+        pre_commit=bool(pre_commit_val),
     )
 
     try:

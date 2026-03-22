@@ -33,6 +33,8 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
+from ruff_sync.pre_commit import sync_pre_commit
+
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
 
@@ -122,6 +124,7 @@ class Config(TypedDict, total=False):
     semantic: bool
     diff: bool
     init: bool
+    pre_commit_version_sync: bool
 
 
 def resolve_target_path(
@@ -813,6 +816,37 @@ async def _merge_multiple_upstreams(
     return target_doc
 
 
+def _print_diff(
+    args: Arguments,
+    source_toml_path: pathlib.Path,
+    source_doc: tomlkit.TOMLDocument,
+    merged_doc: tomlkit.TOMLDocument,
+    source_val: Any,
+    merged_val: Any,
+) -> None:
+    """Print the unified diff between the local and expected configurations."""
+    if args.semantic:
+        # Semantic diff of the managed section
+        from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(keepends=True)
+        to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
+        from_file = "local (semantic)"
+        to_file = "upstream (semantic)"
+    else:
+        # Full text diff of the file
+        from_lines = source_doc.as_string().splitlines(keepends=True)
+        to_lines = merged_doc.as_string().splitlines(keepends=True)
+        from_file = f"local/{source_toml_path.name}"
+        to_file = f"upstream/{source_toml_path.name}"
+
+    diff = difflib.unified_diff(
+        from_lines,
+        to_lines,
+        fromfile=from_file,
+        tofile=to_file,
+    )
+    sys.stdout.writelines(diff)
+
+
 async def check(
     args: Arguments,
 ) -> int:
@@ -851,6 +885,13 @@ async def check(
     source_doc_copy = tomlkit.parse(source_doc.as_string())
     merged_doc = source_doc_copy
 
+    out_of_sync = False
+    if getattr(args, "pre_commit", False):
+        # Base directory for the project, assumed to be where pre-commit config lives
+        base_dir = pathlib.Path.cwd()
+        if not sync_pre_commit(base_dir, dry_run=True):
+            out_of_sync = True
+
     async with httpx.AsyncClient() as client:
         merged_doc = await _merge_multiple_upstreams(
             merged_doc,
@@ -860,6 +901,8 @@ async def check(
         )
 
     is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+    source_val: Any = None
+    merged_val: Any = None
     if args.semantic:
         if is_source_ruff_toml:
             source_ruff = source_doc
@@ -874,37 +917,26 @@ async def check(
 
         if source_val == merged_val:
             print("✅ Ruff configuration is semantically in sync.")
-            return 0
+            return 2 if out_of_sync else 0
     elif source_doc.as_string() == merged_doc.as_string():
         print("✅ Ruff configuration is in sync.")
-        return 0
+        return 2 if out_of_sync else 0
 
     try:
         rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path
     print(f"❌ Ruff configuration at {rel_path} is out of sync!")
-    if args.diff:
-        if args.semantic:
-            # Semantic diff of the managed section
-            from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(keepends=True)
-            to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
-            from_file = "local (semantic)"
-            to_file = "upstream (semantic)"
-        else:
-            # Full text diff of the file
-            from_lines = source_doc.as_string().splitlines(keepends=True)
-            to_lines = merged_doc.as_string().splitlines(keepends=True)
-            from_file = f"local/{_source_toml_path.name}"
-            to_file = f"upstream/{_source_toml_path.name}"
 
-        diff = difflib.unified_diff(
-            from_lines,
-            to_lines,
-            fromfile=from_file,
-            tofile=to_file,
+    if args.diff:
+        _print_diff(
+            args=args,
+            source_toml_path=_source_toml_path,
+            source_doc=source_doc,
+            merged_doc=merged_doc,
+            source_val=source_val,
+            merged_val=merged_val,
         )
-        sys.stdout.writelines(diff)
     return 1
 
 
@@ -967,4 +999,8 @@ async def pull(
     except ValueError:
         rel_path = _source_toml_path.resolve()
     print(f"✅ Updated {rel_path}")
+
+    if getattr(args, "pre_commit", False):
+        sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
+
     return 0

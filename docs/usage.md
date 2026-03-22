@@ -109,31 +109,39 @@ Unlike other tools that might blindly overwrite your file, strip away comments, 
 Downloads the upstream configuration and merges it into your local file. Note that `pull` is the default command, so `ruff-sync` and `ruff-sync pull` are functionally identical and can be used interchangeably.
 
 ```bash
-ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init]
+ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commit]
 ```
 
 * **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local `[tool.ruff-sync]` config. Multiple URLs form a fallback/merge chain. All upstreams are fetched **concurrently**, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.
 * **`--to PATH`**: Where to save the merged config (defaults to the current directory `.`).
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist.
+* **`--pre-commit`**: Sync the `astral-sh/ruff-pre-commit` hook version inside `.pre-commit-config.yaml` with the project's Ruff version.
 
 ### `check`
 
-Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found.
+Verifies if your local configuration matches what the upstream would produce. It exits with a non-zero code if differences are found:
+
+* Exit **`0`**: Configuration is fully in sync.
+* Exit **`1`**: `pyproject.toml` or `ruff.toml` drifted from the upstream.
+* Exit **`2`**: Local config is in sync, but the `.pre-commit-config.yaml` hook drifted from the project's Ruff version (only applies if `--pre-commit` is enabled).
 
 ```bash
-ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff]
+ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff] [--pre-commit]
 ```
 
 * **`UPSTREAM_URL...`**: The source URL(s). Optional if defined locally.
 * **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order. Only errors if the actual Python-level data differs.
 * **`--diff` / `--no-diff`**: Control the display of the unified diff in the terminal.
+* **`--pre-commit`**: Verify that the `astral-sh/ruff-pre-commit` hook version matches the project's Ruff version in addition to checking configuration drift. If you have `pre-commit-version-sync = true` configured in your `pyproject.toml`, the `check` command will automatically respect this setting and you do not need to pass this flag.
 
 ---
 
 ## 🗺️ Logic Flow
 
-The following diagram illustrates how `ruff-sync` handles the synchronization process under the hood:
+### Pull Logic
+
+The following diagram illustrates how `ruff-sync` handles the `pull` synchronization process under the hood:
 
 ```mermaid
 graph TD
@@ -144,5 +152,56 @@ graph TD
     D -- No --> F[Initialize Target Doc]
     F --> G[Merge Upstreams Sequentially]
     G --> H[Save Final Configuration]
-    H --> I[End]
+    H --> PC{--pre-commit?}
+    PC -- Yes --> SyncPC[Sync pre-commit hook version]
+    SyncPC --> I[End]
+    PC -- No --> I[End]
+```
+
+### Check Logic
+
+When you run `ruff-sync check`, it follows this process to determine if your project has drifted from the upstream source:
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Local[Read Local Configuration]
+    Local --> Upstreams{For each Upstream}
+    Upstreams --> Download[Download/Clone Configuration]
+    Download --> Extract[Extract section if needed]
+    Extract --> Exclude[Apply Exclusions]
+    Exclude --> Merge[Merge into in-memory Doc]
+    Merge --> Upstreams
+    Upstreams -- Done --> Comparison
+
+    subgraph Comparison [Comparison Logic]
+        direction TB
+        SemanticNode{--semantic?}
+        SemanticNode -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
+        Unwrap --> CompareVal[Compare Key/Value Pairs]
+        SemanticNode -- No --> CompareFull[Compare Full File Strings]
+    end
+
+    Merge --> Comparison
+
+    CompareVal --> ResultNode{Ruff Sync Match?}
+    CompareFull --> ResultNode
+
+    ResultNode -- Yes --> PCNode{--pre-commit?}
+    PCNode -- Yes --> CheckPC[Check pre-commit hook version]
+    CheckPC -- Match --> Success([Exit 0: In Sync])
+    CheckPC -- Mismatch --> PCOut([Exit 2: Pre-commit Out of Sync])
+    PCNode -- No --> Success
+
+    ResultNode -- No --> Diff[Generate Diff]
+    Diff --> Fail([Exit 1: Ruff Config Out of Sync])
+
+    %% Styling
+    style Start fill:#4a90e2,color:#fff,stroke:#357abd
+    style Success fill:#48c774,color:#fff,stroke:#36975a
+    style Fail fill:#f14668,color:#fff,stroke:#b2334b
+    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
+    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style PCNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
+    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
+    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```

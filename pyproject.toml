@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.1.dev1"
+version = "0.1.2.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
 authors = [
@@ -201,6 +201,9 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.pylint]
+max-args = 6
 
 [tool.ruff.format]
 # Format code snippets in docstrings.

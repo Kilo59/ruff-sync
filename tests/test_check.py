@@ -90,6 +90,53 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
+async def test_check_pre_commit_out_of_sync(fs: FakeFilesystem, caplog):
+    # Setup
+    local_content = """
+[tool.ruff]
+target-version = "py310"
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    # Mock uv.lock and .pre-commit-config.yaml to be out of sync
+    fs.create_file("uv.lock", contents='[[package]]\nname = "ruff"\nversion = "0.15.0"')
+    config_content = """repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff
+"""
+    fs.create_file(".pre-commit-config.yaml", contents=config_content)
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=local_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            pre_commit=True,
+        )
+
+        # Ruff config matches completely, but pre_commit is out of sync -> Exit code 2
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 2
+
+        assert "pre-commit Ruff hook is out of sync" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_check_semantic_sync(fs: FakeFilesystem):
     # A local comment does NOT make you out of sync — ruff-sync only adds/updates
     # keys, it never strips local-only additions like comments.
