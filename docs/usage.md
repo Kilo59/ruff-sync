@@ -15,9 +15,13 @@ This guide covers common daily workflows, explains how `ruff-sync` merges config
 
 If you want to pull rules from a central repository into your current project, run:
 
-```bash
-ruff-sync https://github.com/my-org/standards
+<div class="termy">
+```console
+$ ruff-sync https://github.com/my-org/standards
+Fetching upstream... Done.
+Merging configuration... Done.
 ```
+</div>
 
 This fetches the `pyproject.toml` from the `main` branch of `my-org/standards`, extracts the `[tool.ruff]` section, and surgically merges it into your local `pyproject.toml`.
 
@@ -32,17 +36,25 @@ upstream = "https://github.com/my-org/standards"
 
 Now, you can simply run:
 
-```bash
-ruff-sync
+<div class="termy">
+```console
+$ ruff-sync
+Fetching upstream... Done.
+Merging configuration... Done.
 ```
+</div>
 
 ### Initializing a New Project
 
 If your local directory doesn't have a `pyproject.toml` yet, you can scaffold one:
 
-```bash
-ruff-sync https://github.com/my-org/standards --init
+<div class="termy">
+```console
+$ ruff-sync https://github.com/my-org/standards --init
+Fetching upstream... Done.
+Merging configuration... Done.
 ```
+</div>
 
 This creates a new `pyproject.toml` populated with the upstream configuration and automatically adds a `[tool.ruff-sync]` block so you won't need to specify the URL again.
 
@@ -70,9 +82,13 @@ ruff-sync --exclude lint.ignore lint.select
 
 To ensure your repository hasn't drifted from your organization's unified standards, use the `check` command. It compares your local config to the upstream and warns you of any divergence.
 
-```bash
-ruff-sync check https://github.com/my-org/standards
+<div class="termy">
+```console
+$ ruff-sync check https://github.com/my-org/standards
+Fetching upstream... Done.
+✅ Configuration is in sync
 ```
+</div>
 
 *(If you have `upstream` configured in your `pyproject.toml`, you can just run `ruff-sync check`.)*
 
@@ -80,9 +96,13 @@ ruff-sync check https://github.com/my-org/standards
 
 Often, the exact ordering of keys, whitespace, or comments might slightly differ from the upstream, even though the actual rules are identical. Use the `--semantic` flag to ignore functional equivalents:
 
-```bash
-ruff-sync check --semantic
+<div class="termy">
+```console
+$ ruff-sync check --semantic
+Fetching upstream... Done.
+✅ Configuration is in sync (semantic)
 ```
+</div>
 
 *(This is heavily recommended for CI pipelines.)*
 
