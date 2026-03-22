@@ -373,11 +373,7 @@ flowchart TD
     CompareVal --> ResultNode{Ruff Sync Match?}
     CompareFull --> ResultNode
 
-    ResultNode -- Yes --> PCNode{--pre-commit?}
-    PCNode -- Yes --> CheckPC[Check pre-commit hook version]
-    CheckPC -- Match --> Success([Exit 0: In Sync])
-    CheckPC -- Mismatch --> PCOut([Exit 2: Pre-commit Out of Sync])
-    PCNode -- No --> Success
+    ResultNode -- Yes --> Success([Exit 0: In Sync])
 
     ResultNode -- No --> Diff[Generate Diff]
     Diff --> Fail([Exit 1: Ruff Config Out of Sync])
@@ -386,9 +382,7 @@ flowchart TD
     style Start fill:#4a90e2,color:#fff,stroke:#357abd
     style Success fill:#48c774,color:#fff,stroke:#36975a
     style Fail fill:#f14668,color:#fff,stroke:#b2334b
-    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
     style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style PCNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
     style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
     style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
 ```
