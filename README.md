@@ -90,37 +90,21 @@ See the [Installation Guide](https://kilo59.github.io/ruff-sync/installation/) f
 
 With [uv](https://docs.astral.sh/uv/) (recommended):
 
-<div class="termy">
-
 ```console
-$ uv tool install ruff-sync
-Fetching executable... Done.
-Installed ruff-sync.
+uv tool install ruff-sync
 ```
-
-</div>
 
 With [pipx](https://pipx.pypa.io/stable/):
 
-<div class="termy">
-
 ```console
-$ pipx install ruff-sync
-Installing ruff-sync... Done.
+pipx install ruff-sync
 ```
-
-</div>
 
 With [pip](https://pip.pypa.io/en/stable/):
 
-<div class="termy">
-
 ```console
-$ pip install ruff-sync
-Successfully installed ruff-sync.
+pip install ruff-sync
 ```
-
-</div>
 
 ### Usage
 

@@ -42,14 +42,6 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
-extra_css:
-  - css/termynal.css
-  - css/custom.css
-
-extra_javascript:
-  - js/termynal.js
-  - js/custom.js
-
 extra:
   social:
     - icon: fontawesome/brands/github

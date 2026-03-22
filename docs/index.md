@@ -45,13 +45,9 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 
 If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:
 
-<div class="termy">
-```console
-$ ruff-sync https://github.com/my-org/standards --init
-Fetching upstream... Done.
-Merging configuration... Done.
+```bash
+uv run ruff-sync https://github.com/my-org/standards --init
 ```
-</div>
 
 ### 2. Configure an existing project
 
@@ -66,13 +62,9 @@ upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 
 Once configured, simply run:
 
-<div class="termy">
-```console
-$ ruff-sync
-Fetching upstream... Done.
-Merging configuration... Done.
+```bash
+uv run ruff-sync
 ```
-</div>
 
 This will download the upstream file, extract the `[tool.ruff]` section, and merge it into your local file while **preserving your artisanal comments and formatting**.
 
