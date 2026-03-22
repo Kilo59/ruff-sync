@@ -2,7 +2,7 @@
 name = "ruff-sync"
 version = "0.1.2"
 description = "Synchronize Ruff linter configuration across projects"
-keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit"]
+keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
     { name = "Gabriel Gore", email = "gabriel59kg@gmail.com" }
 ]
