@@ -1,6 +1,7 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/Kilo59/ruff-sync/main/docs/assets/ruff_sync_banner.png" alt="ruff-sync banner" style="max-width: 600px; width: 100%; height: auto; margin-bottom: 1rem;">
   <br>
+  <a href="https://kilo59.github.io/ruff-sync/"><img src="https://img.shields.io/badge/docs-MkDocs-blue.svg" alt="Documentation"></a>
   <a href="https://pypi.org/project/ruff-sync/"><img src="https://img.shields.io/pypi/v/ruff-sync" alt="PyPI version"></a>
   <a href="https://codecov.io/gh/Kilo59/ruff-sync"><img src="https://codecov.io/gh/Kilo59/ruff-sync/graph/badge.svg?token=kMZw0XtoFW" alt="codecov"></a>
   <a href="https://results.pre-commit.ci/latest/github/Kilo59/ruff-sync/main"><img src="https://results.pre-commit.ci/badge/github/Kilo59/ruff-sync/main.svg" alt="pre-commit.ci status"></a>
@@ -18,6 +19,7 @@
 
 ## Table of Contents
 
+- [Documentation](https://kilo59.github.io/ruff-sync/)
 - [The Problem](#the-problem)
 - [How It Works](#how-it-works)
 - [Quick Start](#quick-start)
@@ -25,6 +27,8 @@
 - [Configuration](#configuration)
 - [Pre-commit Integration](#pre-commit-integration)
 - [CI Integration](#ci-integration)
+- [Troubleshooting](https://kilo59.github.io/ruff-sync/troubleshooting/)
+- [API Reference](https://kilo59.github.io/ruff-sync/reference/)
 - [Example Workflow](#example-workflow)
 - [Detailed Check Logic](#detailed-check-logic)
 - [Dogfooding](#dogfooding)
@@ -81,6 +85,8 @@ No package registry. No publishing step. Just a URL.
 ## Quick Start
 
 ### Install
+
+See the [Installation Guide](https://kilo59.github.io/ruff-sync/installation/) for more detailed instructions.
 
 With [uv](https://docs.astral.sh/uv/) (recommended):
 
@@ -172,6 +178,8 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 
 ## Configuration
 
+Point `ruff-sync` at your upstream source and it will handle the rest. See the [Full Configuration Guide](https://kilo59.github.io/ruff-sync/configuration/) for all available options.
+
 You can configure `ruff-sync` itself in your `pyproject.toml`:
 
 ```toml
@@ -242,7 +250,7 @@ See the [Pre-commit Guide](https://kilo59.github.io/ruff-sync/pre-commit/) for m
 
 ## CI Integration
 
-The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges:
+The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges. See the [CI Integration Guide](https://kilo59.github.io/ruff-sync/ci-integration/) for more details.
 
 ```yaml
 # .github/workflows/ci.yaml
