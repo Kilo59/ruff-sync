@@ -156,6 +156,13 @@ graph TD
     PC -- Yes --> SyncPC[Sync pre-commit hook version]
     SyncPC --> I[End]
     PC -- No --> I[End]
+
+    %% Styling
+    style A fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style I fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style E fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D fill:#ca8a04,color:#fff,stroke:#a16207
+    style PC fill:#ca8a04,color:#fff,stroke:#a16207
 ```
 
 ### Check Logic
@@ -166,42 +173,25 @@ When you run `ruff-sync check`, it follows this process to determine if your pro
 flowchart TD
     Start([Start]) --> Local[Read Local Configuration]
     Local --> Upstreams{For each Upstream}
-    Upstreams --> Download[Download/Clone Configuration]
-    Download --> Extract[Extract section if needed]
-    Extract --> Exclude[Apply Exclusions]
-    Exclude --> Merge[Merge into in-memory Doc]
-    Merge --> Upstreams
-    Upstreams -- Done --> Comparison
+    Upstreams --> Fetch[Fetch & Merge Upstream]
+    Fetch --> Upstreams
+    Upstreams -- Done --> Compare{Ruff Config Match?}
 
-    subgraph Comparison [Comparison Logic]
-        direction TB
-        SemanticNode{--semantic?}
-        SemanticNode -- Yes --> Unwrap[Unwrap TOML objects to Python Dicts]
-        Unwrap --> CompareVal[Compare Key/Value Pairs]
-        SemanticNode -- No --> CompareFull[Compare Full File Strings]
-    end
+    Compare -- No --> Diff[Generate Diff]
+    Diff --> Fail([Exit 1: Out of Sync])
 
-    Merge --> Comparison
-
-    CompareVal --> ResultNode{Ruff Sync Match?}
-    CompareFull --> ResultNode
-
-    ResultNode -- Yes --> PCNode{--pre-commit?}
-    PCNode -- Yes --> CheckPC[Check pre-commit hook version]
-    CheckPC -- Match --> Success([Exit 0: In Sync])
-    CheckPC -- Mismatch --> PCOut([Exit 2: Pre-commit Out of Sync])
-    PCNode -- No --> Success
-
-    ResultNode -- No --> Diff[Generate Diff]
-    Diff --> Fail([Exit 1: Ruff Config Out of Sync])
+    Compare -- Yes --> PC{--pre-commit?}
+    PC -- No --> Success([Exit 0: In Sync])
+    PC -- Yes --> CheckPC{Hook Version Match?}
+    CheckPC -- Yes --> Success
+    CheckPC -- No --> PCOut([Exit 2: Hook Drift])
 
     %% Styling
-    style Start fill:#4a90e2,color:#fff,stroke:#357abd
-    style Success fill:#48c774,color:#fff,stroke:#36975a
-    style Fail fill:#f14668,color:#fff,stroke:#b2334b
-    style PCOut fill:#ff9800,color:#fff,stroke:#e65100
-    style ResultNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style PCNode fill:#ffdd57,color:#4a4a4a,stroke:#d4b106
-    style Comparison fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5,stroke-width:2px
-    style SemanticNode fill:#f4f4f4,color:#363636,stroke:#dbdbdb
+    style Start fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style Success fill:#16a34a,color:#fff,stroke:#15803d
+    style Fail fill:#dc2626,color:#fff,stroke:#b91c1c
+    style PCOut fill:#ea580c,color:#fff,stroke:#c2410c
+    style Compare fill:#ca8a04,color:#fff,stroke:#a16207
+    style PC fill:#ca8a04,color:#fff,stroke:#a16207
+    style CheckPC fill:#ca8a04,color:#fff,stroke:#a16207
 ```

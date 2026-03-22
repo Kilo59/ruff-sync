@@ -325,5 +325,50 @@ select = ["E", "F"]
         assert '+select = ["E", "F"]' in captured.out
 
 
+@pytest.mark.asyncio
+async def test_check_both_out_of_sync_prioritizes_config_drift(fs: FakeFilesystem, capsys):
+    """Verify that Exit 1 is returned when both ruff config AND pre-commit are out of sync."""
+    # Setup - ruff config drift
+    local_content = '[tool.ruff]\ntarget-version = "py310"\n'
+    upstream_content = '[tool.ruff]\ntarget-version = "py311"\n'
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    # Mock uv.lock and .pre-commit-config.yaml to be out of sync (Hook Drift)
+    fs.create_file("uv.lock", contents='[[package]]\nname = "ruff"\nversion = "0.15.0"')
+    config_content = """repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+"""
+    fs.create_file(".pre-commit-config.yaml", contents=config_content)
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(200, content=upstream_content)
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            pre_commit=True,
+        )
+
+        # Both out of sync -> Exit code 1 (config drift takes priority)
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+        assert "is out of sync!" in captured.out
+        assert '-target-version = "py310"' in captured.out
+        assert '+target-version = "py311"' in captured.out
+        # Pre-commit drift should NOT be reported if config drift was found and resulted in exit 1
+        assert "⚠️ Pre-commit hook version is out of sync!" not in captured.out
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
