@@ -124,6 +124,7 @@ class Config(TypedDict, total=False):
     semantic: bool
     diff: bool
     init: bool
+    pre_commit_version_sync: bool
 
 
 def resolve_target_path(

@@ -138,9 +138,13 @@ def get_config(
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
             allowed_keys = set(Config.__annotations__.keys())
-            # For backward compatibility, allow pre-commit-sync as pre_commit_sync
             for arg, value in config.items():
                 arg_norm = arg.replace("-", "_")
+
+                # Handle aliases for pre-commit
+                if arg_norm in ("pre_commit_sync", "pre_commit"):
+                    arg_norm = "pre_commit_version_sync"
+
                 if arg_norm in allowed_keys:
                     if arg_norm == "source":
                         LOGGER.warning(
@@ -421,7 +425,7 @@ def main() -> int:
     if pre_commit_arg is not None:
         pre_commit_val = pre_commit_arg
     else:
-        pre_commit_val = config.get("pre_commit_sync", False)
+        pre_commit_val = config.get("pre_commit_version_sync", False)
 
     # Create Arguments object
     exec_args = Arguments(

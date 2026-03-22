@@ -82,5 +82,11 @@ Or enable it permanently in your `pyproject.toml`:
 
 ```toml
 [tool.ruff-sync]
-pre-commit-sync = true
+pre-commit-version-sync = true
+```
+
+If you have `pre-commit-version-sync` enabled in your configuration but need to explicitly disable it for a specific run (for example, during a CI step where pre-commit is turned off), you can bypass it using the `--no-pre-commit` flag:
+
+```bash
+ruff-sync check --no-pre-commit
 ```
