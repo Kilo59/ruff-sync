@@ -167,6 +167,7 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 - 🌍 **Works with any host** — GitHub, GitLab, Bitbucket, private SSH servers, or any raw URL that serves a `pyproject.toml` or `ruff.toml`.
 - 🤖 **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - 🧠 **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
+- 🔗 **Pre-commit hook sync** — Use `--pre-commit` to automatically keep your `ruff-pre-commit` hook version in `.pre-commit-config.yaml` matching your project's Ruff version.
 
 ## Configuration
 
