@@ -58,29 +58,14 @@ jobs:
 
 ### With Pre-commit Sync Check
 
-To also verify the pre-commit hook version (exits 2 if only hook is stale):
+To also verify the pre-commit hook version, add `--pre-commit`. Any non-zero exit code (1 = config drift, 2 = stale hook rev) will fail the CI step:
 
 ```yaml
 - name: Check Ruff config and pre-commit hook
   run: ruff-sync check --semantic --pre-commit
-  # Exit 1 = config out of sync (blocking)
-  # Exit 2 = hook rev out of sync (optionally non-blocking — see below)
 ```
 
-To treat exit code 2 as a warning (non-blocking) while still failing on config drift:
-
-```yaml
-- name: Check Ruff config and pre-commit hook
-  run: |
-    ruff-sync check --semantic --pre-commit
-    code=$?
-    if [ $code -eq 1 ]; then
-      echo "❌ Ruff config is out of sync."
-      exit 1
-    elif [ $code -eq 2 ]; then
-      echo "⚠️  Pre-commit hook version is stale. Consider running ruff-sync."
-    fi
-```
+If you don't want to enforce hook version sync, simply omit `--pre-commit`.
 
 ---
 
