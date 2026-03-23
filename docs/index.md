@@ -58,6 +58,8 @@ Add the upstream URL to your `pyproject.toml` to make it the default:
 upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
 ```
 
+For more options, see the [Configuration Guide](configuration.md).
+
 ### 3. Pull the configuration
 
 Once configured, simply run:
