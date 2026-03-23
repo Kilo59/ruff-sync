@@ -110,10 +110,11 @@ nav:
   - Usage:
       - Usage: usage.md
       - Configuration: configuration.md
-      - Pre-defined Configs: pre-defined-configs.md
       - Best Practices: best-practices.md
       - Pre-commit: pre-commit.md
       - CI Integration: ci-integration.md
   - Troubleshooting: troubleshooting.md
+  - Pre-defined Configs: pre-defined-configs.md
+  - Agent Skill: agent-skill.md
   - Contributing: contributing.md
   - API Reference: reference/

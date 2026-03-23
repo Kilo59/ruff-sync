@@ -27,8 +27,9 @@
 - [Configuration](#configuration)
 - [Pre-commit Integration](#pre-commit-integration)
 - [CI Integration](#ci-integration)
+- [Agent Skill](#agent-skill)
 - [Troubleshooting](https://kilo59.github.io/ruff-sync/troubleshooting/)
-- [API Reference](https://kilo59.github.io/ruff-sync/reference/)
+- [API Reference](https://kilo59.github.io/ruff-sync/reference/ruff_sync/)
 - [Example Workflow](#example-workflow)
 - [Detailed Check Logic](#detailed-check-logic)
 - [Dogfooding](#dogfooding)
@@ -175,6 +176,7 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 - 🤖 **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - 🧠 **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
 - 🔗 **Pre-commit hook sync** — Use `--pre-commit` to automatically keep your `ruff-pre-commit` hook version in `.pre-commit-config.yaml` matching your project's Ruff version.
+- 🦾 **Agent Skill** — Ships a bundled [Agent Skill](https://kilo59.github.io/ruff-sync/agent-skill/) so AI coding agents can guide you through setup, configuration, and troubleshooting automatically.
 
 ## Configuration
 
@@ -280,6 +282,12 @@ $ ruff-sync check --semantic
 > [!TIP]
 > See the [Best Practices](https://kilo59.github.io/ruff-sync/best-practices/) guide for recommendations on whether to make your CI checks blocking or informational.
 
+
+## Agent Skill
+
+`ruff-sync` ships a bundled [Agent Skill](https://agentskills.io/home) at `.agents/skills/ruff-sync-usage/`. AI coding agents that support the [Agent Skills format](https://agentskills.io/what-are-skills) (GitHub Copilot, Claude Code, Cursor, etc.) will automatically use it to guide you through setup, configuration, CI integration, and troubleshooting — without you needing to explain the tool each time.
+
+See the **[Agent Skill guide](https://kilo59.github.io/ruff-sync/agent-skill/)** for details.
 
 ## Example Workflow
 

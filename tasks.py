@@ -14,6 +14,7 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import httpx
+from invoke.exceptions import Exit
 from invoke.tasks import task
 from packaging.version import Version
 from tomlkit.toml_file import TOMLFile
@@ -201,3 +202,33 @@ def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None)
         TOMLFile(LIFECYCLE_TOML_DIR / file_name).write(toml_doc)
         print(f"📄 {file_name}")
     print(f"🎉 Created tomls for '{name}' test case")
+
+
+@task(
+    help={
+        "serve": "Build and serve the documentation locally (default if no flags)",
+        "build": "Build the documentation to the site/ directory",
+        "args": "Additional flags to pass to mkdocs (e.g. '--strict --dirtyreload')",
+    }
+)
+def docs(ctx: Context, *, serve: bool = False, build: bool = False, args: str = "") -> None:
+    """Build or serve the documentation."""
+    # Reject invalid combination of mutually exclusive flags
+    if serve and build:
+        msg = "Options --serve and --build are mutually exclusive; please specify only one."
+        raise Exit(msg)
+
+    # Default to serve if no flags provided
+    if not (serve or build):
+        serve = True
+
+    cmds = ["mkdocs"]
+    if build:
+        cmds.append("build")
+    elif serve:
+        cmds.append("serve")
+
+    if args:
+        cmds.extend(args.split())
+
+    ctx.run("uv run " + " ".join(cmds), echo=True, pty=True)

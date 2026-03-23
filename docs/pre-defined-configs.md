@@ -17,10 +17,24 @@ An exhaustive configuration that explicitly enables and documents almost all ava
 
 ### Usage
 
-```bash
-# Using the directory URL (recommended)
-ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
-```
+=== "Direct URL"
+
+    ```bash
+    ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink
+    ```
+
+=== "Using --path"
+
+    ```bash
+    ruff-sync https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
+    ```
+
+=== "Using --branch"
+
+    ```bash
+    # Pin to a specific tag or branch
+    ruff-sync https://github.com/Kilo59/ruff-sync --branch v0.1.2 --path configs/kitchen-sink
+    ```
 
 ---
 
@@ -35,9 +49,24 @@ Tailored specifically for modern, asynchronous web applications. It focuses on p
 
 ### Usage
 
-```bash
-ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
-```
+=== "Direct URL"
+
+    ```bash
+    ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
+    ```
+
+=== "Using --path"
+
+    ```bash
+    ruff-sync https://github.com/Kilo59/ruff-sync --path configs/fastapi
+    ```
+
+=== "Using --branch"
+
+    ```bash
+    # Pin to a specific tag or branch
+    ruff-sync https://github.com/Kilo59/ruff-sync --branch v0.1.2 --path configs/fastapi
+    ```
 
 ---
 
@@ -52,9 +81,24 @@ Optimized for data science workflows, focusing on readability and common pattern
 
 ### Usage
 
-```bash
-ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/data-science-engineering
-```
+=== "Direct URL"
+
+    ```bash
+    ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/data-science-engineering
+    ```
+
+=== "Using --path"
+
+    ```bash
+    ruff-sync https://github.com/Kilo59/ruff-sync --path configs/data-science-engineering
+    ```
+
+=== "Using --branch"
+
+    ```bash
+    # Pin to a specific tag or branch
+    ruff-sync https://github.com/Kilo59/ruff-sync --branch v0.1.2 --path configs/data-science-engineering
+    ```
 
 ---
 
@@ -66,6 +110,7 @@ You can set your preferred curated configuration as the default in your `pyproje
 [tool.ruff-sync]
 upstream = "https://github.com/Kilo59/ruff-sync"
 path = "configs/fastapi"
+branch = "main"  # or "v0.1.2" to pin to a specific git tag
 ```
 
 ---

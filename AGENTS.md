@@ -58,6 +58,13 @@ gh label list                           # See available labels
 .agents/               # Agent-specific instructions (Deep Standards)
   TESTING.md           # Mandatory testing patterns and rules
   workflows/           # Step-by-step guides for common tasks
+  skills/
+    ruff-sync-usage/   # Agent Skill for users adopting ruff-sync (keep current!)
+      SKILL.md
+      references/
+        configuration.md
+        troubleshooting.md
+        ci-integration.md
 src/ruff_sync/         # The application source
   __init__.py          # Public API
   cli.py               # CLI, merging logic, HTTP
@@ -176,6 +183,7 @@ Defined in `tasks.py`. **ALWAYS** run these through uv: `uv run invoke <task>`
 | `type-check` | `types`               | Type-check with mypy                   |
 | `deps`       | `sync`                | Sync dependencies with uv              |
 | `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML fixtures       |
+| `docs`       |                       | Build or serve documentation           |
 
 ## CI
 
@@ -190,3 +198,4 @@ CI is defined in `.github/workflows/ci.yaml`:
 1. **tomlkit proxy objects**: When adding new keys to a proxy table (from dotted keys), the proxy must be converted to a real table first. The `_recursive_update` function handles this. Don't bypass it.
 2. **`cast(Any, ...)` in tests**: Use `cast(Any, tomlkit.parse(...))["tool"]["ruff"]` pattern in tests to avoid mypy complaints about `tomlkit`'s `Item | Container` return types.
 3. **Pre-commit ruff version**: The ruff version in `.pre-commit-config.yaml` must stay in sync with the version in `pyproject.toml`. The test `test_pre_commit_versions_are_in_sync` enforces this.
+4. **Keep the ruff-sync-usage skill current**: After any change to CLI behavior (new flags, changed exit codes, new configuration keys, updated URL handling, etc.), update `.agents/skills/ruff-sync-usage/` accordingly. The `SKILL.md` covers quick start, workflows, exit codes, and gotchas. Detailed references live in `references/configuration.md`, `references/troubleshooting.md`, and `references/ci-integration.md`.

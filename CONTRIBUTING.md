@@ -50,6 +50,7 @@ The project uses a `src` layout. All source code lives in `src/ruff_sync/`. Deve
 | `uv run invoke type-check` | `types` | Type-check with mypy |
 | `uv run invoke deps` | `sync` | Sync dependencies with uv |
 | `uv run invoke new-case` | `new-lifecycle-tomls` | Scaffold lifecycle TOML test fixtures |
+| `uv run invoke docs` | | Build or serve documentation |
 
 ---
 
@@ -129,7 +130,12 @@ This creates three files in `tests/lifecycle_tomls/`: `<case>_initial.toml`, `<c
 1. Push your branch and open a PR against `main`.
 2. Fill in the PR description: what changed, why, and how to test it.
 3. Ensure all CI checks pass.
-4. A maintainer will review your PR — please respond to feedback promptly.
+4. If your change affects CLI behaviour (new flags, changed exit codes, new config keys, URL handling), **update the agent skill** at [`.agents/skills/ruff-sync-usage/`](.agents/skills/ruff-sync-usage/):
+   - `SKILL.md` — quick start, workflows, exit codes, gotchas
+   - `references/configuration.md` — config key reference
+   - `references/troubleshooting.md` — error scenarios
+   - `references/ci-integration.md` — CI/CD recipes
+5. A maintainer will review your PR — please respond to feedback promptly.
 
 > [!TIP]
 > For significant changes, open an issue first to discuss the approach before investing time in an implementation.
