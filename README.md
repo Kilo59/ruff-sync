@@ -28,7 +28,7 @@
 - [Pre-commit Integration](#pre-commit-integration)
 - [CI Integration](#ci-integration)
 - [Troubleshooting](https://kilo59.github.io/ruff-sync/troubleshooting/)
-- [API Reference](https://kilo59.github.io/ruff-sync/reference/)
+- [API Reference](https://kilo59.github.io/ruff-sync/reference/ruff_sync/)
 - [Example Workflow](#example-workflow)
 - [Detailed Check Logic](#detailed-check-logic)
 - [Dogfooding](#dogfooding)
