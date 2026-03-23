@@ -115,5 +115,6 @@ nav:
       - CI Integration: ci-integration.md
   - Troubleshooting: troubleshooting.md
   - Pre-defined Configs: pre-defined-configs.md
+  - Agent Skill: agent-skill.md
   - Contributing: contributing.md
   - API Reference: reference/
