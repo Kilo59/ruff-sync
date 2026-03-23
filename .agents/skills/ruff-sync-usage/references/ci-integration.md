@@ -36,9 +36,6 @@ jobs:
         with:
           version: "0.10.x"   # pin to a minor range; Dependabot can keep this current
 
-      - name: Set up Python
-        run: uv python install
-
       - name: Install ruff-sync
         run: uv tool install ruff-sync
 
