@@ -208,9 +208,10 @@ def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None)
     help={
         "serve": "Build and serve the documentation locally (default if no flags)",
         "build": "Build the documentation to the site/ directory",
+        "args": "Additional flags to pass to mkdocs (e.g. '--strict --dirtyreload')",
     }
 )
-def docs(ctx: Context, *, serve: bool = False, build: bool = False) -> None:
+def docs(ctx: Context, *, serve: bool = False, build: bool = False, args: str = "") -> None:
     """Build or serve the documentation."""
     # Reject invalid combination of mutually exclusive flags
     if serve and build:
@@ -226,4 +227,8 @@ def docs(ctx: Context, *, serve: bool = False, build: bool = False) -> None:
         cmds.append("build")
     elif serve:
         cmds.append("serve")
+
+    if args:
+        cmds.extend(args.split())
+
     ctx.run("uv run " + " ".join(cmds), echo=True, pty=True)
