@@ -14,6 +14,7 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import httpx
+from invoke.exceptions import Exit
 from invoke.tasks import task
 from packaging.version import Version
 from tomlkit.toml_file import TOMLFile
@@ -211,9 +212,15 @@ def new_lifecycle_tomls(ctx: Context, name: str, description: str | None = None)
 )
 def docs(ctx: Context, *, serve: bool = False, build: bool = False) -> None:
     """Build or serve the documentation."""
+    # Reject invalid combination of mutually exclusive flags
+    if serve and build:
+        msg = "Options --serve and --build are mutually exclusive; please specify only one."
+        raise Exit(msg)
+
     # Default to serve if no flags provided
     if not (serve or build):
         serve = True
+
     cmds = ["mkdocs"]
     if build:
         cmds.append("build")
