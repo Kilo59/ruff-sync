@@ -34,7 +34,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          version: "0.6.x"   # pin to a minor range; Dependabot can keep this current
+          version: "0.10.x"   # pin to a minor range; Dependabot can keep this current
 
       - name: Set up Python
         run: uv python install
@@ -65,7 +65,7 @@ Use the official [`ghcr.io/astral-sh/uv`](https://docs.astral.sh/uv/guides/integ
 
 ```yaml
 variables:
-  UV_VERSION: "0.6"
+  UV_VERSION: "0.10"
   PYTHON_VERSION: "3.12"
   BASE_LAYER: bookworm-slim
   UV_LINK_MODE: copy   # required: GitLab mounts build dir separately
