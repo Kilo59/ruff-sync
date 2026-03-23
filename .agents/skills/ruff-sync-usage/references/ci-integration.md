@@ -45,14 +45,14 @@ jobs:
 
 ### With Pre-commit Sync Check
 
-To also verify the pre-commit hook version, add `--pre-commit`. Any non-zero exit code (1 = config drift, 2 = stale hook rev) will fail the CI step:
+To also verify the pre-commit hook version, add the `--pre-commit` flag. Any non-zero exit code (1 = config drift, 2 = stale hook rev) will fail the CI step:
 
 ```yaml
 - name: Check Ruff config and pre-commit hook
   run: ruff-sync check --semantic --pre-commit
 ```
 
-If you don't want to enforce hook version sync, simply omit `--pre-commit`.
+(Note: For better consistency, you can instead set `pre-commit-version-sync = true` in your `pyproject.toml` — then `ruff-sync check --semantic` will automatically include this check.)
 
 ---
 

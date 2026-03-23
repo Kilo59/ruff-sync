@@ -91,6 +91,9 @@ to = "services/api"   # sync into a subdirectory of the monorepo
 
 When `true`, `ruff-sync` also updates the `ruff-pre-commit` hook rev in `.pre-commit-config.yaml` to match the Ruff version installed in the project.
 
+> [!TIP]
+> This is the preferred way to enable pre-commit hook synchronization as it persists the setting in your project configuration.
+
 ```toml
 pre-commit-version-sync = true
 ```

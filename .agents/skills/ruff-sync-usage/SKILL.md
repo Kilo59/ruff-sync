@@ -50,11 +50,13 @@ See [references/configuration.md](references/configuration.md) for all config ke
 ```
 Setup Progress:
 - [ ] 1. Install ruff-sync (uv tool install ruff-sync)
-- [ ] 2. Add [tool.ruff-sync] to pyproject.toml with upstream URL and exclusions
-- [ ] 3. Run `ruff-sync` to pull the upstream config
-- [ ] 4. Review `git diff pyproject.toml`
-- [ ] 5. Fix any new lint errors: `uv run ruff check . --fix`
-- [ ] 6. Commit
+- [ ] 2. Check for `.pre-commit-config.yaml` — if present, ensure the `ruff` hook is used
+- [ ] 3. Add `[tool.ruff-sync]` to `pyproject.toml` with upstream URL and exclusions
+- [ ] 4. If `.pre-commit-config.yaml` exists, set `pre-commit-version-sync = true` in `[tool.ruff-sync]`
+- [ ] 5. Run `ruff-sync` to pull the upstream config
+- [ ] 6. Review `git diff`
+- [ ] 7. Fix any new lint errors: `uv run ruff check . --fix`
+- [ ] 8. Commit
 ```
 
 ### Upstream Layers (multi-source)
@@ -79,9 +81,9 @@ CI Setup Progress:
 - [ ] 4. Verify locally: `ruff-sync check --semantic`
 ```
 
-### Pre-commit Hook Sync
+Keep the `ruff-pre-commit` hook version in `.pre-commit-config.yaml` aligned with the project's Ruff version.
 
-Keep the `ruff-pre-commit` hook version in `.pre-commit-config.yaml` aligned with the project's Ruff version:
+**Recommendation:** Always prefer the persistent TOML configuration over the ephemeral `--pre-commit` CLI flag.
 
 ```toml
 [tool.ruff-sync]
@@ -118,6 +120,7 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 - **SSH URLs trigger a shallow clone.** `git@github.com:...` URLs use `git clone --filter=blob:none --depth=1` — no `git` credential issues as long as SSH auth is configured.
 - **Later upstreams win in `upstream` lists.** In a multi-source list, keys set by entry 2 overwrite keys from entry 1.
 - **Pre-commit exit code 2 is intentional.** A `2` exit from `ruff-sync check` means the Ruff _config_ is fine, only the pre-commit hook tag is stale. You may want to treat this differently from a full config drift (exit 1) in CI.
+- **Prefer TOML for pre-commit sync.** While `--pre-commit` works on the CLI, setting `pre-commit-version-sync = true` in `pyproject.toml` is the recommended way to ensure hook versioning stays consistent for all contributors.
 
 ## References
 
