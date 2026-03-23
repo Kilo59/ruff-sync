@@ -13,19 +13,9 @@ Add this step to any existing workflow (e.g., `.github/workflows/ci.yaml`):
 
 `--semantic` ignores cosmetic differences (comments, whitespace) — only real value or rule changes cause failure.
 
-### With ruff-sync Installed via uv
-
-If ruff-sync is not part of your project's dev dependencies, install it inline:
-
-```yaml
-- name: Install ruff-sync
-  run: uv tool install ruff-sync
-
-- name: Check Ruff config is in sync
-  run: ruff-sync check --semantic
-```
-
 ### Full Workflow Example
+
+Uses [`astral-sh/setup-uv`](https://github.com/astral-sh/setup-uv) — the official action that installs uv, adds it to PATH, and handles caching. No separate `setup-python` step needed.
 
 ```yaml
 name: Ruff sync check
@@ -41,13 +31,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"   # pin to a minor range; Dependabot can keep this current
+
+      - name: Set up Python
+        run: uv python install
 
       - name: Install ruff-sync
         run: uv tool install ruff-sync
@@ -71,14 +61,20 @@ If you don't want to enforce hook version sync, simply omit `--pre-commit`.
 
 ## GitLab CI
 
+Use the official [`ghcr.io/astral-sh/uv`](https://docs.astral.sh/uv/guides/integration/gitlab/) image — uv is already on the `PATH`, no install step needed.
+
 ```yaml
+variables:
+  UV_VERSION: "0.6"
+  PYTHON_VERSION: "3.12"
+  BASE_LAYER: bookworm-slim
+  UV_LINK_MODE: copy   # required: GitLab mounts build dir separately
+
 ruff-sync-check:
   stage: lint
-  image: python:3.12-slim
-  before_script:
-    - pip install uv
-    - uv tool install ruff-sync
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   script:
+    - uv tool install ruff-sync
     - ruff-sync check --semantic
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
