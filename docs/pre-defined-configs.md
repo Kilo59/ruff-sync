@@ -29,6 +29,13 @@ An exhaustive configuration that explicitly enables and documents almost all ava
     ruff-sync https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
     ```
 
+=== "Using --branch"
+
+    ```bash
+    # Pin to a specific tag or branch
+    ruff-sync https://github.com/Kilo59/ruff-sync --branch v0.1.2 --path configs/kitchen-sink
+    ```
+
 ---
 
 ## ⚡ FastAPI & Async
@@ -52,6 +59,13 @@ Tailored specifically for modern, asynchronous web applications. It focuses on p
 
     ```bash
     ruff-sync https://github.com/Kilo59/ruff-sync --path configs/fastapi
+    ```
+
+=== "Using --branch"
+
+    ```bash
+    # Pin to a specific tag or branch
+    ruff-sync https://github.com/Kilo59/ruff-sync --branch v0.1.2 --path configs/fastapi
     ```
 
 ---
@@ -79,6 +93,13 @@ Optimized for data science workflows, focusing on readability and common pattern
     ruff-sync https://github.com/Kilo59/ruff-sync --path configs/data-science-engineering
     ```
 
+=== "Using --branch"
+
+    ```bash
+    # Pin to a specific tag or branch
+    ruff-sync https://github.com/Kilo59/ruff-sync --branch v0.1.2 --path configs/data-science-engineering
+    ```
+
 ---
 
 ## 🔧 Setting a Default
@@ -89,6 +110,7 @@ You can set your preferred curated configuration as the default in your `pyproje
 [tool.ruff-sync]
 upstream = "https://github.com/Kilo59/ruff-sync"
 path = "configs/fastapi"
+branch = "main"  # or "v0.1.2" to pin to a specific git tag
 ```
 
 ---
