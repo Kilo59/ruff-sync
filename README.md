@@ -285,7 +285,7 @@ $ ruff-sync check --semantic
 
 ## Agent Skill
 
-`ruff-sync` ships a bundled [Agent Skill](https://agentskills.io/home) at `.agents/skills/ruff-sync-usage/`. AI coding agents that support the [Agent Skills format](https://agentskills.io/what-are-skills) (GitHub Copilot, Claude Code, Cursor, etc.) will automatically use it to guide you through setup, configuration, CI integration, and troubleshooting — without you needing to explain the tool each time.
+`ruff-sync` ships a bundled [Agent Skill](https://agentskills.io/home) at [`.agents/skills/ruff-sync-usage/`](.agents/skills/ruff-sync-usage/). AI coding agents that support the [Agent Skills format](https://agentskills.io/what-are-skills) (GitHub Copilot, Claude Code, Cursor, etc.) will automatically use it to guide you through setup, configuration, CI integration, and troubleshooting — without you needing to explain the tool each time.
 
 See the **[Agent Skill guide](https://kilo59.github.io/ruff-sync/agent-skill/)** for details.
 
