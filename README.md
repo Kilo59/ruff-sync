@@ -243,7 +243,7 @@ Ensure your configuration is always in sync before every commit. Add this to you
 
 ```yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.0  # Use the latest version
+  rev: v0.1.2  # Use the latest version
   hooks:
     - id: ruff-sync-check
 ```
@@ -331,8 +331,8 @@ ruff-sync git@github.com:Kilo59/ruff-sync.git --path configs/kitchen-sink
 Tailored for modern web applications. Includes rules for `asyncio`, security (`flake8-bandit`), and Pydantic-friendly naming conventions.
 
 ```console
-# Repository Root (if the config is at the root)
-ruff-sync https://github.com/my-org/fastapi-standards
+# Using the --path option with the repository root
+ruff-sync https://github.com/Kilo59/ruff-sync --path configs/fastapi
 
 # Directory URL
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi
