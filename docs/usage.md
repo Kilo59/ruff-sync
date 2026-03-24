@@ -72,6 +72,8 @@ If the upstream repository stores its Python configuration in a specific subdire
 ruff-sync https://github.com/my-org/standards --path backend
 ```
 
+See the [Pre-defined Configs](pre-defined-configs.md#fastapi--async) page for a real-world example of using the `--path` option.
+
 ### Excluding Specific Rules
 
 Sometimes your project needs to deviate slightly from the upstream standard. You can exclude specific dotted paths to preserve your local settings:
