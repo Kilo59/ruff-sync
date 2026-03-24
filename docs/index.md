@@ -16,7 +16,7 @@
 * **✨ Formatting Preserved**: Keeps all comments and whitespace via `tomlkit`.
 * **🛡️ Smart Merging**: Safely merges nested tables without overwriting local overrides.
 * **📂 Upstream Layers**: Combine and merge configurations from several sources sequentially.
-* **🌐 Flexible Sources**: Sync from GitHub, GitLab, raw URLs, or local files.
+* **🌐 Flexible Sources**: Automatically resolves GitHub/GitLab browser URLs (repo, tree, or blob) to raw content.
 * **📥 Efficient Git Support**: Shallow clones and sparse checkouts for fast extraction.
 * **🚀 Zero-Config Bootstrapping**: Use `--init` to scaffold a new project in one command.
 * **✅ CI Ready**: Built-in `check` command with semantic comparison logic.
