@@ -243,7 +243,7 @@ Ensure your configuration is always in sync before every commit. Add this to you
 
 ```yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.0  # Use the latest version
+  rev: v0.1.2  # Use the latest version
   hooks:
     - id: ruff-sync-check
 ```
@@ -285,7 +285,7 @@ $ ruff-sync check --semantic
 
 ## Agent Skill
 
-`ruff-sync` ships a bundled [Agent Skill](https://agentskills.io/home) at `.agents/skills/ruff-sync-usage/`. AI coding agents that support the [Agent Skills format](https://agentskills.io/what-are-skills) (GitHub Copilot, Claude Code, Cursor, etc.) will automatically use it to guide you through setup, configuration, CI integration, and troubleshooting — without you needing to explain the tool each time.
+`ruff-sync` ships a bundled [Agent Skill](https://agentskills.io/home) at [`.agents/skills/ruff-sync-usage/`](.agents/skills/ruff-sync-usage/). AI coding agents that support the [Agent Skills format](https://agentskills.io/what-are-skills) (GitHub Copilot, Claude Code, Cursor, etc.) will automatically use it to guide you through setup, configuration, CI integration, and troubleshooting — without you needing to explain the tool each time.
 
 See the **[Agent Skill guide](https://kilo59.github.io/ruff-sync/agent-skill/)** for details.
 
@@ -331,8 +331,8 @@ ruff-sync git@github.com:Kilo59/ruff-sync.git --path configs/kitchen-sink
 Tailored for modern web applications. Includes rules for `asyncio`, security (`flake8-bandit`), and Pydantic-friendly naming conventions.
 
 ```console
-# Repository Root (if the config is at the root)
-ruff-sync https://github.com/my-org/fastapi-standards
+# Using the --path option with the repository root
+ruff-sync https://github.com/Kilo59/ruff-sync --path configs/fastapi
 
 # Directory URL
 ruff-sync https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi

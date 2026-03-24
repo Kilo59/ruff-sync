@@ -36,6 +36,24 @@ Now, you can simply run:
 ruff-sync
 ```
 
+### Layer-Based Configuration
+
+You can specify multiple upstreams to create a layered configuration. `ruff-sync` will merge them sequentially, allowing you to combine a base organization standard with team-specific overrides:
+
+```bash
+ruff-sync https://github.com/my-org/standards https://github.com/my-org/team-tweaks
+```
+
+Alternatively, configure this in your `pyproject.toml`:
+
+```toml
+[tool.ruff-sync]
+upstream = [
+    "https://github.com/my-org/standards",
+    "https://github.com/my-org/team-tweaks"
+]
+```
+
 ### Initializing a New Project
 
 If your local directory doesn't have a `pyproject.toml` yet, you can scaffold one:
@@ -48,11 +66,41 @@ This creates a new `pyproject.toml` populated with the upstream configuration an
 
 ### Syncing Subdirectories
 
-If the upstream repository stores its Python configuration in a specific subdirectory (like a `backend/` folder in a monorepo), use the `--path` argument:
+If the upstream repository stores its Python configuration in a specific subdirectory or you want to point to a specific file, use the `--path` argument.
 
-```bash
-ruff-sync https://github.com/my-org/standards --path backend
-```
+=== "Subdirectory"
+
+    Point to a specific subdirectory, such as a `backend/` folder in a monorepo.
+
+    ```bash
+    ruff-sync https://github.com/my-org/standards --path backend
+    ```
+
+=== "Nested Path"
+
+    Point to a more deeply nested directory.
+
+    ```bash
+    ruff-sync https://github.com/my-org/standards --path configs/standards/python/backend
+    ```
+
+=== "Specific `pyproject.toml`"
+
+    Directly target a `pyproject.toml` file to bypass the default configuration searching logic.
+
+    ```bash
+    ruff-sync https://github.com/my-org/standards --path backend/pyproject.toml
+    ```
+
+=== "Specific `ruff.toml`"
+
+    Directly target a specific `ruff.toml` or `.ruff.toml` file to ensure a deterministic source and avoid searching.
+
+    ```bash
+    ruff-sync https://github.com/my-org/standards --path tools/ruff.toml
+    ```
+
+See the [Pre-defined Configs](pre-defined-configs.md#fastapi--async) page for a real-world example of using the `--path` option.
 
 ### Excluding Specific Rules
 
