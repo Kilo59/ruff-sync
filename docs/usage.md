@@ -36,6 +36,24 @@ Now, you can simply run:
 ruff-sync
 ```
 
+### Layer-Based Configuration
+
+You can specify multiple upstreams to create a layered configuration. `ruff-sync` will merge them sequentially, allowing you to combine a base organization standard with team-specific overrides:
+
+```bash
+ruff-sync https://github.com/my-org/standards https://github.com/my-org/team-tweaks
+```
+
+Alternatively, configure this in your `pyproject.toml`:
+
+```toml
+[tool.ruff-sync]
+upstream = [
+    "https://github.com/my-org/standards",
+    "https://github.com/my-org/team-tweaks"
+]
+```
+
 ### Initializing a New Project
 
 If your local directory doesn't have a `pyproject.toml` yet, you can scaffold one:
