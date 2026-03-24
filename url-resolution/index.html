@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/ci-integration/">
+        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/url-resolution/">
       
       
-        <link rel="prev" href="../pre-commit/">
+        <link rel="prev" href="../usage/">
       
       
-        <link rel="next" href="../troubleshooting/">
+        <link rel="next" href="../configuration/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>CI Integration - ruff-sync</title>
+        <title>URL Resolution - ruff-sync</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ci-integration" class="md-skip">
+        <a href="#url-resolution-discovery" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CI Integration
+              URL Resolution
             
           </span>
         </div>
@@ -596,10 +596,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../url-resolution/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    URL Resolution
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -615,6 +642,154 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#browser-url-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🌐 Browser URL Conversion
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🌐 Browser URL Conversion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gitlab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitLab
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 Configuration Discovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#git-ssh-urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛠️ Git &amp; SSH URLs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🛠️ Git &amp; SSH URLs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#efficient-cloning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Efficient Cloning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💡 Troubleshooting &amp; Permissions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="💡 Troubleshooting &amp; Permissions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#private-repositories-via-http" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private Repositories via HTTP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Branches
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logic-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗺️ Logic Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -708,37 +883,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CI Integration
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../ci-integration/" class="md-nav__link">
         
   
   
@@ -754,143 +902,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#usage-in-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Usage in CI
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Usage in CI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#github-actions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitHub Actions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GitHub Actions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#basic-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Check
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#automated-sync-prs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Automated Sync PRs
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gitlab-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitLab CI
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        💡 Best Practices
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="💡 Best Practices">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#use-semantic" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use --semantic
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#handle-exclusions-properly" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Handle Exclusions Properly
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#use-a-dedicated-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use a Dedicated Workflow
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1270,34 +1281,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#usage-in-ci" class="md-nav__link">
+  <a href="#browser-url-conversion" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage in CI
+        🌐 Browser URL Conversion
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Usage in CI">
+    <nav class="md-nav" aria-label="🌐 Browser URL Conversion">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#github-actions" class="md-nav__link">
+  <a href="#github" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GitHub Actions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="GitHub Actions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#basic-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Check
+        GitHub
       
     </span>
   </a>
@@ -1305,26 +1304,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#automated-sync-prs" class="md-nav__link">
+  <a href="#gitlab" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automated Sync PRs
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gitlab-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GitLab CI
+        GitLab
       
     </span>
   </a>
@@ -1337,44 +1320,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
+  <a href="#configuration-discovery" class="md-nav__link">
     <span class="md-ellipsis">
       
-        💡 Best Practices
+        📂 Configuration Discovery
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="💡 Best Practices">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#git-ssh-urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛠️ Git &amp; SSH URLs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🛠️ Git &amp; SSH URLs">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#use-semantic" class="md-nav__link">
+  <a href="#efficient-cloning" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use --semantic
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#handle-exclusions-properly" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Handle Exclusions Properly
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#use-a-dedicated-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use a Dedicated Workflow
+        Efficient Cloning
       
     </span>
   </a>
@@ -1383,6 +1355,56 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💡 Troubleshooting &amp; Permissions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="💡 Troubleshooting &amp; Permissions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#private-repositories-via-http" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private Repositories via HTTP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Branches
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logic-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗺️ Logic Flow
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1454,78 +1476,121 @@
   
 
 
-<h1 id="ci-integration">CI Integration<a class="headerlink" href="#ci-integration" title="Permanent link">&para;</a></h1>
-<p><code>ruff-sync</code> is designed to be run in CI pipelines to ensure that all repositories in an organization stay in sync with the central standards.</p>
-<h2 id="usage-in-ci">Usage in CI<a class="headerlink" href="#usage-in-ci" title="Permanent link">&para;</a></h2>
-<p>The best way to use <code>ruff-sync</code> in CI is with the <code>check</code> command. If the configuration has drifted, <code>ruff-sync check</code> will exit with a non-zero code, failing the build.</p>
-<h3 id="github-actions">GitHub Actions<a class="headerlink" href="#github-actions" title="Permanent link">&para;</a></h3>
-<p>We recommend using <code>uv</code> to run <code>ruff-sync</code> in GitHub Actions.</p>
-<h4 id="basic-check">Basic Check<a class="headerlink" href="#basic-check" title="Permanent link">&para;</a></h4>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Standards</span><span class="nv"> </span><span class="s">Check&quot;</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">on</span><span class="p">:</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">pull_request</span><span class="p">:</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">branches</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">main</span><span class="p p-Indicator">]</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">jobs</span><span class="p">:</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">ruff-sync</span><span class="p">:</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">astral-sh/setup-uv@v5</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx ruff-sync check --semantic</span>
+<h1 id="url-resolution-discovery">URL Resolution &amp; Discovery<a class="headerlink" href="#url-resolution-discovery" title="Permanent link">&para;</a></h1>
+<p><code>ruff-sync</code> is designed to be flexible with the URLs you provide. Whether you point to a GitHub repository, a specific file on GitLab, or use an SSH link, the tool handles the complexity of locating and fetching the target configuration.</p>
+<hr />
+<h2 id="browser-url-conversion">🌐 Browser URL Conversion<a class="headerlink" href="#browser-url-conversion" title="Permanent link">&para;</a></h2>
+<p>For public repositories on GitHub and GitLab, you can copy the URL directly from your browser. <code>ruff-sync</code> automatically converts these into "raw" content URLs.</p>
+<h3 id="github">GitHub<a class="headerlink" href="#github" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Input Type</th>
+<th style="text-align: left;">Browser URL Example</th>
+<th style="text-align: left;">Resolved Raw URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Repository Root</strong></td>
+<td style="text-align: left;"><code>https://github.com/&lt;org&gt;/&lt;repo&gt;</code></td>
+<td style="text-align: left;"><code>.../raw.githubusercontent.com/&lt;org&gt;/&lt;repo&gt;/main/pyproject.toml</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Specific Branch</strong></td>
+<td style="text-align: left;"><code>https://github.com/&lt;org&gt;/&lt;repo&gt;/tree/&lt;branch&gt;</code></td>
+<td style="text-align: left;"><code>.../raw.githubusercontent.com/&lt;org&gt;/&lt;repo&gt;/&lt;branch&gt;/pyproject.toml</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Specific File</strong></td>
+<td style="text-align: left;"><code>https://github.com/&lt;org&gt;/&lt;repo&gt;/blob/&lt;branch&gt;/ruff.toml</code></td>
+<td style="text-align: left;"><code>.../raw.githubusercontent.com/&lt;org&gt;/&lt;repo&gt;/&lt;branch&gt;/ruff.toml</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="gitlab">GitLab<a class="headerlink" href="#gitlab" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Input Type</th>
+<th style="text-align: left;">Browser URL Example</th>
+<th style="text-align: left;">Resolved Raw URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Repository Root</strong></td>
+<td style="text-align: left;"><code>https://gitlab.com/&lt;org&gt;/&lt;repo&gt;</code></td>
+<td style="text-align: left;"><code>.../gitlab.com/&lt;org&gt;/&lt;repo&gt;/-/raw/main/pyproject.toml</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Specific File</strong></td>
+<td style="text-align: left;"><code>https://gitlab.com/&lt;org&gt;/&lt;repo&gt;/-/blob/&lt;branch&gt;/ruff.toml</code></td>
+<td style="text-align: left;"><code>.../gitlab.com/&lt;org&gt;/&lt;repo&gt;/-/raw/&lt;branch&gt;/ruff.toml</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="configuration-discovery">📂 Configuration Discovery<a class="headerlink" href="#configuration-discovery" title="Permanent link">&para;</a></h2>
+<p>When you target a directory (either locally or via a repo-root URL), <code>ruff-sync</code> searches for a configuration file in the following order:</p>
+<ol>
+<li><code>ruff.toml</code></li>
+<li><code>.ruff.toml</code></li>
+<li><code>pyproject.toml</code> (extracting the <code>[tool.ruff]</code> section)</li>
+</ol>
+<p>If you target a URL that doesn't end in <code>.toml</code>, the tool assumes it's a directory and performs this search automatically.</p>
+<hr />
+<h2 id="git-ssh-urls">🛠️ Git &amp; SSH URLs<a class="headerlink" href="#git-ssh-urls" title="Permanent link">&para;</a></h2>
+<p>For private repositories or environments where HTTP access is restricted, you can use Git/SSH URLs.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>git@github.com:&lt;my-org&gt;/&lt;standards&gt;.git
 </span></code></pre></div>
-<h4 id="automated-sync-prs">Automated Sync PRs<a class="headerlink" href="#automated-sync-prs" title="Permanent link">&para;</a></h4>
-<p>Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Upstream</span><span class="nv"> </span><span class="s">Sync&quot;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">on</span><span class="p">:</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">schedule</span><span class="p">:</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">cron</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;0</span><span class="nv"> </span><span class="s">0</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">1&#39;</span><span class="w"> </span><span class="c1"># Every Monday at midnight</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">workflow_dispatch</span><span class="p">:</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nt">jobs</span><span class="p">:</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">sync</span><span class="p">:</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">astral-sh/setup-uv@v5</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pull upstream</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx ruff-sync</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create Pull Request</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">peter-evans/create-pull-request@v6</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">        </span><span class="nt">with</span><span class="p">:</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">          </span><span class="nt">commit-message</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;chore:</span><span class="nv"> </span><span class="s">sync</span><span class="nv"> </span><span class="s">ruff</span><span class="nv"> </span><span class="s">configuration</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">upstream&quot;</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">          </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;chore:</span><span class="nv"> </span><span class="s">sync</span><span class="nv"> </span><span class="s">ruff</span><span class="nv"> </span><span class="s">configuration&quot;</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">          </span><span class="nt">body</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;This</span><span class="nv"> </span><span class="s">PR</span><span class="nv"> </span><span class="s">synchronizes</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">Ruff</span><span class="nv"> </span><span class="s">configuration</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">upstream</span><span class="nv"> </span><span class="s">source.&quot;</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">          </span><span class="nt">branch</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ruff-sync-update&quot;</span>
-</span></code></pre></div>
-<h3 id="gitlab-ci">GitLab CI<a class="headerlink" href="#gitlab-ci" title="Permanent link">&para;</a></h3>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">ruff-sync-check</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python:3.12</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">script</span><span class="p">:</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install ruff-sync</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync check --semantic</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="nt">only</span><span class="p">:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">merge_requests</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+<h3 id="efficient-cloning">Efficient Cloning<a class="headerlink" href="#efficient-cloning" title="Permanent link">&para;</a></h3>
+<p>When using Git URLs, <code>ruff-sync</code> performs an optimized "partial clone" to minimize network traffic:
+- <code>--depth 1</code>: Fetches only the latest commit.
+- <code>--filter=blob:none</code>: Avoids downloading any file contents initially.
+- <code>--no-checkout</code>: Does not populate the working directory.</p>
+<p>The tool then uses <code>git restore</code> (or <code>git checkout</code> as a fallback) to pull <strong>only</strong> the configuration file it needs.</p>
+<hr />
+<h2 id="troubleshooting-permissions">💡 Troubleshooting &amp; Permissions<a class="headerlink" href="#troubleshooting-permissions" title="Permanent link">&para;</a></h2>
+<h3 id="private-repositories-via-http">Private Repositories via HTTP<a class="headerlink" href="#private-repositories-via-http" title="Permanent link">&para;</a></h3>
+<p>Conversion to <code>raw.githubusercontent.com</code> works beautifully for public repositories. However, if your repository is private, these HTTP requests will fail with a <code>404</code> or <code>401</code> unless you have configured authentication for <code>httpx</code>.</p>
+<p><strong>Recommendation</strong>: Use <strong>SSH URLs</strong> (<code>git@github.com:...</code>) for private repositories. <code>ruff-sync</code> will detect the HTTP failure and suggest the equivalent SSH command if it recognizes the host.</p>
+<h3 id="custom-branches">Custom Branches<a class="headerlink" href="#custom-branches" title="Permanent link">&para;</a></h3>
+<p>If your upstream repository uses a default branch other than <code>main</code> (e.g., <code>master</code> or <code>develop</code>), you should specify it via the <code>--branch</code> flag or in your configuration:</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tool.ruff-sync]</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/&lt;my-org&gt;/&lt;standards&gt;&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">branch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;develop&quot;</span>
 </span></code></pre></div>
 <hr />
-<p>You can use <code>ruff-sync</code> with <code>pre-commit</code> to ensure your configuration is always in sync before pushing.</p>
-<p>See the <a href="../pre-commit/">Pre-commit Guide</a> for details on using the official hooks.</p>
-<hr />
-<h2 id="best-practices">💡 Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-<blockquote>
-<p>[!TIP]
-Read the complete <a href="../best-practices/">Best Practices</a> guide for a broader look at organizing <code>ruff-sync</code> deployments, including when semantic checks should be blocking vs. informational.</p>
-</blockquote>
-<h3 id="use-semantic">Use <code>--semantic</code><a class="headerlink" href="#use-semantic" title="Permanent link">&para;</a></h3>
-<p>In CI, you usually only care about the functional configuration. Using <code>--semantic</code> ensures that minor formatting changes don't break your builds, while still guaranteeing that the actual rules are identical.</p>
-<h3 id="handle-exclusions-properly">Handle Exclusions Properly<a class="headerlink" href="#handle-exclusions-properly" title="Permanent link">&para;</a></h3>
-<p>If your project intentionally diverges from the upstream (e.g., using different <code>per-file-ignores</code> or ignoring a specific rule), ensure those overrides are listed in the <code>[tool.ruff-sync]</code> <code>exclude</code> list in your <code>pyproject.toml</code>.</p>
-<p>The <code>check</code> command respects your local <code>exclude</code> list. If you exclude a setting, <code>ruff-sync check</code> will completely ignore it when comparing against the upstream, ensuring that intended deviations never cause CI to fail!</p>
-<h3 id="use-a-dedicated-workflow">Use a Dedicated Workflow<a class="headerlink" href="#use-a-dedicated-workflow" title="Permanent link">&para;</a></h3>
-<p>Running <code>ruff-sync</code> as a separate job in your linting workflow makes it easy to identify when a failure is due to configuration drift rather than a code quality issue.</p>
+<h2 id="logic-flow">🗺️ Logic Flow<a class="headerlink" href="#logic-flow" title="Permanent link">&para;</a></h2>
+<p>Below is a visualization of how <code>ruff-sync</code> resolves an upstream source:</p>
+<pre class="mermaid"><code>graph TD
+    A[Input URL] --&gt; B{Is Git/SSH URL?}
+    B -- Yes --&gt; C[Efficient Partial Clone]
+    C --&gt; D[Discover Config in Repo]
+    B -- No --&gt; E{Is GitHub/GitLab Browser URL?}
+    E -- Yes --&gt; F[Convert to Raw Content URL]
+    E -- No --&gt; G[Use URL As-Is]
+    F --&gt; H{Ends in .toml?}
+    G --&gt; H
+    H -- Yes --&gt; I[Fetch File Directly]
+    H -- No --&gt; J[Configuration Discovery Order]
+    J --&gt; K[1. ruff.toml]
+    J --&gt; L[2. .ruff.toml]
+    J --&gt; M[3. pyproject.toml]
+    I --&gt; N([Success])
+    K -- 404 --&gt; L
+    L -- 404 --&gt; M
+    M -- 200 --&gt; N
+    K -- 200 --&gt; N
+    L -- 200 --&gt; N
+
+    %% Styling
+    style A fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style N fill:#16a34a,color:#fff,stroke:#15803d
+    style B fill:#ca8a04,color:#fff,stroke:#a16207
+    style E fill:#ca8a04,color:#fff,stroke:#a16207
+    style H fill:#ca8a04,color:#fff,stroke:#a16207</code></pre>
 
 
 

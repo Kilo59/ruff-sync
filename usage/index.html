@@ -16,7 +16,7 @@
         <link rel="prev" href="../installation/">
       
       
-        <link rel="next" href="../configuration/">
+        <link rel="next" href="../url-resolution/">
       
       
         
@@ -514,6 +514,8 @@
       
         
       
+        
+      
     
     
     
@@ -832,6 +834,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../url-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    URL Resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1654,7 +1684,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 </div>
 </div>
 </div>
-<p>See the <a href="../pre-defined-configs/#fastapi--async">Pre-defined Configs</a> page for a real-world example of using the <code>--path</code> option.</p>
+<p>See the <a href="../pre-defined-configs/#fastapi--async">Pre-defined Configs</a> page for a real-world example of using the <code>--path</code> option, or the <a href="../url-resolution/">URL Resolution Guide</a> for details on how different paths are resolved.</p>
 <h3 id="excluding-specific-rules">Excluding Specific Rules<a class="headerlink" href="#excluding-specific-rules" title="Permanent link">&para;</a></h3>
 <p>Sometimes your project needs to deviate slightly from the upstream standard. You can exclude specific dotted paths to preserve your local settings:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ruff-sync<span class="w"> </span>--exclude<span class="w"> </span>lint.ignore<span class="w"> </span>lint.select
