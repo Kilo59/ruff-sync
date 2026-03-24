@@ -21,6 +21,7 @@
 * **🚀 Zero-Config Bootstrapping**: Use `--init` to scaffold a new project in one command.
 * **✅ CI Ready**: Built-in `check` command with semantic comparison logic.
 * **🔗 Pre-commit Sync**: Automatically keep your `.pre-commit-config.yaml` Ruff hook version matched with your project's Ruff version.
+* **🦾 Agent Skill**: Includes a built-in AI skill to configure and troubleshoot your `ruff-sync` setup.
 
 ---
 
