@@ -73,7 +73,10 @@ This will download the upstream file, extract the `[tool.ruff]` section, and mer
 
 ---
 
-## 📚 Next Steps
+## Learn More
 
-- Check out our [Best Practices](best-practices.md) for recommendations on adopting `ruff-sync` across your organization.
-- Read the [Usage](usage.md) guide for advanced examples.
+- [Usage Guide](usage.md)
+- [URL Resolution & Discovery](url-resolution.md)
+- [Configuration Guide](configuration.md)
+- [CI Integration](ci-integration.md)
+- [Pre-commit Hooks](pre-commit.md)
