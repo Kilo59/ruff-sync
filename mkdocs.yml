@@ -109,6 +109,7 @@ nav:
   - Installation: installation.md
   - Usage:
       - Usage: usage.md
+      - URL Resolution: url-resolution.md
       - Configuration: configuration.md
       - Best Practices: best-practices.md
       - Pre-commit: pre-commit.md

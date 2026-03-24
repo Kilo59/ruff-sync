@@ -100,7 +100,7 @@ If the upstream repository stores its Python configuration in a specific subdire
     ruff-sync https://github.com/my-org/standards --path tools/ruff.toml
     ```
 
-See the [Pre-defined Configs](pre-defined-configs.md#fastapi--async) page for a real-world example of using the `--path` option.
+See the [Pre-defined Configs](pre-defined-configs.md#fastapi--async) page for a real-world example of using the `--path` option, or the [URL Resolution Guide](url-resolution.md) for details on how different paths are resolved.
 
 ### Excluding Specific Rules
 

@@ -19,12 +19,12 @@ upstream = [
 ]
 ```
 
-**Supported URL formats:**
-- GitHub/GitLab repo root: `https://github.com/org/repo`
-- Subdirectory (tree): `https://github.com/org/repo/tree/main/configs/ruff`
-- Specific file (blob): `https://github.com/org/repo/blob/main/pyproject.toml`
-- Raw URL: `https://raw.githubusercontent.com/org/repo/main/pyproject.toml`
-- SSH (triggers shallow clone): `git@github.com:org/repo.git`
+**Supported URL formats (with automatic browser link resolution):**
+- GitHub/GitLab repo root: `https://github.com/<org>/<repo>`
+- Subdirectory (tree): `https://github.com/<org>/<repo>/tree/main/configs/ruff`
+- Specific file (blob): `https://github.com/<org>/<repo>/blob/main/pyproject.toml`
+- Raw URL: `https://raw.githubusercontent.com/<org>/<repo>/main/pyproject.toml`
+- SSH (triggers shallow clone): `git@github.com:<org>/<repo>.git`
 
 ---
 

@@ -119,6 +119,7 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 - **`--semantic` ignores comments and whitespace.** Use it in CI to avoid false positives from cosmetic local edits. Omit it for strict byte-for-byte checks.
 - **SSH URLs trigger a shallow clone.** `git@github.com:...` URLs use `git clone --filter=blob:none --depth=1` — no `git` credential issues as long as SSH auth is configured.
 - **Later upstreams win in `upstream` lists.** In a multi-source list, keys set by entry 2 overwrite keys from entry 1.
+- **Config discovery order matters.** When targeting a directory, `ruff-sync` looks for `ruff.toml` -> `.ruff.toml` -> `pyproject.toml` in that order.
 - **Pre-commit exit code 2 is intentional.** A `2` exit from `ruff-sync check` means the Ruff _config_ is fine, only the pre-commit hook tag is stale. You may want to treat this differently from a full config drift (exit 1) in CI.
 - **Prefer TOML for pre-commit sync.** While `--pre-commit` works on the CLI, setting `pre-commit-version-sync = true` in `pyproject.toml` is the recommended way to ensure hook versioning stays consistent for all contributors.
 
