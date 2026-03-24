@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -656,6 +656,17 @@
     <span class="md-ellipsis">
       
         Persistent Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer-based-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer-Based Configuration
       
     </span>
   </a>
@@ -1346,6 +1357,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#layer-based-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer-Based Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#initializing-a-new-project" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1590,29 +1612,63 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <p>Now, you can simply run:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ruff-sync
 </span></code></pre></div>
+<h3 id="layer-based-configuration">Layer-Based Configuration<a class="headerlink" href="#layer-based-configuration" title="Permanent link">&para;</a></h3>
+<p>You can specify multiple upstreams to create a layered configuration. <code>ruff-sync</code> will merge them sequentially, allowing you to combine a base organization standard with team-specific overrides:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>https://github.com/my-org/team-tweaks
+</span></code></pre></div>
+<p>Alternatively, configure this in your <code>pyproject.toml</code>:</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[tool.ruff-sync]</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/standards&quot;</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/team-tweaks&quot;</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">]</span>
+</span></code></pre></div>
 <h3 id="initializing-a-new-project">Initializing a New Project<a class="headerlink" href="#initializing-a-new-project" title="Permanent link">&para;</a></h3>
 <p>If your local directory doesn't have a <code>pyproject.toml</code> yet, you can scaffold one:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
 </span></code></pre></div>
 <p>This creates a new <code>pyproject.toml</code> populated with the upstream configuration and automatically adds a <code>[tool.ruff-sync]</code> block so you won't need to specify the URL again.</p>
 <h3 id="syncing-subdirectories">Syncing Subdirectories<a class="headerlink" href="#syncing-subdirectories" title="Permanent link">&para;</a></h3>
-<p>If the upstream repository stores its Python configuration in a specific subdirectory (like a <code>backend/</code> folder in a monorepo), use the <code>--path</code> argument:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--path<span class="w"> </span>backend
+<p>If the upstream repository stores its Python configuration in a specific subdirectory or you want to point to a specific file, use the <code>--path</code> argument.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Subdirectory</label><label for="__tabbed_1_2">Nested Path</label><label for="__tabbed_1_3">Specific <code>pyproject.toml</code></label><label for="__tabbed_1_4">Specific <code>ruff.toml</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Point to a specific subdirectory, such as a <code>backend/</code> folder in a monorepo.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--path<span class="w"> </span>backend
 </span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Point to a more deeply nested directory.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--path<span class="w"> </span>configs/standards/python/backend
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Directly target a <code>pyproject.toml</code> file to bypass the default configuration searching logic.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--path<span class="w"> </span>backend/pyproject.toml
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Directly target a specific <code>ruff.toml</code> or <code>.ruff.toml</code> file to ensure a deterministic source and avoid searching.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--path<span class="w"> </span>tools/ruff.toml
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>See the <a href="../pre-defined-configs/#fastapi--async">Pre-defined Configs</a> page for a real-world example of using the <code>--path</code> option.</p>
 <h3 id="excluding-specific-rules">Excluding Specific Rules<a class="headerlink" href="#excluding-specific-rules" title="Permanent link">&para;</a></h3>
 <p>Sometimes your project needs to deviate slightly from the upstream standard. You can exclude specific dotted paths to preserve your local settings:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ruff-sync<span class="w"> </span>--exclude<span class="w"> </span>lint.ignore<span class="w"> </span>lint.select
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ruff-sync<span class="w"> </span>--exclude<span class="w"> </span>lint.ignore<span class="w"> </span>lint.select
 </span></code></pre></div>
 <p><em>(By default, <code>lint.per-file-ignores</code> is always excluded so your local file-specific ignores are safe).</em></p>
 <hr />
 <h2 id="checking-for-drift">🔍 Checking for Drift<a class="headerlink" href="#checking-for-drift" title="Permanent link">&para;</a></h2>
 <p>To ensure your repository hasn't drifted from your organization's unified standards, use the <code>check</code> command. It compares your local config to the upstream and warns you of any divergence.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>https://github.com/my-org/standards
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>https://github.com/my-org/standards
 </span></code></pre></div>
 <p><em>(If you have <code>upstream</code> configured in your <code>pyproject.toml</code>, you can just run <code>ruff-sync check</code>.)</em></p>
 <h3 id="semantic-checking">Semantic Checking<a class="headerlink" href="#semantic-checking" title="Permanent link">&para;</a></h3>
 <p>Often, the exact ordering of keys, whitespace, or comments might slightly differ from the upstream, even though the actual rules are identical. Use the <code>--semantic</code> flag to ignore functional equivalents:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>--semantic
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>--semantic
 </span></code></pre></div>
 <p><em>(This is heavily recommended for CI pipelines.)</em></p>
 <hr />
@@ -1632,7 +1688,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <h2 id="command-reference">📚 Command Reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h2>
 <h3 id="pull-or-just-ruff-sync"><code>pull</code> (or just <code>ruff-sync</code>)<a class="headerlink" href="#pull-or-just-ruff-sync" title="Permanent link">&para;</a></h3>
 <p>Downloads the upstream configuration and merges it into your local file. Note that <code>pull</code> is the default command, so <code>ruff-sync</code> and <code>ruff-sync pull</code> are functionally identical and can be used interchangeably.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ruff-sync<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ruff-sync<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>UPSTREAM_URL...</code></strong>: One or more URLs to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local <code>[tool.ruff-sync]</code> config. Multiple URLs form a fallback/merge chain. All upstreams are fetched <strong>concurrently</strong>, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.</li>
@@ -1648,7 +1704,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <li>Exit <strong><code>1</code></strong>: <code>pyproject.toml</code> or <code>ruff.toml</code> drifted from the upstream.</li>
 <li>Exit <strong><code>2</code></strong>: Local config is in sync, but the <code>.pre-commit-config.yaml</code> hook drifted from the project's Ruff version (only applies if <code>--pre-commit</code> is enabled).</li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>UPSTREAM_URL...</code></strong>: The source URL(s). Optional if defined locally.</li>
