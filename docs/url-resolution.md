@@ -68,3 +68,39 @@ If your upstream repository uses a default branch other than `main` (e.g., `mast
 upstream = "https://github.com/<my-org>/<standards>"
 branch = "develop"
 ```
+
+---
+
+## 🗺️ Logic Flow
+
+Below is a visualization of how `ruff-sync` resolves an upstream source:
+
+```mermaid
+graph TD
+    A[Input URL] --> B{Is Git/SSH URL?}
+    B -- Yes --> C[Efficient Partial Clone]
+    C --> D[Discover Config in Repo]
+    B -- No --> E{Is GitHub/GitLab Browser URL?}
+    E -- Yes --> F[Convert to Raw Content URL]
+    E -- No --> G[Use URL As-Is]
+    F --> H{Ends in .toml?}
+    G --> H
+    H -- Yes --> I[Fetch File Directly]
+    H -- No --> J[Configuration Discovery Order]
+    J --> K[1. ruff.toml]
+    J --> L[2. .ruff.toml]
+    J --> M[3. pyproject.toml]
+    I --> N([Success])
+    K -- 404 --> L
+    L -- 404 --> M
+    M -- 200 --> N
+    K -- 200 --> N
+    L -- 200 --> N
+
+    %% Styling
+    style A fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style N fill:#16a34a,color:#fff,stroke:#15803d
+    style B fill:#ca8a04,color:#fff,stroke:#a16207
+    style E fill:#ca8a04,color:#fff,stroke:#a16207
+    style H fill:#ca8a04,color:#fff,stroke:#a16207
+```
