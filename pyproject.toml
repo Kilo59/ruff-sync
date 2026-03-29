@@ -64,6 +64,8 @@ docs = [
     # Pygments 2.20.0 (released 2026-03-29) changes HtmlFormatter to call html.escape()
     # on the filename kwarg. pymdownx 10.21 explicitly passes filename=None for code
     # fences without a title attribute, causing an AttributeError. Pin until fixed upstream.
+    # Track upstream status in pymdown-extensions issues:
+    # https://github.com/facelessuser/pymdown-extensions/issues/2864
     "pygments>=2.18.0,<2.20",
 ]
 
