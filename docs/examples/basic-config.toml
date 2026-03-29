@@ -1,0 +1,4 @@
+[tool.ruff-sync]
+upstream = "https://github.com/Kilo59/ruff-sync" # The source repository to sync from
+path = "configs/fastapi" # Specific directory or toml file in the upstream repo
+exclude = ["lint.per-file-ignores"] # Keys to preserve in your local config

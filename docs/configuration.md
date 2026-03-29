@@ -77,6 +77,26 @@ upstream = [
 !!! tip "Last One Wins"
     The merge logic follows a "last one wins" approach for simple keys (like `line-length`), while performing a deep merge for configuration tables like `lint.per-file-ignores`.
 
+## Complete Examples
+
+Here are some complete `pyproject.toml` configuration examples (excluding the core Ruff settings themselves):
+
+### Basic Configuration
+
+Syncs the provided `fastapi` predefined config from the `ruff-sync` repository itself, while keeping your local per-file ignores intact.
+
+```toml
+--8<-- "docs/examples/basic-config.toml"
+```
+
+### Advanced Configuration
+
+Demonstrates a sequential strategy: it pulls the comprehensive `kitchen-sink` configuration first, then overlays the `fastapi` configuration on top. It also protects your own local `isort` settings and Python target version from being overwritten, and ensures your pre-commit hooks stay in sync with Ruff's version.
+
+```toml
+--8<-- "docs/examples/advanced-config.toml"
+```
+
 ## Deprecation Notes
 
 - The key `source` in `[tool.ruff-sync]` is deprecated and will be removed in a future version. Use `to` instead.
