@@ -31,6 +31,8 @@ jobs:
 
 By using `--output-format github`, `ruff-sync` will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.
 
+![GitHub PR Annotation](assets/github-pr-annotation.png)
+
 ### Automated Sync PRs
 
 Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.
