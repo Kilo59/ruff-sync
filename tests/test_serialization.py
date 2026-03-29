@@ -36,6 +36,7 @@ def test_serialize_ruff_sync_config_basic():
     assert "exclude = [" in s
     assert '"lint.ignore"' in s
     assert 'branch = "develop"' in s
+    assert 'path = "backend"' in s
     assert "pre-commit-version-sync = true" in s
 
 

@@ -170,15 +170,20 @@ uv run coverage run -m pytest -vv
 - Use the `MissingType.SENTINEL` (aliased as `MISSING`) from `ruff_sync.constants` whenever you need to distinguish between a value that is functionally "absent" and one that was explicitly provided (even if that provided value matches the default, such as `None` or an empty list).
 - **Why?**: This is particularly important for configuration serialization, as it allows `ruff-sync` to distinguish between a setting the user actively chose and one that is simply the default. This keeps the user's `pyproject.toml` clean by ensuring only explicit choices are serialized.
 - **Serialization Rule**: Only serialize fields to `[tool.ruff-sync]` if they are `not MISSING`.
-- Example pattern for resolving configuration:
+- Example pattern for resolving configuration (note: use **truthiness**, not `is not None`, so an
+  empty string falls back to config/defaults):
   ```python
   def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+      # Empty string is treated as falsy → falls back to config or DEFAULT_BRANCH
       if getattr(args, "branch", None):
           return cast("str", args.branch)
       if "branch" in config:
           return cast("str", config["branch"])
       return MISSING
   ```
+  The actual MISSING → default resolution (e.g. `MISSING` → `"main"`) is handled in
+  `resolve_defaults` from `ruff_sync.constants`, which is the single source of truth used
+  by both `cli.main` and `core._merge_multiple_upstreams`.
 
 ### Testing
 

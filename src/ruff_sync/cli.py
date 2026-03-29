@@ -33,12 +33,12 @@ from ruff_sync.constants import (
     DEFAULT_PATH,
     MISSING,
     MissingType,
+    resolve_defaults,
 )
 from ruff_sync.core import (
     Config,
     RuffConfigFileName,
     UpstreamError,
-    _resolve_defaults,
     check,
     pull,
     resolve_raw_url,
@@ -338,7 +338,13 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
 
 
 def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | MissingType:
-    """Resolve exclude patterns from CLI, config, or default."""
+    """Resolve exclude patterns from CLI or config.
+
+    Returns the CLI value if provided, otherwise the value from
+    ``[tool.ruff-sync].exclude`` in the config.  If neither is set,
+    returns ``MISSING`` so that :func:`~ruff_sync.constants.resolve_defaults`
+    can apply the ``DEFAULT_EXCLUDE`` set downstream.
+    """
     if args.exclude is not None:
         return cast("Iterable[str]", args.exclude)
     if "exclude" in config:
@@ -349,8 +355,12 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | Mi
 
 
 def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
-    """Resolve branch name from CLI, config, or default."""
-    if getattr(args, "branch", None) is not None:
+    """Resolve branch name from CLI, config, or MISSING.
+
+    An empty string (``--branch ""``) is treated as falsy and falls back to
+    the config or default, preserving the original behaviour.
+    """
+    if getattr(args, "branch", None):
         return cast("str", args.branch)
     if "branch" in config:
         branch = cast("str", config["branch"])
@@ -360,8 +370,12 @@ def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
 
 
 def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
-    """Resolve path prefix from CLI, config, or default."""
-    if getattr(args, "path", None) is not None:
+    """Resolve path prefix from CLI, config, or MISSING.
+
+    An empty string (``--path ""``) is treated as falsy and falls back to
+    the config or default, preserving the original behaviour.
+    """
+    if getattr(args, "path", None):
         return cast("str", args.path)
     if "path" in config:
         path = cast("str", config["path"])
@@ -461,9 +475,9 @@ def main() -> int:
         save=getattr(args, "save", None),
     )
 
-    # Use the shared helper so the MISSING→default logic for branch/path cannot
-    # diverge between cli.main and core._merge_multiple_upstreams.
-    res_branch, res_path, _exclude = _resolve_defaults(exec_args)
+    # Use the shared helper from constants so the MISSING→default logic for
+    # branch/path cannot diverge between cli.main and core._merge_multiple_upstreams.
+    res_branch, res_path, _exclude = resolve_defaults(branch, path, exclude)
     resolved_upstream = tuple(
         resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream
     )

@@ -35,9 +35,8 @@ from typing_extensions import override
 
 from ruff_sync.constants import (
     DEFAULT_BRANCH,
-    DEFAULT_EXCLUDE,
-    DEFAULT_PATH,
     MISSING,
+    resolve_defaults,
 )
 from ruff_sync.pre_commit import sync_pre_commit
 
@@ -791,22 +790,13 @@ async def fetch_upstreams_concurrently(
 def _resolve_defaults(
     args: Arguments,
 ) -> tuple[str, str | None, Iterable[str]]:
-    """Resolve MISSING sentinel values in args to their effective defaults.
+    """Resolve MISSING sentinel values in *args* to their effective defaults.
 
-    Returns:
-        A tuple of (branch, path, exclude) with defaults applied.
-        ``path`` is normalised to ``None`` (not ``""``) so callers can
-        forward it directly to :func:`resolve_raw_url` and
-        :func:`fetch_upstreams_concurrently`.
+    Delegates to :func:`~ruff_sync.constants.resolve_defaults` so that the
+    MISSING → default logic is centralised in one place and shared with
+    ``cli.main`` without coupling the two layers together.
     """
-    branch = args.branch if args.branch is not MISSING else DEFAULT_BRANCH
-    # Normalise to None so both _merge_multiple_upstreams and cli.main agree
-    # on the representation of "root directory" (resolve_raw_url treats both
-    # None and "" the same, but explicit None is the canonical sentinel).
-    raw_path = args.path if args.path is not MISSING else DEFAULT_PATH
-    path: str | None = raw_path or None
-    exclude = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
-    return branch, path, exclude
+    return resolve_defaults(args.branch, args.path, args.exclude)
 
 
 async def _merge_multiple_upstreams(
