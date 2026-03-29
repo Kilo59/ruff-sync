@@ -61,6 +61,10 @@ docs = [
     "mkdocs-literate-nav>=0.6.2",
     "mkdocs-material>=9.7.5",
     "mkdocstrings[python]>=1.0.3",
+    # Pygments 2.20.0 (released 2026-03-29) changes HtmlFormatter to call html.escape()
+    # on the filename kwarg. pymdownx 10.21 explicitly passes filename=None for code
+    # fences without a title attribute, causing an AttributeError. Pin until fixed upstream.
+    "pygments>=2.18.0,<2.20",
 ]
 
 [tool.uv]
