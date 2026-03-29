@@ -951,17 +951,23 @@ async def check(
     return 1
 
 
-def _has_credentials(upstreams: tuple[URL, ...]) -> bool:
-    return any(url.username or url.password for url in upstreams)
+def _get_credential_url(upstreams: tuple[URL, ...]) -> URL | None:
+    for url in upstreams:
+        if url.username or url.password:
+            return url
+    return None
 
 
 def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
     """Serialize the ruff-sync CLI arguments into the TOML document."""
-    if _has_credentials(args.upstream):
+    bad_url = _get_credential_url(args.upstream)
+    if bad_url:
+        suggested = to_git_url(bad_url)
+        suggestion_msg = f" (e.g., {suggested})" if suggested else ""
         LOGGER.warning(
             "⚠️ Upstream URL contains credentials! Refusing to serialize "
-            "[tool.ruff-sync] configuration. Consider using a SSH git URL "
-            "instead (e.g., git@github.com:org/repo.git) to avoid leaking credentials."
+            f"[tool.ruff-sync] configuration. Consider using a SSH git URL instead{suggestion_msg}"
+            " to avoid leaking credentials."
         )
         return
 
