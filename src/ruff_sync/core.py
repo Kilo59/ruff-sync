@@ -867,13 +867,13 @@ def _print_diff(
     sys.stdout.writelines(diff)
 
 
-def _check_pre_commit_sync(args: Arguments, formatter: ResultFormatter) -> int | None:
+def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
     """Return exit code 2 if pre-commit hook version is out of sync, otherwise None.
 
     Shared helper to avoid duplicating the pre-commit synchronization logic.
     """
     if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
-        formatter.warning("⚠️ Pre-commit hook version is out of sync!")
+        fmt.warning("⚠️ Pre-commit hook version is out of sync!")
         return 2
     return None
 
@@ -899,12 +899,12 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
-    formatter = get_formatter(args.output_format)
-    formatter.info("🔍 Checking Ruff sync status...")
+    fmt = get_formatter(args.output_format)
+    fmt.info("🔍 Checking Ruff sync status...")
 
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
     if not _source_toml_path.exists():
-        formatter.error(
+        fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
             "Run 'ruff-sync pull' to create it.",
             file_path=str(_source_toml_path),
@@ -942,14 +942,14 @@ async def check(
         merged_val = merged_ruff.unwrap() if merged_ruff is not None else None
 
         if source_val == merged_val:
-            formatter.success("✅ Ruff configuration is semantically in sync.")
-            exit_code = _check_pre_commit_sync(args, formatter)
+            fmt.success("✅ Ruff configuration is semantically in sync.")
+            exit_code = _check_pre_commit_sync(args, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
     elif source_doc.as_string() == merged_doc.as_string():
-        formatter.success("✅ Ruff configuration is in sync.")
-        exit_code = _check_pre_commit_sync(args, formatter)
+        fmt.success("✅ Ruff configuration is in sync.")
+        exit_code = _check_pre_commit_sync(args, fmt)
         if exit_code is not None:
             return exit_code
         return 0
@@ -958,7 +958,7 @@ async def check(
         rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path
-    formatter.error(f"❌ Ruff configuration at {rel_path} is out of sync!", file_path=str(rel_path))
+    fmt.error(f"❌ Ruff configuration at {rel_path} is out of sync!", file_path=str(rel_path))
 
     if args.diff:
         _print_diff(
