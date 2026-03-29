@@ -94,6 +94,7 @@ class Arguments(NamedTuple):
     diff: bool = True
     init: bool = False
     pre_commit: bool = False
+    save: bool | None = None
 
     @property
     @deprecated("Use 'to' instead")
@@ -251,6 +252,12 @@ def _get_cli_parser() -> ArgumentParser:
         "--init",
         action="store_true",
         help="Create a new configuration file if it does not exist in the target directory.",
+    )
+    pull_parser.add_argument(
+        "--save",
+        action=BooleanOptionalAction,
+        default=None,
+        help="Save CLI arguments to [tool.ruff-sync] in pyproject.toml.",
     )
 
     # Check subcommand
@@ -440,6 +447,7 @@ def main() -> int:
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
         pre_commit=bool(pre_commit_val),
+        save=getattr(args, "save", None),
     )
 
     try:

@@ -53,6 +53,7 @@ __all__: Final[list[str]] = [
     "pull",
     "resolve_raw_url",
     "resolve_target_path",
+    "serialize_ruff_sync_config",
     "to_git_url",
     "toml_ruff_parse",
 ]
@@ -950,6 +951,54 @@ async def check(
     return 1
 
 
+def _has_credentials(upstreams: tuple[URL, ...]) -> bool:
+    return any(url.username or url.password for url in upstreams)
+
+
+def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
+    """Serialize the ruff-sync CLI arguments into the TOML document."""
+    if _has_credentials(args.upstream):
+        LOGGER.warning(
+            "⚠️ Upstream URL contains credentials! Refusing to serialize "
+            "[tool.ruff-sync] configuration. Consider using a SSH git URL "
+            "instead (e.g., git@github.com:org/repo.git) to avoid leaking credentials."
+        )
+        return
+
+    tool_table = doc.get("tool")
+    if not isinstance(tool_table, tomlkit.items.Table):
+        tool_table = tomlkit.table()
+        doc.append("tool", tool_table)
+
+    ruff_sync_table = tomlkit.table()
+
+    if len(args.upstream) == 1:
+        ruff_sync_table.add("upstream", str(args.upstream[0]))
+    else:
+        urls_array = tomlkit.array()
+        urls_array.multiline(True)
+        for url in args.upstream:
+            urls_array.append(str(url))
+        ruff_sync_table.add("upstream", urls_array)
+
+    if list(args.exclude) != ["lint.per-file-ignores"]:
+        exclude_array = tomlkit.array()
+        for ex in args.exclude:
+            exclude_array.append(ex)
+        ruff_sync_table.add("exclude", exclude_array)
+
+    if args.branch and args.branch != "main":
+        ruff_sync_table.add("branch", args.branch)
+
+    if args.path:
+        ruff_sync_table.add("path", args.path)
+
+    if getattr(args, "pre_commit", False):
+        ruff_sync_table.add("pre_commit_version_sync", True)
+
+    tool_table["ruff-sync"] = ruff_sync_table
+
+
 async def pull(
     args: Arguments,
 ) -> int:
@@ -1002,6 +1051,16 @@ async def pull(
             args=args,
             client=client,
         )
+
+    should_save = args.save if args.save is not None else args.init
+    if should_save:
+        if _source_toml_path.name == RuffConfigFileName.PYPROJECT_TOML:
+            LOGGER.info(f"Saving [tool.ruff-sync] configuration to {_source_toml_path.name}")
+            serialize_ruff_sync_config(source_doc, args)
+        else:
+            LOGGER.info(
+                "Skipping [tool.ruff-sync] configuration save because target is not pyproject.toml"
+            )
 
     source_toml_file.write(source_doc)
     try:
