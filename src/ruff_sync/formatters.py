@@ -138,7 +138,7 @@ class GithubFormatter:
 
         # Strip emoji/symbols if any for the raw title, or just use a generic title
         file_val = self._escape(str(file_path), is_property=True) if file_path else ""
-        file_arg = f"file={file_val}," if file_path else ""
+        file_arg = f"file={file_val},line=1," if file_path else ""
         title_val = self._escape("Ruff Sync Error", is_property=True)
 
         # The message is technically what we pass after ::
@@ -157,7 +157,7 @@ class GithubFormatter:
         (logger or LOGGER).warning(message)
 
         file_val = self._escape(str(file_path), is_property=True) if file_path else ""
-        file_arg = f"file={file_val}," if file_path else ""
+        file_arg = f"file={file_val},line=1," if file_path else ""
         title_val = self._escape("Ruff Sync Warning", is_property=True)
 
         clean_msg = message.removeprefix("❌ ").removeprefix("⚠️ ")
