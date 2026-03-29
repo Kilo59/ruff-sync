@@ -33,7 +33,7 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
-from ruff_sync.constants import DEFAULT_EXCLUDE
+from ruff_sync.constants import DEFAULT_EXCLUDE, MISSING
 from ruff_sync.pre_commit import sync_pre_commit
 
 if TYPE_CHECKING:
@@ -794,8 +794,13 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
+    # Resolve MISSING values to defaults
+    branch = args.branch if args.branch is not MISSING else "main"
+    path = args.path if args.path is not MISSING else ""
+    exclude = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
+
     fetch_results = await fetch_upstreams_concurrently(
-        args.upstream, client, branch=args.branch, path=args.path
+        args.upstream, client, branch=branch, path=path
     )
 
     # Sequentially merge the results in the original order
@@ -808,7 +813,7 @@ async def _merge_multiple_upstreams(
             fetch_result.buffer.read(),
             is_ruff_toml=is_upstream_ruff_toml,
             create_if_missing=False,
-            exclude=args.exclude,
+            exclude=exclude,
         )
 
         target_doc = merge_ruff_toml(
@@ -987,6 +992,7 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
 
     ruff_sync_table = _get_or_create_ruff_sync_table(doc)
 
+    # TODO: Consider only saving upstream if it differs from existing config
     if len(args.upstream) == 1:
         ruff_sync_table["upstream"] = str(args.upstream[0])
     else:
@@ -996,21 +1002,25 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
             urls_array.append(str(url))
         ruff_sync_table["upstream"] = urls_array
 
-    normalized_excludes = list(dict.fromkeys(args.exclude))
-    if set(normalized_excludes) != DEFAULT_EXCLUDE:
+    # Normalize excludes and de-duplicate while preserving order
+    excludes = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
+    normalized_excludes = list(dict.fromkeys(excludes))
+
+    # Only serialize if not MISSING
+    if args.exclude is not MISSING:
         exclude_array = tomlkit.array()
         for ex in normalized_excludes:
             exclude_array.append(ex)
         ruff_sync_table["exclude"] = exclude_array
 
-    if args.branch and args.branch != "main":
+    if args.branch is not MISSING:
         ruff_sync_table["branch"] = args.branch
 
-    if args.path:
+    if args.path is not MISSING:
         ruff_sync_table["path"] = args.path
 
-    if getattr(args, "pre_commit", False):
-        ruff_sync_table["pre-commit-version-sync"] = True
+    if args.pre_commit is not MISSING:
+        ruff_sync_table["pre-commit-version-sync"] = args.pre_commit
 
 
 async def pull(
@@ -1083,7 +1093,7 @@ async def pull(
         rel_path = _source_toml_path.resolve()
     print(f"✅ Updated {rel_path}")
 
-    if getattr(args, "pre_commit", False):
+    if args.pre_commit is not MISSING and args.pre_commit:
         sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
     return 0

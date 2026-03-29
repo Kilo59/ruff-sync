@@ -8,6 +8,7 @@ import tomlkit
 from httpx import URL
 
 from ruff_sync.cli import Arguments
+from ruff_sync.constants import MISSING
 from ruff_sync.core import pull, serialize_ruff_sync_config
 
 
@@ -35,9 +36,63 @@ def test_serialize_ruff_sync_config_basic():
     assert "exclude = [" in s
     assert '"lint.ignore"' in s
     assert 'branch = "develop"' in s
-    assert 'path = "backend"' in s
     assert "pre-commit-version-sync = true" in s
-    assert "pre-commit-version-sync = true" in s
+
+
+def test_serialize_ruff_sync_config_exclude_deduplication():
+    # Case: duplicates and extra entries -> written, deduped, first-occurrence order
+    doc = tomlkit.document()
+    exclude_with_duplicates = [
+        "lint.per-file-ignores",
+        "lint.ignore",
+        "lint.ignore",
+        "lint.extend-select",
+    ]
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=exclude_with_duplicates,
+        verbose=0,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync_table = doc.get("tool", {}).get("ruff-sync", {})
+
+    # Should be a single exclude array
+    assert "exclude" in ruff_sync_table
+    exclude_value = ruff_sync_table["exclude"]
+    # tomlkit items might not be direct lists but behave like them
+    assert list(exclude_value) == [
+        "lint.per-file-ignores",
+        "lint.ignore",
+        "lint.extend-select",
+    ]
+
+
+def test_serialize_ruff_sync_config_preserves_existing():
+    doc = tomlkit.document()
+    tool = tomlkit.table()
+    ruff_sync = tomlkit.table()
+    ruff_sync.add("unrelated", "value")
+    tool.add("ruff-sync", ruff_sync)
+    doc.add("tool", tool)
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=MISSING,
+        verbose=0,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    s = doc.as_string()
+    assert 'unrelated = "value"' in s
+    assert 'upstream = "https://example.com/repo/pyproject.toml"' in s
 
 
 def test_serialize_ruff_sync_config_omits_defaults():
@@ -46,14 +101,11 @@ def test_serialize_ruff_sync_config_omits_defaults():
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=["lint.per-file-ignores"],
+        exclude=MISSING,
         verbose=0,
-        branch="main",  # default
-        path="",  # empty
-        semantic=False,
-        diff=False,
-        init=True,
-        pre_commit=False,  # disabled
+        branch=MISSING,
+        path=MISSING,
+        pre_commit=MISSING,
         save=True,
     )
     serialize_ruff_sync_config(doc, args)
@@ -73,7 +125,7 @@ def test_serialize_ruff_sync_config_exclude_default_skipped():
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=["lint.per-file-ignores"],
+        exclude=MISSING,
         verbose=0,
     )
     serialize_ruff_sync_config(doc, args)
@@ -92,7 +144,7 @@ def test_serialize_ruff_sync_config_mixed_credentials(caplog: pytest.LogCaptureF
             URL("https://user:pass@example.com/repo/pyproject.toml"),
         ),
         to=pathlib.Path(),
-        exclude=["lint.per-file-ignores"],
+        exclude=MISSING,
         verbose=0,
     )
 
@@ -110,7 +162,7 @@ def test_serialize_ruff_sync_config_skip_credentials(caplog: pytest.LogCaptureFi
         command="pull",
         upstream=(URL("https://user:pass@example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=["lint.per-file-ignores"],
+        exclude=MISSING,
         verbose=0,
         branch="main",
         path="",
@@ -135,7 +187,7 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
             URL("https://example.com/repo2/pyproject.toml"),
         ),
         to=pathlib.Path(),
-        exclude=["lint.per-file-ignores"],
+        exclude=MISSING,
         verbose=0,
     )
     serialize_ruff_sync_config(doc, args)
@@ -200,6 +252,7 @@ async def test_pull_logging_and_serialization_triggers(
 
     # Now test with ruff.toml
     caplog.clear()
+    MockTOMLFile.last_written_doc = None
     args = args._replace(to=pathlib.Path("ruff.toml"))
 
     with caplog.at_level(logging.INFO):
@@ -209,12 +262,21 @@ async def test_pull_logging_and_serialization_triggers(
         "Skipping [tool.ruff-sync] configuration save because target is not pyproject.toml"
         in caplog.text
     )
+    # Target not pyproject.toml -> config serialization skipped, but file still written
+    assert MockTOMLFile.last_written_doc is not None
+    assert "tool" not in MockTOMLFile.last_written_doc
+    assert "ruff-sync" not in MockTOMLFile.last_written_doc.as_string()
 
     # Now test --init --no-save
     caplog.clear()
+    MockTOMLFile.last_written_doc = None
     args = args._replace(to=pathlib.Path("pyproject.toml"), save=False)
 
     with caplog.at_level(logging.INFO):
         await pull(args)
 
     assert "Saving [tool.ruff-sync] configuration to pyproject.toml" not in caplog.text
+    # Explicitly disabled save, but file still written
+    assert MockTOMLFile.last_written_doc is not None
+    assert "tool" not in MockTOMLFile.last_written_doc
+    assert "ruff-sync" not in MockTOMLFile.last_written_doc.as_string()

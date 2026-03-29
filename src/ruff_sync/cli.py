@@ -27,7 +27,7 @@ import tomlkit
 from httpx import URL
 from typing_extensions import deprecated
 
-from ruff_sync.constants import DEFAULT_EXCLUDE
+from ruff_sync.constants import DEFAULT_EXCLUDE, MISSING, MissingType
 from ruff_sync.core import (
     Config,
     RuffConfigFileName,
@@ -86,14 +86,14 @@ class Arguments(NamedTuple):
     command: str
     upstream: tuple[URL, ...]
     to: pathlib.Path
-    exclude: Iterable[str]
+    exclude: Iterable[str] | MissingType
     verbose: int
-    branch: str = "main"
-    path: str = ""
+    branch: str | MissingType = MISSING
+    path: str | MissingType = MISSING
     semantic: bool = False
     diff: bool = True
     init: bool = False
-    pre_commit: bool = False
+    pre_commit: bool | MissingType = MISSING
     save: bool | None = None
 
     @property
@@ -114,9 +114,9 @@ class ResolvedArgs(NamedTuple):
 
     upstream: tuple[URL, ...]
     to: pathlib.Path
-    exclude: Iterable[str]
-    branch: str
-    path: str
+    exclude: Iterable[str] | MissingType
+    branch: str | MissingType
+    path: str | MissingType
 
 
 @lru_cache(maxsize=1)
@@ -329,7 +329,7 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
     )
 
 
-def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str]:
+def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | MissingType:
     """Resolve exclude patterns from CLI, config, or default."""
     if args.exclude is not None:
         return cast("Iterable[str]", args.exclude)
@@ -337,29 +337,29 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str]:
         exclude = config["exclude"]
         LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
         return cast("Iterable[str]", exclude)
-    return DEFAULT_EXCLUDE
+    return MISSING
 
 
-def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str:
+def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     """Resolve branch name from CLI, config, or default."""
-    if args.branch:
+    if getattr(args, "branch", None):
         return cast("str", args.branch)
     if "branch" in config:
         branch = cast("str", config["branch"])
         LOGGER.info(f"🌿 Using branch from [tool.ruff-sync]: {branch}")
         return branch
-    return "main"
+    return MISSING
 
 
-def _resolve_path(args: Any, config: Mapping[str, Any]) -> str:
+def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     """Resolve path prefix from CLI, config, or default."""
-    if args.path:
+    if getattr(args, "path", None):
         return cast("str", args.path)
     if "path" in config:
         path = cast("str", config["path"])
         LOGGER.info(f"📄 Using path from [tool.ruff-sync]: {path}")
         return path
-    return ""
+    return MISSING
 
 
 def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
@@ -386,7 +386,7 @@ def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return ResolvedArgs(upstream, to, exclude, branch, path)
+    return ResolvedArgs(upstream, to, cast("Any", exclude), cast("Any", branch), cast("Any", path))
 
 
 def main() -> int:
@@ -425,14 +425,20 @@ def main() -> int:
 
     upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
-    # Convert non-raw github/gitlab upstream url to the raw equivalent
-    upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
+    # Resolve MISSING values to defaults for raw URL resolution
+    res_branch = branch if branch is not MISSING else "main"
+    res_path = path if path is not MISSING else None
+    upstream = tuple(resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream)
 
     pre_commit_arg = getattr(args, "pre_commit", None)
     if pre_commit_arg is not None:
-        pre_commit_val = pre_commit_arg
+        pre_commit_val: bool | MissingType = pre_commit_arg
+    elif "pre-commit-version-sync" in config:
+        pre_commit_val = cast("Any", config).get("pre-commit-version-sync")
+    elif "pre_commit_version_sync" in config:
+        pre_commit_val = config.get("pre_commit_version_sync", MISSING)
     else:
-        pre_commit_val = config.get("pre_commit_version_sync", False)
+        pre_commit_val = MISSING
 
     # Create Arguments object
     exec_args = Arguments(
@@ -446,7 +452,7 @@ def main() -> int:
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
-        pre_commit=bool(pre_commit_val),
+        pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
     )
 

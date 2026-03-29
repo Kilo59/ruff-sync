@@ -22,7 +22,7 @@ from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
-from ruff_sync.constants import DEFAULT_EXCLUDE
+from ruff_sync.constants import DEFAULT_EXCLUDE, MISSING
 from ruff_sync.core import (
     UpstreamError,
     _merge_multiple_upstreams,
@@ -417,7 +417,7 @@ def test_exclude_resolution_default(patch_cli: CLIPatch):
     ruff_sync.main()
 
     assert len(patch_cli.captured_args) == 1
-    assert set(patch_cli.captured_args[0].exclude) == DEFAULT_EXCLUDE
+    assert patch_cli.captured_args[0].exclude is MISSING
 
 
 def test_main_default_to_resolution(patch_cli: CLIPatch):
