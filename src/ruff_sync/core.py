@@ -117,6 +117,16 @@ class UpstreamError(Exception):
         super().__init__(msg)
 
 
+class DiffContext(NamedTuple):
+    """Context for printing a diff between local and merged configurations."""
+
+    source_toml_path: pathlib.Path
+    source_doc: TOMLDocument
+    merged_doc: TOMLDocument
+    source_val: Any
+    merged_val: Any
+
+
 class Config(TypedDict, total=False):
     """Configuration schema for [tool.ruff-sync] in pyproject.toml."""
 
@@ -838,25 +848,22 @@ async def _merge_multiple_upstreams(
 
 def _print_diff(
     args: Arguments,
-    source_toml_path: pathlib.Path,
-    source_doc: tomlkit.TOMLDocument,
-    merged_doc: tomlkit.TOMLDocument,
-    source_val: Any,
-    merged_val: Any,
+    fmt: ResultFormatter,
+    ctx: DiffContext,
 ) -> None:
     """Print the unified diff between the local and expected configurations."""
     if args.semantic:
         # Semantic diff of the managed section
-        from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(keepends=True)
-        to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
+        from_lines = json.dumps(ctx.source_val, indent=2, sort_keys=True).splitlines(keepends=True)
+        to_lines = json.dumps(ctx.merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
         from_file = "local (semantic)"
         to_file = "upstream (semantic)"
     else:
         # Full text diff of the file
-        from_lines = source_doc.as_string().splitlines(keepends=True)
-        to_lines = merged_doc.as_string().splitlines(keepends=True)
-        from_file = f"local/{source_toml_path.name}"
-        to_file = f"upstream/{source_toml_path.name}"
+        from_lines = ctx.source_doc.as_string().splitlines(keepends=True)
+        to_lines = ctx.merged_doc.as_string().splitlines(keepends=True)
+        from_file = f"local/{ctx.source_toml_path.name}"
+        to_file = f"upstream/{ctx.source_toml_path.name}"
 
     diff = difflib.unified_diff(
         from_lines,
@@ -864,7 +871,7 @@ def _print_diff(
         fromfile=from_file,
         tofile=to_file,
     )
-    sys.stdout.writelines(diff)
+    fmt.diff("".join(diff))
 
 
 def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
@@ -873,7 +880,14 @@ def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
     Shared helper to avoid duplicating the pre-commit synchronization logic.
     """
     if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
-        fmt.warning("⚠️ Pre-commit hook version is out of sync!", logger=LOGGER)
+        repo_root = pathlib.Path.cwd()
+        pre_commit_config = repo_root / ".pre-commit-config.yaml"
+        file_path = pre_commit_config if pre_commit_config.exists() else repo_root
+        fmt.warning(
+            "⚠️ Pre-commit hook version is out of sync!",
+            logger=LOGGER,
+            file_path=file_path,
+        )
         return 2
     return None
 
@@ -968,11 +982,14 @@ async def check(
     if args.diff:
         _print_diff(
             args=args,
-            source_toml_path=_source_toml_path,
-            source_doc=source_doc,
-            merged_doc=merged_doc,
-            source_val=source_val,
-            merged_val=merged_val,
+            fmt=fmt,
+            ctx=DiffContext(
+                source_toml_path=_source_toml_path,
+                source_doc=source_doc,
+                merged_doc=merged_doc,
+                source_val=source_val,
+                merged_val=merged_val,
+            ),
         )
     return 1
 
@@ -1088,6 +1105,7 @@ async def pull(
         fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
             "Pass the '--init' flag to create it.",
+            file_path=_source_toml_path,
             logger=LOGGER,
         )
         return 1
