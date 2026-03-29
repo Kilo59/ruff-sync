@@ -77,8 +77,9 @@ upstream = [
 CI Setup Progress:
 - [ ] 1. Add ruff-sync check step to CI workflow (see references/ci-integration.md)
 - [ ] 2. Decide: --semantic for value-only checks, or full string comparison
-- [ ] 3. Set exit-code expectations (0 = in sync, 1 = config drift, 2 = pre-commit only)
-- [ ] 4. Verify locally: `ruff-sync check --semantic`
+- [ ] 3. Set output format: --output-format github for PR annotations
+- [ ] 4. Set exit-code expectations (0 = in sync, 1 = config drift, 2 = pre-commit only)
+- [ ] 5. Verify locally: `ruff-sync check --semantic`
 ```
 
 Keep the `ruff-pre-commit` hook version in `.pre-commit-config.yaml` aligned with the project's Ruff version.
@@ -111,6 +112,15 @@ ruff-sync https://github.com/my-org/standards/blob/main/ruff.toml  # specific fi
 ruff-sync https://raw.githubusercontent.com/my-org/standards/main/pyproject.toml
 ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 ```
+
+## CLI Reference (Short)
+
+| Flag | Meaning |
+|------|---------|
+| `--output-format` | `text` (default), `json`, `github` (PR annotations) |
+| `--semantic`      | Ignore whitespace/comments in `check` |
+| `--pre-commit`    | Sync `.pre-commit-config.yaml` hook version |
+| `--save`          | Persist CLI args to `pyproject.toml` |
 
 ## Gotchas
 
