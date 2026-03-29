@@ -787,6 +787,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#complete-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complete Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deprecation-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1082,6 +1121,8 @@
       
         
       
+        
+      
     
     
     
@@ -1153,6 +1194,34 @@
     
   
     cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/ruff_sync/constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    constants
   
 
     
@@ -1364,6 +1433,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#complete-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complete Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deprecation-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1519,9 +1627,9 @@ See <a href="../best-practices/#use-strategic-exclusions">Strategic Exclusions</
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">]</span>
 </span></code></pre></div>
 <h4 id="manage-specific-plugins-locally">Manage specific plugins locally<a class="headerlink" href="#manage-specific-plugins-locally" title="Permanent link">&para;</a></h4>
-<p>If you want to use the upstream rules but manage <code>isort</code> settings yourself:</p>
+<p>If you want to use the upstream rules but manage <code>pydocstyle</code> settings yourself:</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.isort&quot;</span><span class="p">]</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.pydocstyle&quot;</span><span class="p">]</span>
 </span></code></pre></div>
 <h4 id="keep-a-specific-rule-toggle">Keep a specific rule toggle<a class="headerlink" href="#keep-a-specific-rule-toggle" title="Permanent link">&para;</a></h4>
 <p>If you want to manage whether a specific rule is ignored or selected:</p>
@@ -1545,6 +1653,35 @@ See <a href="../best-practices/#use-strategic-exclusions">Strategic Exclusions</
 <p class="admonition-title">Last One Wins</p>
 <p>The merge logic follows a "last one wins" approach for simple keys (like <code>line-length</code>), while performing a deep merge for configuration tables like <code>lint.per-file-ignores</code>.</p>
 </div>
+<h2 id="complete-examples">Complete Examples<a class="headerlink" href="#complete-examples" title="Permanent link">&para;</a></h2>
+<p>Here are some complete <code>pyproject.toml</code> configuration examples (excluding the core Ruff settings themselves):</p>
+<h3 id="basic-configuration">Basic Configuration<a class="headerlink" href="#basic-configuration" title="Permanent link">&para;</a></h3>
+<p>Syncs the provided <code>fastapi</code> predefined config from the <code>ruff-sync</code> repository itself, while keeping your local per-file ignores intact.</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">[tool.ruff-sync]</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># The source to sync from (supports GitHub/GitLab web URLs, raw file URLs, and git:// or git+https:// URLs)</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/Kilo59/ruff-sync&quot;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># `path` is only needed if the config file is NOT in the root directory of the upstream repo</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;configs/fastapi&quot;</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">]</span><span class="w"> </span><span class="c1"># Keys to preserve in your local config</span>
+</span></code></pre></div>
+<h3 id="advanced-configuration">Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Permanent link">&para;</a></h3>
+<p>Demonstrates a sequential strategy: it pulls the comprehensive <code>kitchen-sink</code> configuration first, then overlays the <code>fastapi</code> configuration on top. It also protects your own local <code>pydocstyle</code> settings and Python target version from being overwritten, and ensures your pre-commit hooks stay in sync with Ruff's version.</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[tool.ruff-sync]</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Merge multiple upstreams sequentially (last one wins)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Supports GitHub/GitLab web URLs, raw file URLs, and git:// or git+https:// URLs</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="s2">&quot;https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1"># Base configuration profile</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="s2">&quot;https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi&quot;</span><span class="p">,</span><span class="w">      </span><span class="c1"># Overrides with asyncio/web focus</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">]</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="c1"># Keys that you want to manage strictly locally</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1"># Keep your local file-specific ignore lists</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="s2">&quot;lint.pydocstyle&quot;</span><span class="p">,</span><span class="w">       </span><span class="c1"># Manage your own docstring conventions</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="s2">&quot;target-version&quot;</span><span class="p">,</span><span class="w">        </span><span class="c1"># Do not override the local python target version</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="p">]</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="c1"># Synchronize your .pre-commit-config.yaml with the upstream Ruff version</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="n">pre-commit-version-sync</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</span></code></pre></div>
 <h2 id="deprecation-notes">Deprecation Notes<a class="headerlink" href="#deprecation-notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The key <code>source</code> in <code>[tool.ruff-sync]</code> is deprecated and will be removed in a future version. Use <code>to</code> instead.</li>

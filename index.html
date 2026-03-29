@@ -1060,6 +1060,8 @@
       
         
       
+        
+      
     
     
     
@@ -1131,6 +1133,34 @@
     
   
     cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/ruff_sync/constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    constants
   
 
     
@@ -1398,18 +1428,23 @@
 <hr />
 <h2 id="quick-start">🏁 Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <h3 id="1-initialize-a-new-project-optional">1. Initialize a new project (Optional)<a class="headerlink" href="#1-initialize-a-new-project-optional" title="Permanent link">&para;</a></h3>
-<p>If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
+<p>If your local directory doesn't have a configuration file yet, you can fetch a standard and create one instantly using <a href="https://docs.astral.sh/uv/guides/tools/#running-tools">uvx</a> (which installs and runs <code>ruff-sync</code> in one command):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uvx<span class="w"> </span>ruff-sync<span class="w"> </span>https://github.com/&lt;my-org&gt;/&lt;standards&gt;<span class="w"> </span>--init
 </span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Jumpstart your configuration</p>
+<p>New project? Use one of our <a href="pre-defined-configs/">Pre-defined Configurations</a> (Kitchen Sink, FastAPI, Data Science, etc.) as your upstream source.</p>
+</div>
+<p>For more permanent installation options, see the <a href="installation/">Installation Guide</a>.</p>
 <h3 id="2-configure-an-existing-project">2. Configure an existing project<a class="headerlink" href="#2-configure-an-existing-project" title="Permanent link">&para;</a></h3>
 <p>Add the upstream URL to your <code>pyproject.toml</code> to make it the default:</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/my-org/standards/blob/main/pyproject.toml&quot;</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/&lt;my-org&gt;/&lt;standards&gt;/blob/main/pyproject.toml&quot;</span>
 </span></code></pre></div>
 <p>For more options, see the <a href="configuration/">Configuration Guide</a>.</p>
 <h3 id="3-pull-the-configuration">3. Pull the configuration<a class="headerlink" href="#3-pull-the-configuration" title="Permanent link">&para;</a></h3>
 <p>Once configured, simply run:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>ruff-sync
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uvx<span class="w"> </span>ruff-sync
 </span></code></pre></div>
 <p>This will download the upstream file, extract the <code>[tool.ruff]</code> section, and merge it into your local file while <strong>preserving your artisanal comments and formatting</strong>.</p>
 <hr />
@@ -1418,6 +1453,7 @@
 <li><a href="usage/">Usage Guide</a></li>
 <li><a href="url-resolution/">URL Resolution &amp; Discovery</a></li>
 <li><a href="configuration/">Configuration Guide</a></li>
+<li><a href="pre-defined-configs/">Pre-defined Configurations</a></li>
 <li><a href="ci-integration/">CI Integration</a></li>
 <li><a href="pre-commit/">Pre-commit Hooks</a></li>
 </ul>
