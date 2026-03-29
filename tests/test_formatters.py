@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 @pytest.fixture(params=[TextFormatter, GithubFormatter, JsonFormatter])
 def formatter(request: pytest.FixtureRequest) -> ResultFormatter:
     """Fixture providing instances of all registered formatters."""
-    return request.param()
+    formatter_cls: type[ResultFormatter] = request.param
+    return formatter_cls()
 
 
 class TestFormatterBasics:
@@ -128,7 +129,7 @@ class TestJsonFormatterSpecifics:
         file_path = pathlib.Path("f.py")
 
         # Call the method with all possible extras (only error/warning take file_path)
-        kwargs = {"logger": logger}
+        kwargs: dict[str, Any] = {"logger": logger}
         if method in ("error", "warning"):
             kwargs["file_path"] = file_path
 
@@ -145,8 +146,8 @@ def test_get_formatter_factory() -> None:
     assert isinstance(get_formatter(OutputFormat.TEXT), TextFormatter)
     assert isinstance(get_formatter(OutputFormat.JSON), JsonFormatter)
     assert isinstance(get_formatter(OutputFormat.GITHUB), GithubFormatter)
-    # Default fallback
-    assert isinstance(get_formatter(cast("Any", "invalid")), TextFormatter)
+    # Default fallback - ignore error for purposeful type-incorrect input
+    assert isinstance(get_formatter("invalid"), TextFormatter)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":
