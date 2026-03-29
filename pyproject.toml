@@ -162,6 +162,8 @@ select = [
     "TID", # flake8-tidy-imports
     # https://docs.astral.sh/ruff/rules/#tryceratops-try
     "TRY", # tryceratops - exception handling
+    # https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    "T20", # flake8-print
     # https://beta.ruff.rs/docs/rules/#pyupgrade-up
     "UP", # pyupgrade
 ]
@@ -173,7 +175,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"src/ruff_sync/formatters.py" = ["T20"]
+"tasks.py" = ["T20"]
 "tests/**/*.py" = [
+    "T20", # allow print in tests
     "D100", # missing docstring in module
     "D103", # missing docstring in function
     "D400", # first line should end with a period
