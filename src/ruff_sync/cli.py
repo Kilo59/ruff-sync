@@ -28,6 +28,7 @@ from httpx import URL
 from typing_extensions import deprecated
 
 from ruff_sync.core import (
+    DEFAULT_EXCLUDE,
     Config,
     RuffConfigFileName,
     UpstreamError,
@@ -51,9 +52,8 @@ try:
 except metadata.PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
-LOGGER = logging.getLogger(__name__)
 
-_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
+LOGGER = logging.getLogger(__name__)
 
 
 class ColoredFormatter(logging.Formatter):
@@ -215,7 +215,7 @@ def _get_cli_parser() -> ArgumentParser:
     common_parser.add_argument(
         "--exclude",
         nargs="+",
-        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        help=f"Exclude certain ruff configs. Default: {' '.join(DEFAULT_EXCLUDE)}",
         default=None,
     )
     common_parser.add_argument(
@@ -337,7 +337,7 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str]:
         exclude = config["exclude"]
         LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
         return cast("Iterable[str]", exclude)
-    return _DEFAULT_EXCLUDE
+    return DEFAULT_EXCLUDE
 
 
 def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str:

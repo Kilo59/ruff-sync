@@ -357,7 +357,7 @@ By default, `ruff-sync` requires an existing configuration file (`pyproject.toml
 ruff-sync https://github.com/my-org/standards --init
 ```
 
-Ruff sync will automatically serialize the upstream URL (and any other CLI arguments like exclusions) into a new `[tool.ruff-sync]` section in your `pyproject.toml` so that future syncs can be performed simply by running `ruff-sync`. To prevent accidental credential leaks, `ruff-sync` will refuse to serialize this section if it detects a username or password in the upstream URL.
+`ruff-sync` will automatically serialize the upstream URL (and any other CLI arguments like exclusions) into a new `[tool.ruff-sync]` section in your `pyproject.toml` so that future syncs can be performed simply by running `ruff-sync`. To prevent accidental credential leaks, `ruff-sync` will refuse to serialize this section if it detects a username or password in the upstream URL.
 
 If you wish to update an existing configuration with a new upstream URL and save it permanently, use the `--save` flag:
 

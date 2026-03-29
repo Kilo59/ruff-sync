@@ -416,7 +416,7 @@ def test_exclude_resolution_default(patch_cli: CLIPatch):
     ruff_sync.main()
 
     assert len(patch_cli.captured_args) == 1
-    assert set(patch_cli.captured_args[0].exclude) == ruff_sync_cli._DEFAULT_EXCLUDE
+    assert set(patch_cli.captured_args[0].exclude) == ruff_sync.core.DEFAULT_EXCLUDE
 
 
 def test_main_default_to_resolution(patch_cli: CLIPatch):
@@ -618,7 +618,7 @@ target-version = "py311"
                 command="pull",
                 upstream=(URL("https://example.com/pyproject.toml"),),
                 to=ff_path,
-                exclude=ruff_sync_cli._DEFAULT_EXCLUDE,
+                exclude=ruff_sync.core.DEFAULT_EXCLUDE,
                 verbose=0,
             )
         )

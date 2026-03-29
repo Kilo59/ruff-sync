@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
 
 __all__: Final[list[str]] = [
+    "DEFAULT_EXCLUDE",
     "Config",
     "FetchResult",
     "RuffConfigFileName",
@@ -60,7 +61,8 @@ __all__: Final[list[str]] = [
 
 LOGGER = logging.getLogger(__name__)
 
-_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
+DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
+
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
 _GITHUB_TREE_PREFIX_PARTS_COUNT: Final[int] = 4
 _GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
@@ -958,6 +960,20 @@ def _get_credential_url(upstreams: tuple[URL, ...]) -> URL | None:
     return None
 
 
+def _get_or_create_ruff_sync_table(doc: TOMLDocument) -> tomlkit.items.Table:
+    tool_table = doc.get("tool")
+    if not isinstance(tool_table, tomlkit.items.Table):
+        tool_table = tomlkit.table()
+        doc.append("tool", tool_table)
+
+    ruff_sync_table = tool_table.get("ruff-sync")
+    if not isinstance(ruff_sync_table, tomlkit.items.Table):
+        ruff_sync_table = tomlkit.table()
+        tool_table.add("ruff-sync", ruff_sync_table)
+
+    return ruff_sync_table
+
+
 def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
     """Serialize the ruff-sync CLI arguments into the TOML document."""
     bad_url = _get_credential_url(args.upstream)
@@ -971,38 +987,32 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
         )
         return
 
-    tool_table = doc.get("tool")
-    if not isinstance(tool_table, tomlkit.items.Table):
-        tool_table = tomlkit.table()
-        doc.append("tool", tool_table)
-
-    ruff_sync_table = tomlkit.table()
+    ruff_sync_table = _get_or_create_ruff_sync_table(doc)
 
     if len(args.upstream) == 1:
-        ruff_sync_table.add("upstream", str(args.upstream[0]))
+        ruff_sync_table["upstream"] = str(args.upstream[0])
     else:
         urls_array = tomlkit.array()
         urls_array.multiline(True)
         for url in args.upstream:
             urls_array.append(str(url))
-        ruff_sync_table.add("upstream", urls_array)
+        ruff_sync_table["upstream"] = urls_array
 
-    if list(args.exclude) != ["lint.per-file-ignores"]:
+    normalized_excludes = list(dict.fromkeys(args.exclude))
+    if set(normalized_excludes) != DEFAULT_EXCLUDE:
         exclude_array = tomlkit.array()
-        for ex in args.exclude:
+        for ex in normalized_excludes:
             exclude_array.append(ex)
-        ruff_sync_table.add("exclude", exclude_array)
+        ruff_sync_table["exclude"] = exclude_array
 
     if args.branch and args.branch != "main":
-        ruff_sync_table.add("branch", args.branch)
+        ruff_sync_table["branch"] = args.branch
 
     if args.path:
-        ruff_sync_table.add("path", args.path)
+        ruff_sync_table["path"] = args.path
 
     if getattr(args, "pre_commit", False):
-        ruff_sync_table.add("pre_commit_version_sync", True)
-
-    tool_table["ruff-sync"] = ruff_sync_table
+        ruff_sync_table["pre-commit-version-sync"] = True
 
 
 async def pull(
