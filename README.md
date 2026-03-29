@@ -259,7 +259,7 @@ The `check` command is designed for use in CI pipelines. Add it as a step to cat
 # .github/workflows/ci.yaml
 - name: Check ruff config is in sync
   run: |
-    ruff-sync check --semantic
+    ruff-sync check --semantic --output-format github
 ```
 
 With `--semantic`, minor reformatting of your local file won't cause a false positive — only actual rule or value differences will fail the check.

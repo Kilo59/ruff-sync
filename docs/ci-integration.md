@@ -25,18 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uvx ruff-sync check --semantic
-
-### Inline PR Annotations
-
-To get the most out of `ruff-sync` in GitHub Actions, use the `--output-format github` flag. This will cause `ruff-sync` to emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.
-
-```yaml
       - name: Check Ruff Config
         run: uvx ruff-sync check --semantic --output-format github
 ```
 
-If a check fails, you will see exactly which configuration key is out of sync directly in the GitHub UI, without having to dig into the raw CI logs.
+By using `--output-format github`, `ruff-sync` will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.
 
 ### Automated Sync PRs
 

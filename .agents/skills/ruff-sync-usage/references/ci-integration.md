@@ -50,7 +50,7 @@ To also verify the pre-commit hook version, add the `--pre-commit` flag. Any non
 
 ```yaml
 - name: Check Ruff config and pre-commit hook
-  run: ruff-sync check --semantic --pre-commit
+  run: ruff-sync check --semantic --pre-commit --output-format github
 ```
 
 (Note: For better consistency, you can instead set `pre-commit-version-sync = true` in your `pyproject.toml` — then `ruff-sync check --semantic` will automatically include this check.)
