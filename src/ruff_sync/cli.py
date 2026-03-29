@@ -27,8 +27,8 @@ import tomlkit
 from httpx import URL
 from typing_extensions import deprecated
 
+from ruff_sync.constants import DEFAULT_EXCLUDE
 from ruff_sync.core import (
-    DEFAULT_EXCLUDE,
     Config,
     RuffConfigFileName,
     UpstreamError,

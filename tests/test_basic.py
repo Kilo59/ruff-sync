@@ -22,6 +22,7 @@ from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
+from ruff_sync.constants import DEFAULT_EXCLUDE
 from ruff_sync.core import (
     UpstreamError,
     _merge_multiple_upstreams,
@@ -416,7 +417,7 @@ def test_exclude_resolution_default(patch_cli: CLIPatch):
     ruff_sync.main()
 
     assert len(patch_cli.captured_args) == 1
-    assert set(patch_cli.captured_args[0].exclude) == ruff_sync.core.DEFAULT_EXCLUDE
+    assert set(patch_cli.captured_args[0].exclude) == DEFAULT_EXCLUDE
 
 
 def test_main_default_to_resolution(patch_cli: CLIPatch):
@@ -618,7 +619,7 @@ target-version = "py311"
                 command="pull",
                 upstream=(URL("https://example.com/pyproject.toml"),),
                 to=ff_path,
-                exclude=ruff_sync.core.DEFAULT_EXCLUDE,
+                exclude=DEFAULT_EXCLUDE,
                 verbose=0,
             )
         )

@@ -37,6 +37,34 @@ def test_serialize_ruff_sync_config_basic():
     assert 'branch = "develop"' in s
     assert 'path = "backend"' in s
     assert "pre-commit-version-sync = true" in s
+    assert "pre-commit-version-sync = true" in s
+
+
+def test_serialize_ruff_sync_config_omits_defaults():
+    doc = tomlkit.document()
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=["lint.per-file-ignores"],
+        verbose=0,
+        branch="main",  # default
+        path="",  # empty
+        semantic=False,
+        diff=False,
+        init=True,
+        pre_commit=False,  # disabled
+        save=True,
+    )
+    serialize_ruff_sync_config(doc, args)
+
+    s = doc.as_string()
+    assert "[tool.ruff-sync]" in s
+    assert 'upstream = "https://example.com/repo/pyproject.toml"' in s
+    assert "exclude" not in s
+    assert "branch" not in s
+    assert "path" not in s
+    assert "pre-commit-version-sync" not in s
 
 
 def test_serialize_ruff_sync_config_exclude_default_skipped():

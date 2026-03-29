@@ -33,13 +33,13 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
+from ruff_sync.constants import DEFAULT_EXCLUDE
 from ruff_sync.pre_commit import sync_pre_commit
 
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
 
 __all__: Final[list[str]] = [
-    "DEFAULT_EXCLUDE",
     "Config",
     "FetchResult",
     "RuffConfigFileName",
@@ -60,8 +60,6 @@ __all__: Final[list[str]] = [
 ]
 
 LOGGER = logging.getLogger(__name__)
-
-DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
 _GITHUB_TREE_PREFIX_PARTS_COUNT: Final[int] = 4
