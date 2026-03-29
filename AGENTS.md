@@ -158,6 +158,7 @@ uv run coverage run -m pytest -vv
 - Prefer f-strings for logging (we ignore `G004`).
 - Do not create custom exception classes for simple errors (`TRY003` is ignored).
 - **Prefer `NamedTuple` for return types** over plain tuples to improve readability and type safety.
+- **Prefer `typing.Protocol` over `abc.ABC`** for abstract base classes to promote structural subtyping.
 
 ### TOML Handling
 
@@ -219,3 +220,4 @@ CI is defined in `.github/workflows/ci.yaml`:
 2. **`cast(Any, ...)` in tests**: Use `cast(Any, tomlkit.parse(...))["tool"]["ruff"]` pattern in tests to avoid mypy complaints about `tomlkit`'s `Item | Container` return types.
 3. **Pre-commit ruff version**: The ruff version in `.pre-commit-config.yaml` must stay in sync with the version in `pyproject.toml`. The test `test_pre_commit_versions_are_in_sync` enforces this.
 4. **Keep the ruff-sync-usage skill current**: After any change to CLI behavior (new flags, changed exit codes, new configuration keys, updated URL handling, etc.), update `.agents/skills/ruff-sync-usage/` accordingly. The `SKILL.md` covers quick start, workflows, exit codes, and gotchas. Detailed references live in `references/configuration.md`, `references/troubleshooting.md`, and `references/ci-integration.md`.
+5. **No `autouse=True` fixtures**: NEVER use `autouse=True` for pytest fixtures. All fixtures must be explicitly requested by the test functions that require them. This ensures dependencies are explicit and avoids hidden side effects.

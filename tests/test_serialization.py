@@ -363,6 +363,7 @@ async def test_pull_ruff_toml_skips_serialization(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     tmp_path: pathlib.Path,
+    configure_logging: logging.Logger,
 ):
     """Serialization of [tool.ruff-sync] must be skipped when target is ruff.toml."""
     from ruff_sync import core
@@ -386,7 +387,7 @@ async def test_pull_ruff_toml_skips_serialization(
         save=None,
     )
 
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.INFO, logger="ruff_sync"):
         await pull(args)
 
     assert (

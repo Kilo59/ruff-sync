@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import os
 import pathlib
@@ -597,7 +598,7 @@ def test_verbosity_log_level(
     ruff_sync.main()
 
     # Verify that the computed log level matches what we expect for this verbosity
-    assert ruff_sync_cli.LOGGER.level == expected_level
+    assert ruff_sync_cli.LOGGER.getEffectiveLevel() == expected_level
 
     # Verify that the verbose flag value propagates into Arguments.verbose
     assert len(patch_cli.captured_args) == 1
@@ -799,6 +800,7 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     monkeypatch: pytest.MonkeyPatch,
     respx_mock: respx.Router,
     capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
 ) -> None:
     """Ensure UpstreamError from a failed fetch surfaces as exit code 1 with logged failures."""
     # Successful upstream
@@ -837,6 +839,160 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     # Assert that the failing upstream is mentioned in the logs
     assert "http://fail.toml" in combined_output
     assert "Failed to fetch" in combined_output
+
+
+def test_cli_output_format_github(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
+) -> None:
+    """End-to-end: --output-format=github produces GitHub-style annotations."""
+    respx_mock.get("https://example.com/pyproject.toml").respond(
+        status_code=200,
+        text="[tool.ruff]\ntarget-version = 'py311'\n",
+    )
+
+    # Patch sys.argv to simulate CLI call
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "check",
+            "https://example.com/pyproject.toml",
+            "--output-format",
+            "github",
+        ],
+    )
+
+    # Mock get_config to avoid reading from the real filesystem
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke the CLI entry point - it should exit with 1 because pyproject.toml is missing
+    # or out of sync. In a fake filesystem without pyproject.toml it will fail.
+    exit_code = ruff_sync.main()
+    assert exit_code == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+
+    # Assert: GitHub Actions annotation is present
+    assert "::error" in output
+    # The GitHub formatter should not emit JSON records.
+    assert not output.lstrip().startswith("{")
+
+
+def test_cli_output_format_json(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
+) -> None:
+    """End-to-end: --output-format=json produces JSON records."""
+    respx_mock.get("https://example.com/pyproject.toml").respond(
+        status_code=200,
+        text="[tool.ruff]\ntarget-version = 'py311'\n",
+    )
+
+    # Patch sys.argv
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "check",
+            "https://example.com/pyproject.toml",
+            "--output-format",
+            "json",
+        ],
+    )
+
+    # Mock get_config
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke
+    exit_code = ruff_sync.main()
+    assert exit_code == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+
+    # Assert: no GitHub-style annotations in JSON mode
+    assert all("::error" not in line for line in lines)
+
+    # Collect and parse all JSON records
+    records = [json.loads(line) for line in lines if line.startswith("{")]
+
+    assert records, "Expected at least one JSON record in CLI output"
+
+    # 1. Assert expected fields like 'file' are present
+    assert any("file" in record for record in records), (
+        "Expected at least one JSON record to contain a 'file' field"
+    )
+
+    # 2. Assert presence of an error-level record
+    assert any(record.get("level") == "error" for record in records), (
+        "Expected at least one JSON record with level='error'"
+    )
+
+    # 3. Assert message content mentions "out of sync"
+    assert any("out of sync" in str(record.get("message", "")).lower() for record in records), (
+        "Expected at least one JSON record whose message mentions 'out of sync'"
+    )
+
+
+def test_cli_output_format_json_success(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
+    fs: FakeFilesystem,
+) -> None:
+    """End-to-end: --output-format=json produces success-level JSON when in sync."""
+    # Ensure a local pyproject.toml exists that matches upstream
+    local_content = "[tool.ruff]\ntarget-version = 'py311'\n"
+    fs.create_file("pyproject.toml", contents=local_content)
+
+    # Mock in-sync upstream
+    respx_mock.get("https://example.com/pyproject.toml").respond(
+        status_code=200,
+        text=local_content,
+    )
+
+    # Patch sys.argv
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "check",
+            "https://example.com/pyproject.toml",
+            "--output-format",
+            "json",
+        ],
+    )
+
+    # Mock get_config
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke
+    exit_code = ruff_sync.main()
+    assert exit_code == 0
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    records = [json.loads(line) for line in lines if line.startswith("{")]
+
+    # At least one success-level record is emitted.
+    assert any(record.get("level") == "success" for record in records), (
+        "Expected at least one success-level record in JSON output"
+    )
+
+    # No error-level records are emitted on the success path.
+    assert all(record.get("level") != "error" for record in records)
 
 
 if __name__ == "__main__":

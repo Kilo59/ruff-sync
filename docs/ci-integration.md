@@ -25,10 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uvx ruff-sync check --semantic
+      - name: Check Ruff Config
+        run: uvx ruff-sync check --semantic --output-format github
 ```
 
-#### Automated Sync PRs
+By using `--output-format github`, `ruff-sync` will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.
+
+### Automated Sync PRs
 
 Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.
 

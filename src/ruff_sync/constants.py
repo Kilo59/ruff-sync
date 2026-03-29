@@ -5,6 +5,8 @@ from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING, Final
 
+from typing_extensions import override
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -14,6 +16,7 @@ __all__: Final[list[str]] = [
     "DEFAULT_PATH",
     "MISSING",
     "MissingType",
+    "OutputFormat",
     "resolve_defaults",
 ]
 
@@ -40,6 +43,20 @@ class MissingType(enum.Enum):
 
 
 MISSING: Final[MissingType] = MissingType.SENTINEL
+
+
+@enum.unique
+class OutputFormat(str, enum.Enum):
+    """Output formats for the CLI."""
+
+    TEXT = "text"
+    JSON = "json"
+    GITHUB = "github"
+
+    @override
+    def __str__(self) -> str:
+        """Return the string value for argparse help."""
+        return self.value
 
 
 def resolve_defaults(

@@ -8,10 +8,11 @@ Add this step to any existing workflow (e.g., `.github/workflows/ci.yaml`):
 
 ```yaml
 - name: Check Ruff config is in sync
-  run: ruff-sync check --semantic
+  run: ruff-sync check --semantic --output-format github
 ```
 
 `--semantic` ignores cosmetic differences (comments, whitespace) — only real value or rule changes cause failure.
+`--output-format github` creates inline PR annotations for errors and warnings.
 
 ### Full Workflow Example
 
@@ -40,7 +41,7 @@ jobs:
         run: uv tool install ruff-sync
 
       - name: Check Ruff config is in sync with upstream
-        run: ruff-sync check --semantic
+        run: ruff-sync check --semantic --output-format github
 ```
 
 ### With Pre-commit Sync Check
@@ -49,7 +50,7 @@ To also verify the pre-commit hook version, add the `--pre-commit` flag. Any non
 
 ```yaml
 - name: Check Ruff config and pre-commit hook
-  run: ruff-sync check --semantic --pre-commit
+  run: ruff-sync check --semantic --pre-commit --output-format github
 ```
 
 (Note: For better consistency, you can instead set `pre-commit-version-sync = true` in your `pyproject.toml` — then `ruff-sync check --semantic` will automatically include this check.)

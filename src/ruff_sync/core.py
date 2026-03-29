@@ -38,6 +38,7 @@ from ruff_sync.constants import (
     MISSING,
     resolve_defaults,
 )
+from ruff_sync.formatters import ResultFormatter, get_formatter
 from ruff_sync.pre_commit import sync_pre_commit
 
 if TYPE_CHECKING:
@@ -114,6 +115,16 @@ class UpstreamError(Exception):
         error_count = len(self.errors)
         msg = f"❌ {error_count} upstream fetch{'es' if error_count > 1 else ''} failed"
         super().__init__(msg)
+
+
+class DiffContext(NamedTuple):
+    """Context for printing a diff between local and merged configurations."""
+
+    source_toml_path: pathlib.Path
+    source_doc: TOMLDocument
+    merged_doc: TOMLDocument
+    source_val: Any
+    merged_val: Any
 
 
 class Config(TypedDict, total=False):
@@ -837,25 +848,22 @@ async def _merge_multiple_upstreams(
 
 def _print_diff(
     args: Arguments,
-    source_toml_path: pathlib.Path,
-    source_doc: tomlkit.TOMLDocument,
-    merged_doc: tomlkit.TOMLDocument,
-    source_val: Any,
-    merged_val: Any,
+    fmt: ResultFormatter,
+    ctx: DiffContext,
 ) -> None:
     """Print the unified diff between the local and expected configurations."""
     if args.semantic:
         # Semantic diff of the managed section
-        from_lines = json.dumps(source_val, indent=2, sort_keys=True).splitlines(keepends=True)
-        to_lines = json.dumps(merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
+        from_lines = json.dumps(ctx.source_val, indent=2, sort_keys=True).splitlines(keepends=True)
+        to_lines = json.dumps(ctx.merged_val, indent=2, sort_keys=True).splitlines(keepends=True)
         from_file = "local (semantic)"
         to_file = "upstream (semantic)"
     else:
         # Full text diff of the file
-        from_lines = source_doc.as_string().splitlines(keepends=True)
-        to_lines = merged_doc.as_string().splitlines(keepends=True)
-        from_file = f"local/{source_toml_path.name}"
-        to_file = f"upstream/{source_toml_path.name}"
+        from_lines = ctx.source_doc.as_string().splitlines(keepends=True)
+        to_lines = ctx.merged_doc.as_string().splitlines(keepends=True)
+        from_file = f"local/{ctx.source_toml_path.name}"
+        to_file = f"upstream/{ctx.source_toml_path.name}"
 
     diff = difflib.unified_diff(
         from_lines,
@@ -863,16 +871,23 @@ def _print_diff(
         fromfile=from_file,
         tofile=to_file,
     )
-    sys.stdout.writelines(diff)
+    fmt.diff("".join(diff))
 
 
-def _check_pre_commit_sync(args: Arguments) -> int | None:
+def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
     """Return exit code 2 if pre-commit hook version is out of sync, otherwise None.
 
     Shared helper to avoid duplicating the pre-commit synchronization logic.
     """
     if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
-        print("⚠️ Pre-commit hook version is out of sync!")
+        repo_root = pathlib.Path.cwd()
+        pre_commit_config = repo_root / ".pre-commit-config.yaml"
+        file_path = pre_commit_config if pre_commit_config.exists() else repo_root
+        fmt.warning(
+            "⚠️ Pre-commit hook version is out of sync!",
+            logger=LOGGER,
+            file_path=file_path,
+        )
         return 2
     return None
 
@@ -898,13 +913,16 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
-    print("🔍 Checking Ruff sync status...")
+    fmt = get_formatter(args.output_format)
+    fmt.note("🔍 Checking Ruff sync status...")
 
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
     if not _source_toml_path.exists():
-        print(
+        fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
-            "Run 'ruff-sync pull' to create it."
+            "Run 'ruff-sync pull' to create it.",
+            file_path=_source_toml_path,
+            logger=LOGGER,
         )
         return 1
 
@@ -939,14 +957,14 @@ async def check(
         merged_val = merged_ruff.unwrap() if merged_ruff is not None else None
 
         if source_val == merged_val:
-            print("✅ Ruff configuration is semantically in sync.")
-            exit_code = _check_pre_commit_sync(args)
+            fmt.success("✅ Ruff configuration is semantically in sync.")
+            exit_code = _check_pre_commit_sync(args, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
     elif source_doc.as_string() == merged_doc.as_string():
-        print("✅ Ruff configuration is in sync.")
-        exit_code = _check_pre_commit_sync(args)
+        fmt.success("✅ Ruff configuration is in sync.")
+        exit_code = _check_pre_commit_sync(args, fmt)
         if exit_code is not None:
             return exit_code
         return 0
@@ -955,16 +973,23 @@ async def check(
         rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path
-    print(f"❌ Ruff configuration at {rel_path} is out of sync!")
+    fmt.error(
+        f"❌ Ruff configuration at {rel_path} is out of sync!",
+        file_path=rel_path,
+        logger=LOGGER,
+    )
 
     if args.diff:
         _print_diff(
             args=args,
-            source_toml_path=_source_toml_path,
-            source_doc=source_doc,
-            merged_doc=merged_doc,
-            source_val=source_val,
-            merged_val=merged_val,
+            fmt=fmt,
+            ctx=DiffContext(
+                source_toml_path=_source_toml_path,
+                source_doc=source_doc,
+                merged_doc=merged_doc,
+                source_val=source_val,
+                merged_val=merged_val,
+            ),
         )
     return 1
 
@@ -1059,7 +1084,8 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
-    print("🔄 Syncing Ruff...")
+    fmt = get_formatter(args.output_format)
+    fmt.note("🔄 Syncing Ruff...")
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
@@ -1073,12 +1099,14 @@ async def pull(
             _source_toml_path.parent.mkdir(parents=True, exist_ok=True)
             _source_toml_path.touch()
         except OSError as e:
-            print(f"❌ Failed to create {_source_toml_path}: {e}", file=sys.stderr)
+            fmt.error(f"❌ Failed to create {_source_toml_path}: {e}", logger=LOGGER)
             return 1
     else:
-        print(
+        fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
-            "Pass the '--init' flag to create it."
+            "Pass the '--init' flag to create it.",
+            file_path=_source_toml_path,
+            logger=LOGGER,
         )
         return 1
 
@@ -1105,7 +1133,7 @@ async def pull(
         rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path.resolve()
-    print(f"✅ Updated {rel_path}")
+    fmt.success(f"✅ Updated {rel_path}")
 
     if args.pre_commit is not MISSING and args.pre_commit:
         sync_pre_commit(pathlib.Path.cwd(), dry_run=False)

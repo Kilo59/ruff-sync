@@ -48,7 +48,7 @@ target-version = "py310"
 
 
 @pytest.mark.asyncio
-async def test_check_out_of_sync(fs: FakeFilesystem, capsys):
+async def test_check_out_of_sync(fs: FakeFilesystem, capsys, configure_logging):
     # Setup
     local_content = """
 [tool.ruff]
@@ -84,7 +84,7 @@ target-version = "py311"
         assert exit_code == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert '-target-version = "py310"' in captured.out
         assert '+target-version = "py311"' in captured.out
 
@@ -224,7 +224,7 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_semantic_diff_output(fs: FakeFilesystem, capsys):
+async def test_check_semantic_diff_output(fs: FakeFilesystem, capsys, configure_logging):
     # Setup - actual values differ
     local_content = """
 [tool.ruff]
@@ -258,7 +258,7 @@ target-version = "py311"
         assert await ruff_sync.check(args_semantic) == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert "--- local (semantic)" in captured.out
         assert "+++ upstream (semantic)" in captured.out
         # Check for JSON-style diff content
@@ -267,7 +267,7 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_multi_upstream(fs: FakeFilesystem, capsys):
+async def test_check_multi_upstream(fs: FakeFilesystem, capsys, configure_logging):
     """Check supports multiple upstreams and bases status on the fully merged result."""
     # Setup
     local_content = """
@@ -320,13 +320,15 @@ select = ["E", "F"]
         assert await ruff_sync.check(args) == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert "+line-length = 100" in captured.out
         assert '+select = ["E", "F"]' in captured.out
 
 
 @pytest.mark.asyncio
-async def test_check_both_out_of_sync_prioritizes_config_drift(fs: FakeFilesystem, capsys):
+async def test_check_both_out_of_sync_prioritizes_config_drift(
+    fs: FakeFilesystem, capsys, configure_logging
+):
     """Verify that Exit 1 is returned when both ruff config AND pre-commit are out of sync."""
     # Setup - ruff config drift
     local_content = '[tool.ruff]\ntarget-version = "py310"\n'
@@ -363,11 +365,231 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(fs: FakeFilesyste
         assert exit_code == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert '-target-version = "py310"' in captured.out
         assert '+target-version = "py311"' in captured.out
         # Pre-commit drift should NOT be reported if config drift was found and resulted in exit 1
         assert "⚠️ Pre-commit hook version is out of sync!" not in captured.out
+
+
+@pytest.mark.asyncio
+async def test_check_out_of_sync_json_format(fs: FakeFilesystem, capsys, configure_logging):
+    # Setup mirrors the default-format test but uses JSON output_format
+    local_content = """
+[tool.ruff]
+target-version = "py310"
+"""
+    upstream_content = """
+[tool.ruff]
+target-version = "py311"
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.JSON,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+
+        # JSON formatter should emit valid JSON records (one per line).
+        import json
+
+        # Logs go to stderr, but structured output (notes) might go elsewhere.
+        # In our implementation, JsonFormatter prints to stdout.
+        # We filter for lines starting with '{' to avoid parsing plain-text diffs.
+        combined_output = captured.out + captured.err
+        json_lines = [line for line in combined_output.splitlines() if line.strip().startswith("{")]
+        assert json_lines, "Expected at least one JSON log line for out-of-sync config"
+
+        records = [json.loads(line) for line in json_lines]
+
+        # There should be at least one error record describing the out-of-sync state.
+        error_records = [r for r in records if r.get("level") == "error"]
+        assert error_records, "Expected at least one error record in JSON output"
+
+        error_messages = " ".join(r.get("message", "") for r in error_records)
+        assert "is out of sync" in error_messages
+
+        # When file_path is set, JSON output should include a file field.
+        files = {r.get("file") for r in records if "file" in r}
+        assert "pyproject.toml" in files
+
+
+@pytest.mark.asyncio
+async def test_check_out_of_sync_github_format(fs: FakeFilesystem, capsys, configure_logging):
+    # Setup mirrors the default-format test but uses GITHUB output_format
+    local_content = """
+[tool.ruff]
+target-version = "py310"
+"""
+    upstream_content = """
+[tool.ruff]
+target-version = "py311"
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.GITHUB,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+
+        # GitHub formatter should emit ::error / ::warning annotations.
+        # Combined output because we delegate standard output to a logger (stderr)
+        # while workflow commands go to stdout.
+        combined_output = captured.out + captured.err
+        error_lines = [line for line in combined_output.splitlines() if line.startswith("::error")]
+        assert error_lines, "Expected at least one ::error line in GitHub output"
+
+        # Ensure the annotation references the config file as a relative path.
+        assert any("file=pyproject.toml" in line for line in error_lines)
+
+        # Also ensure the human-readable message is present after the annotation.
+        assert any("is out of sync" in line for line in error_lines)
+
+
+@pytest.mark.asyncio
+async def test_check_in_sync_json_format(
+    fs: FakeFilesystem,
+    capsys,
+    configure_logging,
+):
+    """Ensure JSON formatter reports success and no errors when configs are in sync."""
+    local_content = """
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=local_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.JSON,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 0
+
+        captured = capsys.readouterr()
+        combined_output = captured.out + captured.err
+        json_lines = [line for line in combined_output.splitlines() if line.strip().startswith("{")]
+        assert json_lines, "Expected at least one JSON record in output"
+
+        import json
+
+        records = [json.loads(line) for line in json_lines]
+
+        # No error-level records
+        assert all(r.get("level") != "error" for r in records)
+
+        # At least one success/in-sync record
+        assert any(
+            r.get("level") in ("success", "info") and "in sync" in (r.get("message") or "").lower()
+            for r in records
+        )
+
+
+@pytest.mark.asyncio
+async def test_check_in_sync_github_format(
+    fs: FakeFilesystem,
+    capsys,
+    configure_logging,
+):
+    """Ensure GitHub formatter does not emit ::error lines when configs are in sync."""
+    local_content = """
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=local_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.GITHUB,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 0
+
+        captured = capsys.readouterr()
+        combined_output = captured.out + captured.err
+
+        # No GitHub ::error annotations should be emitted
+        assert "::error" not in combined_output
+
+        # Human-friendly success/note message should still be present
+        assert "in sync" in combined_output.lower()
+        assert "ruff" in combined_output.lower()
 
 
 if __name__ == "__main__":

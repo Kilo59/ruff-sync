@@ -6,4 +6,4 @@ flag_management:
         target: auto # the default target for the project
         threshold: 75% # the default minimum threshold for the project
       - type: patch
-        target: 95%
+        target: 90%

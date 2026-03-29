@@ -177,6 +177,7 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 - 🧠 **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
 - 🔗 **Pre-commit hook sync** — Use `--pre-commit` to automatically keep your `ruff-pre-commit` hook version in `.pre-commit-config.yaml` matching your project's Ruff version.
 - 🦾 **Agent Skill** — Ships a bundled [Agent Skill](https://kilo59.github.io/ruff-sync/agent-skill/) so AI coding agents can guide you through setup, configuration, and troubleshooting automatically.
+- 📊 **Multiple Output Formats** — Supports `text`, `json`, and GitHub Actions `github` (inline annotations) formats for seamless integration with both human developers and CI/CD pipelines.
 
 ## Configuration
 
@@ -258,7 +259,7 @@ The `check` command is designed for use in CI pipelines. Add it as a step to cat
 # .github/workflows/ci.yaml
 - name: Check ruff config is in sync
   run: |
-    ruff-sync check --semantic
+    ruff-sync check --semantic --output-format github
 ```
 
 With `--semantic`, minor reformatting of your local file won't cause a false positive — only actual rule or value differences will fail the check.
@@ -411,7 +412,9 @@ flowchart TD
 
 ## Dogfooding
 
-To see `ruff-sync` in action, you can ["dogfood" it on this project's own config](./scripts).
+To see `ruff-sync` in action, this project automatically "dogfoods" its own configuration. Every pull request runs a `ruff-sync check` against the repository's own `pyproject.toml` using the `--output-format github` flag, providing real-time feedback and inline annotations whenever configuration drift is detected.
+
+You can also run these checks manually or experiment with syncing:
 
 [**Check if this project is in sync with its upstream:**](./scripts/check_dogfood.sh)
 

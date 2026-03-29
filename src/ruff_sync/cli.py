@@ -33,6 +33,7 @@ from ruff_sync.constants import (
     DEFAULT_PATH,
     MISSING,
     MissingType,
+    OutputFormat,
     resolve_defaults,
 )
 from ruff_sync.core import (
@@ -102,6 +103,7 @@ class Arguments(NamedTuple):
     init: bool = False
     pre_commit: bool | MissingType = MISSING
     save: bool | None = None
+    output_format: OutputFormat = OutputFormat.TEXT
 
     @property
     @deprecated("Use 'to' instead")
@@ -248,6 +250,13 @@ def _get_cli_parser() -> ArgumentParser:
         action=BooleanOptionalAction,
         default=None,
         help="Sync the pre-commit Ruff hook version with the project's Ruff version.",
+    )
+    common_parser.add_argument(
+        "--output-format",
+        type=OutputFormat,
+        choices=list(OutputFormat),
+        default=OutputFormat.TEXT,
+        help="Format for output. Default: text.",
     )
 
     # Pull subcommand (the default action)
@@ -433,11 +442,17 @@ def main() -> int:
         1: logging.INFO,
     }.get(args.verbose, logging.DEBUG)
 
-    LOGGER.setLevel(log_level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(ColoredFormatter())
-    LOGGER.addHandler(handler)
-    LOGGER.propagate = "PYTEST_CURRENT_TEST" in os.environ  # Allow capturing in tests
+    # Configure logging for the entire ruff_sync package
+    root_logger = logging.getLogger("ruff_sync")
+    root_logger.setLevel(log_level)
+
+    # Avoid adding multiple handlers if main() is called multiple times (e.g. in tests)
+    if not root_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(ColoredFormatter())
+        root_logger.addHandler(handler)
+
+    root_logger.propagate = "PYTEST_CURRENT_TEST" in os.environ
 
     # Determine target 'to' from CLI or use default '.'
     # Defer Path conversion to avoid pyfakefs issues with captured Path class
@@ -473,6 +488,7 @@ def main() -> int:
         init=getattr(args, "init", False),
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
+        output_format=getattr(args, "output_format", OutputFormat.TEXT),
     )
 
     # Use the shared helper from constants so the MISSING→default logic for

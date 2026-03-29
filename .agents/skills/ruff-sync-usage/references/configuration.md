@@ -127,7 +127,7 @@ pre-commit-version-sync = true
 All config keys have CLI equivalents. CLI values always win over `pyproject.toml`:
 
 ```bash
-ruff-sync --exclude lint.ignore --branch develop https://github.com/my-org/standards
+ruff-sync https://github.com/my-org/standards --exclude lint.ignore --branch develop --output-format github
 ```
 
 ## Config Discovery for `ruff.toml` Projects
