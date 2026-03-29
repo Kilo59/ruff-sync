@@ -251,6 +251,13 @@ def _get_cli_parser() -> ArgumentParser:
         default=None,
         help="Sync the pre-commit Ruff hook version with the project's Ruff version.",
     )
+    common_parser.add_argument(
+        "--output-format",
+        type=OutputFormat,
+        choices=list(OutputFormat),
+        default=OutputFormat.TEXT,
+        help="Format for output. Default: text.",
+    )
 
     # Pull subcommand (the default action)
     pull_parser = subparsers.add_parser(
@@ -290,13 +297,6 @@ def _get_cli_parser() -> ArgumentParser:
         action="store_false",
         dest="diff",
         help="Do not show a diff.",
-    )
-    check_parser.add_argument(
-        "--output-format",
-        type=OutputFormat,
-        choices=list(OutputFormat),
-        default=OutputFormat.TEXT,
-        help="Format for output. Default: text.",
     )
 
     return parser

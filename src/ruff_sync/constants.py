@@ -5,6 +5,8 @@ from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING, Final
 
+from typing_extensions import override
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -50,6 +52,11 @@ class OutputFormat(str, enum.Enum):
     TEXT = "text"
     JSON = "json"
     GITHUB = "github"
+
+    @override
+    def __str__(self) -> str:
+        """Return the string value for argparse help."""
+        return self.value
 
 
 def resolve_defaults(
