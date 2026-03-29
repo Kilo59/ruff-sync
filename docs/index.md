@@ -44,11 +44,13 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 
 ### 1. Initialize a new project (Optional)
 
-If your local directory doesn't have a configuration file yet, you can fetch the standard and create one instantly:
+If your local directory doesn't have a configuration file yet, you can fetch a standard and create one instantly using [uvx](https://docs.astral.sh/uv/guides/tools/#running-tools) (which installs and runs `ruff-sync` in one command):
 
 ```bash
-uv run ruff-sync https://github.com/my-org/standards --init
+uvx ruff-sync https://github.com/<my-org>/<standards> --init
 ```
+
+For more permanent installation options, see the [Installation Guide](installation.md).
 
 ### 2. Configure an existing project
 
@@ -56,7 +58,7 @@ Add the upstream URL to your `pyproject.toml` to make it the default:
 
 ```toml
 [tool.ruff-sync]
-upstream = "https://github.com/my-org/standards/blob/main/pyproject.toml"
+upstream = "https://github.com/<my-org>/<standards>/blob/main/pyproject.toml"
 ```
 
 For more options, see the [Configuration Guide](configuration.md).
@@ -66,7 +68,7 @@ For more options, see the [Configuration Guide](configuration.md).
 Once configured, simply run:
 
 ```bash
-uv run ruff-sync
+uvx ruff-sync
 ```
 
 This will download the upstream file, extract the `[tool.ruff]` section, and merge it into your local file while **preserving your artisanal comments and formatting**.
