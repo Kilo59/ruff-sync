@@ -50,6 +50,9 @@ If your local directory doesn't have a configuration file yet, you can fetch a s
 uvx ruff-sync https://github.com/<my-org>/<standards> --init
 ```
 
+!!! tip "Jumpstart your configuration"
+    New project? Use one of our [Pre-defined Configurations](pre-defined-configs.md) (Kitchen Sink, FastAPI, Data Science, etc.) as your upstream source.
+
 For more permanent installation options, see the [Installation Guide](installation.md).
 
 ### 2. Configure an existing project
@@ -80,5 +83,6 @@ This will download the upstream file, extract the `[tool.ruff]` section, and mer
 - [Usage Guide](usage.md)
 - [URL Resolution & Discovery](url-resolution.md)
 - [Configuration Guide](configuration.md)
+- [Pre-defined Configurations](pre-defined-configs.md)
 - [CI Integration](ci-integration.md)
 - [Pre-commit Hooks](pre-commit.md)
