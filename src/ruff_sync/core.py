@@ -907,7 +907,7 @@ async def check(
         fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
             "Run 'ruff-sync pull' to create it.",
-            file_path=str(_source_toml_path),
+            file_path=_source_toml_path,
         )
         return 1
 
@@ -958,7 +958,7 @@ async def check(
         rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path
-    fmt.error(f"❌ Ruff configuration at {rel_path} is out of sync!", file_path=str(rel_path))
+    fmt.error(f"❌ Ruff configuration at {rel_path} is out of sync!", file_path=rel_path)
 
     if args.diff:
         _print_diff(
