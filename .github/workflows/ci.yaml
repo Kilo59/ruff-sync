@@ -122,6 +122,13 @@ jobs:
           echo "Testing ruff-sync check against Kilo59/ruff-sync..."
           ruff-sync check https://github.com/Kilo59/ruff-sync
 
+      - name: Dogfood Ruff-Sync Check (GitHub Format)
+        run: |
+          echo "Dogfooding ruff-sync check with GitHub annotations..."
+          # This will produce annotations if the current branch's ruff config
+          # has drifted from the upstream (main branch).
+          ruff-sync check https://github.com/Kilo59/ruff-sync --output-format github
+
       - name: Verify semantic check failure
         run: |
           echo "Verifying that --semantic check fails for kitchen-sink config (expected failure)..."
