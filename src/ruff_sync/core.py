@@ -873,7 +873,7 @@ def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
     Shared helper to avoid duplicating the pre-commit synchronization logic.
     """
     if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
-        fmt.warning("⚠️ Pre-commit hook version is out of sync!")
+        fmt.warning("⚠️ Pre-commit hook version is out of sync!", logger=LOGGER)
         return 2
     return None
 
@@ -908,6 +908,7 @@ async def check(
             f"❌ Configuration file {_source_toml_path} does not exist. "
             "Run 'ruff-sync pull' to create it.",
             file_path=_source_toml_path,
+            logger=LOGGER,
         )
         return 1
 
@@ -958,7 +959,11 @@ async def check(
         rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path
-    fmt.error(f"❌ Ruff configuration at {rel_path} is out of sync!", file_path=rel_path)
+    fmt.error(
+        f"❌ Ruff configuration at {rel_path} is out of sync!",
+        file_path=rel_path,
+        logger=LOGGER,
+    )
 
     if args.diff:
         _print_diff(
@@ -1077,12 +1082,13 @@ async def pull(
             _source_toml_path.parent.mkdir(parents=True, exist_ok=True)
             _source_toml_path.touch()
         except OSError as e:
-            fmt.error(f"❌ Failed to create {_source_toml_path}: {e}")
+            fmt.error(f"❌ Failed to create {_source_toml_path}: {e}", logger=LOGGER)
             return 1
     else:
         fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
-            "Pass the '--init' flag to create it."
+            "Pass the '--init' flag to create it.",
+            logger=LOGGER,
         )
         return 1
 

@@ -21,19 +21,29 @@ class ResultFormatter(Protocol):
     def note(self, message: str) -> None:
         """Print a status note (unconditional)."""
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print an informational message."""
 
     def success(self, message: str) -> None:
         """Print a success message."""
 
-    def error(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Print an error message."""
 
-    def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Print a warning message."""
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message."""
 
 
@@ -49,25 +59,35 @@ class TextFormatter:
         """Print a status note to stdout."""
         print(message)
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
         """Log an info message."""
-        LOGGER.info(message)
+        (logger or LOGGER).info(message)
 
     def success(self, message: str) -> None:
         """Print a success message to stdout."""
         print(message)
 
-    def error(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Log an error message."""
-        LOGGER.error(message)
+        (logger or LOGGER).error(message)
 
-    def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Log a warning message."""
-        LOGGER.warning(message)
+        (logger or LOGGER).warning(message)
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Log a debug message."""
-        LOGGER.debug(message)
+        (logger or LOGGER).debug(message)
 
 
 class GithubFormatter:
@@ -80,7 +100,7 @@ class GithubFormatter:
         """Print a status note (standard stdout)."""
         print(message)
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print an info message (standard stdout)."""
         print(message)
 
@@ -88,7 +108,12 @@ class GithubFormatter:
         """Print a success message (standard stdout)."""
         print(message)
 
-    def error(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Print an error message as a GitHub Action error annotation."""
         # Also print the standard string so it shows up cleanly in logs
         print(message)
@@ -99,14 +124,19 @@ class GithubFormatter:
         clean_msg = message.replace("❌ ", "")
         print(f"::error {file_arg}title=Ruff Sync Error::{clean_msg}")
 
-    def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Print a warning message as a GitHub Action warning annotation."""
         print(message)
         file_arg = f"file={file_path}," if file_path else ""
         clean_msg = message.replace("⚠️ ", "")
         print(f"::warning {file_arg}title=Ruff Sync Warning::{clean_msg}")
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message as a GitHub Action debug annotation."""
         print(f"::debug::{message}")
 
@@ -118,7 +148,7 @@ class JsonFormatter:
         """Print a status note as JSON."""
         print(json.dumps({"level": "note", "message": message}))
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print an info message as JSON."""
         print(json.dumps({"level": "info", "message": message}))
 
@@ -126,21 +156,31 @@ class JsonFormatter:
         """Print a success message as JSON."""
         print(json.dumps({"level": "success", "message": message}))
 
-    def error(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Print an error message as JSON."""
         data = {"level": "error", "message": message}
         if file_path:
             data["file"] = str(file_path)
         print(json.dumps(data))
 
-    def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         """Print a warning message as JSON."""
         data = {"level": "warning", "message": message}
         if file_path:
             data["file"] = str(file_path)
         print(json.dumps(data))
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message as JSON."""
         print(json.dumps({"level": "debug", "message": message}))
 
