@@ -33,7 +33,7 @@ class TestStreamHandler(logging.Handler):
             self.handleError(record)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def configure_logging():
     """Configure ruff_sync logger for tests to ensure capsys can capture log output."""
     logger = logging.getLogger("ruff_sync")

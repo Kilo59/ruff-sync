@@ -51,7 +51,10 @@ ignore = ["W191", "E111"]
 
 @pytest.mark.asyncio
 async def test_pull_without_init_fails_on_missing_file(
-    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+    mock_http: respx.MockRouter,
+    fs: FakeFilesystem,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging,
 ):
     target_dir = pathlib.Path(fs.create_dir("empty_dir").path)  # type: ignore[arg-type]
 
@@ -132,7 +135,10 @@ async def test_pull_with_init_scaffolds_ruff_toml(mock_http: respx.MockRouter, f
 
 @pytest.mark.asyncio
 async def test_pull_init_uses_existing_pyproject_toml(
-    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+    mock_http: respx.MockRouter,
+    fs: FakeFilesystem,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging,
 ) -> None:
     # Arrange: existing pyproject.toml, no ruff.toml or .ruff.toml
     directory = fs.create_dir("project_with_pyproject")
@@ -171,7 +177,10 @@ async def test_pull_init_uses_existing_pyproject_toml(
 
 @pytest.mark.asyncio
 async def test_pull_prefers_dot_ruff_toml_over_pyproject_toml(
-    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+    mock_http: respx.MockRouter,
+    fs: FakeFilesystem,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging,
 ) -> None:
     # Arrange: both pyproject.toml and .ruff.toml exist
     directory = fs.create_dir("project_with_pyproject_and_dot_ruff")
@@ -216,7 +225,10 @@ async def test_pull_prefers_dot_ruff_toml_over_pyproject_toml(
 
 @pytest.mark.asyncio
 async def test_pull_updates_existing_dot_ruff_toml(
-    mock_http: respx.MockRouter, fs: FakeFilesystem, capsys: pytest.CaptureFixture[str]
+    mock_http: respx.MockRouter,
+    fs: FakeFilesystem,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging,
 ) -> None:
     # Arrange: only .ruff.toml exists
     directory = fs.create_dir("project_with_dot_ruff_only")

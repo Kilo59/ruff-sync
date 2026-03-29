@@ -48,7 +48,7 @@ target-version = "py310"
 
 
 @pytest.mark.asyncio
-async def test_check_out_of_sync(fs: FakeFilesystem, capsys):
+async def test_check_out_of_sync(fs: FakeFilesystem, capsys, configure_logging):
     # Setup
     local_content = """
 [tool.ruff]
@@ -224,7 +224,7 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_semantic_diff_output(fs: FakeFilesystem, capsys):
+async def test_check_semantic_diff_output(fs: FakeFilesystem, capsys, configure_logging):
     # Setup - actual values differ
     local_content = """
 [tool.ruff]
@@ -267,7 +267,7 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_multi_upstream(fs: FakeFilesystem, capsys):
+async def test_check_multi_upstream(fs: FakeFilesystem, capsys, configure_logging):
     """Check supports multiple upstreams and bases status on the fully merged result."""
     # Setup
     local_content = """
@@ -326,7 +326,9 @@ select = ["E", "F"]
 
 
 @pytest.mark.asyncio
-async def test_check_both_out_of_sync_prioritizes_config_drift(fs: FakeFilesystem, capsys):
+async def test_check_both_out_of_sync_prioritizes_config_drift(
+    fs: FakeFilesystem, capsys, configure_logging
+):
     """Verify that Exit 1 is returned when both ruff config AND pre-commit are out of sync."""
     # Setup - ruff config drift
     local_content = '[tool.ruff]\ntarget-version = "py310"\n'

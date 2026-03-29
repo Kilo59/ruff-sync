@@ -799,6 +799,7 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     monkeypatch: pytest.MonkeyPatch,
     respx_mock: respx.Router,
     capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
 ) -> None:
     """Ensure UpstreamError from a failed fetch surfaces as exit code 1 with logged failures."""
     # Successful upstream
