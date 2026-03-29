@@ -352,9 +352,17 @@ path = "configs/fastapi"
 
 By default, `ruff-sync` requires an existing configuration file (`pyproject.toml` or `ruff.toml`) to merge into. If you are starting a fresh project and want to initialize it with your organization's Ruff settings, you can use the `--init` flag to scaffold a new file automatically.
 
-```console
+```bash
 # Create a new pyproject.toml (or ruff.toml) pre-configured with upstream settings
 ruff-sync https://github.com/my-org/standards --init
+```
+
+Ruff sync will automatically serialize the upstream URL (and any other CLI arguments like exclusions) into a new `[tool.ruff-sync]` section in your `pyproject.toml` so that future syncs can be performed simply by running `ruff-sync`. To prevent accidental credential leaks, `ruff-sync` will refuse to serialize this section if it detects a username or password in the upstream URL.
+
+If you wish to update an existing configuration with a new upstream URL and save it permanently, use the `--save` flag:
+
+```bash
+ruff-sync https://github.com/my-org/new-standards --save
 ```
 
 `ruff-sync` seamlessly supports both `pyproject.toml` and standalone `ruff.toml` (or `.ruff.toml`) files. If your local target is a directory, it will look for configuration files in the following order: `ruff.toml` -> `.ruff.toml` -> `pyproject.toml`. If your upstream source or your local target is a `ruff.toml`, it will automatically adapt and sync the root configuration rather than looking for a `[tool.ruff]` section.
