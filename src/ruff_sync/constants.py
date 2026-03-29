@@ -14,6 +14,7 @@ __all__: Final[list[str]] = [
     "DEFAULT_PATH",
     "MISSING",
     "MissingType",
+    "OutputFormat",
     "resolve_defaults",
 ]
 
@@ -40,6 +41,15 @@ class MissingType(enum.Enum):
 
 
 MISSING: Final[MissingType] = MissingType.SENTINEL
+
+
+@enum.unique
+class OutputFormat(str, enum.Enum):
+    """Output formats for the CLI."""
+
+    TEXT = "text"
+    JSON = "json"
+    GITHUB = "github"
 
 
 def resolve_defaults(

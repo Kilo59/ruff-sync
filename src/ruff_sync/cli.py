@@ -33,6 +33,7 @@ from ruff_sync.constants import (
     DEFAULT_PATH,
     MISSING,
     MissingType,
+    OutputFormat,
     resolve_defaults,
 )
 from ruff_sync.core import (
@@ -102,6 +103,7 @@ class Arguments(NamedTuple):
     init: bool = False
     pre_commit: bool | MissingType = MISSING
     save: bool | None = None
+    output_format: OutputFormat = OutputFormat.TEXT
 
     @property
     @deprecated("Use 'to' instead")
@@ -289,6 +291,13 @@ def _get_cli_parser() -> ArgumentParser:
         dest="diff",
         help="Do not show a diff.",
     )
+    check_parser.add_argument(
+        "--output-format",
+        type=OutputFormat,
+        choices=list(OutputFormat),
+        default=OutputFormat.TEXT,
+        help="Format for output. Default: text.",
+    )
 
     return parser
 
@@ -473,6 +482,7 @@ def main() -> int:
         init=getattr(args, "init", False),
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
+        output_format=getattr(args, "output_format", OutputFormat.TEXT),
     )
 
     # Use the shared helper from constants so the MISSING→default logic for

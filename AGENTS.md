@@ -158,6 +158,7 @@ uv run coverage run -m pytest -vv
 - Prefer f-strings for logging (we ignore `G004`).
 - Do not create custom exception classes for simple errors (`TRY003` is ignored).
 - **Prefer `NamedTuple` for return types** over plain tuples to improve readability and type safety.
+- **Prefer `typing.Protocol` over `abc.ABC`** for abstract base classes to promote structural subtyping.
 
 ### TOML Handling
 
