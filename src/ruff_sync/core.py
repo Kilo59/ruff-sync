@@ -974,7 +974,7 @@ async def check(
     except ValueError:
         rel_path = _source_toml_path
     fmt.error(
-        f"❌ Ruff configuration at {rel_path} is out of sync!",
+        f"❌ Ruff configuration at {rel_path} is out of sync! Run `ruff-sync` to update.",
         file_path=rel_path,
         logger=LOGGER,
     )

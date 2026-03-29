@@ -244,7 +244,7 @@ Ensure your configuration is always in sync before every commit. Add this to you
 
 ```yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.2  # Use the latest version
+  rev: v0.1.3  # Use the latest version
   hooks:
     - id: ruff-sync-check
 ```
