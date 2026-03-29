@@ -290,6 +290,8 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
         (True, None, MISSING, False, True),
         # when pre_commit is False, sync_pre_commit is not called
         (True, None, False, False, True),
+        # init with explicit --no-save should not serialize [tool.ruff-sync]
+        (True, False, MISSING, False, False),
         # neither init nor save is truthy: no [tool.ruff-sync] section should appear
         (False, None, MISSING, False, False),
     ],
