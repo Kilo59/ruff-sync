@@ -1537,6 +1537,7 @@
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx ruff-sync check --semantic --output-format github</span>
 </span></code></pre></div>
 <p>By using <code>--output-format github</code>, <code>ruff-sync</code> will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.</p>
+<p><img alt="GitHub PR Annotation" src="../assets/github-pr-annotation.png" /></p>
 <h3 id="automated-sync-prs">Automated Sync PRs<a class="headerlink" href="#automated-sync-prs" title="Permanent link">&para;</a></h3>
 <p>Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Upstream</span><span class="nv"> </span><span class="s">Sync&quot;</span>
