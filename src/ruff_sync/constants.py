@@ -6,12 +6,16 @@ import enum
 from typing import Final
 
 __all__: Final[list[str]] = [
+    "DEFAULT_BRANCH",
     "DEFAULT_EXCLUDE",
+    "DEFAULT_PATH",
     "MISSING",
     "MissingType",
 ]
 
 DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
+DEFAULT_BRANCH: Final[str] = "main"
+DEFAULT_PATH: Final[str] = ""
 
 
 class MissingType(enum.Enum):

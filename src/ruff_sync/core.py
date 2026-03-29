@@ -33,7 +33,12 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
-from ruff_sync.constants import DEFAULT_EXCLUDE, MISSING
+from ruff_sync.constants import (
+    DEFAULT_BRANCH,
+    DEFAULT_EXCLUDE,
+    DEFAULT_PATH,
+    MISSING,
+)
 from ruff_sync.pre_commit import sync_pre_commit
 
 if TYPE_CHECKING:
@@ -715,7 +720,7 @@ def merge_ruff_toml(
 async def fetch_upstreams_concurrently(
     upstreams: Iterable[URL],
     client: httpx.AsyncClient,
-    branch: str = "main",
+    branch: str = DEFAULT_BRANCH,
     path: str | None = None,
 ) -> list[FetchResult]:
     """Fetch multiple upstream configurations concurrently.
@@ -795,8 +800,8 @@ async def _merge_multiple_upstreams(
     while merging remains sequential to preserve layering order.
     """
     # Resolve MISSING values to defaults
-    branch = args.branch if args.branch is not MISSING else "main"
-    path = args.path if args.path is not MISSING else ""
+    branch = args.branch if args.branch is not MISSING else DEFAULT_BRANCH
+    path = args.path if args.path is not MISSING else DEFAULT_PATH
     exclude = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
 
     fetch_results = await fetch_upstreams_concurrently(

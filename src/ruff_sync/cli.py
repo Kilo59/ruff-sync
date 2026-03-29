@@ -27,7 +27,13 @@ import tomlkit
 from httpx import URL
 from typing_extensions import deprecated
 
-from ruff_sync.constants import DEFAULT_EXCLUDE, MISSING, MissingType
+from ruff_sync.constants import (
+    DEFAULT_BRANCH,
+    DEFAULT_EXCLUDE,
+    DEFAULT_PATH,
+    MISSING,
+    MissingType,
+)
 from ruff_sync.core import (
     Config,
     RuffConfigFileName,
@@ -227,12 +233,13 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--branch",
-        help="The default branch to use when resolving repo URLs. Default: main",
+        help=f"The default branch to use when resolving repo URLs. Default: {DEFAULT_BRANCH}",
         default=None,
     )
     common_parser.add_argument(
         "--path",
-        help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located. Default: root",
+        help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located."
+        f" Default: {DEFAULT_PATH or 'root'}",
         default=None,
     )
     common_parser.add_argument(
@@ -426,8 +433,8 @@ def main() -> int:
     upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
     # Resolve MISSING values to defaults for raw URL resolution
-    res_branch = branch if branch is not MISSING else "main"
-    res_path = path if path is not MISSING else None
+    res_branch = branch if branch is not MISSING else DEFAULT_BRANCH
+    res_path = path if path is not MISSING else (DEFAULT_PATH or None)
     upstream = tuple(resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream)
 
     pre_commit_arg = getattr(args, "pre_commit", None)
