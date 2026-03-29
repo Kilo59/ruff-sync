@@ -372,5 +372,121 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(
         assert "⚠️ Pre-commit hook version is out of sync!" not in captured.out
 
 
+@pytest.mark.asyncio
+async def test_check_out_of_sync_json_format(fs: FakeFilesystem, capsys, configure_logging):
+    # Setup mirrors the default-format test but uses JSON output_format
+    local_content = """
+[tool.ruff]
+target-version = "py310"
+"""
+    upstream_content = """
+[tool.ruff]
+target-version = "py311"
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.JSON,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+
+        # JSON formatter should emit valid JSON records (one per line).
+        import json
+
+        # Logs go to stderr, but structured output (notes) might go elsewhere.
+        # In our implementation, JsonFormatter prints to stdout.
+        # We filter for lines starting with '{' to avoid parsing plain-text diffs.
+        combined_output = captured.out + captured.err
+        json_lines = [line for line in combined_output.splitlines() if line.strip().startswith("{")]
+        assert json_lines, "Expected at least one JSON log line for out-of-sync config"
+
+        records = [json.loads(line) for line in json_lines]
+
+        # There should be at least one error record describing the out-of-sync state.
+        error_records = [r for r in records if r.get("level") == "error"]
+        assert error_records, "Expected at least one error record in JSON output"
+
+        error_messages = " ".join(r.get("message", "") for r in error_records)
+        assert "is out of sync" in error_messages
+
+        # When file_path is set, JSON output should include a file field.
+        files = {r.get("file") for r in records if "file" in r}
+        assert "pyproject.toml" in files
+
+
+@pytest.mark.asyncio
+async def test_check_out_of_sync_github_format(fs: FakeFilesystem, capsys, configure_logging):
+    # Setup mirrors the default-format test but uses GITHUB output_format
+    local_content = """
+[tool.ruff]
+target-version = "py310"
+"""
+    upstream_content = """
+[tool.ruff]
+target-version = "py311"
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.GITHUB,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+
+        # GitHub formatter should emit ::error / ::warning annotations.
+        # Combined output because we delegate standard output to a logger (stderr)
+        # while workflow commands go to stdout.
+        combined_output = captured.out + captured.err
+        error_lines = [line for line in combined_output.splitlines() if line.startswith("::error")]
+        assert error_lines, "Expected at least one ::error line in GitHub output"
+
+        # Ensure the annotation references the config file as a relative path.
+        assert any("file=pyproject.toml" in line for line in error_lines)
+
+        # Also ensure the human-readable message is present after the annotation.
+        assert any("is out of sync" in line for line in error_lines)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])

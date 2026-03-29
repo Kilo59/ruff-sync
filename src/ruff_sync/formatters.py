@@ -46,6 +46,15 @@ class ResultFormatter(Protocol):
         """Print a debug message."""
 
 
+def _escape_github_message(message: str) -> str:
+    r"""Escapes characters for GitHub Actions workflow commands.
+
+    GitHub requires percent-encoding for '%', '\r', and '\n' in the message part
+    of ::error, ::warning, and ::debug commands.
+    """
+    return message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 class TextFormatter:
     """Standard text output formatter.
 
@@ -100,8 +109,8 @@ class GithubFormatter:
         print(message)
 
     def info(self, message: str, logger: logging.Logger | None = None) -> None:
-        """Print an info message (standard stdout)."""
-        print(message)
+        """Print an info message (delegates to logger)."""
+        (logger or LOGGER).info(message)
 
     def success(self, message: str) -> None:
         """Print a success message (standard stdout)."""
@@ -114,14 +123,16 @@ class GithubFormatter:
         logger: logging.Logger | None = None,
     ) -> None:
         """Print an error message as a GitHub Action error annotation."""
-        # Also print the standard string so it shows up cleanly in logs
-        print(message)
+        # Delegate standard log output to the logger to preserve context
+        (logger or LOGGER).error(message)
+
         # Strip emoji/symbols if any for the raw title, or just use a generic title
         file_arg = f"file={file_path}," if file_path else ""
         # The message is technically what we pass after ::
         # E.g. ::error file=app.js,line=1::Missing semicolon
         clean_msg = message.replace("❌ ", "")
-        print(f"::error {file_arg}title=Ruff Sync Error::{clean_msg}")
+        escaped_msg = _escape_github_message(clean_msg)
+        print(f"::error {file_arg}title=Ruff Sync Error::{escaped_msg}")
 
     def warning(
         self,
@@ -130,14 +141,18 @@ class GithubFormatter:
         logger: logging.Logger | None = None,
     ) -> None:
         """Print a warning message as a GitHub Action warning annotation."""
-        print(message)
+        (logger or LOGGER).warning(message)
+
         file_arg = f"file={file_path}," if file_path else ""
         clean_msg = message.replace("⚠️ ", "")
-        print(f"::warning {file_arg}title=Ruff Sync Warning::{clean_msg}")
+        escaped_msg = _escape_github_message(clean_msg)
+        print(f"::warning {file_arg}title=Ruff Sync Warning::{escaped_msg}")
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message as a GitHub Action debug annotation."""
-        print(f"::debug::{message}")
+        (logger or LOGGER).debug(message)
+        escaped_msg = _escape_github_message(message)
+        print(f"::debug::{escaped_msg}")
 
 
 class JsonFormatter:
@@ -149,7 +164,10 @@ class JsonFormatter:
 
     def info(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print an info message as JSON."""
-        print(json.dumps({"level": "info", "message": message}))
+        data = {"level": "info", "message": message}
+        if logger:
+            data["logger"] = logger.name
+        print(json.dumps(data))
 
     def success(self, message: str) -> None:
         """Print a success message as JSON."""
@@ -165,6 +183,8 @@ class JsonFormatter:
         data = {"level": "error", "message": message}
         if file_path:
             data["file"] = str(file_path)
+        if logger:
+            data["logger"] = logger.name
         print(json.dumps(data))
 
     def warning(
@@ -177,11 +197,16 @@ class JsonFormatter:
         data = {"level": "warning", "message": message}
         if file_path:
             data["file"] = str(file_path)
+        if logger:
+            data["logger"] = logger.name
         print(json.dumps(data))
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message as JSON."""
-        print(json.dumps({"level": "debug", "message": message}))
+        data = {"level": "debug", "message": message}
+        if logger:
+            data["logger"] = logger.name
+        print(json.dumps(data))
 
 
 def get_formatter(output_format: OutputFormat) -> ResultFormatter:
