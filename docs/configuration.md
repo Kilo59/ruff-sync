@@ -37,11 +37,11 @@ exclude = ["lint.per-file-ignores"]
 
 #### Manage specific plugins locally
 
-If you want to use the upstream rules but manage `isort` settings yourself:
+If you want to use the upstream rules but manage `pydocstyle` settings yourself:
 
 ```toml
 [tool.ruff-sync]
-exclude = ["lint.isort"]
+exclude = ["lint.pydocstyle"]
 ```
 
 #### Keep a specific rule toggle
@@ -91,7 +91,7 @@ Syncs the provided `fastapi` predefined config from the `ruff-sync` repository i
 
 ### Advanced Configuration
 
-Demonstrates a sequential strategy: it pulls the comprehensive `kitchen-sink` configuration first, then overlays the `fastapi` configuration on top. It also protects your own local `isort` settings and Python target version from being overwritten, and ensures your pre-commit hooks stay in sync with Ruff's version.
+Demonstrates a sequential strategy: it pulls the comprehensive `kitchen-sink` configuration first, then overlays the `fastapi` configuration on top. It also protects your own local `pydocstyle` settings and Python target version from being overwritten, and ensures your pre-commit hooks stay in sync with Ruff's version.
 
 ```toml
 --8<-- "docs/examples/advanced-config.toml"
