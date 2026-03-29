@@ -81,6 +81,9 @@ markdown_extensions:
   - pymdownx.tilde
   - toc:
       permalink: true
+  - pymdownx.snippets:
+      check_paths: true
+      base_path: "."
 
 plugins:
   - search
