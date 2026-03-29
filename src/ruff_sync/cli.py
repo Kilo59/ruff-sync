@@ -38,6 +38,7 @@ from ruff_sync.core import (
     Config,
     RuffConfigFileName,
     UpstreamError,
+    _resolve_defaults,
     check,
     pull,
     resolve_raw_url,
@@ -349,7 +350,7 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | Mi
 
 def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     """Resolve branch name from CLI, config, or default."""
-    if getattr(args, "branch", None):
+    if getattr(args, "branch", None) is not None:
         return cast("str", args.branch)
     if "branch" in config:
         branch = cast("str", config["branch"])
@@ -360,7 +361,7 @@ def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
 
 def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     """Resolve path prefix from CLI, config, or default."""
-    if getattr(args, "path", None):
+    if getattr(args, "path", None) is not None:
         return cast("str", args.path)
     if "path" in config:
         path = cast("str", config["path"])
@@ -432,11 +433,6 @@ def main() -> int:
 
     upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
-    # Resolve MISSING values to defaults for raw URL resolution
-    res_branch = branch if branch is not MISSING else DEFAULT_BRANCH
-    res_path = path if path is not MISSING else (DEFAULT_PATH or None)
-    upstream = tuple(resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream)
-
     pre_commit_arg = getattr(args, "pre_commit", None)
     if pre_commit_arg is not None:
         pre_commit_val: bool | MissingType = pre_commit_arg
@@ -447,7 +443,9 @@ def main() -> int:
     else:
         pre_commit_val = MISSING
 
-    # Create Arguments object
+    # Build Arguments first so _resolve_defaults can centralize MISSING → default
+    # resolution for branch and path (keeps cli.main and core._merge_multiple_upstreams
+    # in sync with a single source of truth).
     exec_args = Arguments(
         command=args.command,
         upstream=upstream,
@@ -462,6 +460,14 @@ def main() -> int:
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
     )
+
+    # Use the shared helper so the MISSING→default logic for branch/path cannot
+    # diverge between cli.main and core._merge_multiple_upstreams.
+    res_branch, res_path, _exclude = _resolve_defaults(exec_args)
+    resolved_upstream = tuple(
+        resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream
+    )
+    exec_args = exec_args._replace(upstream=resolved_upstream)
 
     try:
         if exec_args.command == "check":

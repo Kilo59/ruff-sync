@@ -280,15 +280,17 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
 @pytest.mark.parametrize(
     "case",
     [
-        # (init, save, pre_commit, expect_sync_pre_commit)
+        # (init, save, pre_commit, expect_sync_pre_commit, expect_save)
         # baseline: init+save with explicit pre_commit=True triggers sync
-        (True, None, True, True),
+        (True, None, True, True, True),
         # save without init still writes [tool.ruff-sync] but does not init hooks
-        (False, True, MISSING, False),
+        (False, True, MISSING, False, True),
         # when pre_commit is MISSING, sync_pre_commit is never called
-        (True, None, MISSING, False),
+        (True, None, MISSING, False, True),
         # when pre_commit is False, sync_pre_commit is not called
-        (True, None, False, False),
+        (True, None, False, False, True),
+        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
+        (False, None, MISSING, False, False),
     ],
 )
 @pytest.mark.asyncio
@@ -296,9 +298,9 @@ async def test_pull_logging_and_serialization_triggers(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     tmp_path: pathlib.Path,
-    case: tuple[bool, bool | None, bool | MissingType, bool],
+    case: tuple[bool, bool | None, bool | MissingType, bool, bool],
 ) -> None:
-    init, save, pre_commit, expect_sync_pre_commit = case
+    init, save, pre_commit, expect_sync_pre_commit, expect_save = case
     from ruff_sync import core
 
     # Mock _merge_multiple_upstreams to just return the doc unchanged
@@ -342,11 +344,12 @@ async def test_pull_logging_and_serialization_triggers(
 
     contents = target.read_text()
 
-    # When save resolves to True, [tool.ruff-sync] must be written
-    resolved_save = save if save is not None else init
-    if resolved_save:
+    if expect_save:
         assert "[tool.ruff-sync]" in contents
         assert "upstream" in contents
+    else:
+        # when neither init nor save is truthy, no [tool.ruff-sync] section written
+        assert "[tool.ruff-sync]" not in contents
 
     # sync_pre_commit is only called when pre_commit is explicitly True
     assert bool(sync_calls) is expect_sync_pre_commit
