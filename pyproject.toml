@@ -180,6 +180,7 @@ ignore = [
 "tests/**/*.py" = [
     "T20", # allow print in tests
     "D100", # missing docstring in module
+    "D101", # missing docstring in class
     "D103", # missing docstring in function
     "D400", # first line should end with a period
     "D401", # first line of docstring should be in imperative mood
