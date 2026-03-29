@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
@@ -80,29 +81,35 @@ class GithubFormatter:
 
 
 class JsonFormatter:
-    """JSON output formatter (stub)."""
+    """JSON output formatter."""
 
     def info(self, message: str) -> None:
-        """Stub."""
-        print(message)
+        """Print an info message as JSON."""
+        print(json.dumps({"level": "info", "message": message}))
 
     def success(self, message: str) -> None:
-        """Stub."""
-        print(message)
+        """Print a success message as JSON."""
+        print(json.dumps({"level": "success", "message": message}))
 
     def error(self, message: str, file_path: pathlib.Path | None = None) -> None:
-        """Stub."""
-        print(message)
+        """Print an error message as JSON."""
+        data = {"level": "error", "message": message}
+        if file_path:
+            data["file"] = str(file_path)
+        print(json.dumps(data))
 
     def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
-        """Stub."""
-        print(message)
+        """Print a warning message as JSON."""
+        data = {"level": "warning", "message": message}
+        if file_path:
+            data["file"] = str(file_path)
+        print(json.dumps(data))
 
 
-def get_formatter(format: OutputFormat) -> ResultFormatter:
+def get_formatter(output_format: OutputFormat) -> ResultFormatter:
     """Return the corresponding formatter for the given format."""
-    if format == OutputFormat.GITHUB:
+    if output_format == OutputFormat.GITHUB:
         return GithubFormatter()
-    if format == OutputFormat.JSON:
+    if output_format == OutputFormat.JSON:
         return JsonFormatter()
     return TextFormatter()
