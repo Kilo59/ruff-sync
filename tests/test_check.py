@@ -488,5 +488,109 @@ target-version = "py311"
         assert any("is out of sync" in line for line in error_lines)
 
 
+@pytest.mark.asyncio
+async def test_check_in_sync_json_format(
+    fs: FakeFilesystem,
+    capsys,
+    configure_logging,
+):
+    """Ensure JSON formatter reports success and no errors when configs are in sync."""
+    local_content = """
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=local_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.JSON,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 0
+
+        captured = capsys.readouterr()
+        combined_output = captured.out + captured.err
+        json_lines = [line for line in combined_output.splitlines() if line.strip().startswith("{")]
+        assert json_lines, "Expected at least one JSON record in output"
+
+        import json
+
+        records = [json.loads(line) for line in json_lines]
+
+        # No error-level records
+        assert all(r.get("level") != "error" for r in records)
+
+        # At least one success/in-sync record
+        assert any(
+            r.get("level") in ("success", "info") and "in sync" in (r.get("message") or "").lower()
+            for r in records
+        )
+
+
+@pytest.mark.asyncio
+async def test_check_in_sync_github_format(
+    fs: FakeFilesystem,
+    capsys,
+    configure_logging,
+):
+    """Ensure GitHub formatter does not emit ::error lines when configs are in sync."""
+    local_content = """
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+"""
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=local_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=True,
+            output_format=ruff_sync.constants.OutputFormat.GITHUB,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 0
+
+        captured = capsys.readouterr()
+        combined_output = captured.out + captured.err
+
+        # No GitHub ::error annotations should be emitted
+        assert "::error" not in combined_output
+
+        # Human-friendly success/note message should still be present
+        assert "in sync" in combined_output.lower()
+        assert "ruff" in combined_output.lower()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])

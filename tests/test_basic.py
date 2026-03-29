@@ -943,5 +943,57 @@ def test_cli_output_format_json(
     )
 
 
+def test_cli_output_format_json_success(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
+    fs: FakeFilesystem,
+) -> None:
+    """End-to-end: --output-format=json produces success-level JSON when in sync."""
+    # Ensure a local pyproject.toml exists that matches upstream
+    local_content = "[tool.ruff]\ntarget-version = 'py311'\n"
+    fs.create_file("pyproject.toml", contents=local_content)
+
+    # Mock in-sync upstream
+    respx_mock.get("https://example.com/pyproject.toml").respond(
+        status_code=200,
+        text=local_content,
+    )
+
+    # Patch sys.argv
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "check",
+            "https://example.com/pyproject.toml",
+            "--output-format",
+            "json",
+        ],
+    )
+
+    # Mock get_config
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke
+    exit_code = ruff_sync.main()
+    assert exit_code == 0
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    records = [json.loads(line) for line in lines if line.startswith("{")]
+
+    # At least one success-level record is emitted.
+    assert any(record.get("level") == "success" for record in records), (
+        "Expected at least one success-level record in JSON output"
+    )
+
+    # No error-level records are emitted on the success path.
+    assert all(record.get("level") != "error" for record in records)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
