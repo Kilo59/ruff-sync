@@ -84,7 +84,7 @@ target-version = "py311"
         assert exit_code == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert '-target-version = "py310"' in captured.out
         assert '+target-version = "py311"' in captured.out
 
@@ -258,7 +258,7 @@ target-version = "py311"
         assert await ruff_sync.check(args_semantic) == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert "--- local (semantic)" in captured.out
         assert "+++ upstream (semantic)" in captured.out
         # Check for JSON-style diff content
@@ -320,7 +320,7 @@ select = ["E", "F"]
         assert await ruff_sync.check(args) == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert "+line-length = 100" in captured.out
         assert '+select = ["E", "F"]' in captured.out
 
@@ -363,7 +363,7 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(fs: FakeFilesyste
         assert exit_code == 1
 
         captured = capsys.readouterr()
-        assert "is out of sync!" in captured.out
+        assert "is out of sync!" in captured.err
         assert '-target-version = "py310"' in captured.out
         assert '+target-version = "py311"' in captured.out
         # Pre-commit drift should NOT be reported if config drift was found and resulted in exit 1

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
@@ -10,9 +11,15 @@ if TYPE_CHECKING:
 
 from ruff_sync.constants import OutputFormat
 
+# Logger for this module
+LOGGER = logging.getLogger(__name__)
+
 
 class ResultFormatter(Protocol):
     """Protocol for output formatters."""
+
+    def note(self, message: str) -> None:
+        """Print a status note (unconditional)."""
 
     def info(self, message: str) -> None:
         """Print an informational message."""
@@ -26,25 +33,41 @@ class ResultFormatter(Protocol):
     def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
         """Print a warning message."""
 
+    def debug(self, message: str) -> None:
+        """Print a debug message."""
+
 
 class TextFormatter:
-    """Standard text output formatter."""
+    """Standard text output formatter.
 
-    def info(self, message: str) -> None:
-        """Print an info message."""
+    Delegates diagnostic messages (info, warning, error, debug) to the project logger
+     to ensure they benefit from standard logging configuration (colors, streams).
+    Primary command feedback (note, success) is printed to stdout.
+    """
+
+    def note(self, message: str) -> None:
+        """Print a status note to stdout."""
         print(message)
 
+    def info(self, message: str) -> None:
+        """Log an info message."""
+        LOGGER.info(message)
+
     def success(self, message: str) -> None:
-        """Print a success message."""
+        """Print a success message to stdout."""
         print(message)
 
     def error(self, message: str, file_path: pathlib.Path | None = None) -> None:
-        """Print an error message."""
-        print(message)
+        """Log an error message."""
+        LOGGER.error(message)
 
     def warning(self, message: str, file_path: pathlib.Path | None = None) -> None:
-        """Print a warning message."""
-        print(message)
+        """Log a warning message."""
+        LOGGER.warning(message)
+
+    def debug(self, message: str) -> None:
+        """Log a debug message."""
+        LOGGER.debug(message)
 
 
 class GithubFormatter:
@@ -52,6 +75,10 @@ class GithubFormatter:
 
     Emits `::error::` and `::warning::` workflow commands for inline annotations.
     """
+
+    def note(self, message: str) -> None:
+        """Print a status note (standard stdout)."""
+        print(message)
 
     def info(self, message: str) -> None:
         """Print an info message (standard stdout)."""
@@ -79,9 +106,17 @@ class GithubFormatter:
         clean_msg = message.replace("⚠️ ", "")
         print(f"::warning {file_arg}title=Ruff Sync Warning::{clean_msg}")
 
+    def debug(self, message: str) -> None:
+        """Print a debug message as a GitHub Action debug annotation."""
+        print(f"::debug::{message}")
+
 
 class JsonFormatter:
     """JSON output formatter."""
+
+    def note(self, message: str) -> None:
+        """Print a status note as JSON."""
+        print(json.dumps({"level": "note", "message": message}))
 
     def info(self, message: str) -> None:
         """Print an info message as JSON."""
@@ -104,6 +139,10 @@ class JsonFormatter:
         if file_path:
             data["file"] = str(file_path)
         print(json.dumps(data))
+
+    def debug(self, message: str) -> None:
+        """Print a debug message as JSON."""
+        print(json.dumps({"level": "debug", "message": message}))
 
 
 def get_formatter(output_format: OutputFormat) -> ResultFormatter:

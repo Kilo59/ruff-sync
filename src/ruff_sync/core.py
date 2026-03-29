@@ -900,7 +900,7 @@ async def check(
         >>> # asyncio.run(check(args))
     """
     fmt = get_formatter(args.output_format)
-    fmt.info("🔍 Checking Ruff sync status...")
+    fmt.note("🔍 Checking Ruff sync status...")
 
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
     if not _source_toml_path.exists():
@@ -1062,7 +1062,8 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
-    print("🔄 Syncing Ruff...")
+    fmt = get_formatter(args.output_format)
+    fmt.note("🔄 Syncing Ruff...")
     _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
 
     source_toml_file = TOMLFile(_source_toml_path)
@@ -1076,10 +1077,10 @@ async def pull(
             _source_toml_path.parent.mkdir(parents=True, exist_ok=True)
             _source_toml_path.touch()
         except OSError as e:
-            print(f"❌ Failed to create {_source_toml_path}: {e}", file=sys.stderr)
+            fmt.error(f"❌ Failed to create {_source_toml_path}: {e}")
             return 1
     else:
-        print(
+        fmt.error(
             f"❌ Configuration file {_source_toml_path} does not exist. "
             "Pass the '--init' flag to create it."
         )
@@ -1108,7 +1109,7 @@ async def pull(
         rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
     except ValueError:
         rel_path = _source_toml_path.resolve()
-    print(f"✅ Updated {rel_path}")
+    fmt.success(f"✅ Updated {rel_path}")
 
     if args.pre_commit is not MISSING and args.pre_commit:
         sync_pre_commit(pathlib.Path.cwd(), dry_run=False)

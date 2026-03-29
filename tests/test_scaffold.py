@@ -69,9 +69,9 @@ async def test_pull_without_init_fails_on_missing_file(
 
     assert result == 1
     captured = capsys.readouterr()
-    assert "Configuration file" in captured.out
-    assert "does not exist" in captured.out
-    assert "Pass the '--init' flag" in captured.out
+    assert "Configuration file" in captured.err
+    assert "does not exist" in captured.err
+    assert "Pass the '--init' flag" in captured.err
     assert not (target_dir / "pyproject.toml").exists()
 
 

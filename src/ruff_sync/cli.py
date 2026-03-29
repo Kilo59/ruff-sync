@@ -442,11 +442,17 @@ def main() -> int:
         1: logging.INFO,
     }.get(args.verbose, logging.DEBUG)
 
-    LOGGER.setLevel(log_level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(ColoredFormatter())
-    LOGGER.addHandler(handler)
-    LOGGER.propagate = "PYTEST_CURRENT_TEST" in os.environ  # Allow capturing in tests
+    # Configure logging for the entire ruff_sync package
+    root_logger = logging.getLogger("ruff_sync")
+    root_logger.setLevel(log_level)
+
+    # Avoid adding multiple handlers if main() is called multiple times (e.g. in tests)
+    if not root_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(ColoredFormatter())
+        root_logger.addHandler(handler)
+
+    root_logger.propagate = "PYTEST_CURRENT_TEST" in os.environ
 
     # Determine target 'to' from CLI or use default '.'
     # Defer Path conversion to avoid pyfakefs issues with captured Path class

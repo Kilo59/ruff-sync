@@ -597,7 +597,7 @@ def test_verbosity_log_level(
     ruff_sync.main()
 
     # Verify that the computed log level matches what we expect for this verbosity
-    assert ruff_sync_cli.LOGGER.level == expected_level
+    assert ruff_sync_cli.LOGGER.getEffectiveLevel() == expected_level
 
     # Verify that the verbose flag value propagates into Arguments.verbose
     assert len(patch_cli.captured_args) == 1
