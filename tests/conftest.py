@@ -37,16 +37,24 @@ class TestStreamHandler(logging.Handler):
 def configure_logging():
     """Configure ruff_sync logger for tests to ensure capsys can capture log output."""
     logger = logging.getLogger("ruff_sync")
-    logger.setLevel(logging.DEBUG)
+    old_handlers = logger.handlers[:]
+    old_level = logger.level
 
-    # Clear existing handlers to avoid duplicates/stale handlers
-    logger.handlers = []
+    try:
+        logger.setLevel(logging.DEBUG)
 
-    # Add our dynamic handler
-    handler = TestStreamHandler("stderr")
-    logger.addHandler(handler)
+        # Clear existing handlers to avoid duplicates/stale handlers
+        logger.handlers = []
 
-    yield logger
+        # Add our dynamic handler
+        handler = TestStreamHandler("stderr")
+        logger.addHandler(handler)
+
+        yield logger
+    finally:
+        # Restore original state
+        logger.handlers = old_handlers
+        logger.setLevel(old_level)
 
 
 @pytest.fixture

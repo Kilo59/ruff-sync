@@ -46,13 +46,16 @@ class ResultFormatter(Protocol):
         """Print a debug message."""
 
 
-def _escape_github_message(message: str) -> str:
+def _escape_github(value: str, is_property: bool = False) -> str:
     r"""Escapes characters for GitHub Actions workflow commands.
 
-    GitHub requires percent-encoding for '%', '\r', and '\n' in the message part
-    of ::error, ::warning, and ::debug commands.
+    GitHub requires percent-encoding for '%', '\r', and '\n' in all messages.
+    Additionally, property values (like file and title) require escaping for ':' and ','.
     """
-    return message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    escaped = value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    if is_property:
+        return escaped.replace(":", "%3A").replace(",", "%2C")
+    return escaped
 
 
 class TextFormatter:
@@ -127,12 +130,15 @@ class GithubFormatter:
         (logger or LOGGER).error(message)
 
         # Strip emoji/symbols if any for the raw title, or just use a generic title
-        file_arg = f"file={file_path}," if file_path else ""
+        file_val = _escape_github(str(file_path), is_property=True) if file_path else ""
+        file_arg = f"file={file_val}," if file_path else ""
+        title_val = _escape_github("Ruff Sync Error", is_property=True)
+
         # The message is technically what we pass after ::
         # E.g. ::error file=app.js,line=1::Missing semicolon
         clean_msg = message.replace("❌ ", "")
-        escaped_msg = _escape_github_message(clean_msg)
-        print(f"::error {file_arg}title=Ruff Sync Error::{escaped_msg}")
+        escaped_msg = _escape_github(clean_msg)
+        print(f"::error {file_arg}title={title_val}::{escaped_msg}")
 
     def warning(
         self,
@@ -143,15 +149,18 @@ class GithubFormatter:
         """Print a warning message as a GitHub Action warning annotation."""
         (logger or LOGGER).warning(message)
 
-        file_arg = f"file={file_path}," if file_path else ""
+        file_val = _escape_github(str(file_path), is_property=True) if file_path else ""
+        file_arg = f"file={file_val}," if file_path else ""
+        title_val = _escape_github("Ruff Sync Warning", is_property=True)
+
         clean_msg = message.replace("⚠️ ", "")
-        escaped_msg = _escape_github_message(clean_msg)
-        print(f"::warning {file_arg}title=Ruff Sync Warning::{escaped_msg}")
+        escaped_msg = _escape_github(clean_msg)
+        print(f"::warning {file_arg}title={title_val}::{escaped_msg}")
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message as a GitHub Action debug annotation."""
         (logger or LOGGER).debug(message)
-        escaped_msg = _escape_github_message(message)
+        escaped_msg = _escape_github(message)
         print(f"::debug::{escaped_msg}")
 
 

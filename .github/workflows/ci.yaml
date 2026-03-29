@@ -152,11 +152,14 @@ jobs:
 
       - name: Publish package
         run: |
-          uv publish || {
+          # Capture stderr to a file so we can check for specific error strings
+          uv publish 2> publish_err.log || {
             exit_code=$?
-            if [ $exit_code -eq 2 ]; then
+            # Check for common "version already exists" markers in the output
+            if grep -qi "already exists" publish_err.log; then
               echo "::warning title=Ruff Sync Publish::Version already exists on PyPI. Skipping upload."
             else
+              cat publish_err.log
               exit $exit_code
             fi
           }

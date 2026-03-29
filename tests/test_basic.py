@@ -840,5 +840,106 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     assert "Failed to fetch" in combined_output
 
 
+def test_cli_output_format_github(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
+) -> None:
+    """End-to-end: --output-format=github produces GitHub-style annotations."""
+    respx_mock.get("https://example.com/pyproject.toml").respond(
+        status_code=200,
+        text="[tool.ruff]\ntarget-version = 'py311'\n",
+    )
+
+    # Patch sys.argv to simulate CLI call
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "check",
+            "https://example.com/pyproject.toml",
+            "--output-format",
+            "github",
+        ],
+    )
+
+    # Mock get_config to avoid reading from the real filesystem
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke the CLI entry point - it should exit with 1 because pyproject.toml is missing
+    # or out of sync. In a fake filesystem without pyproject.toml it will fail.
+    exit_code = ruff_sync.main()
+    assert exit_code == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+
+    # Assert: GitHub Actions annotation is present
+    assert "::error" in output
+    # The GitHub formatter should not emit JSON records.
+    assert not output.lstrip().startswith("{")
+
+
+def test_cli_output_format_json(
+    monkeypatch: pytest.MonkeyPatch,
+    respx_mock: respx.Router,
+    capsys: pytest.CaptureFixture[str],
+    configure_logging: logging.Logger,
+) -> None:
+    """End-to-end: --output-format=json produces JSON records."""
+    respx_mock.get("https://example.com/pyproject.toml").respond(
+        status_code=200,
+        text="[tool.ruff]\ntarget-version = 'py311'\n",
+    )
+
+    # Patch sys.argv
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ruff-sync",
+            "check",
+            "https://example.com/pyproject.toml",
+            "--output-format",
+            "json",
+        ],
+    )
+
+    # Mock get_config
+    monkeypatch.setattr(ruff_sync_cli, "get_config", lambda _: {})
+
+    # Invoke
+    exit_code = ruff_sync.main()
+    assert exit_code == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    lines = [line for line in output.splitlines() if line.strip()]
+
+    # Assert: no GitHub-style annotations in JSON mode
+    assert all("::error" not in line for line in lines)
+
+    # At least one line should be valid JSON
+    import json
+
+    parsed_any = False
+    for line in lines:
+        if not line.strip().startswith("{"):
+            continue
+        try:
+            json_obj = json.loads(line)
+        except ValueError:
+            continue
+        else:
+            assert isinstance(json_obj, dict)
+            assert "level" in json_obj
+            parsed_any = True
+            break
+
+    assert parsed_any, "Expected at least one JSON record in JSON output"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
