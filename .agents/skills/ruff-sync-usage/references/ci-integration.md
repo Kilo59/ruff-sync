@@ -88,7 +88,7 @@ Run `ruff-sync check` as a pre-commit hook to catch drift before every commit:
 ```yaml
 # .pre-commit-config.yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.0   # pin to a release tag
+  rev: v0.1.3   # pin to a release tag
   hooks:
     - id: ruff-sync-check
 ```
