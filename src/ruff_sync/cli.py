@@ -27,6 +27,14 @@ import tomlkit
 from httpx import URL
 from typing_extensions import deprecated
 
+from ruff_sync.constants import (
+    DEFAULT_BRANCH,
+    DEFAULT_EXCLUDE,
+    DEFAULT_PATH,
+    MISSING,
+    MissingType,
+    resolve_defaults,
+)
 from ruff_sync.core import (
     Config,
     RuffConfigFileName,
@@ -51,9 +59,8 @@ try:
 except metadata.PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
-LOGGER = logging.getLogger(__name__)
 
-_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
+LOGGER = logging.getLogger(__name__)
 
 
 class ColoredFormatter(logging.Formatter):
@@ -86,14 +93,15 @@ class Arguments(NamedTuple):
     command: str
     upstream: tuple[URL, ...]
     to: pathlib.Path
-    exclude: Iterable[str]
+    exclude: Iterable[str] | MissingType
     verbose: int
-    branch: str = "main"
-    path: str = ""
+    branch: str | MissingType = MISSING
+    path: str | MissingType = MISSING
     semantic: bool = False
     diff: bool = True
     init: bool = False
-    pre_commit: bool = False
+    pre_commit: bool | MissingType = MISSING
+    save: bool | None = None
 
     @property
     @deprecated("Use 'to' instead")
@@ -113,9 +121,9 @@ class ResolvedArgs(NamedTuple):
 
     upstream: tuple[URL, ...]
     to: pathlib.Path
-    exclude: Iterable[str]
-    branch: str
-    path: str
+    exclude: Iterable[str] | MissingType
+    branch: str | MissingType
+    path: str | MissingType
 
 
 @lru_cache(maxsize=1)
@@ -214,7 +222,7 @@ def _get_cli_parser() -> ArgumentParser:
     common_parser.add_argument(
         "--exclude",
         nargs="+",
-        help=f"Exclude certain ruff configs. Default: {' '.join(_DEFAULT_EXCLUDE)}",
+        help=f"Exclude certain ruff configs. Default: {' '.join(DEFAULT_EXCLUDE)}",
         default=None,
     )
     common_parser.add_argument(
@@ -226,12 +234,13 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--branch",
-        help="The default branch to use when resolving repo URLs. Default: main",
+        help=f"The default branch to use when resolving repo URLs. Default: {DEFAULT_BRANCH}",
         default=None,
     )
     common_parser.add_argument(
         "--path",
-        help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located. Default: root",
+        help=f"The parent path where {RuffConfigFileName.PYPROJECT_TOML} is located."
+        f" Default: {DEFAULT_PATH or 'root'}",
         default=None,
     )
     common_parser.add_argument(
@@ -251,6 +260,12 @@ def _get_cli_parser() -> ArgumentParser:
         "--init",
         action="store_true",
         help="Create a new configuration file if it does not exist in the target directory.",
+    )
+    pull_parser.add_argument(
+        "--save",
+        action=BooleanOptionalAction,
+        default=None,
+        help="Save CLI arguments to [tool.ruff-sync] in pyproject.toml.",
     )
 
     # Check subcommand
@@ -322,37 +337,51 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
     )
 
 
-def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str]:
-    """Resolve exclude patterns from CLI, config, or default."""
+def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | MissingType:
+    """Resolve exclude patterns from CLI or config.
+
+    Returns the CLI value if provided, otherwise the value from
+    ``[tool.ruff-sync].exclude`` in the config.  If neither is set,
+    returns ``MISSING`` so that :func:`~ruff_sync.constants.resolve_defaults`
+    can apply the ``DEFAULT_EXCLUDE`` set downstream.
+    """
     if args.exclude is not None:
         return cast("Iterable[str]", args.exclude)
     if "exclude" in config:
         exclude = config["exclude"]
         LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
         return cast("Iterable[str]", exclude)
-    return _DEFAULT_EXCLUDE
+    return MISSING
 
 
-def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str:
-    """Resolve branch name from CLI, config, or default."""
-    if args.branch:
+def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+    """Resolve branch name from CLI, config, or MISSING.
+
+    An empty string (``--branch ""``) is treated as falsy and falls back to
+    the config or default, preserving the original behaviour.
+    """
+    if getattr(args, "branch", None):
         return cast("str", args.branch)
     if "branch" in config:
         branch = cast("str", config["branch"])
         LOGGER.info(f"🌿 Using branch from [tool.ruff-sync]: {branch}")
         return branch
-    return "main"
+    return MISSING
 
 
-def _resolve_path(args: Any, config: Mapping[str, Any]) -> str:
-    """Resolve path prefix from CLI, config, or default."""
-    if args.path:
+def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+    """Resolve path prefix from CLI, config, or MISSING.
+
+    An empty string (``--path ""``) is treated as falsy and falls back to
+    the config or default, preserving the original behaviour.
+    """
+    if getattr(args, "path", None):
         return cast("str", args.path)
     if "path" in config:
         path = cast("str", config["path"])
         LOGGER.info(f"📄 Using path from [tool.ruff-sync]: {path}")
         return path
-    return ""
+    return MISSING
 
 
 def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
@@ -379,7 +408,7 @@ def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return ResolvedArgs(upstream, to, exclude, branch, path)
+    return ResolvedArgs(upstream, to, cast("Any", exclude), cast("Any", branch), cast("Any", path))
 
 
 def main() -> int:
@@ -418,16 +447,19 @@ def main() -> int:
 
     upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
 
-    # Convert non-raw github/gitlab upstream url to the raw equivalent
-    upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
-
     pre_commit_arg = getattr(args, "pre_commit", None)
     if pre_commit_arg is not None:
-        pre_commit_val = pre_commit_arg
+        pre_commit_val: bool | MissingType = pre_commit_arg
+    elif "pre-commit-version-sync" in config:
+        pre_commit_val = cast("Any", config).get("pre-commit-version-sync")
+    elif "pre_commit_version_sync" in config:
+        pre_commit_val = config.get("pre_commit_version_sync", MISSING)
     else:
-        pre_commit_val = config.get("pre_commit_version_sync", False)
+        pre_commit_val = MISSING
 
-    # Create Arguments object
+    # Build Arguments first so _resolve_defaults can centralize MISSING → default
+    # resolution for branch and path (keeps cli.main and core._merge_multiple_upstreams
+    # in sync with a single source of truth).
     exec_args = Arguments(
         command=args.command,
         upstream=upstream,
@@ -439,8 +471,17 @@ def main() -> int:
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
-        pre_commit=bool(pre_commit_val),
+        pre_commit=pre_commit_val,
+        save=getattr(args, "save", None),
     )
+
+    # Use the shared helper from constants so the MISSING→default logic for
+    # branch/path cannot diverge between cli.main and core._merge_multiple_upstreams.
+    res_branch, res_path, _exclude = resolve_defaults(branch, path, exclude)
+    resolved_upstream = tuple(
+        resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream
+    )
+    exec_args = exec_args._replace(upstream=resolved_upstream)
 
     try:
         if exec_args.command == "check":

@@ -33,6 +33,11 @@ from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
+from ruff_sync.constants import (
+    DEFAULT_BRANCH,
+    MISSING,
+    resolve_defaults,
+)
 from ruff_sync.pre_commit import sync_pre_commit
 
 if TYPE_CHECKING:
@@ -53,13 +58,13 @@ __all__: Final[list[str]] = [
     "pull",
     "resolve_raw_url",
     "resolve_target_path",
+    "serialize_ruff_sync_config",
     "to_git_url",
     "toml_ruff_parse",
 ]
 
 LOGGER = logging.getLogger(__name__)
 
-_DEFAULT_EXCLUDE: Final[set[str]] = {"lint.per-file-ignores"}
 _GITHUB_REPO_PATH_PARTS_COUNT: Final[int] = 2
 _GITHUB_TREE_PREFIX_PARTS_COUNT: Final[int] = 4
 _GITHUB_HOSTS: Final[set[str]] = {"github.com", "www.github.com"}
@@ -714,7 +719,7 @@ def merge_ruff_toml(
 async def fetch_upstreams_concurrently(
     upstreams: Iterable[URL],
     client: httpx.AsyncClient,
-    branch: str = "main",
+    branch: str = DEFAULT_BRANCH,
     path: str | None = None,
 ) -> list[FetchResult]:
     """Fetch multiple upstream configurations concurrently.
@@ -782,6 +787,18 @@ async def fetch_upstreams_concurrently(
         return fetch_results
 
 
+def _resolve_defaults(
+    args: Arguments,
+) -> tuple[str, str | None, Iterable[str]]:
+    """Resolve MISSING sentinel values in *args* to their effective defaults.
+
+    Delegates to :func:`~ruff_sync.constants.resolve_defaults` so that the
+    MISSING → default logic is centralised in one place and shared with
+    ``cli.main`` without coupling the two layers together.
+    """
+    return resolve_defaults(args.branch, args.path, args.exclude)
+
+
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
@@ -793,8 +810,10 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
+    branch, path, exclude = _resolve_defaults(args)
+
     fetch_results = await fetch_upstreams_concurrently(
-        args.upstream, client, branch=args.branch, path=args.path
+        args.upstream, client, branch=branch, path=path
     )
 
     # Sequentially merge the results in the original order
@@ -807,7 +826,7 @@ async def _merge_multiple_upstreams(
             fetch_result.buffer.read(),
             is_ruff_toml=is_upstream_ruff_toml,
             create_if_missing=False,
-            exclude=args.exclude,
+            exclude=exclude,
         )
 
         target_doc = merge_ruff_toml(
@@ -950,6 +969,74 @@ async def check(
     return 1
 
 
+def _get_credential_url(upstreams: tuple[URL, ...]) -> URL | None:
+    for url in upstreams:
+        if url.username or url.password:
+            return url
+    return None
+
+
+def _get_or_create_ruff_sync_table(doc: TOMLDocument) -> tomlkit.items.Table:
+    tool_table = doc.get("tool")
+    if not isinstance(tool_table, tomlkit.items.Table):
+        tool_table = tomlkit.table()
+        # Use assignment (not append) so we replace rather than duplicate the key
+        doc["tool"] = tool_table
+
+    ruff_sync_table = tool_table.get("ruff-sync")
+    if not isinstance(ruff_sync_table, tomlkit.items.Table):
+        ruff_sync_table = tomlkit.table()
+        # Use assignment (not add) so we replace rather than raise KeyAlreadyPresent
+        tool_table["ruff-sync"] = ruff_sync_table
+
+    return ruff_sync_table
+
+
+def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
+    """Serialize the ruff-sync CLI arguments into the TOML document."""
+    bad_url = _get_credential_url(args.upstream)
+    if bad_url:
+        suggested = to_git_url(bad_url)
+        suggestion_msg = f" (e.g., {suggested})" if suggested else ""
+        LOGGER.warning(
+            "⚠️ Upstream URL contains credentials! Refusing to serialize "
+            f"[tool.ruff-sync] configuration. Consider using a SSH git URL instead{suggestion_msg}"
+            " to avoid leaking credentials."
+        )
+        return
+
+    ruff_sync_table = _get_or_create_ruff_sync_table(doc)
+
+    # TODO: Consider only saving upstream if it differs from existing config
+    if len(args.upstream) == 1:
+        ruff_sync_table["upstream"] = str(args.upstream[0])
+    else:
+        urls_array = tomlkit.array()
+        urls_array.multiline(True)
+        for url in args.upstream:
+            urls_array.append(str(url))
+        ruff_sync_table["upstream"] = urls_array
+
+    # Normalize excludes and de-duplicate while preserving order.
+    # Only compute and persist excludes when explicitly provided so that
+    # DEFAULT_EXCLUDE remains an implicit default and is not serialized.
+    if args.exclude is not MISSING:
+        normalized_excludes = list(dict.fromkeys(args.exclude))
+        exclude_array = tomlkit.array()
+        for ex in normalized_excludes:
+            exclude_array.append(ex)
+        ruff_sync_table["exclude"] = exclude_array
+
+    if args.branch is not MISSING:
+        ruff_sync_table["branch"] = args.branch
+
+    if args.path is not MISSING:
+        ruff_sync_table["path"] = args.path
+
+    if args.pre_commit is not MISSING:
+        ruff_sync_table["pre-commit-version-sync"] = args.pre_commit
+
+
 async def pull(
     args: Arguments,
 ) -> int:
@@ -1003,6 +1090,16 @@ async def pull(
             client=client,
         )
 
+    should_save = args.save if args.save is not None else args.init
+    if should_save:
+        if _source_toml_path.name == RuffConfigFileName.PYPROJECT_TOML:
+            LOGGER.info(f"Saving [tool.ruff-sync] configuration to {_source_toml_path.name}")
+            serialize_ruff_sync_config(source_doc, args)
+        else:
+            LOGGER.info(
+                "Skipping [tool.ruff-sync] configuration save because target is not pyproject.toml"
+            )
+
     source_toml_file.write(source_doc)
     try:
         rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
@@ -1010,7 +1107,7 @@ async def pull(
         rel_path = _source_toml_path.resolve()
     print(f"✅ Updated {rel_path}")
 
-    if getattr(args, "pre_commit", False):
+    if args.pre_commit is not MISSING and args.pre_commit:
         sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
     return 0

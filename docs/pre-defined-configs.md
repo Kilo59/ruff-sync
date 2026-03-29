@@ -15,6 +15,12 @@ An exhaustive configuration that explicitly enables and documents almost all ava
 - **Explicit Documentation**: Each rule or category is documented with comments explaining why it's enabled.
 - **Safety First**: Includes security-related rules from `flake8-bandit`.
 
+??? example "View `ruff.toml`"
+
+    ```toml
+    --8<-- "configs/kitchen-sink/ruff.toml"
+    ```
+
 ### Usage
 
 === "Direct URL"
@@ -38,7 +44,7 @@ An exhaustive configuration that explicitly enables and documents almost all ava
 
 ---
 
-## ⚡ FastAPI & Async
+## ⚡ FastAPI & Async {: #fastapi-async }
 
 Tailored specifically for modern, asynchronous web applications. It focuses on performance, correctness in `asyncio` code, and compatibility with popular frameworks like FastAPI and Pydantic.
 
@@ -46,6 +52,12 @@ Tailored specifically for modern, asynchronous web applications. It focuses on p
 - **Asyncio Specialized**: Includes rules for common `asyncio` pitfalls.
 - **Pydantic Support**: Configured to play nicely with Pydantic's naming conventions and model definitions.
 - **Web Security**: Includes essential security checks for web-facing applications.
+
+??? example "View `ruff.toml`"
+
+    ```toml
+    --8<-- "configs/fastapi/ruff.toml"
+    ```
 
 ### Usage
 
@@ -78,6 +90,12 @@ Optimized for data science workflows, focusing on readability and common pattern
 - **Notebook Friendly**: Tailored rules for `.ipynb` files and cell-based development.
 - **Documentation**: Focuses on clear docstrings and type hints for complex data pipelines.
 - **Performance**: Includes rules to catch common performance issues in data processing loops.
+
+??? example "View `ruff.toml`"
+
+    ```toml
+    --8<-- "configs/data-science-engineering/ruff.toml"
+    ```
 
 ### Usage
 

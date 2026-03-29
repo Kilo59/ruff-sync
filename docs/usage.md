@@ -100,7 +100,7 @@ If the upstream repository stores its Python configuration in a specific subdire
     ruff-sync https://github.com/my-org/standards --path tools/ruff.toml
     ```
 
-See the [Pre-defined Configs](pre-defined-configs.md#fastapi--async) page for a real-world example of using the `--path` option, or the [URL Resolution Guide](url-resolution.md) for details on how different paths are resolved.
+See the [Pre-defined Configs](pre-defined-configs.md#fastapi-async) page for a real-world example of using the `--path` option, or the [URL Resolution Guide](url-resolution.md) for details on how different paths are resolved.
 
 ### Excluding Specific Rules
 
@@ -163,7 +163,8 @@ ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commi
 * **`UPSTREAM_URL...`**: One or more URLs to the source `pyproject.toml` or `ruff.toml`. Optional if defined in your local `[tool.ruff-sync]` config. Multiple URLs form a fallback/merge chain. All upstreams are fetched **concurrently**, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.
 * **`--to PATH`**: Where to save the merged config (defaults to the current directory `.`).
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
-* **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist.
+* **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist. This automatically saves the upstream source and any other CLI flags into the `[tool.ruff-sync]` section.
+* **`--save` / `--no-save`**: Force serialization (or prevent serialization) of the provided CLI arguments (like `upstream`, `exclude`, etc.) directly into the `[tool.ruff-sync]` section of the target `pyproject.toml` for future use. Note: any credentials present in the upstream URL will cause this operation to safely abort.
 * **`--pre-commit`**: Sync the `astral-sh/ruff-pre-commit` hook version inside `.pre-commit-config.yaml` with the project's Ruff version.
 
 ### `check`

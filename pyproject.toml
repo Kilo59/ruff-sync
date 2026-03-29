@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.2"
+version = "0.1.3.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -190,6 +190,7 @@ ignore = [
     "S105", # hard-code passwords in tests should be fake
     "S106", # hard-code passwords in tests should be fake
     "PLR2004", # magic values in test comparison is less of a concern
+    "PLR0913", # too many arguments in test functions
     "PLC0415", # lazy imports needed for some tests and fixture setup
     "FBT001", # boolean typed positional arguments common in parametrized tests
     "FBT003", # Boolean positional value in test code is common and less of a concern

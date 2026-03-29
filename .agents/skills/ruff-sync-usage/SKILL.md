@@ -115,7 +115,8 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 ## Gotchas
 
 - **`exclude` uses dotted paths, not TOML paths.** `lint.per-file-ignores` refers to the `per-file-ignores` key inside `[tool.ruff.lint]`. Do NOT write `tool.ruff.lint.per-file-ignores`.
-- **Use `--init` only for new projects.** `ruff-sync` requires an existing `pyproject.toml` or `ruff.toml`. Pass `--init` to scaffold one if the directory is empty.
+- **Use `--init` only for new projects.** `ruff-sync` requires an existing `pyproject.toml` or `ruff.toml`. Pass `--init` to scaffold one if the directory is empty. This will automatically generate a `[tool.ruff-sync]` configuration block for future syncs.
+- **Use `--save` to persist CLI arguments.** If you want to update an existing `pyproject.toml` with a new upstream URL or exclusion, pass `--save` to write the new configuration to the file.
 - **`--semantic` ignores comments and whitespace.** Use it in CI to avoid false positives from cosmetic local edits. Omit it for strict byte-for-byte checks.
 - **SSH URLs trigger a shallow clone.** `git@github.com:...` URLs use `git clone --filter=blob:none --depth=1` — no `git` credential issues as long as SSH auth is configured.
 - **Later upstreams win in `upstream` lists.** In a multi-source list, keys set by entry 2 overwrite keys from entry 1.
