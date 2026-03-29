@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import os
 import pathlib
@@ -916,29 +917,30 @@ def test_cli_output_format_json(
 
     captured = capsys.readouterr()
     output = captured.out + captured.err
-    lines = [line for line in output.splitlines() if line.strip()]
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
 
     # Assert: no GitHub-style annotations in JSON mode
     assert all("::error" not in line for line in lines)
 
-    # At least one line should be valid JSON
-    import json
+    # Collect and parse all JSON records
+    records = [json.loads(line) for line in lines if line.startswith("{")]
 
-    parsed_any = False
-    for line in lines:
-        if not line.strip().startswith("{"):
-            continue
-        try:
-            json_obj = json.loads(line)
-        except ValueError:
-            continue
-        else:
-            assert isinstance(json_obj, dict)
-            assert "level" in json_obj
-            parsed_any = True
-            break
+    assert records, "Expected at least one JSON record in CLI output"
 
-    assert parsed_any, "Expected at least one JSON record in JSON output"
+    # 1. Assert expected fields like 'file' are present
+    assert any("file" in record for record in records), (
+        "Expected at least one JSON record to contain a 'file' field"
+    )
+
+    # 2. Assert presence of an error-level record
+    assert any(record.get("level") == "error" for record in records), (
+        "Expected at least one JSON record with level='error'"
+    )
+
+    # 3. Assert message content mentions "out of sync"
+    assert any("out of sync" in str(record.get("message", "")).lower() for record in records), (
+        "Expected at least one JSON record whose message mentions 'out of sync'"
+    )
 
 
 if __name__ == "__main__":
