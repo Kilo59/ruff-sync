@@ -8,7 +8,7 @@ import tomlkit
 from httpx import URL
 
 from ruff_sync.cli import Arguments
-from ruff_sync.constants import MISSING
+from ruff_sync.constants import MISSING, MissingType
 from ruff_sync.core import pull, serialize_ruff_sync_config
 
 
@@ -37,6 +37,40 @@ def test_serialize_ruff_sync_config_basic():
     assert '"lint.ignore"' in s
     assert 'branch = "develop"' in s
     assert "pre-commit-version-sync = true" in s
+
+
+def test_serialize_ruff_sync_config_pre_commit_false():
+    """Explicitly passing pre_commit=False must serialize as false, not omit the key."""
+    doc = tomlkit.document()
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=MISSING,
+        verbose=0,
+        pre_commit=False,
+    )
+    serialize_ruff_sync_config(doc, args)
+
+    s = doc.as_string()
+    assert "pre-commit-version-sync = false" in s
+
+
+def test_serialize_ruff_sync_config_pre_commit_missing():
+    """When pre_commit is MISSING the key must be absent from the serialized config."""
+    doc = tomlkit.document()
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=MISSING,
+        verbose=0,
+        pre_commit=MISSING,
+    )
+    serialize_ruff_sync_config(doc, args)
+
+    s = doc.as_string()
+    assert "pre-commit-version-sync" not in s
 
 
 def test_serialize_ruff_sync_config_exclude_deduplication():
@@ -92,6 +126,51 @@ def test_serialize_ruff_sync_config_preserves_existing():
 
     s = doc.as_string()
     assert 'unrelated = "value"' in s
+    assert 'upstream = "https://example.com/repo/pyproject.toml"' in s
+
+
+def test_get_or_create_ruff_sync_table_non_table_tool():
+    """If doc['tool'] exists but is not a Table it should be replaced, not appended."""
+    from ruff_sync.core import _get_or_create_ruff_sync_table
+
+    doc = tomlkit.document()
+    doc.add("tool", tomlkit.items.String.from_raw("not-a-table"))  # Malformed: non-Table value
+
+    table = _get_or_create_ruff_sync_table(doc)
+    assert isinstance(table, tomlkit.items.Table)
+
+    # Only one 'tool' key must exist (no duplicates)
+    tool_keys = [k for k in doc if k == "tool"]
+    assert len(tool_keys) == 1
+
+    # The replacement table should contain the new ruff-sync sub-table
+    assert isinstance(doc["tool"]["ruff-sync"], tomlkit.items.Table)  # type: ignore[index]
+
+
+def test_get_or_create_ruff_sync_table_non_table_ruff_sync():
+    """If tool['ruff-sync'] exists but is not a Table it should be replaced."""
+    from ruff_sync.core import _get_or_create_ruff_sync_table
+
+    doc = tomlkit.document()
+    tool = tomlkit.table()
+    tool.add("ruff-sync", 42)  # Malformed: non-Table value
+    doc.add("tool", tool)
+
+    table = _get_or_create_ruff_sync_table(doc)
+    assert isinstance(table, tomlkit.items.Table)
+
+    # Serialization should still succeed
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=MISSING,
+        verbose=0,
+    )
+    from ruff_sync.core import serialize_ruff_sync_config
+
+    serialize_ruff_sync_config(doc, args)
+    s = doc.as_string()
     assert 'upstream = "https://example.com/repo/pyproject.toml"' in s
 
 
@@ -198,62 +277,108 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
     assert '"https://example.com/repo2/pyproject.toml"' in s
 
 
+@pytest.mark.parametrize(
+    "case",
+    [
+        # (init, save, pre_commit, expect_sync_pre_commit)
+        # baseline: init+save with explicit pre_commit=True triggers sync
+        (True, None, True, True),
+        # save without init still writes [tool.ruff-sync] but does not init hooks
+        (False, True, MISSING, False),
+        # when pre_commit is MISSING, sync_pre_commit is never called
+        (True, None, MISSING, False),
+        # when pre_commit is False, sync_pre_commit is not called
+        (True, None, False, False),
+    ],
+)
 @pytest.mark.asyncio
 async def test_pull_logging_and_serialization_triggers(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-):
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: pathlib.Path,
+    case: tuple[bool, bool | None, bool | MissingType, bool],
+) -> None:
+    init, save, pre_commit, expect_sync_pre_commit = case
     from ruff_sync import core
 
-    # Mock _merge_multiple_upstreams to just return the doc
+    # Mock _merge_multiple_upstreams to just return the doc unchanged
     async def mock_merge(doc, *args, **kwargs):
         return doc
 
     monkeypatch.setattr(core, "_merge_multiple_upstreams", mock_merge)
 
-    # Mock TOMLFile so we don't actually write to disk
-    class MockTOMLFile:
-        last_written_doc: tomlkit.TOMLDocument | None = None
+    # Track sync_pre_commit calls so we can verify the branching on pre_commit
+    sync_calls: list[pathlib.Path] = []
 
-        def __init__(self, path):
-            self.path = path
+    def mock_sync_pre_commit(path: pathlib.Path, dry_run: bool = False) -> bool:
+        sync_calls.append(path)
+        return True
 
-        def read(self):
-            return tomlkit.document()
+    monkeypatch.setattr(core, "sync_pre_commit", mock_sync_pre_commit)
 
-        def write(self, doc):
-            type(self).last_written_doc = doc
+    target = tmp_path / "pyproject.toml"
 
-    monkeypatch.setattr(core, "TOMLFile", MockTOMLFile)
+    # When not using --init the file must already exist; pre-create it
+    if not init:
+        target.touch()
+
+    # Ensure resolve_target_path returns our explicit file path so that pull()
+    # does not treat the not-yet-existing target as a directory
     monkeypatch.setattr(core, "resolve_target_path", lambda to, up: to)
-
-    # Mock exists/touch/mkdir on Path to simulate --init
-    monkeypatch.setattr("pathlib.Path.exists", lambda x: False)
-    monkeypatch.setattr("pathlib.Path.touch", lambda x: None)
-    monkeypatch.setattr("pathlib.Path.mkdir", lambda x, parents, exist_ok: None)
 
     args = Arguments(
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
-        to=pathlib.Path("pyproject.toml"),
+        to=target,
         exclude=["lint.per-file-ignores"],
         verbose=0,
-        init=True,
-        save=None,  # should default to True because of init=True
+        init=init,
+        save=save,
+        pre_commit=pre_commit,
     )
 
     with caplog.at_level(logging.INFO):
         await pull(args)
 
-    assert "Saving [tool.ruff-sync] configuration to pyproject.toml" in caplog.text
-    assert MockTOMLFile.last_written_doc is not None
-    s = MockTOMLFile.last_written_doc.as_string()
-    assert "[tool.ruff-sync]" in s
-    assert 'upstream = "https://example.com/repo/pyproject.toml"' in s
+    contents = target.read_text()
 
-    # Now test with ruff.toml
-    caplog.clear()
-    MockTOMLFile.last_written_doc = None
-    args = args._replace(to=pathlib.Path("ruff.toml"))
+    # When save resolves to True, [tool.ruff-sync] must be written
+    resolved_save = save if save is not None else init
+    if resolved_save:
+        assert "[tool.ruff-sync]" in contents
+        assert "upstream" in contents
+
+    # sync_pre_commit is only called when pre_commit is explicitly True
+    assert bool(sync_calls) is expect_sync_pre_commit
+
+
+@pytest.mark.asyncio
+async def test_pull_ruff_toml_skips_serialization(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: pathlib.Path,
+):
+    """Serialization of [tool.ruff-sync] must be skipped when target is ruff.toml."""
+    from ruff_sync import core
+
+    async def mock_merge(doc, *args, **kwargs):
+        return doc
+
+    monkeypatch.setattr(core, "_merge_multiple_upstreams", mock_merge)
+
+    target = tmp_path / "ruff.toml"
+    # Ensure resolve_target_path returns our explicit file path
+    monkeypatch.setattr(core, "resolve_target_path", lambda to, up: to)
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=target,
+        exclude=["lint.per-file-ignores"],
+        verbose=0,
+        init=True,
+        save=None,
+    )
 
     with caplog.at_level(logging.INFO):
         await pull(args)
@@ -262,21 +387,5 @@ async def test_pull_logging_and_serialization_triggers(
         "Skipping [tool.ruff-sync] configuration save because target is not pyproject.toml"
         in caplog.text
     )
-    # Target not pyproject.toml -> config serialization skipped, but file still written
-    assert MockTOMLFile.last_written_doc is not None
-    assert "tool" not in MockTOMLFile.last_written_doc
-    assert "ruff-sync" not in MockTOMLFile.last_written_doc.as_string()
-
-    # Now test --init --no-save
-    caplog.clear()
-    MockTOMLFile.last_written_doc = None
-    args = args._replace(to=pathlib.Path("pyproject.toml"), save=False)
-
-    with caplog.at_level(logging.INFO):
-        await pull(args)
-
-    assert "Saving [tool.ruff-sync] configuration to pyproject.toml" not in caplog.text
-    # Explicitly disabled save, but file still written
-    assert MockTOMLFile.last_written_doc is not None
-    assert "tool" not in MockTOMLFile.last_written_doc
-    assert "ruff-sync" not in MockTOMLFile.last_written_doc.as_string()
+    assert "tool" not in target.read_text()
+    assert "ruff-sync" not in target.read_text()

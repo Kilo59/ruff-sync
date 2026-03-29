@@ -788,6 +788,27 @@ async def fetch_upstreams_concurrently(
         return fetch_results
 
 
+def _resolve_defaults(
+    args: Arguments,
+) -> tuple[str, str | None, Iterable[str]]:
+    """Resolve MISSING sentinel values in args to their effective defaults.
+
+    Returns:
+        A tuple of (branch, path, exclude) with defaults applied.
+        ``path`` is normalised to ``None`` (not ``""``) so callers can
+        forward it directly to :func:`resolve_raw_url` and
+        :func:`fetch_upstreams_concurrently`.
+    """
+    branch = args.branch if args.branch is not MISSING else DEFAULT_BRANCH
+    # Normalise to None so both _merge_multiple_upstreams and cli.main agree
+    # on the representation of "root directory" (resolve_raw_url treats both
+    # None and "" the same, but explicit None is the canonical sentinel).
+    raw_path = args.path if args.path is not MISSING else DEFAULT_PATH
+    path: str | None = raw_path or None
+    exclude = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
+    return branch, path, exclude
+
+
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
@@ -799,10 +820,7 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
-    # Resolve MISSING values to defaults
-    branch = args.branch if args.branch is not MISSING else DEFAULT_BRANCH
-    path = args.path if args.path is not MISSING else DEFAULT_PATH
-    exclude = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
+    branch, path, exclude = _resolve_defaults(args)
 
     fetch_results = await fetch_upstreams_concurrently(
         args.upstream, client, branch=branch, path=path
@@ -972,12 +990,14 @@ def _get_or_create_ruff_sync_table(doc: TOMLDocument) -> tomlkit.items.Table:
     tool_table = doc.get("tool")
     if not isinstance(tool_table, tomlkit.items.Table):
         tool_table = tomlkit.table()
-        doc.append("tool", tool_table)
+        # Use assignment (not append) so we replace rather than duplicate the key
+        doc["tool"] = tool_table
 
     ruff_sync_table = tool_table.get("ruff-sync")
     if not isinstance(ruff_sync_table, tomlkit.items.Table):
         ruff_sync_table = tomlkit.table()
-        tool_table.add("ruff-sync", ruff_sync_table)
+        # Use assignment (not add) so we replace rather than raise KeyAlreadyPresent
+        tool_table["ruff-sync"] = ruff_sync_table
 
     return ruff_sync_table
 
@@ -1007,12 +1027,11 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
             urls_array.append(str(url))
         ruff_sync_table["upstream"] = urls_array
 
-    # Normalize excludes and de-duplicate while preserving order
-    excludes = args.exclude if args.exclude is not MISSING else DEFAULT_EXCLUDE
-    normalized_excludes = list(dict.fromkeys(excludes))
-
-    # Only serialize if not MISSING
+    # Normalize excludes and de-duplicate while preserving order.
+    # Only compute and persist excludes when explicitly provided so that
+    # DEFAULT_EXCLUDE remains an implicit default and is not serialized.
     if args.exclude is not MISSING:
+        normalized_excludes = list(dict.fromkeys(args.exclude))
         exclude_array = tomlkit.array()
         for ex in normalized_excludes:
             exclude_array.append(ex)
