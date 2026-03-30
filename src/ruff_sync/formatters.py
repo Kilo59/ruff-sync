@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Final, Protocol
+from typing import TYPE_CHECKING, Final, Literal, Protocol, TypedDict
 
 if TYPE_CHECKING:
     import pathlib
@@ -307,6 +307,29 @@ class JsonFormatter:
         """No-op for streaming formatters."""
 
 
+class GitlabLines(TypedDict):
+    """GitLab Code Quality report lines."""
+
+    begin: int
+
+
+class GitlabLocation(TypedDict):
+    """GitLab Code Quality report location."""
+
+    path: str
+    lines: GitlabLines
+
+
+class GitlabIssue(TypedDict):
+    """GitLab Code Quality report issue."""
+
+    description: str
+    check_name: str
+    fingerprint: str
+    severity: Literal["info", "minor", "major", "critical", "blocker"]
+    location: GitlabLocation
+
+
 class GitlabFormatter:
     """GitLab Code Quality report formatter.
 
@@ -326,7 +349,7 @@ class GitlabFormatter:
 
     def __init__(self) -> None:
         """Initialise an empty issue list."""
-        self._issues: list[dict[str, Any]] = []
+        self._issues: list[GitlabIssue] = []
 
     # ------------------------------------------------------------------
     # Protocol methods
@@ -405,10 +428,10 @@ class GitlabFormatter:
         self,
         description: str,
         check_name: str,
-        severity: str,
+        severity: Literal["info", "minor", "major", "critical", "blocker"],
         file_path: pathlib.Path | None,
         drift_key: str | None,
-    ) -> dict[str, Any]:
+    ) -> GitlabIssue:
         """Build a single Code Quality issue object."""
         # location.path must be relative to the repo root (no absolute paths).
         path = str(file_path) if file_path else "pyproject.toml"
