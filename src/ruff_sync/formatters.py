@@ -354,14 +354,16 @@ class GitlabFormatter:
     # ------------------------------------------------------------------
 
     def note(self, message: str) -> None:
-        """No-op: status notes are not representable in the Code Quality schema."""
+        """Delegate to logger only; not representable in the Code Quality schema."""
+        LOGGER.info(message)
 
     def info(self, message: str, logger: logging.Logger | None = None) -> None:
         """Delegate to logger only; not included in the structured report."""
         (logger or LOGGER).info(message)
 
     def success(self, message: str) -> None:
-        """No-op: success messages are not representable in the Code Quality schema."""
+        """Delegate to logger only; not representable in the Code Quality schema."""
+        LOGGER.info(message)
 
     def error(
         self,
