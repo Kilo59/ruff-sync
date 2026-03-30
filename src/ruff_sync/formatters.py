@@ -345,8 +345,6 @@ class GitlabFormatter:
     issue was introduced or resolved between branches.
     """
 
-    _DEFAULT_CHECK_NAME: Final[str] = "ruff-sync/config-drift"
-
     def __init__(self) -> None:
         """Initialise an empty issue list."""
         self._issues: list[GitlabIssue] = []
