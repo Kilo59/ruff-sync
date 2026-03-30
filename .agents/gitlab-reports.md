@@ -611,4 +611,4 @@ def test_gitlab_formatter_no_bom(capsys):
 - [Ruff GitLab CI integration](https://docs.astral.sh/ruff/integrations/#gitlab-cicd)
 - [ruff-sync existing formatters](../src/ruff_sync/formatters.py)
 - [ruff-sync OutputFormat enum](../src/ruff_sync/constants.py)
-- [ruff-sync Issue #102 context](../ISSUE_102_CONTEXT.md)
+- [ruff-sync Issue #102 context](./issue-102-context.md)

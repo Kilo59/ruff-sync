@@ -216,4 +216,4 @@ upload structured reports regardless of exit code.
 - [`src/ruff_sync/constants.py`](../src/ruff_sync/constants.py)
 - [`tests/test_formatters.py`](../tests/test_formatters.py)
 - [`.agents/gitlab-reports.md`](./gitlab-reports.md) — GitLab Code Quality implementation spec
-- [`ISSUE_102_CONTEXT.md`](../ISSUE_102_CONTEXT.md) — full feature context for Issue #102
+- [`issue-102-context.md`](./issue-102-context.md) — full feature context for Issue #102
