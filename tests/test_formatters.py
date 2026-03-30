@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from ruff_sync.constants import OutputFormat
+from ruff_sync.constants import MISSING, OutputFormat
 from ruff_sync.formatters import (
     GithubFormatter,
     GitlabFormatter,
@@ -204,7 +204,7 @@ class TestGitlabFormatter:
         assert issues[0]["location"]["lines"]["begin"] == 1
         assert "fingerprint" in issues[0]
         assert "description" in issues[0]
-        assert "check_name" in issues[0]
+        assert issues[0]["check_name"] == "ruff-sync/config-drift"
 
     def test_warning_produces_minor_severity(self, capsys: pytest.CaptureFixture[str]) -> None:
         """warning() must accumulate a minor-severity issue."""
@@ -328,6 +328,143 @@ class TestGitlabFormatter:
 
         fmt.debug("debug msg", logger=mock_logger)  # type: ignore[arg-type]
         assert mock_logger.debug_called
+
+
+class TestJsonFormatterMetadata:
+    """Verify metadata propagation in JsonFormatter."""
+
+    def test_json_formatter_always_includes_check_name(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """JsonFormatter must always include check_name, even if it is the default."""
+        from ruff_sync.formatters import JsonFormatter
+
+        fmt = JsonFormatter()
+        fmt.error("drift")
+        data = json.loads(capsys.readouterr().out)
+        assert data["check_name"] == "ruff-sync/config-drift"
+
+        fmt.warning("stale")
+        data = json.loads(capsys.readouterr().out)
+        assert data["check_name"] == "ruff-sync/config-drift"
+
+
+class SpyFormatter:
+    """A minimal ResultFormatter that tracks calls to ensure they occur."""
+
+    def __init__(self) -> None:
+        """Initialize the spy with state tracking fields."""
+        self.finalized = False
+        self.errors: list[str] = []
+
+    def note(self, message: str) -> None:
+        """No-op note implementation."""
+
+    def info(self, message: str, logger: Any = None) -> None:
+        """No-op info implementation."""
+
+    def success(self, message: str) -> None:
+        """No-op success implementation."""
+
+    def debug(self, message: str, logger: Any = None) -> None:
+        """No-op debug implementation."""
+
+    def diff(self, diff_text: str) -> None:
+        """No-op diff implementation."""
+
+    def error(
+        self,
+        message: str,
+        file_path: Any = None,
+        logger: Any = None,
+        check_name: str = "ruff-sync/config-drift",
+        drift_key: str | None = None,
+    ) -> None:
+        """Record the error message."""
+        self.errors.append(message)
+
+    def warning(
+        self,
+        message: str,
+        file_path: Any = None,
+        logger: Any = None,
+        check_name: str = "ruff-sync/config-drift",
+        drift_key: str | None = None,
+    ) -> None:
+        """No-op warning implementation."""
+
+    def finalize(self) -> None:
+        """Flush the accumulated report and finish the sync process."""
+        self.finalized = True
+
+
+class TestCLILifecycle:
+    """Verify that core.py ensures the formatter lifecycle (finalize) is honored."""
+
+    @pytest.mark.asyncio
+    async def test_check_calls_finalize_on_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """check() must call finalize() even when everything is in sync."""
+        from ruff_sync import core
+
+        spy = SpyFormatter()
+        monkeypatch.setattr(core, "get_formatter", lambda _: spy)
+
+        # Mock dependencies to avoid real IO
+        monkeypatch.setattr(pathlib.Path, "exists", lambda _: True)
+        # Mock TOMLFile.read to return a valid sync config
+        from tomlkit import parse
+
+        content = parse("[tool.ruff]\nline-length = 80")
+        monkeypatch.setattr("ruff_sync.core.TOMLFile.read", lambda _: content)
+
+        async def _mock_merge(*args, **kwargs):
+            return content
+
+        monkeypatch.setattr("ruff_sync.core._merge_multiple_upstreams", _mock_merge)
+
+        from httpx import URL
+
+        from ruff_sync.cli import Arguments
+
+        args = Arguments(
+            command="check",
+            upstream=(URL("https://example.com"),),
+            to=pathlib.Path("pyproject.toml"),
+            exclude=MISSING,
+            verbose=0,
+            output_format=OutputFormat.TEXT,
+        )
+
+        await core.check(args)
+        assert spy.finalized
+
+    @pytest.mark.asyncio
+    async def test_check_calls_finalize_on_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """check() must call finalize() even when an exception occurs."""
+        from ruff_sync import core
+
+        spy = SpyFormatter()
+        monkeypatch.setattr(core, "get_formatter", lambda _: spy)
+
+        # Force an early return/error by making the file not exist
+        monkeypatch.setattr(pathlib.Path, "exists", lambda _: False)
+
+        from httpx import URL
+
+        from ruff_sync.cli import Arguments
+
+        args = Arguments(
+            command="check",
+            upstream=(URL("https://example.com"),),
+            to=pathlib.Path("nonexistent.toml"),
+            exclude=MISSING,
+            verbose=0,
+            output_format=OutputFormat.TEXT,
+        )
+
+        await core.check(args)
+        assert len(spy.errors) > 0
+        assert spy.finalized
 
 
 def test_get_formatter_factory() -> None:

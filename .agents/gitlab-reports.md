@@ -516,28 +516,24 @@ Use a different `check_name` per upstream if needed (e.g., `ruff-sync/upstream-1
 |---|---|
 | `src/ruff_sync/constants.py` | Add `GITLAB = "gitlab"` to `OutputFormat` enum |
 | `src/ruff_sync/formatters.py` | Add `GitlabFormatter` class; update `get_formatter` |
-| `src/ruff_sync/cli.py` | Ensure `finalize()` is called after `check()` / `pull()` when format is `gitlab` |
+| `src/ruff_sync/core.py` | Ensure `finalize()` is called after `check()` / `pull()` via `try...finally` |
 | `.agents/skills/ruff-sync-usage/references/ci-integration.md` | Document `--output-format gitlab` |
 
-### `finalize()` Call Site (in `cli.py`)
+### 10.3 `finalize()` Call Site (in `core.py`)
 
-The `check()` and `pull()` coroutines must ensure `finalize()` is called. Use `try...finally`:
+Every formatter in the `ResultFormatter` protocol provides the `finalize()` method.
+The `check()` and `pull()` coroutines in `core.py` ensure it is always called
+unconditionally via a `try...finally` block:
 
 ```python
-fmt = get_formatter(exec_args.output_format)
+fmt = get_formatter(args.output_format)
 try:
-    exit_code = await check(exec_args, fmt=fmt)
+    ...
 finally:
-    if hasattr(fmt, "finalize"):
-        fmt.finalize()   # Writes the JSON array to stdout (piped to file by CI)
+    fmt.finalize()   # Writes the JSON array to stdout (piped to file by CI)
 ```
 
-Or, more explicitly, check for `GitlabFormatter`:
-
-```python
-if isinstance(fmt, GitlabFormatter):
-    fmt.finalize()
-```
+**Do not** guard the call with `isinstance` or `hasattr` checks.
 
 ### Exit Codes (Unchanged)
 

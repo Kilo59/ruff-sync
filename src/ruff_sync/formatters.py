@@ -269,8 +269,7 @@ class JsonFormatter:
             data["logger"] = logger.name
         if drift_key:
             data["drift_key"] = drift_key
-        if check_name != _DEFAULT_CHECK_NAME:
-            data["check_name"] = check_name
+        data["check_name"] = check_name
         print(json.dumps(data))
 
     def warning(
@@ -289,8 +288,7 @@ class JsonFormatter:
             data["logger"] = logger.name
         if drift_key:
             data["drift_key"] = drift_key
-        if check_name != _DEFAULT_CHECK_NAME:
-            data["check_name"] = check_name
+        data["check_name"] = check_name
         print(json.dumps(data))
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:

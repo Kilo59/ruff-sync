@@ -48,7 +48,7 @@ Defined in `src/ruff_sync/formatters.py`.
 | `warning(message, file_path, logger, check_name, drift_key)` | Non-fatal issue (e.g. stale pre-commit hook) | See §Semantic Fields |
 | `debug(message, logger)` | Verbose internal state | Streaming |
 | `diff(diff_text)` | Unified diff between upstream and local | Intentionally ignored by structured formatters |
-| `finalize()` | **Always called in a `try…finally` by `cli.py`** | No-op for streaming; writes report for accumulating |
+| `finalize()` | **Always called in a `try…finally` by `core.py`** | No-op for streaming; writes report for accumulating |
 
 ### Semantic Fields on `error()` and `warning()`
 
@@ -141,12 +141,15 @@ this even when `UpstreamError` or another exception occurs.
 
 ---
 
-## `finalize()` Call Site in `cli.py`
+## `finalize()` Call Site
+
+`finalize()` is always called in a `try…finally` block within `core.py`’s
+`check()` and `pull()` coroutines:
 
 ```python
-fmt = get_formatter(exec_args.output_format)
+fmt = get_formatter(args.output_format)
 try:
-    exit_code = await check(exec_args, fmt=fmt)
+    ...
 finally:
     fmt.finalize()   # no-op for streaming; flushes JSON for accumulating
 ```
