@@ -149,6 +149,7 @@ class TestJsonFormatterSpecifics:
         if method in ("error", "warning"):
             kwargs["file_path"] = file_path
             kwargs["drift_key"] = "lint.select"
+            kwargs["check_name"] = "custom-check"
 
         getattr(fmt, method)("msg", **kwargs)
 
@@ -157,10 +158,32 @@ class TestJsonFormatterSpecifics:
         if method in ("error", "warning"):
             assert data["file"] == "f.py"
             assert data["drift_key"] == "lint.select"
+            assert data["check_name"] == "custom-check"
 
 
 class TestGitlabFormatter:
     """Tests for GitlabFormatter (GitLab Code Quality report format)."""
+
+    def test_default_path_when_file_path_is_none(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """When file_path is None, GitlabFormatter should default to 'pyproject.toml'."""
+        fmt = GitlabFormatter()
+        fmt.error("drift", file_path=None)
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert len(issues) == 1
+        assert issues[0]["location"]["path"] == "pyproject.toml"
+
+    def test_absolute_path_normalization(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """GitlabFormatter must normalize absolute paths to be relative to CWD."""
+        fmt = GitlabFormatter()
+        cwd = pathlib.Path.cwd()
+        abs_path = cwd / "subdir" / "pyproject.toml"
+
+        fmt.error("drift", file_path=abs_path)
+        fmt.finalize()
+
+        issues = json.loads(capsys.readouterr().out)
+        assert issues[0]["location"]["path"] == "subdir/pyproject.toml"
 
     def test_finalize_empty_produces_empty_array(self, capsys: pytest.CaptureFixture[str]) -> None:
         """An empty formatter must emit [] — the GitLab 'no issues' signal."""

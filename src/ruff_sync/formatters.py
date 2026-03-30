@@ -5,10 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from typing import TYPE_CHECKING, Final, Literal, Protocol, TypedDict
-
-if TYPE_CHECKING:
-    import pathlib
+import pathlib
+from typing import Final, Literal, Protocol, TypedDict
 
 from ruff_sync.constants import OutputFormat
 
@@ -433,8 +431,20 @@ class GitlabFormatter:
         drift_key: str | None,
     ) -> GitlabIssue:
         """Build a single Code Quality issue object."""
-        # location.path must be relative to the repo root (no absolute paths).
-        path = str(file_path) if file_path else "pyproject.toml"
+        # Normalize location.path to be relative to the repo root (no absolute paths).
+        if file_path:
+            if file_path.is_absolute():
+                try:
+                    path = str(file_path.relative_to(pathlib.Path.cwd()))
+                except ValueError:
+                    # Not under CWD, keep as is or just use name?
+                    # GitLab prefers relative to root. If it's outside, we can't do much.
+                    path = str(file_path)
+            else:
+                path = str(file_path)
+        else:
+            path = "pyproject.toml"
+
         return {
             "description": description,
             "check_name": check_name,
