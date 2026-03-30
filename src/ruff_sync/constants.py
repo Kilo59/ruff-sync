@@ -52,6 +52,7 @@ class OutputFormat(str, enum.Enum):
     TEXT = "text"
     JSON = "json"
     GITHUB = "github"
+    GITLAB = "gitlab"
 
     @override
     def __str__(self) -> str:

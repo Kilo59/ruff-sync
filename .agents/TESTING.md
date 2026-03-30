@@ -51,7 +51,13 @@ def test_merge_scenarios(source, upstream, expected_keys):
 ### 3.3 No Autouse Fixtures
 `autouse=True` fixtures are **never allowed**. They hide setup logic and can cause non-obvious side effects or dependencies between tests. All fixtures used by a test must be explicitly requested in the test function's arguments.
 
-### 3.4 Main Entry Point
+### 3.4 No unittest.mock
+The use of `unittest.mock` or `MagicMock` is strictly forbidden because it encourages bad design and tests that lie to you. Any kind of patching is discouraged. Instead, follow these patterns:
+1. **Dependency Injection (DI)**: Design code so that dependencies (like loggers or configurations) are passed in, rather than hard-coded. This allows for simple "Spies" or test-specific objects to be used without patching.
+2. **Dedicated Libraries**: Use `respx` for HTTP and `pyfakefs` for filesystem operations to mock at the IO layer.
+3. **Monkeypatch (as a last resort)**: If a dependency is truly external and not easily injectable (e.g., a global function in a library), use the built-in `monkeypatch` fixture. However, always check if the code can be redesigned for DI first.
+
+### 3.5 Main Entry Point
 Every test file **must** end with a main entry point block. This ensures each file is independently executable as a script (`python tests/test_foo.py`).
 
 ```python
