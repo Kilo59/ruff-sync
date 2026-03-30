@@ -247,6 +247,56 @@ class TestGitlabFormatter:
         fp2 = json.loads(capsys.readouterr().out)[0]["fingerprint"]
         assert fp1 == fp2
 
+    def test_absolute_path_outside_cwd_normalization(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """If an absolute path is outside CWD, it must fall back to the filename."""
+        fmt = GitlabFormatter()
+        # Use a path that is guaranteed to be outside the project root/CWD
+        outside_path = pathlib.Path("/external.toml")
+
+        fmt.error("drift", file_path=outside_path)
+        fmt.finalize()
+
+        issues = json.loads(capsys.readouterr().out)
+        assert issues[0]["location"]["path"] == "external.toml"
+
+    def test_fingerprint_includes_check_name(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Different check_names on the same file/key must produce distinct fingerprints."""
+        fmt = GitlabFormatter()
+        path = pathlib.Path("pyproject.toml")
+
+        fmt.error("drift", file_path=path, drift_key="lint.select", check_name="rule-1")
+        fmt.error("drift", file_path=path, drift_key="lint.select", check_name="rule-2")
+        fmt.finalize()
+
+        issues = json.loads(capsys.readouterr().out)
+        assert issues[0]["fingerprint"] != issues[1]["fingerprint"]
+
+    def test_distinct_fingerprints_no_drift_key(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Omitting drift_key must still produce stable and distinct fingerprints."""
+        fmt1 = GitlabFormatter()
+        fmt2 = GitlabFormatter()
+        path1 = pathlib.Path("pyproject.toml")
+        path2 = pathlib.Path("ruff.toml")
+
+        # Stable for same path
+        fmt1.error("drift", file_path=path1, drift_key=None)
+        fmt2.error("drift", file_path=path1, drift_key=None)
+        fmt1.finalize()
+        fp1_a = json.loads(capsys.readouterr().out)[0]["fingerprint"]
+        fmt2.finalize()
+        fp1_b = json.loads(capsys.readouterr().out)[0]["fingerprint"]
+        assert fp1_a == fp1_b
+
+        # Distinct for different paths
+        fmt1 = GitlabFormatter()
+        fmt1.error("drift", file_path=path1, drift_key=None)
+        fmt1.error("drift", file_path=path2, drift_key=None)
+        fmt1.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert issues[0]["fingerprint"] != issues[1]["fingerprint"]
+
     def test_no_bom_in_output(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Output must not start with a UTF-8 BOM (GitLab rejects BOM-prefixed JSON)."""
         fmt = GitlabFormatter()

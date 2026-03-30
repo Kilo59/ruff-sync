@@ -439,9 +439,9 @@ class GitlabFormatter:
                 try:
                     path = str(file_path.relative_to(pathlib.Path.cwd()))
                 except ValueError:
-                    # Not under CWD, keep as is or just use name?
-                    # GitLab prefers relative to root. If it's outside, we can't do much.
-                    path = str(file_path)
+                    # If the absolute path is outside the CWD (repo root in CI),
+                    # fall back to the filename so GitLab can at least attempt a map.
+                    path = file_path.name
             else:
                 path = str(file_path)
         else:
@@ -450,20 +450,21 @@ class GitlabFormatter:
         return {
             "description": description,
             "check_name": check_name,
-            "fingerprint": self._make_fingerprint(path, drift_key),
+            "fingerprint": self._make_fingerprint(path, check_name, drift_key),
             "severity": severity,
             "location": {"path": path, "lines": {"begin": 1}},
         }
 
     @staticmethod
-    def _make_fingerprint(path: str, drift_key: str | None) -> str:
+    def _make_fingerprint(path: str, check_name: str, drift_key: str | None) -> str:
         """Return a stable MD5 fingerprint for a Code Quality issue.
 
         The fingerprint must be deterministic (same inputs → same output on
         every pipeline run) so GitLab can track introduced vs resolved issues.
         Never include timestamps, UUIDs, or any other runtime-variable data.
         """
-        raw = f"ruff-sync:drift:{path}:{drift_key}" if drift_key else f"ruff-sync:drift:{path}"
+        # Include check_name to prevent collisions if multiple rules trigger on the same key.
+        raw = f"ruff-sync:{check_name}:{path}:{drift_key or ''}"
         return hashlib.md5(raw.encode()).hexdigest()  # noqa: S324
 
 
