@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
-from typing import TYPE_CHECKING, Final, Protocol
+from typing import TYPE_CHECKING, Any, Final, Protocol
 
 if TYPE_CHECKING:
     import pathlib
@@ -306,6 +307,131 @@ class JsonFormatter:
         """No-op for streaming formatters."""
 
 
+class GitlabFormatter:
+    """GitLab Code Quality report formatter.
+
+    Accumulates issues during the run and writes a single valid JSON array to
+    stdout in ``finalize()``.  The CI job redirects stdout to a file::
+
+        ruff-sync check --output-format gitlab > gl-code-quality-report.json
+
+    An empty array (``[]``) is emitted when no issues were collected, which
+    signals to GitLab that previously reported issues are now resolved.
+
+    Fingerprints are deterministic MD5 hashes so GitLab can track whether an
+    issue was introduced or resolved between branches.
+    """
+
+    _DEFAULT_CHECK_NAME: Final[str] = "ruff-sync/config-drift"
+
+    def __init__(self) -> None:
+        """Initialise an empty issue list."""
+        self._issues: list[dict[str, Any]] = []
+
+    # ------------------------------------------------------------------
+    # Protocol methods
+    # ------------------------------------------------------------------
+
+    def note(self, message: str) -> None:
+        """No-op: status notes are not representable in the Code Quality schema."""
+
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
+        """Delegate to logger only; not included in the structured report."""
+        (logger or LOGGER).info(message)
+
+    def success(self, message: str) -> None:
+        """No-op: success messages are not representable in the Code Quality schema."""
+
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
+    ) -> None:
+        """Accumulate a major-severity Code Quality issue."""
+        (logger or LOGGER).error(message)
+        self._issues.append(
+            self._make_issue(
+                description=message,
+                check_name=check_name,
+                severity="major",
+                file_path=file_path,
+                drift_key=drift_key,
+            )
+        )
+
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
+    ) -> None:
+        """Accumulate a minor-severity Code Quality issue."""
+        (logger or LOGGER).warning(message)
+        self._issues.append(
+            self._make_issue(
+                description=message,
+                check_name=check_name,
+                severity="minor",
+                file_path=file_path,
+                drift_key=drift_key,
+            )
+        )
+
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
+        """Delegate to logger only; not included in the structured report."""
+        (logger or LOGGER).debug(message)
+
+    def diff(self, diff_text: str) -> None:
+        """Ignored by structured formatters — diffs are not representable in JSON report schemas."""
+
+    def finalize(self) -> None:
+        """Write the collected issues as a GitLab Code Quality JSON array to stdout.
+
+        Always produces valid JSON: an empty array ``[]`` when no issues were
+        collected (signals resolution of previously reported issues to GitLab).
+        """
+        print(json.dumps(self._issues, indent=2))
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _make_issue(
+        self,
+        description: str,
+        check_name: str,
+        severity: str,
+        file_path: pathlib.Path | None,
+        drift_key: str | None,
+    ) -> dict[str, Any]:
+        """Build a single Code Quality issue object."""
+        # location.path must be relative to the repo root (no absolute paths).
+        path = str(file_path) if file_path else "pyproject.toml"
+        return {
+            "description": description,
+            "check_name": check_name,
+            "fingerprint": self._make_fingerprint(path, drift_key),
+            "severity": severity,
+            "location": {"path": path, "lines": {"begin": 1}},
+        }
+
+    @staticmethod
+    def _make_fingerprint(path: str, drift_key: str | None) -> str:
+        """Return a stable MD5 fingerprint for a Code Quality issue.
+
+        The fingerprint must be deterministic (same inputs → same output on
+        every pipeline run) so GitLab can track introduced vs resolved issues.
+        Never include timestamps, UUIDs, or any other runtime-variable data.
+        """
+        raw = f"ruff-sync:drift:{path}:{drift_key}" if drift_key else f"ruff-sync:drift:{path}"
+        return hashlib.md5(raw.encode()).hexdigest()  # noqa: S324
+
+
 def get_formatter(output_format: OutputFormat) -> ResultFormatter:
     """Return the corresponding formatter for the given format."""
     match output_format:
@@ -316,7 +442,4 @@ def get_formatter(output_format: OutputFormat) -> ResultFormatter:
         case OutputFormat.JSON:
             return JsonFormatter()
         case OutputFormat.GITLAB:
-            # GitlabFormatter will be implemented in a follow-up.
-            # Fall back to JsonFormatter until then so the enum value is
-            # already wired up and the match is exhaustive.
-            return JsonFormatter()
+            return GitlabFormatter()

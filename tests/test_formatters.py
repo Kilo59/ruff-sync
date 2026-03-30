@@ -10,6 +10,7 @@ import pytest
 from ruff_sync.constants import OutputFormat
 from ruff_sync.formatters import (
     GithubFormatter,
+    GitlabFormatter,
     JsonFormatter,
     TextFormatter,
     get_formatter,
@@ -156,14 +157,118 @@ class TestJsonFormatterSpecifics:
             assert data["file"] == "f.py"
 
 
+class TestGitlabFormatter:
+    """Tests for GitlabFormatter (GitLab Code Quality report format)."""
+
+    def test_finalize_empty_produces_empty_array(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """An empty formatter must emit [] — the GitLab 'no issues' signal."""
+        fmt = GitlabFormatter()
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert issues == []
+
+    def test_error_produces_major_severity(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """error() must accumulate a major-severity issue."""
+        fmt = GitlabFormatter()
+        fmt.error("drift found", file_path=pathlib.Path("pyproject.toml"))
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert len(issues) == 1
+        assert issues[0]["severity"] == "major"
+        assert issues[0]["location"]["path"] == "pyproject.toml"
+        assert issues[0]["location"]["lines"]["begin"] == 1
+        assert "fingerprint" in issues[0]
+        assert "description" in issues[0]
+        assert "check_name" in issues[0]
+
+    def test_warning_produces_minor_severity(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """warning() must accumulate a minor-severity issue."""
+        fmt = GitlabFormatter()
+        fmt.warning("stale hook", file_path=pathlib.Path(".pre-commit-config.yaml"))
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert len(issues) == 1
+        assert issues[0]["severity"] == "minor"
+
+    def test_custom_check_name_is_preserved(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """A caller-supplied check_name must appear in the issue object."""
+        fmt = GitlabFormatter()
+        fmt.error("hook stale", check_name="ruff-sync/precommit-stale")
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert issues[0]["check_name"] == "ruff-sync/precommit-stale"
+
+    def test_drift_key_produces_distinct_fingerprints(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Different drift_key values must yield different fingerprints."""
+        fmt = GitlabFormatter()
+        fmt.error("drift", file_path=pathlib.Path("pyproject.toml"), drift_key="lint.select")
+        fmt.error("drift", file_path=pathlib.Path("pyproject.toml"), drift_key="target-version")
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert issues[0]["fingerprint"] != issues[1]["fingerprint"]
+
+    def test_fingerprint_is_stable(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Same inputs must produce the same fingerprint across multiple instances."""
+        fmt1 = GitlabFormatter()
+        fmt2 = GitlabFormatter()
+        fp = pathlib.Path("pyproject.toml")
+        fmt1.error("drift found", file_path=fp, drift_key="lint.select")
+        fmt2.error("drift found", file_path=fp, drift_key="lint.select")
+        fmt1.finalize()
+        fp1 = json.loads(capsys.readouterr().out)[0]["fingerprint"]
+        fmt2.finalize()
+        fp2 = json.loads(capsys.readouterr().out)[0]["fingerprint"]
+        assert fp1 == fp2
+
+    def test_no_bom_in_output(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Output must not start with a UTF-8 BOM (GitLab rejects BOM-prefixed JSON)."""
+        fmt = GitlabFormatter()
+        fmt.finalize()
+        assert not capsys.readouterr().out.startswith("\ufeff")
+
+    def test_multiple_issues_accumulated(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """All error() and warning() calls must appear in the final JSON array."""
+        fmt = GitlabFormatter()
+        fmt.error("error one", file_path=pathlib.Path("pyproject.toml"), drift_key="lint.select")
+        fmt.warning(
+            "warn one",
+            file_path=pathlib.Path("pyproject.toml"),
+            drift_key="target-version",
+        )
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert len(issues) == 2
+        assert issues[0]["severity"] == "major"
+        assert issues[1]["severity"] == "minor"
+
+    def test_note_and_success_do_not_produce_issues(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """note() and success() must not populate the issue list."""
+        fmt = GitlabFormatter()
+        fmt.note("checking...")
+        fmt.success("✅ in sync")
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert issues == []
+
+    def test_diff_is_ignored(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """diff() must not add any issue to the report."""
+        fmt = GitlabFormatter()
+        fmt.diff("--- a\n+++ b\n@@ ...")
+        fmt.finalize()
+        issues = json.loads(capsys.readouterr().out)
+        assert issues == []
+
+
 def test_get_formatter_factory() -> None:
     """Verify get_formatter returns correct types for all OutputFormat values."""
     assert isinstance(get_formatter(OutputFormat.TEXT), TextFormatter)
     assert isinstance(get_formatter(OutputFormat.JSON), JsonFormatter)
     assert isinstance(get_formatter(OutputFormat.GITHUB), GithubFormatter)
-    # GITLAB is a placeholder until GitlabFormatter is implemented; it
-    # currently falls back to JsonFormatter so the enum value is wired up.
-    assert isinstance(get_formatter(OutputFormat.GITLAB), JsonFormatter)
+    assert isinstance(get_formatter(OutputFormat.GITLAB), GitlabFormatter)
 
 
 if __name__ == "__main__":

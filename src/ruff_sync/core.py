@@ -914,84 +914,87 @@ async def check(
         >>> # asyncio.run(check(args))
     """
     fmt = get_formatter(args.output_format)
-    fmt.note("🔍 Checking Ruff sync status...")
+    try:
+        fmt.note("🔍 Checking Ruff sync status...")
 
-    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
-    if not _source_toml_path.exists():
-        fmt.error(
-            f"❌ Configuration file {_source_toml_path} does not exist. "
-            "Run 'ruff-sync pull' to create it.",
-            file_path=_source_toml_path,
-            logger=LOGGER,
-        )
-        return 1
+        _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
+        if not _source_toml_path.exists():
+            fmt.error(
+                f"❌ Configuration file {_source_toml_path} does not exist. "
+                "Run 'ruff-sync pull' to create it.",
+                file_path=_source_toml_path,
+                logger=LOGGER,
+            )
+            return 1
 
-    source_toml_file = TOMLFile(_source_toml_path)
-    source_doc = source_toml_file.read()
+        source_toml_file = TOMLFile(_source_toml_path)
+        source_doc = source_toml_file.read()
 
-    # Create a copy for comparison
-    source_doc_copy = tomlkit.parse(source_doc.as_string())
-    merged_doc = source_doc_copy
+        # Create a copy for comparison
+        source_doc_copy = tomlkit.parse(source_doc.as_string())
+        merged_doc = source_doc_copy
 
-    async with httpx.AsyncClient() as client:
-        merged_doc = await _merge_multiple_upstreams(
-            merged_doc,
-            is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-            args=args,
-            client=client,
-        )
+        async with httpx.AsyncClient() as client:
+            merged_doc = await _merge_multiple_upstreams(
+                merged_doc,
+                is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
+                args=args,
+                client=client,
+            )
 
-    is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-    source_val: Any = None
-    merged_val: Any = None
-    if args.semantic:
-        if is_source_ruff_toml:
-            source_ruff = source_doc
-            merged_ruff = merged_doc
-        else:
-            source_ruff = source_doc.get("tool", {}).get("ruff")
-            merged_ruff = merged_doc.get("tool", {}).get("ruff")
+        is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+        source_val: Any = None
+        merged_val: Any = None
+        if args.semantic:
+            if is_source_ruff_toml:
+                source_ruff = source_doc
+                merged_ruff = merged_doc
+            else:
+                source_ruff = source_doc.get("tool", {}).get("ruff")
+                merged_ruff = merged_doc.get("tool", {}).get("ruff")
 
-        # Compare unwrapped versions
-        source_val = source_ruff.unwrap() if source_ruff is not None else None
-        merged_val = merged_ruff.unwrap() if merged_ruff is not None else None
+            # Compare unwrapped versions
+            source_val = source_ruff.unwrap() if source_ruff is not None else None
+            merged_val = merged_ruff.unwrap() if merged_ruff is not None else None
 
-        if source_val == merged_val:
-            fmt.success("✅ Ruff configuration is semantically in sync.")
+            if source_val == merged_val:
+                fmt.success("✅ Ruff configuration is semantically in sync.")
+                exit_code = _check_pre_commit_sync(args, fmt)
+                if exit_code is not None:
+                    return exit_code
+                return 0
+        elif source_doc.as_string() == merged_doc.as_string():
+            fmt.success("✅ Ruff configuration is in sync.")
             exit_code = _check_pre_commit_sync(args, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
-    elif source_doc.as_string() == merged_doc.as_string():
-        fmt.success("✅ Ruff configuration is in sync.")
-        exit_code = _check_pre_commit_sync(args, fmt)
-        if exit_code is not None:
-            return exit_code
-        return 0
 
-    try:
-        rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
-    except ValueError:
-        rel_path = _source_toml_path
-    fmt.error(
-        f"❌ Ruff configuration at {rel_path} is out of sync! Run `ruff-sync` to update.",
-        file_path=rel_path,
-        logger=LOGGER,
-    )
-
-    if args.diff:
-        _print_diff(
-            args=args,
-            fmt=fmt,
-            ctx=DiffContext(
-                source_toml_path=_source_toml_path,
-                source_doc=source_doc,
-                merged_doc=merged_doc,
-                source_val=source_val,
-                merged_val=merged_val,
-            ),
+        try:
+            rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
+        except ValueError:
+            rel_path = _source_toml_path
+        fmt.error(
+            f"❌ Ruff configuration at {rel_path} is out of sync! Run `ruff-sync` to update.",
+            file_path=rel_path,
+            logger=LOGGER,
         )
-    return 1
+
+        if args.diff:
+            _print_diff(
+                args=args,
+                fmt=fmt,
+                ctx=DiffContext(
+                    source_toml_path=_source_toml_path,
+                    source_doc=source_doc,
+                    merged_doc=merged_doc,
+                    source_val=source_val,
+                    merged_val=merged_val,
+                ),
+            )
+        return 1
+    finally:
+        fmt.finalize()
 
 
 def _get_credential_url(upstreams: tuple[URL, ...]) -> URL | None:
@@ -1085,57 +1088,61 @@ async def pull(
         >>> # asyncio.run(pull(args))
     """
     fmt = get_formatter(args.output_format)
-    fmt.note("🔄 Syncing Ruff...")
-    _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
+    try:
+        fmt.note("🔄 Syncing Ruff...")
+        _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
 
-    source_toml_file = TOMLFile(_source_toml_path)
-    if _source_toml_path.exists():
-        source_doc = source_toml_file.read()
-    elif args.init:
-        LOGGER.info(f"✨ Target file {_source_toml_path} does not exist, creating it.")
-        source_doc = tomlkit.document()
-        # Scaffold the file immediately to ensure we can write to the enclosing directory
-        try:
-            _source_toml_path.parent.mkdir(parents=True, exist_ok=True)
-            _source_toml_path.touch()
-        except OSError as e:
-            fmt.error(f"❌ Failed to create {_source_toml_path}: {e}", logger=LOGGER)
-            return 1
-    else:
-        fmt.error(
-            f"❌ Configuration file {_source_toml_path} does not exist. "
-            "Pass the '--init' flag to create it.",
-            file_path=_source_toml_path,
-            logger=LOGGER,
-        )
-        return 1
-
-    async with httpx.AsyncClient() as client:
-        source_doc = await _merge_multiple_upstreams(
-            source_doc,
-            is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-            args=args,
-            client=client,
-        )
-
-    should_save = args.save if args.save is not None else args.init
-    if should_save:
-        if _source_toml_path.name == RuffConfigFileName.PYPROJECT_TOML:
-            LOGGER.info(f"Saving [tool.ruff-sync] configuration to {_source_toml_path.name}")
-            serialize_ruff_sync_config(source_doc, args)
+        source_toml_file = TOMLFile(_source_toml_path)
+        if _source_toml_path.exists():
+            source_doc = source_toml_file.read()
+        elif args.init:
+            LOGGER.info(f"✨ Target file {_source_toml_path} does not exist, creating it.")
+            source_doc = tomlkit.document()
+            # Scaffold the file immediately to ensure we can write to the enclosing directory
+            try:
+                _source_toml_path.parent.mkdir(parents=True, exist_ok=True)
+                _source_toml_path.touch()
+            except OSError as e:
+                fmt.error(f"❌ Failed to create {_source_toml_path}: {e}", logger=LOGGER)
+                return 1
         else:
-            LOGGER.info(
-                "Skipping [tool.ruff-sync] configuration save because target is not pyproject.toml"
+            fmt.error(
+                f"❌ Configuration file {_source_toml_path} does not exist. "
+                "Pass the '--init' flag to create it.",
+                file_path=_source_toml_path,
+                logger=LOGGER,
+            )
+            return 1
+
+        async with httpx.AsyncClient() as client:
+            source_doc = await _merge_multiple_upstreams(
+                source_doc,
+                is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
+                args=args,
+                client=client,
             )
 
-    source_toml_file.write(source_doc)
-    try:
-        rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
-    except ValueError:
-        rel_path = _source_toml_path.resolve()
-    fmt.success(f"✅ Updated {rel_path}")
+        should_save = args.save if args.save is not None else args.init
+        if should_save:
+            if _source_toml_path.name == RuffConfigFileName.PYPROJECT_TOML:
+                LOGGER.info(f"Saving [tool.ruff-sync] configuration to {_source_toml_path.name}")
+                serialize_ruff_sync_config(source_doc, args)
+            else:
+                LOGGER.info(
+                    "Skipping [tool.ruff-sync] configuration save "
+                    "because target is not pyproject.toml"
+                )
 
-    if args.pre_commit is not MISSING and args.pre_commit:
-        sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
+        source_toml_file.write(source_doc)
+        try:
+            rel_path = _source_toml_path.resolve().relative_to(pathlib.Path.cwd())
+        except ValueError:
+            rel_path = _source_toml_path.resolve()
+        fmt.success(f"✅ Updated {rel_path}")
 
-    return 0
+        if args.pre_commit is not MISSING and args.pre_commit:
+            sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
+
+        return 0
+    finally:
+        fmt.finalize()
