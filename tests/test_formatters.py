@@ -144,10 +144,11 @@ class TestJsonFormatterSpecifics:
         logger = logging.getLogger("custom")
         file_path = pathlib.Path("f.py")
 
-        # Call the method with all possible extras (only error/warning take file_path)
+        # Call the method with all possible extras (only error/warning take file_path and drift_key)
         kwargs: dict[str, Any] = {"logger": logger}
         if method in ("error", "warning"):
             kwargs["file_path"] = file_path
+            kwargs["drift_key"] = "lint.select"
 
         getattr(fmt, method)("msg", **kwargs)
 
@@ -155,6 +156,7 @@ class TestJsonFormatterSpecifics:
         assert data["logger"] == "custom"
         if method in ("error", "warning"):
             assert data["file"] == "f.py"
+            assert data["drift_key"] == "lint.select"
 
 
 class TestGitlabFormatter:
@@ -261,6 +263,48 @@ class TestGitlabFormatter:
         fmt.finalize()
         issues = json.loads(capsys.readouterr().out)
         assert issues == []
+
+    def test_diagnostic_methods_delegate_to_logger(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Verify diagnostic methods (info, debug, note, success) delegate to the logger."""
+        fmt = GitlabFormatter()
+
+        # note/success/info log at INFO level
+        with caplog.at_level(logging.INFO, logger="ruff_sync.formatters"):
+            fmt.note("note msg")
+            fmt.success("success msg")
+            fmt.info("info msg")
+
+        # debug logs at DEBUG level
+        with caplog.at_level(logging.DEBUG, logger="ruff_sync.formatters"):
+            fmt.debug("debug msg")
+
+        assert "note msg" in caplog.text
+        assert "success msg" in caplog.text
+        assert "info msg" in caplog.text
+        assert "debug msg" in caplog.text
+
+    def test_custom_logger_delegation(self) -> None:
+        """Verify diagnostic methods delegate to a custom logger if provided."""
+        fmt = GitlabFormatter()
+
+        class LoggerSpy:
+            def __init__(self) -> None:
+                self.info_called = False
+                self.debug_called = False
+
+            def info(self, msg: str) -> None:
+                self.info_called = True
+
+            def debug(self, msg: str) -> None:
+                self.debug_called = True
+
+        mock_logger = LoggerSpy()
+
+        fmt.info("info msg", logger=mock_logger)  # type: ignore[arg-type]
+        assert mock_logger.info_called
+
+        fmt.debug("debug msg", logger=mock_logger)  # type: ignore[arg-type]
+        assert mock_logger.debug_called
 
 
 def test_get_formatter_factory() -> None:

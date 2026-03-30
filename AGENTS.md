@@ -150,6 +150,7 @@ uv run coverage run -m pytest -vv
 
 - Always use `from __future__ import annotations` as the first import.
 - Do NOT use `from pathlib import Path` or `from datetime import ...` — these are banned by the import conventions config. Use `import pathlib` and `import datetime as dt` instead.
+- **Do NOT use `unittest.mock` or `MagicMock`**. This project forbids `unittest.mock` because it encourages bad design and tests that lie to you. Prefer Dependency Injection (DI) and dedicated IO-layer libraries (respx, pyfakefs) over any kind of patching.
 - Imports used only for type hints should go inside `if TYPE_CHECKING:` blocks.
 
 ### Style
@@ -159,6 +160,7 @@ uv run coverage run -m pytest -vv
 - Do not create custom exception classes for simple errors (`TRY003` is ignored).
 - **Prefer `NamedTuple` for return types** over plain tuples to improve readability and type safety.
 - **Prefer `typing.Protocol` over `abc.ABC`** for abstract base classes to promote structural subtyping.
+- **Prefer Dependency Injection (DI)**: Pass dependencies as arguments to functions and classes instead of hard-coding them or relying on global state. This makes code easier to test without patching.
 
 ### TOML Handling
 
