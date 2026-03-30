@@ -13,9 +13,21 @@ from ruff_sync.constants import OutputFormat
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
+_DEFAULT_CHECK_NAME: Final[str] = "ruff-sync/config-drift"
+
 
 class ResultFormatter(Protocol):
-    """Protocol for output formatters."""
+    """Protocol for output formatters.
+
+    Streaming formatters (Text, GitHub, JSON) implement ``note`` / ``info`` /
+    ``success`` / ``error`` / ``warning`` / ``debug`` / ``diff`` and provide a
+    no-op ``finalize``.
+
+    Accumulating formatters (GitLab, SARIF) collect issues during the run and
+    write their structured report in ``finalize``.  ``finalize`` is always
+    called by the CLI in a ``try...finally`` block, so all formatters receive
+    it unconditionally.
+    """
 
     def note(self, message: str) -> None:
         """Print a status note (unconditional)."""
@@ -31,30 +43,66 @@ class ResultFormatter(Protocol):
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
-        """Print an error message."""
+        """Print an error message.
+
+        Args:
+            message: Human-readable description of the issue.
+            file_path: Path to the file that contains the issue.
+            logger: Optional logger to use instead of the module logger.
+            check_name: Machine-readable rule ID (used by structured formatters).
+            drift_key: Dotted TOML key that drifted, e.g. ``"lint.select"``.
+                Used by structured formatters to build stable fingerprints.
+        """
 
     def warning(
         self,
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
-        """Print a warning message."""
+        """Print a warning message.
+
+        Args:
+            message: Human-readable description of the issue.
+            file_path: Path to the file that contains the issue.
+            logger: Optional logger to use instead of the module logger.
+            check_name: Machine-readable rule ID (used by structured formatters).
+            drift_key: Dotted TOML key that drifted, e.g. ``"lint.select"``.
+                Used by structured formatters to build stable fingerprints.
+        """
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message."""
 
     def diff(self, diff_text: str) -> None:
-        """Print a unified diff between configurations."""
+        """Print a unified diff between configurations.
+
+        Note:
+            Structured (accumulating) formatters intentionally ignore this
+            method — diffs are not representable in JSON report schemas.
+        """
+
+    def finalize(self) -> None:
+        """Finalize and flush all output.
+
+        Streaming formatters (Text, GitHub, JSON) implement this as a no-op.
+        Accumulating formatters (GitLab, SARIF) write their collected report
+        here.  The CLI calls this unconditionally inside a ``try...finally``
+        block so it is always executed, even when an exception occurred.
+        """
 
 
 class TextFormatter:
     """Standard text output formatter.
 
-    Delegates diagnostic messages (info, warning, error, debug) to the project logger
-     to ensure they benefit from standard logging configuration (colors, streams).
-    Primary command feedback (note, success) is printed to stdout.
+    Delegates diagnostic messages (info, warning, error, debug) to the project
+    logger to ensure they benefit from standard logging configuration (colors,
+    streams).  Primary command feedback (note, success) is printed to stdout.
     """
 
     def note(self, message: str) -> None:
@@ -74,6 +122,8 @@ class TextFormatter:
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
         """Log an error message."""
         (logger or LOGGER).error(message)
@@ -83,6 +133,8 @@ class TextFormatter:
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
         """Log a warning message."""
         (logger or LOGGER).warning(message)
@@ -95,19 +147,24 @@ class TextFormatter:
         """Print a unified diff directly to stdout."""
         print(diff_text, end="")
 
+    def finalize(self) -> None:
+        """No-op for streaming formatters."""
+
 
 class GithubFormatter:
     """GitHub Actions output formatter.
 
-    Emits `::error::` and `::warning::` workflow commands for inline annotations.
+    Emits ``::error::`` and ``::warning::`` workflow commands for inline
+    annotations.
     """
 
     @staticmethod
     def _escape(value: str, is_property: bool = False) -> str:
         r"""Escapes characters for GitHub Actions workflow commands.
 
-        GitHub requires percent-encoding for '%', '\r', and '\n' in all messages.
-        Additionally, property values (like file and title) require escaping for ':' and ','.
+        GitHub requires percent-encoding for '%', '\r', and '\n' in all
+        messages.  Additionally, property values (like file and title) require
+        escaping for ':' and ','.
         """
         escaped = value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
         if is_property:
@@ -131,18 +188,17 @@ class GithubFormatter:
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
         """Print an error message as a GitHub Action error annotation."""
         # Delegate standard log output to the logger to preserve context
         (logger or LOGGER).error(message)
 
-        # Strip emoji/symbols if any for the raw title, or just use a generic title
         file_val = self._escape(str(file_path), is_property=True) if file_path else ""
         file_arg = f"file={file_val},line=1," if file_path else ""
         title_val = self._escape("Ruff Sync Error", is_property=True)
 
-        # The message is technically what we pass after ::
-        # E.g. ::error file=app.js,line=1::Missing semicolon
         clean_msg = message.removeprefix("❌ ").removeprefix("⚠️ ")
         escaped_msg = self._escape(clean_msg)
         print(f"::error {file_arg}title={title_val}::{escaped_msg}")
@@ -152,6 +208,8 @@ class GithubFormatter:
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
         """Print a warning message as a GitHub Action warning annotation."""
         (logger or LOGGER).warning(message)
@@ -174,9 +232,12 @@ class GithubFormatter:
         """Print a unified diff in GitHub Actions logs (standard stdout)."""
         print(diff_text, end="")
 
+    def finalize(self) -> None:
+        """No-op for streaming formatters."""
+
 
 class JsonFormatter:
-    """JSON output formatter."""
+    """JSON output formatter (newline-delimited JSON, one record per line)."""
 
     def note(self, message: str) -> None:
         """Print a status note as JSON."""
@@ -198,6 +259,8 @@ class JsonFormatter:
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
         """Print an error message as JSON."""
         data = {"level": "error", "message": message}
@@ -205,6 +268,8 @@ class JsonFormatter:
             data["file"] = str(file_path)
         if logger:
             data["logger"] = logger.name
+        if drift_key:
+            data["drift_key"] = drift_key
         print(json.dumps(data))
 
     def warning(
@@ -212,6 +277,8 @@ class JsonFormatter:
         message: str,
         file_path: pathlib.Path | None = None,
         logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
     ) -> None:
         """Print a warning message as JSON."""
         data = {"level": "warning", "message": message}
@@ -219,6 +286,8 @@ class JsonFormatter:
             data["file"] = str(file_path)
         if logger:
             data["logger"] = logger.name
+        if drift_key:
+            data["drift_key"] = drift_key
         print(json.dumps(data))
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:
@@ -233,11 +302,21 @@ class JsonFormatter:
         # Strip trailing newline if any, as it's common in diff text
         print(json.dumps({"level": "diff", "message": diff_text.strip()}))
 
+    def finalize(self) -> None:
+        """No-op for streaming formatters."""
+
 
 def get_formatter(output_format: OutputFormat) -> ResultFormatter:
     """Return the corresponding formatter for the given format."""
-    if output_format == OutputFormat.GITHUB:
-        return GithubFormatter()
-    if output_format == OutputFormat.JSON:
-        return JsonFormatter()
-    return TextFormatter()
+    match output_format:
+        case OutputFormat.TEXT:
+            return TextFormatter()
+        case OutputFormat.GITHUB:
+            return GithubFormatter()
+        case OutputFormat.JSON:
+            return JsonFormatter()
+        case OutputFormat.GITLAB:
+            # GitlabFormatter will be implemented in a follow-up.
+            # Fall back to JsonFormatter until then so the enum value is
+            # already wired up and the match is exhaustive.
+            return JsonFormatter()

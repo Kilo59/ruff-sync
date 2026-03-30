@@ -18,10 +18,14 @@ from ruff_sync.formatters import (
 if TYPE_CHECKING:
     from ruff_sync.formatters import ResultFormatter
 
+# ---------------------------------------------------------------------------
+# Shared fixtures
+# ---------------------------------------------------------------------------
+
 
 @pytest.fixture(params=[TextFormatter, GithubFormatter, JsonFormatter])
 def formatter(request: pytest.FixtureRequest) -> ResultFormatter:
-    """Fixture providing instances of all registered formatters."""
+    """Fixture providing instances of all streaming formatters."""
     formatter_cls: type[ResultFormatter] = request.param
     return formatter_cls()
 
@@ -55,6 +59,17 @@ class TestFormatterBasics:
         else:
             # Text and Github both print raw for these
             assert message in captured
+
+    def test_finalize_is_noop_for_streaming_formatters(
+        self,
+        formatter: ResultFormatter,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """finalize() must not emit any output for streaming formatters."""
+        formatter.finalize()
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
 
     @pytest.mark.parametrize(
         "method, level",
@@ -146,8 +161,9 @@ def test_get_formatter_factory() -> None:
     assert isinstance(get_formatter(OutputFormat.TEXT), TextFormatter)
     assert isinstance(get_formatter(OutputFormat.JSON), JsonFormatter)
     assert isinstance(get_formatter(OutputFormat.GITHUB), GithubFormatter)
-    # Default fallback - ignore error for purposeful type-incorrect input
-    assert isinstance(get_formatter("invalid"), TextFormatter)  # type: ignore[arg-type]
+    # GITLAB is a placeholder until GitlabFormatter is implemented; it
+    # currently falls back to JsonFormatter so the enum value is wired up.
+    assert isinstance(get_formatter(OutputFormat.GITLAB), JsonFormatter)
 
 
 if __name__ == "__main__":
