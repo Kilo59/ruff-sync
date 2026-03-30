@@ -28,7 +28,7 @@ repos:
         types_or: [yaml, json]
         exclude: .agents/skills/mkdocs-generation/templates/mkdocs.yml
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.11
+    rev: v1.7.12
     hooks:
       - id: actionlint
         exclude: .github/workflows/complexity.yaml
