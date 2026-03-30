@@ -1,6 +1,9 @@
 # Formatter Pipeline Architecture
 
-> **Audience**: Agents and developers extending or maintaining `ruff_sync.formatters`.
+> **Purpose**: Reference document for agents and developers extending or maintaining
+> `ruff_sync.formatters`. Covers the streaming vs. accumulating formatter taxonomy,
+> the `finalize()` contract, how to add a new formatter, and the fingerprint strategy
+> required by structured CI report formats (GitLab Code Quality, SARIF).
 >
 > **Source of truth**: `src/ruff_sync/formatters.py` and `src/ruff_sync/constants.py`.
 
