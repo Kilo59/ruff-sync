@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 import pathlib
-from typing import Final, Literal, Protocol, TypedDict
+from typing import Any, Final, Literal, Protocol, TypedDict
 
 from ruff_sync.constants import OutputFormat
 
@@ -468,6 +468,248 @@ class GitlabFormatter:
         return hashlib.md5(raw.encode()).hexdigest()  # noqa: S324
 
 
+class SarifResult(TypedDict, total=False):
+    """A single SARIF result (finding)."""
+
+    ruleId: str
+    level: Literal["error", "warning", "note"]
+    message: dict[str, str]
+    locations: list[dict[str, Any]]
+    fingerprints: dict[str, str]
+    properties: dict[str, str]
+
+
+class SarifFormatter:
+    """SARIF v2.1.0 output formatter.
+
+    Accumulates results during the run and writes a complete SARIF document to
+    stdout in ``finalize()``.  The CI job redirects stdout to a file::
+
+        ruff-sync check --output-format sarif > results.sarif
+
+    An empty ``results`` list is emitted when no issues were found.
+
+    Schema: https://json.schemastore.org/sarif-2.1.0.json
+    """
+
+    _RULE_ID: Final[str] = "RUFF-SYNC-CONFIG-DRIFT"
+    _SCHEMA: Final[str] = "https://json.schemastore.org/sarif-2.1.0.json"
+    _SARIF_VERSION: Final[str] = "2.1.0"
+
+    def __init__(self) -> None:
+        """Initialise with an empty result list."""
+        self._results: list[SarifResult] = []
+
+    # ------------------------------------------------------------------
+    # Protocol methods
+    # ------------------------------------------------------------------
+
+    def note(self, message: str) -> None:
+        """Delegate to logger only; not representable in the SARIF schema."""
+        LOGGER.info(message)
+
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
+        """Delegate to logger only; not included in the structured report."""
+        (logger or LOGGER).info(message)
+
+    def success(self, message: str) -> None:
+        """Delegate to logger only; not representable in the SARIF schema."""
+        LOGGER.info(message)
+
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
+    ) -> None:
+        """Accumulate an error-level SARIF result."""
+        (logger or LOGGER).error(message)
+        self._results.append(
+            self._make_result(
+                message=message,
+                level="error",
+                file_path=file_path,
+                check_name=check_name,
+                drift_key=drift_key,
+            )
+        )
+
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
+    ) -> None:
+        """Accumulate a warning-level SARIF result."""
+        (logger or LOGGER).warning(message)
+        self._results.append(
+            self._make_result(
+                message=message,
+                level="warning",
+                file_path=file_path,
+                check_name=check_name,
+                drift_key=drift_key,
+            )
+        )
+
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
+        """Delegate to logger only; not included in the structured report."""
+        (logger or LOGGER).debug(message)
+
+    def diff(self, diff_text: str) -> None:
+        """Ignored by structured formatters — diffs are not representable in SARIF."""
+
+    def finalize(self) -> None:
+        """Write the collected results as a SARIF v2.1.0 document to stdout.
+
+        Rules are de-duplicated from the accumulated results so the ``rules``
+        list contains one entry per unique ``ruleId`` seen across all findings.
+        """
+        seen_ids: set[str] = set()
+        rules: list[dict[str, Any]] = []
+        for result in self._results:
+            rule_id = result["ruleId"]
+            if rule_id not in seen_ids:
+                seen_ids.add(rule_id)
+                rules.append(
+                    {
+                        "id": rule_id,
+                        "name": "ConfigDrift",
+                        "shortDescription": {
+                            "text": "Ruff configuration has drifted from upstream."
+                        },
+                        "helpUri": "https://github.com/Kilo59/ruff-sync",
+                    }
+                )
+        if not rules:
+            # No findings — emit a single placeholder rule so the SARIF document
+            # is always schema-valid (a tool with zero rules is still valid, but
+            # some consumers require at least one rule entry).
+            rules = [
+                {
+                    "id": self._RULE_ID,
+                    "name": "ConfigDrift",
+                    "shortDescription": {"text": "Ruff configuration has drifted from upstream."},
+                    "helpUri": "https://github.com/Kilo59/ruff-sync",
+                }
+            ]
+        sarif_doc: dict[str, Any] = {
+            "version": self._SARIF_VERSION,
+            "$schema": self._SCHEMA,
+            "runs": [
+                {
+                    "tool": {
+                        "driver": {
+                            "name": "ruff-sync",
+                            "informationUri": "https://github.com/Kilo59/ruff-sync",
+                            "rules": rules,
+                        }
+                    },
+                    "results": self._results,
+                }
+            ],
+        }
+        print(json.dumps(sarif_doc, indent=2))
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _make_result(
+        self,
+        message: str,
+        level: Literal["error", "warning", "note"],
+        file_path: pathlib.Path | None,
+        check_name: str | None = None,
+        drift_key: str | None = None,
+    ) -> SarifResult:
+        """Build a single SARIF result object.
+
+        Args:
+            message: Human-readable finding text.
+            level: SARIF severity level.
+            file_path: Source file the finding belongs to.
+            check_name: Machine-readable rule identifier.  When provided a
+                granular ``ruleId`` of the form ``check_name:drift_key`` is
+                used so code-scanning UIs can group findings per key.
+            drift_key: Dotted TOML key that drifted (e.g. ``"lint.select"``).
+                Included in ``properties`` and used to derive a stable fingerprint.
+        """
+        artifact_uri = _path_to_artifact_uri(file_path)
+
+        # Build a granular ruleId so findings for different keys are
+        # distinguishable in code-scanning UIs (e.g. GitHub Advanced Security).
+        if drift_key is not None and check_name is not None:
+            rule_id = f"{check_name}:{drift_key}"
+        elif check_name is not None:
+            rule_id = check_name
+        else:
+            rule_id = self._RULE_ID
+
+        result: SarifResult = {
+            "ruleId": rule_id,
+            "level": level,
+            "message": {"text": message},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {"uri": artifact_uri, "uriBaseId": "%SRCROOT%"},
+                        "region": {"startLine": 1},
+                    }
+                }
+            ],
+        }
+
+        # Populate custom properties for tooling that reads SARIF property bags.
+        props: dict[str, str] = {}
+        if check_name is not None:
+            props["check_name"] = check_name
+        if drift_key is not None:
+            props["drift_key"] = drift_key
+        if props:
+            result["properties"] = props
+
+        # Derive a stable fingerprint so consumers can deduplicate across runs.
+        # Never include timestamps or UUIDs — only stable, content-derived data.
+        fingerprint = self._make_fingerprint(artifact_uri, rule_id, drift_key)
+        # Use a custom SARIF fingerprint key to reflect that this is not a line-hash.
+        result["fingerprints"] = {"ruff-sync-fingerprint/v1": fingerprint}
+
+        return result
+
+    @staticmethod
+    def _make_fingerprint(artifact_uri: str, rule_id: str, drift_key: str | None) -> str:
+        """Return a stable MD5 fingerprint for a SARIF result.
+
+        The fingerprint must be deterministic (same inputs → same output on
+        every pipeline run) so consumers can track introduced vs resolved
+        findings.  Never include timestamps, UUIDs, or any other
+        runtime-variable data.
+        """
+        raw = f"ruff-sync:{rule_id}:{artifact_uri}:{drift_key or ''}"
+        return hashlib.md5(raw.encode()).hexdigest()  # noqa: S324
+
+
+def _path_to_artifact_uri(file_path: pathlib.Path | None) -> str:
+    """Convert a file path to a relative URI suitable for SARIF artifactLocation.
+
+    SARIF recommends relative URIs with ``uriBaseId`` rather than absolute
+    ``file://`` URIs so results are portable across machines.
+    """
+    if file_path is None:
+        return "pyproject.toml"
+    if file_path.is_absolute():
+        try:
+            return str(file_path.relative_to(pathlib.Path.cwd()))
+        except ValueError:
+            return file_path.name
+    return str(file_path)
+
+
 def get_formatter(output_format: OutputFormat) -> ResultFormatter:
     """Return the corresponding formatter for the given format."""
     match output_format:
@@ -479,3 +721,5 @@ def get_formatter(output_format: OutputFormat) -> ResultFormatter:
             return JsonFormatter()
         case OutputFormat.GITLAB:
             return GitlabFormatter()
+        case OutputFormat.SARIF:
+            return SarifFormatter()

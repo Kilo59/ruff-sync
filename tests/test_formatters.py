@@ -12,7 +12,9 @@ from ruff_sync.formatters import (
     GithubFormatter,
     GitlabFormatter,
     JsonFormatter,
+    SarifFormatter,
     TextFormatter,
+    _path_to_artifact_uri,
     get_formatter,
 )
 
@@ -399,6 +401,98 @@ class TestJsonFormatterMetadata:
         assert data["check_name"] == "ruff-sync/config-drift"
 
 
+class TestSarifFormatter:
+    """Tests for SarifFormatter (SARIF v2.1.0 format)."""
+
+    def test_finalize_empty_produces_valid_document(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """An empty formatter must emit a valid SARIF doc with placeholder rules."""
+        fmt = SarifFormatter()
+        fmt.finalize()
+        doc = json.loads(capsys.readouterr().out)
+        assert doc["version"] == "2.1.0"
+        assert len(doc["runs"][0]["tool"]["driver"]["rules"]) == 1
+        assert doc["runs"][0]["results"] == []
+
+    def test_error_accumulation(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """error() must add a result with correct level and ruleId."""
+        fmt = SarifFormatter()
+        fmt.error("msg", file_path=pathlib.Path("f.py"), drift_key="k", check_name="c")
+        fmt.finalize()
+        doc = json.loads(capsys.readouterr().out)
+        results = doc["runs"][0]["results"]
+        assert len(results) == 1
+        assert results[0]["level"] == "error"
+        assert results[0]["ruleId"] == "c:k"
+
+    def test_warning_accumulation(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """warning() must add a result with warning level."""
+        fmt = SarifFormatter()
+        fmt.warning("msg", file_path=pathlib.Path("f.py"), drift_key="k", check_name="c")
+        fmt.finalize()
+        doc = json.loads(capsys.readouterr().out)
+        results = doc["runs"][0]["results"]
+        assert len(results) == 1
+        assert results[0]["level"] == "warning"
+
+    def test_diagnostic_methods_delegate_to_logger(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Verify info/debug/note/success delegate to the logger."""
+        fmt = SarifFormatter()
+
+        with caplog.at_level(logging.INFO, logger="ruff_sync.formatters"):
+            fmt.info("info msg")
+            fmt.note("note msg")
+            fmt.success("success msg")
+
+        with caplog.at_level(logging.DEBUG, logger="ruff_sync.formatters"):
+            fmt.debug("debug msg")
+
+        assert "info msg" in caplog.text
+        assert "note msg" in caplog.text
+        assert "success msg" in caplog.text
+        assert "debug msg" in caplog.text
+
+    def test_rule_deduplication(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """The rules list must only contain unique ruleIds."""
+        fmt = SarifFormatter()
+        fmt.error("msg1", drift_key="k1", check_name="c")
+        fmt.error("msg2", drift_key="k1", check_name="c")  # same ruleId
+        fmt.error("msg3", drift_key="k2", check_name="c")  # different ruleId
+        fmt.finalize()
+        doc = json.loads(capsys.readouterr().out)
+        rules = doc["runs"][0]["tool"]["driver"]["rules"]
+        assert len(rules) == 2
+        rule_ids = {r["id"] for r in rules}
+        assert rule_ids == {"c:k1", "c:k2"}
+
+    def test_make_result_branches(self) -> None:
+        """Test ruleId selection logic in _make_result."""
+        fmt = SarifFormatter()
+
+        # Only check_name
+        r1 = fmt._make_result("m", "error", None, check_name="c", drift_key=None)
+        assert r1["ruleId"] == "c"
+
+        # Neither (placeholder)
+        r2 = fmt._make_result("m", "error", None, check_name=None, drift_key=None)
+        assert r2["ruleId"] == SarifFormatter._RULE_ID
+
+    def test_path_to_artifact_uri_edge_cases(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test _path_to_artifact_uri coverage gaps."""
+        # No path
+        assert _path_to_artifact_uri(None) == "pyproject.toml"
+
+        # Rel path
+        assert _path_to_artifact_uri(pathlib.Path("a/b.toml")) == "a/b.toml"
+
+        # Absolute path outside CWD
+        # Use monkeypatch to ensure we have a stable CWD for testing
+        monkeypatch.setattr(pathlib.Path, "cwd", lambda: pathlib.Path("/project"))
+        outside = pathlib.Path("/tmp/external.toml")  # noqa: S108
+        assert _path_to_artifact_uri(outside) == "external.toml"
+
+
 class SpyFormatter:
     """A minimal ResultFormatter that tracks calls to ensure they occur."""
 
@@ -523,6 +617,7 @@ def test_get_formatter_factory() -> None:
     assert isinstance(get_formatter(OutputFormat.JSON), JsonFormatter)
     assert isinstance(get_formatter(OutputFormat.GITHUB), GithubFormatter)
     assert isinstance(get_formatter(OutputFormat.GITLAB), GitlabFormatter)
+    assert isinstance(get_formatter(OutputFormat.SARIF), SarifFormatter)
 
 
 if __name__ == "__main__":

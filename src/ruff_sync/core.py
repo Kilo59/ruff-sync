@@ -875,9 +875,11 @@ def _print_diff(
 
 
 def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
-    """Return exit code 2 if pre-commit hook version is out of sync, otherwise None.
+    """Return exit code 3 if pre-commit hook version is out of sync, otherwise None.
 
     Shared helper to avoid duplicating the pre-commit synchronization logic.
+    Exit code 3 is reserved for pre-commit hook drift to avoid collision with
+    argparse (2) and config drift (1).
     """
     if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
         repo_root = pathlib.Path.cwd()
@@ -888,8 +890,110 @@ def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
             logger=LOGGER,
             file_path=file_path,
         )
-        return 2
+        return 3
     return None
+
+
+def _find_changed_keys(
+    source: Any,
+    merged: Any,
+    prefix: str = "",
+) -> list[str]:
+    """Return a list of dotted TOML keys that differ between *source* and *merged*.
+
+    Recursively walks both tables and returns keys whose leaf values have
+    changed or that are present only in *merged* (added by upstream).  Keys
+    that exist only in *source* (local-only additions) are intentionally
+    excluded — ruff-sync never removes local keys.
+
+    Args:
+        source: The original (local) TOML table or value.
+        merged: The merged (upstream-applied) TOML table or value.
+        prefix: Dotted key prefix built up during recursion.
+
+    Returns:
+        A list of dotted key paths, e.g. ``["lint.select", "target-version"]``.
+    """
+    changed: list[str] = []
+
+    source_is_mapping = isinstance(source, Mapping)
+    merged_is_mapping = isinstance(merged, Mapping)
+
+    if source_is_mapping and merged_is_mapping:
+        for key, merged_val in merged.items():
+            full_key = f"{prefix}.{key}" if prefix else key
+            source_val = source.get(key)
+            if source_val is None and key not in source:
+                # Key is new (only in merged)
+                changed.append(full_key)
+            else:
+                # Unwrap tomlkit proxy objects before comparing.
+                # Note: source_val is always set here because the key exists in source
+                # (the is None + key not in guard above handles the absent case).
+                src_unwrapped = (
+                    source_val.unwrap()
+                    if source_val is not None and hasattr(source_val, "unwrap")
+                    else source_val
+                )
+                mrg_unwrapped = merged_val.unwrap() if hasattr(merged_val, "unwrap") else merged_val
+                nested = _find_changed_keys(src_unwrapped, mrg_unwrapped, prefix=full_key)
+                if nested:
+                    changed.extend(nested)
+                elif src_unwrapped != mrg_unwrapped:
+                    changed.append(full_key)
+    elif source_is_mapping != merged_is_mapping:
+        # Structural type mismatch (table vs scalar or vice-versa): treat the
+        # whole node as changed rather than attempting a meaningless value
+        # comparison between incompatible TOML node types.
+        changed.append(prefix or ".")
+    else:
+        # Both are leaf values — compare directly.
+        src_unwrapped = source.unwrap() if hasattr(source, "unwrap") else source
+        mrg_unwrapped = merged.unwrap() if hasattr(merged, "unwrap") else merged
+        if src_unwrapped != mrg_unwrapped:
+            changed.append(prefix or ".")
+
+    return changed
+
+
+def _report_drift(
+    fmt: ResultFormatter,
+    rel_path: pathlib.Path,
+    source_doc: TOMLDocument,
+    merged_doc: TOMLDocument,
+    is_ruff_toml: bool,
+) -> None:
+    """Report configuration drift by emitting one error per changed key.
+
+    Emits one ``fmt.error()`` call per differing dotted key so that structured
+    formatters (SARIF, GitLab, JSON) can build per-key fingerprints.  If no
+    granular keys are found (whitespace-only diff), falls back to a single
+    generic error.
+    """
+    if is_ruff_toml:
+        source_section: Any = source_doc
+        merged_section: Any = merged_doc
+    else:
+        source_section = source_doc.get("tool", {}).get("ruff") or {}
+        merged_section = merged_doc.get("tool", {}).get("ruff") or {}
+    changed_keys = sorted(set(_find_changed_keys(source_section, merged_section)))
+
+    if changed_keys:
+        for drift_key in changed_keys:
+            fmt.error(
+                f"\u274c Key '{drift_key}' in {rel_path} is out of sync! "
+                "Run `ruff-sync` to update.",
+                file_path=rel_path,
+                logger=LOGGER,
+                drift_key=drift_key,
+            )
+    else:
+        # Structural change only (e.g. whitespace) — single generic error.
+        fmt.error(
+            f"\u274c Ruff configuration at {rel_path} is out of sync! Run `ruff-sync` to update.",
+            file_path=rel_path,
+            logger=LOGGER,
+        )
 
 
 async def check(
@@ -974,10 +1078,13 @@ async def check(
             rel_path = _source_toml_path.relative_to(pathlib.Path.cwd())
         except ValueError:
             rel_path = _source_toml_path
-        fmt.error(
-            f"❌ Ruff configuration at {rel_path} is out of sync! Run `ruff-sync` to update.",
-            file_path=rel_path,
-            logger=LOGGER,
+
+        _report_drift(
+            fmt=fmt,
+            rel_path=rel_path,
+            source_doc=source_doc,
+            merged_doc=merged_doc,
+            is_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
         )
 
         if args.diff:
