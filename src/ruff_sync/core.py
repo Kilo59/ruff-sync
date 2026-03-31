@@ -899,7 +899,7 @@ def _find_changed_keys(
     merged: Any,
     prefix: str = "",
 ) -> list[str]:
-    """Return a sorted list of dotted TOML keys that differ between *source* and *merged*.
+    """Return a list of dotted TOML keys that differ between *source* and *merged*.
 
     Recursively walks both tables and returns keys whose leaf values have
     changed or that are present only in *merged* (added by upstream).  Keys
@@ -912,7 +912,7 @@ def _find_changed_keys(
         prefix: Dotted key prefix built up during recursion.
 
     Returns:
-        A sorted list of dotted key paths, e.g. ``["lint.select", "target-version"]``.
+        A list of dotted key paths, e.g. ``["lint.select", "target-version"]``.
     """
     changed: list[str] = []
 
@@ -945,16 +945,15 @@ def _find_changed_keys(
         # Structural type mismatch (table vs scalar or vice-versa): treat the
         # whole node as changed rather than attempting a meaningless value
         # comparison between incompatible TOML node types.
-        if prefix:
-            changed.append(prefix)
+        changed.append(prefix or ".")
     else:
         # Both are leaf values — compare directly.
         src_unwrapped = source.unwrap() if hasattr(source, "unwrap") else source
         mrg_unwrapped = merged.unwrap() if hasattr(merged, "unwrap") else merged
         if src_unwrapped != mrg_unwrapped:
-            changed.append(prefix)
+            changed.append(prefix or ".")
 
-    return sorted(changed)
+    return changed
 
 
 def _report_drift(
@@ -977,7 +976,7 @@ def _report_drift(
     else:
         source_section = source_doc.get("tool", {}).get("ruff") or {}
         merged_section = merged_doc.get("tool", {}).get("ruff") or {}
-    changed_keys = _find_changed_keys(source_section, merged_section)
+    changed_keys = sorted(set(_find_changed_keys(source_section, merged_section)))
 
     if changed_keys:
         for drift_key in changed_keys:

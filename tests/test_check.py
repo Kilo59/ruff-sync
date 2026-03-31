@@ -745,5 +745,58 @@ async def test_check_sarif_format_in_sync(fs: FakeFilesystem, capsys, configure_
         assert results == [], f"Expected empty results for in-sync config, got {results}"
 
 
+@pytest.mark.asyncio
+async def test_check_sarif_multiple_drifts(fs: FakeFilesystem, capsys, configure_logging):
+    """Verify SARIF output includes multiple results for multiple drifted keys."""
+    import json
+
+    local_content = '[tool.ruff]\ntarget-version = "py310"\nline-length = 100\n'
+    upstream_content = '[tool.ruff]\ntarget-version = "py311"\nline-length = 88\n'
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=False,
+            output_format=ruff_sync.constants.OutputFormat.SARIF,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+        sarif_doc = json.loads(captured.out)
+
+        results = sarif_doc["runs"][0]["results"]
+        # Should have at least two results (one for target-version, one for line-length)
+        assert len(results) >= 2
+
+        drift_keys = {r["properties"]["drift_key"] for r in results if "properties" in r}
+        assert "target-version" in drift_keys
+        assert "line-length" in drift_keys
+
+        rule_ids = {r["ruleId"] for r in results}
+        assert any("target-version" in rid for rid in rule_ids)
+        assert any("line-length" in rid for rid in rule_ids)
+
+        # Check for custom fingerprint key
+        for result in results:
+            assert "ruff-sync-fingerprint/v1" in result.get("fingerprints", {})
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])

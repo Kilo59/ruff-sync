@@ -94,7 +94,7 @@ ruff-sync-check:
     - if: '$CI_COMMIT_BRANCH == "main"'
 ```
 
-### GitLab Code Quality Report (SARIF)
+### GitLab SAST Report (SARIF)
 
 ```yaml
 ruff-sync-sarif:

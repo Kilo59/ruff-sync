@@ -676,7 +676,8 @@ class SarifFormatter:
         # Derive a stable fingerprint so consumers can deduplicate across runs.
         # Never include timestamps or UUIDs — only stable, content-derived data.
         fingerprint = self._make_fingerprint(artifact_uri, rule_id, drift_key)
-        result["fingerprints"] = {"primaryLocationLineHash/v1": fingerprint}
+        # Use a custom SARIF fingerprint key to reflect that this is not a line-hash.
+        result["fingerprints"] = {"ruff-sync-fingerprint/v1": fingerprint}
 
         return result
 
