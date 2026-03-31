@@ -29,7 +29,7 @@ The existing documentation is a well-configured Material for MkDocs site:
 | **Hosting** | GitHub Pages (`Kilo59.github.io/ruff-sync`) |
 | **Build tooling** | `invoke docs` task, Pygments pinned due to recent regression |
 
-The plugins `gen-files`, `literate-nav`, and `mkdocstrings` are all Tier 1 or Tier 2 items on Zensical's backlog — **only `gen-files` is Tier 2 (lower priority)**.
+The plugins `literate-nav` and `mkdocstrings` are Tier 1 items on Zensical's backlog. `gen-files` is Tier 2 but **not relevant** — `ruff-sync` is a CLI tool that doesn't benefit from auto-generated API reference pages.
 
 ---
 
@@ -62,12 +62,12 @@ Zensical documents a **phased transition strategy**:
 | Plugin (current) | Tier | Status |
 |---|---|---|
 | `search` | Tier 1 | ✅ In backlog, being replaced by **Disco** (native Rust search engine) |
-| `gen-files` | **Tier 2** | ⚠️ On backlog but lower priority than Tier 1 |
+| `gen-files` | Tier 2 | ➡️ N/A — not needed (no API autodocs for this CLI tool) |
 | `literate-nav` | Tier 1 | ✅ On backlog; eventually superseded by modular nav |
-| `mkdocstrings` | Tier 1 | ✅ On backlog (Backlog #4) |
+| `mkdocstrings` | Tier 1 | ✅ On backlog (Backlog #4) — low value for CLI docs anyway |
 
-> [!WARNING]
-> `gen-files` (used by `ruff-sync` to auto-generate the API reference pages via `docs/gen_ref_pages.py`) is Tier 2. This is the highest migration risk. If Zensical doesn't yet support it when you want to switch, the API reference page (`reference/`) would not build correctly.
+> [!NOTE]
+> `ruff-sync` is a CLI tool — the auto-generated API reference (`gen-files` + `mkdocstrings`) is low value and could be removed entirely to simplify the stack. Neither is a migration blocker.
 
 ### What would NOT require changes (by design)
 
@@ -80,10 +80,9 @@ Zensical documents a **phased transition strategy**:
 
 ### What would need testing
 
-- `gen_ref_pages.py` script — depends on `mkdocs-gen-files` plugin compatibility
 - `literate-nav` SUMMARY.md-driven navigation
 - Pygments/syntax highlighting behavior (the pinned version issue may resurface differently)
-- `mkdocstrings` API reference rendering (high priority backlog item but still in progress)
+- The `tasks.py` `docs` invoke task (would swap `mkdocs` → `zensical`)
 
 ---
 
@@ -121,7 +120,7 @@ Replaces MkDocs' basic Python HTTP server with a high-performance Rust server wi
 The roadmap explicitly says "Zensical is currently alpha software." This means instability, potential breaking changes between releases, and incomplete documentation. Not suitable for production use without Zensical Spark support.
 
 ### ❌ Key plugins not yet ready
-`gen-files` (Tier 2) is essential for auto-generating the API reference pages. Until it — and `mkdocstrings` (Tier 1) — are production-ready in Zensical, switching would break the API docs. These are actively in progress but no ETAs are given.
+`literate-nav` (Tier 1) is still in progress. Until it lands in Zensical, the SUMMARY.md-driven navigation would need to be manually inlined into `mkdocs.yml` — a one-time low-effort change, but still a required step.
 
 ### ❌ Paid support tier is expensive
 Zensical Spark is not cheap for an open source project:
@@ -155,34 +154,133 @@ Zensical currently uses Python Markdown (same as MkDocs), but is "exploring swit
 | **Maturity** | Battle-tested, stable | Alpha |
 | **Build speed** | Moderate (Python) | Will be much faster (Rust, differential) |
 | **Plugin ecosystem** | Large, community-maintained | Small, growing, not yet extensible externally |
-| **Key plugins** | All working today | `gen-files`, `mkdocstrings` still in progress |
+| **Key plugins** | All working today | `literate-nav` still in progress |
 | **Search** | lunr-based (basic) | Disco (next-gen, Rust) |
 | **Config** | `mkdocs.yml` | `mkdocs.yml` now → `zensical.toml` later |
 | **Cost** | Free | Free core, $249–999/month for support |
 | **Support** | GitHub Issues, community | GitHub + paid Spark tiers |
 | **GitHub Pages deployment** | First-class | Should be identical (same static output) |
-| **API docs (`mkdocstrings`)** | Working | Tier 1 backlog, in progress |
+| **API docs (`mkdocstrings`)** | Working (low value for CLI) | Tier 1 backlog, in progress |
 
 ---
 
 ## Recommendation
 
 > [!IMPORTANT]
-> **Do not switch to Zensical yet, but bookmark it as a strong future migration target (likely 6–12 months from now).**
+> **Do not switch to Zensical yet, but it's a viable migration target within ~3–6 months — sooner than initially estimated.**
 
-### Rationale
+### Revised rationale
 
-**The timing is wrong for ruff-sync today.** The two most critical plugins for this site — `mkdocstrings` (the API reference) and `gen-files` (the script that generates the reference page stubs) — are explicitly listed as in-progress backlog items. Until both are production-ready in Zensical, the switch would regress the API documentation section, which is currently working well.
+**`gen-files` is irrelevant** — `ruff-sync` is a CLI tool and doesn't need auto-generated API reference pages. The existing `gen_ref_pages.py` + `mkdocstrings` setup could simply be dropped or replaced with a hand-authored API summary page, which is arguably better for a user-facing CLI tool anyway.
 
-**The trajectory is very compelling, however.** Zensical is not a risky startup replacement — it's the next phase of Material for MkDocs, built by the same team, with a deliberate compatibility-first strategy. The Rust runtime, Disco search, and modular navigation system will eventually make it substantially better than the current stack.
+The **actual migration risk is now just `literate-nav`** (Tier 1, actively in progress). The current docs site uses a `SUMMARY.md` to drive navigation. If Zensical doesn't support this when you try a shadow build, you'd need to inline the nav into `mkdocs.yml` — a one-time, low-effort change.
+
+**The trajectory is very compelling.** Zensical is not a risky startup replacement — it's the next phase of Material for MkDocs, built by the same team, with a deliberate compatibility-first strategy. The Rust runtime, Disco search, and modular navigation system will eventually make it substantially better than the current stack.
 
 ### Suggested action plan
 
-1. **Now:** Track the Zensical backlog for [Backlog #4 (`mkdocstrings`)](https://github.com/zensical/backlog/issues/4) and [Backlog #8 (`gen-files`)](https://github.com/zensical/backlog/issues/8). Subscribe to the [Zensical newsletter](https://zensical.org/about/newsletter/) for progress updates.
-2. **When both Tier 1/2 plugins are ready (est. 6–12 months):** Run `pip install zensical` alongside the existing setup and attempt a shadow build with `zensical build`. Compare the output.
-3. **If shadow build succeeds:** Switch the CI `docs` job from `mkdocs build` to `zensical build`. Keep `mkdocs.yml` unchanged initially.
-4. **Later:** Consider opting into the modern design and the new `zensical.toml` format once tooling is stable.
+1. **Now:** Track the Zensical backlog for [Backlog #13 (`literate-nav`)](https://github.com/zensical/backlog/issues/13). Subscribe to the [Zensical newsletter](https://zensical.org/about/newsletter/) for progress updates.
+2. **Simplify the current stack:** Drop `gen-files` + `mkdocstrings` and replace the auto-generated API reference with a hand-authored page. This removes a maintenance burden and makes a future Zensical migration trivially simple.
+3. **When `literate-nav` lands (est. 3–6 months):** Run `pip install zensical && zensical build` as a shadow build. Compare the output.
+4. **If shadow build succeeds:** Switch the CI `docs` job from `mkdocs build` to `zensical build`. Keep `mkdocs.yml` unchanged initially.
+5. **Later:** Consider opting into the modern design and the new `zensical.toml` format once tooling is stable.
 
 ### For an OSS project like `ruff-sync`
 
 Zensical Spark pricing ($249/month minimum) is not appropriate for an open-source CLI tool. The free tier (GitHub issues, public docs) is sufficient. Wait until the core product reaches feature parity before switching — you'll get the benefits without needing a paid tier.
+
+---
+
+## MkDocs Catalog Plugins Worth Considering
+
+Scanned [mkdocs/catalog](https://github.com/mkdocs/catalog) for plugins that are:
+- Not already in use
+- Relevant to a CLI tool docs site (not API docs, notebooks, or enterprise-only)
+- Well-maintained and compatible with Material for MkDocs
+- On or planned for Zensical's backlog (low Zensical switching risk)
+
+### 🟢 Strongly Recommended
+
+#### [`mkdocs-git-revision-date-localized`](https://github.com/timvink/mkdocs-git-revision-date-localized-plugin)
+
+Adds a "last updated" date (and optionally git author info) to the bottom of every page, pulled from git history. This is a **Tier 2 item on Zensical's backlog** (Backlog #18).
+
+```yaml
+plugins:
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago  # e.g. "3 weeks ago"
+```
+
+**Why:** The docs cover actively developing features. Showing "Updated 2 days ago" builds reader trust and makes staleness immediately visible. Very low maintenance — zero config needed after the initial setup. Widely supported; used by dozens of major OSS projects.
+
+**Zensical impact:** On the Tier 2 backlog — not a blocker. If you switch before it lands, you simply remove this plugin.
+
+---
+
+#### [`mkdocs-redirects`](https://github.com/mkdocs/mkdocs-redirects)
+
+Manages URL redirects when pages are moved or renamed, preventing broken links.
+
+```yaml
+plugins:
+  - redirects:
+      redirect_maps:
+        'old-page.md': 'new-page.md'
+```
+
+**Why:** As the docs evolve (e.g., if CI integration or URL resolution pages get reorganized), redirects prevent dead links in the wild — especially important because external sites, README snippets, and pre-commit hooks may link directly to doc pages. This is a **Tier 1 item on Zensical's backlog** (Backlog #23).
+
+**Zensical impact:** Tier 1 — will be supported.
+
+---
+
+### 🟡 Worth Considering
+
+#### [`mkdocs-minify-plugin`](https://github.com/byrnereese/mkdocs-minify-plugin)
+
+Minifies HTML, CSS, and JS output for faster page loads.
+
+```yaml
+plugins:
+  - minify:
+      minify_html: true
+```
+
+**Why:** Free performance win on GitHub Pages with zero ongoing maintenance. This is a **Tier 1 item on Zensical's backlog** (Backlog #15). Zensical's Rust runtime will eventually make this obsolete (it does optimization natively), so it's only a temporary addition.
+
+**Zensical impact:** Tier 1 — will be replaced by native optimization.
+
+---
+
+#### [`mkdocs-llmstxt`](https://github.com/pawamoy/mkdocs-llmstxt)
+
+Generates an `/llms.txt` file at build time — a standardized machine-readable summary of the site's content for LLM consumption (see [llmstxt.org](https://llmstxt.org/)).
+
+```yaml
+plugins:
+  - llmstxt:
+      full_output: true  # also emit /llms-full.txt with all page content
+```
+
+**Why:** `ruff-sync` already includes an "Agent Skill" feature in its docs. Making the full doc content available via `/llms.txt` is a natural complement — agents and LLMs can directly consume the docs without scraping. This is a new addition to the catalog (by pawamoy, who also maintains `mkdocstrings`) and is **not yet on Zensical's backlog**, so it's a slight risk.
+
+**Zensical impact:** Not yet in the backlog. If you switch to Zensical before it's supported, you'd need to drop or replace this — low stakes since it's a nice-to-have.
+
+---
+
+### 🔴 Not Recommended (for this project)
+
+| Plugin | Reason to skip |
+|---|---|
+| `mkdocs-htmlproofer` | Validates all URLs at build time — catches broken links but dramatically slows the build. The existing `pymdownx.snippets: check_paths: true` already catches internal broken references. |
+| `git-authors` | Shows per-page git author list — overkill for a single-maintainer OSS project. |
+| `blog` (Material built-in) | Not relevant; this is not a blog. |
+| `mkdocs-coverage` | Shows test coverage inline in docs — interesting but adds complexity; coverage is already tracked with Codecov. |
+| `social` (Material built-in) | Auto-generates social card images per page. Nice but needs Cairo/Pillow system dependencies and adds CI complexity. |
+
+### Effect on the Zensical evaluation
+
+Adopting `git-revision-date-localized` and `mkdocs-redirects` **slightly increases** the Zensical switching cost in the short term — both are on the backlog but not yet released as Zensical modules. However, both are **Tier 1 or Tier 2** items, and `git-revision-date-localized` could simply be disabled during a shadow build.
+
+`mkdocs-llmstxt` is the only one not on Zensical's backlog yet, and it's optional — easy to drop before a Zensical migration.
