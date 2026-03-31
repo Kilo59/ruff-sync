@@ -668,8 +668,16 @@ async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging)
 
         run = sarif_doc["runs"][0]
         assert run["tool"]["driver"]["name"] == "ruff-sync"
-        assert len(run["tool"]["driver"]["rules"]) >= 1
-        assert run["tool"]["driver"]["rules"][0]["id"] == "RUFF-SYNC-CONFIG-DRIFT"
+        rules = run["tool"]["driver"]["rules"]
+        assert len(rules) >= 1
+        # Rules are now de-duplicated and keyed per drifted TOML path.
+        # Each ruleId includes the check_name and the drift_key so code-scanning
+        # UIs can group findings per key across runs.
+        rule_ids = {r["id"] for r in rules}
+        # The drifted key 'target-version' should show up in at least one rule ID.
+        assert any("target-version" in rid for rid in rule_ids), (
+            f"Expected a per-key ruleId containing 'target-version', got: {rule_ids}"
+        )
 
         # Semantic assertions — at least one result must reference the drifted key
         results = run["results"]
@@ -684,6 +692,13 @@ async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging)
             loc = result["locations"][0]["physicalLocation"]
             assert "artifactLocation" in loc
             assert loc["region"]["startLine"] == 1
+            # Each result must carry stable fingerprints and custom properties.
+            assert "fingerprints" in result, "Expected 'fingerprints' on each SARIF result"
+            assert "properties" in result, "Expected 'properties' on each SARIF result"
+            assert "drift_key" in result["properties"], "Expected 'drift_key' in result properties"
+            assert "check_name" in result["properties"], (
+                "Expected 'check_name' in result properties"
+            )
 
         # The drifted key should appear in at least one message
         all_messages = " ".join(r["message"]["text"] for r in results)

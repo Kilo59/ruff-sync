@@ -916,21 +916,19 @@ def _find_changed_keys(
     """
     changed: list[str] = []
 
-    source_has_items = hasattr(source, "items") or isinstance(source, Mapping)
-    merged_has_items = hasattr(merged, "items") or isinstance(merged, Mapping)
+    source_is_mapping = isinstance(source, Mapping)
+    merged_is_mapping = isinstance(merged, Mapping)
 
-    if source_has_items and merged_has_items:
-        merged_dict: Mapping[str, Any] = merged
-        source_dict: Mapping[str, Any] = source
-        for key, merged_val in merged_dict.items():
+    if source_is_mapping and merged_is_mapping:
+        for key, merged_val in merged.items():
             full_key = f"{prefix}.{key}" if prefix else key
-            source_val = source_dict.get(key)
-            if source_val is None and key not in source_dict:
+            source_val = source.get(key)
+            if source_val is None and key not in source:
                 # Key is new (only in merged)
                 changed.append(full_key)
             else:
                 # Unwrap tomlkit proxy objects before comparing.
-                # Note: source_val is always set here because the key exists in source_dict
+                # Note: source_val is always set here because the key exists in source
                 # (the is None + key not in guard above handles the absent case).
                 src_unwrapped = (
                     source_val.unwrap()
@@ -943,8 +941,14 @@ def _find_changed_keys(
                     changed.extend(nested)
                 elif src_unwrapped != mrg_unwrapped:
                     changed.append(full_key)
+    elif source_is_mapping != merged_is_mapping:
+        # Structural type mismatch (table vs scalar or vice-versa): treat the
+        # whole node as changed rather than attempting a meaningless value
+        # comparison between incompatible TOML node types.
+        if prefix:
+            changed.append(prefix)
     else:
-        # Leaf node comparison
+        # Both are leaf values — compare directly.
         src_unwrapped = source.unwrap() if hasattr(source, "unwrap") else source
         mrg_unwrapped = merged.unwrap() if hasattr(merged, "unwrap") else merged
         if src_unwrapped != mrg_unwrapped:
