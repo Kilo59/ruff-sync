@@ -506,7 +506,7 @@ def main() -> int:
     except UpstreamError as e:
         for url, err in e.errors:
             LOGGER.error(f"❌ Failed to fetch {url}: {err}")  # noqa: TRY400
-        return 1
+        return 4
 
 
 if __name__ == "__main__":

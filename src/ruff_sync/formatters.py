@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 import pathlib
-from typing import Final, Literal, Protocol, TypedDict
+from typing import Any, Final, Literal, Protocol, TypedDict
 
 from ruff_sync.constants import OutputFormat
 
@@ -468,6 +468,154 @@ class GitlabFormatter:
         return hashlib.md5(raw.encode()).hexdigest()  # noqa: S324
 
 
+class SarifResult(TypedDict):
+    """A single SARIF result (finding)."""
+
+    ruleId: str
+    level: Literal["error", "warning", "note"]
+    message: dict[str, str]
+    locations: list[dict[str, Any]]
+
+
+class SarifFormatter:
+    """SARIF v2.1.0 output formatter.
+
+    Accumulates results during the run and writes a complete SARIF document to
+    stdout in ``finalize()``.  The CI job redirects stdout to a file::
+
+        ruff-sync check --output-format sarif > results.sarif
+
+    An empty ``results`` list is emitted when no issues were found.
+
+    Schema: https://json.schemastore.org/sarif-2.1.0.json
+    """
+
+    _RULE_ID: Final[str] = "RUFF-SYNC-CONFIG-DRIFT"
+    _SCHEMA: Final[str] = "https://json.schemastore.org/sarif-2.1.0.json"
+    _SARIF_VERSION: Final[str] = "2.1.0"
+
+    def __init__(self) -> None:
+        """Initialise with an empty result list."""
+        self._results: list[SarifResult] = []
+
+    # ------------------------------------------------------------------
+    # Protocol methods
+    # ------------------------------------------------------------------
+
+    def note(self, message: str) -> None:
+        """Delegate to logger only; not representable in the SARIF schema."""
+        LOGGER.info(message)
+
+    def info(self, message: str, logger: logging.Logger | None = None) -> None:
+        """Delegate to logger only; not included in the structured report."""
+        (logger or LOGGER).info(message)
+
+    def success(self, message: str) -> None:
+        """Delegate to logger only; not representable in the SARIF schema."""
+        LOGGER.info(message)
+
+    def error(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
+    ) -> None:
+        """Accumulate an error-level SARIF result."""
+        (logger or LOGGER).error(message)
+        self._results.append(self._make_result(message=message, level="error", file_path=file_path))
+
+    def warning(
+        self,
+        message: str,
+        file_path: pathlib.Path | None = None,
+        logger: logging.Logger | None = None,
+        check_name: str = _DEFAULT_CHECK_NAME,
+        drift_key: str | None = None,
+    ) -> None:
+        """Accumulate a warning-level SARIF result."""
+        (logger or LOGGER).warning(message)
+        self._results.append(
+            self._make_result(message=message, level="warning", file_path=file_path)
+        )
+
+    def debug(self, message: str, logger: logging.Logger | None = None) -> None:
+        """Delegate to logger only; not included in the structured report."""
+        (logger or LOGGER).debug(message)
+
+    def diff(self, diff_text: str) -> None:
+        """Ignored by structured formatters — diffs are not representable in SARIF."""
+
+    def finalize(self) -> None:
+        """Write the collected results as a SARIF v2.1.0 document to stdout."""
+        rule: dict[str, Any] = {
+            "id": self._RULE_ID,
+            "name": "ConfigDrift",
+            "shortDescription": {"text": "Ruff configuration has drifted from upstream."},
+            "helpUri": "https://github.com/Kilo59/ruff-sync",
+        }
+        sarif_doc: dict[str, Any] = {
+            "version": self._SARIF_VERSION,
+            "$schema": self._SCHEMA,
+            "runs": [
+                {
+                    "tool": {
+                        "driver": {
+                            "name": "ruff-sync",
+                            "informationUri": "https://github.com/Kilo59/ruff-sync",
+                            "rules": [rule],
+                        }
+                    },
+                    "results": self._results,
+                }
+            ],
+        }
+        print(json.dumps(sarif_doc, indent=2))
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _make_result(
+        self,
+        message: str,
+        level: Literal["error", "warning", "note"],
+        file_path: pathlib.Path | None,
+    ) -> SarifResult:
+        """Build a single SARIF result object."""
+        artifact_uri = _path_to_artifact_uri(file_path)
+        return {
+            "ruleId": self._RULE_ID,
+            "level": level,
+            "message": {"text": message},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {"uri": artifact_uri, "uriBaseId": "%SRCROOT%"},
+                        "region": {"startLine": 1},
+                    }
+                }
+            ],
+        }
+
+
+def _path_to_artifact_uri(file_path: pathlib.Path | None) -> str:
+    """Convert a file path to a relative URI suitable for SARIF artifactLocation.
+
+    SARIF recommends relative URIs with ``uriBaseId`` rather than absolute
+    ``file://`` URIs so results are portable across machines.
+    """
+    if file_path is None:
+        return "pyproject.toml"
+    if file_path.is_absolute():
+        try:
+            return str(file_path.relative_to(pathlib.Path.cwd()))
+        except ValueError:
+            return file_path.name
+    return str(file_path)
+
+
 def get_formatter(output_format: OutputFormat) -> ResultFormatter:
     """Return the corresponding formatter for the given format."""
     match output_format:
@@ -479,3 +627,5 @@ def get_formatter(output_format: OutputFormat) -> ResultFormatter:
             return JsonFormatter()
         case OutputFormat.GITLAB:
             return GitlabFormatter()
+        case OutputFormat.SARIF:
+            return SarifFormatter()

@@ -802,7 +802,7 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     capsys: pytest.CaptureFixture[str],
     configure_logging: logging.Logger,
 ) -> None:
-    """Ensure UpstreamError from a failed fetch surfaces as exit code 1 with logged failures."""
+    """Ensure UpstreamError from a failed fetch surfaces as exit code 4 with logged failures."""
     # Successful upstream
     respx_mock.get("http://ok.toml").respond(
         status_code=200,
@@ -831,7 +831,7 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     # Invoke the CLI entry point
     exit_code = ruff_sync.main()
 
-    assert exit_code == 1
+    assert exit_code == 4
 
     captured = capsys.readouterr()
     combined_output = captured.out + captured.err

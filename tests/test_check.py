@@ -129,9 +129,9 @@ target-version = "py310"
             pre_commit=True,
         )
 
-        # Ruff config matches completely, but pre_commit is out of sync -> Exit code 2
+        # Ruff config matches completely, but pre_commit is out of sync -> Exit code 3
         exit_code = await ruff_sync.check(args)
-        assert exit_code == 2
+        assert exit_code == 3
 
         assert "pre-commit Ruff hook is out of sync" in caplog.text
 
@@ -590,6 +590,144 @@ line-length = 88
         # Human-friendly success/note message should still be present
         assert "in sync" in combined_output.lower()
         assert "ruff" in combined_output.lower()
+
+
+@pytest.mark.asyncio
+async def test_check_upstream_error_returns_4(fs: FakeFilesystem, capsys):
+    """Verify that an unreachable upstream URL causes check() to raise UpstreamError.
+
+    The CLI catches UpstreamError and returns exit code 4.  Here we test check()
+    directly — it propagates UpstreamError so the CLI can handle it uniformly.
+    """
+    from ruff_sync.core import UpstreamError
+
+    local_content = '[tool.ruff]\ntarget-version = "py310"\n'
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(404)
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=False,
+        )
+
+        with pytest.raises(UpstreamError):
+            await ruff_sync.check(args)
+
+
+@pytest.mark.asyncio
+async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging):
+    """Verify --output-format sarif produces a valid SARIF v2.1.0 document."""
+    import json
+
+    local_content = '[tool.ruff]\ntarget-version = "py310"\n'
+    upstream_content = '[tool.ruff]\ntarget-version = "py311"\n'
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=upstream_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=False,
+            output_format=ruff_sync.constants.OutputFormat.SARIF,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 1
+
+        captured = capsys.readouterr()
+        # SARIF is written as a single JSON document to stdout
+        sarif_doc = json.loads(captured.out)
+
+        # Structural assertions — must be a valid SARIF v2.1.0 document
+        assert sarif_doc["version"] == "2.1.0"
+        assert "runs" in sarif_doc
+        assert len(sarif_doc["runs"]) == 1
+
+        run = sarif_doc["runs"][0]
+        assert run["tool"]["driver"]["name"] == "ruff-sync"
+        assert len(run["tool"]["driver"]["rules"]) >= 1
+        assert run["tool"]["driver"]["rules"][0]["id"] == "RUFF-SYNC-CONFIG-DRIFT"
+
+        # Semantic assertions — at least one result must reference the drifted key
+        results = run["results"]
+        assert results, "Expected at least one SARIF result for out-of-sync config"
+
+        error_results = [r for r in results if r["level"] == "error"]
+        assert error_results, "Expected at least one error-level SARIF result"
+
+        # Each result must have a message and a physical location
+        for result in error_results:
+            assert "text" in result["message"]
+            loc = result["locations"][0]["physicalLocation"]
+            assert "artifactLocation" in loc
+            assert loc["region"]["startLine"] == 1
+
+        # The drifted key should appear in at least one message
+        all_messages = " ".join(r["message"]["text"] for r in results)
+        assert "target-version" in all_messages
+
+
+@pytest.mark.asyncio
+async def test_check_sarif_format_in_sync(fs: FakeFilesystem, capsys, configure_logging):
+    """Verify SARIF formatter emits zero results when configs are in sync."""
+    import json
+
+    local_content = '[tool.ruff]\ntarget-version = "py311"\n'
+    fs.create_file("pyproject.toml", contents=local_content)
+    source_path = pathlib.Path("pyproject.toml")
+
+    upstream_url = URL("https://example.com/pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200,
+            content_type="text/plain",
+            content=local_content,
+        )
+
+        args = ruff_sync.Arguments(
+            command="check",
+            upstream=(upstream_url,),
+            to=source_path,
+            exclude=set(),
+            verbose=0,
+            semantic=False,
+            diff=False,
+            output_format=ruff_sync.constants.OutputFormat.SARIF,
+        )
+
+        exit_code = await ruff_sync.check(args)
+        assert exit_code == 0
+
+        captured = capsys.readouterr()
+        sarif_doc = json.loads(captured.out)
+
+        assert sarif_doc["version"] == "2.1.0"
+        results = sarif_doc["runs"][0]["results"]
+        assert results == [], f"Expected empty results for in-sync config, got {results}"
 
 
 if __name__ == "__main__":

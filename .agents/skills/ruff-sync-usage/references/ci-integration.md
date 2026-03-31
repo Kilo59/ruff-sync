@@ -46,7 +46,7 @@ jobs:
 
 ### With Pre-commit Sync Check
 
-To also verify the pre-commit hook version, add the `--pre-commit` flag. Any non-zero exit code (1 = config drift, 2 = stale hook rev) will fail the CI step:
+To also verify the pre-commit hook version, add the `--pre-commit` flag:
 
 ```yaml
 - name: Check Ruff config and pre-commit hook
@@ -54,6 +54,21 @@ To also verify the pre-commit hook version, add the `--pre-commit` flag. Any non
 ```
 
 (Note: For better consistency, you can instead set `pre-commit-version-sync = true` in your `pyproject.toml` — then `ruff-sync check --semantic` will automatically include this check.)
+
+### SARIF Upload (GitHub Advanced Security)
+
+For repositories using GitHub Advanced Security, you can upload SARIF results for rich PR annotations:
+
+```yaml
+- name: Check Ruff config (SARIF)
+  run: ruff-sync check --output-format sarif > ruff-sync.sarif || true
+
+- name: Upload SARIF results
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: ruff-sync.sarif
+    category: ruff-sync
+```
 
 ---
 
@@ -77,6 +92,22 @@ ruff-sync-check:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
+```
+
+### GitLab Code Quality Report (SARIF)
+
+```yaml
+ruff-sync-sarif:
+  stage: lint
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  script:
+    - uv tool install ruff-sync
+    - ruff-sync check --output-format sarif > ruff-sync.sarif || true
+  artifacts:
+    reports:
+      sast: ruff-sync.sarif
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 ```
 
 ---
@@ -132,3 +163,17 @@ ruff-sync check
 ```
 
 No URL argument needed — it reads `upstream` from `[tool.ruff-sync]`.
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|----------|
+| **0** | In sync — no drift detected |
+| **1** | Config drift — `[tool.ruff]` values differ from upstream |
+| **2** | CLI usage error — invalid arguments (reserved by argparse) |
+| **3** | Pre-commit hook drift — use `--pre-commit` flag to enable this check |
+| **4** | Upstream unreachable — HTTP error or network failure |
+
+All non-zero codes cause a CI step to fail, which is the desired behaviour. To diagnose which failure occurred, check the exit code with `echo $?` after the `ruff-sync check` call.
