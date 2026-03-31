@@ -87,7 +87,14 @@ ruff-sync-check:
   stage: lint
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   script:
-    - uvx ruff-sync check --semantic
+    - uvx ruff-sync check --semantic --output-format gitlab > gl-code-quality-report.json
+  artifacts:
+    when: always
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - gl-code-quality-report.json
+    expire_in: 1 week
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -106,10 +113,14 @@ ruff-sync-sarif:
   stage: lint
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   script:
-    - uvx ruff-sync check --output-format sarif > ruff-sync.sarif || true
+    - uvx ruff-sync check --output-format sarif > ruff-sync.sarif
   artifacts:
+    when: always
     reports:
       sast: ruff-sync.sarif
+    paths:
+      - ruff-sync.sarif
+    expire_in: 1 week
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 ```

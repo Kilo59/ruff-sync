@@ -66,13 +66,20 @@ jobs:
 
 ```yaml
 ruff-sync-check:
-  image: python:3.12
+  stage: lint
+  image: ghcr.io/astral-sh/uv:latest
   script:
-    - pip install ruff-sync
-    - ruff-sync check --semantic
-  only:
-    - merge_requests
-    - main
+    - uvx ruff-sync check --semantic --output-format gitlab > gl-code-quality-report.json
+  artifacts:
+    when: always
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - gl-code-quality-report.json
+    expire_in: 1 week
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 ```
 
 ---
