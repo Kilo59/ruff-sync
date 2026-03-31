@@ -80,7 +80,7 @@ Use the official [`ghcr.io/astral-sh/uv`](https://docs.astral.sh/uv/guides/integ
 variables:
   UV_VERSION: "0.10"
   PYTHON_VERSION: "3.12"
-  BASE_LAYER: bookworm-slim
+  BASE_LAYER: alpine
   UV_LINK_MODE: copy   # required: GitLab mounts build dir separately
 
 ruff-sync-check:
@@ -96,6 +96,12 @@ ruff-sync-check:
 ### GitLab SAST Report (SARIF)
 
 ```yaml
+variables:
+  UV_VERSION: "0.10"
+  PYTHON_VERSION: "3.12"
+  BASE_LAYER: alpine
+  UV_LINK_MODE: copy   # required: GitLab mounts build dir separately
+
 ruff-sync-sarif:
   stage: lint
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
