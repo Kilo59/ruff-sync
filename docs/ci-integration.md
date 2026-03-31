@@ -33,6 +33,25 @@ By using `--output-format github`, `ruff-sync` will emit special workflow comman
 
 ![GitHub PR Annotation](assets/github-pr-annotation.png)
 
+### SARIF Upload (GitHub Advanced Security)
+
+For repositories with [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) enabled, upload SARIF results to track drift findings in the **Security tab** and get per-key inline PR annotations:
+
+```yaml
+- name: Check Ruff config (SARIF)
+  run: ruff-sync check --output-format sarif > ruff-sync.sarif || true
+
+- name: Upload SARIF results
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: ruff-sync.sarif
+    category: ruff-sync
+```
+
+The `|| true` ensures the upload step always runs even when drift is detected (exit code 1).
+
+> **Why SARIF over `--output-format github`?** The `github` format creates ephemeral PR annotations that disappear after the check re-runs. SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (`lint.select`, `target-version`, etc.) appears as a separate, deduplicated finding.
+
 ### Automated Sync PRs
 
 Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.
@@ -64,6 +83,10 @@ jobs:
 
 ### GitLab CI
 
+#### Code Quality Report (Free tier)
+
+Use `--output-format gitlab` to produce a [GitLab Code Quality](https://docs.gitlab.com/ci/testing/code_quality/) report. This appears in the MR widget on the Free tier and as inline diff annotations on Ultimate.
+
 ```yaml
 ruff-sync-check:
   stage: lint
@@ -71,22 +94,59 @@ ruff-sync-check:
   script:
     - uvx ruff-sync check --semantic --output-format gitlab > gl-code-quality-report.json
   artifacts:
-    when: always
+    when: always          # Upload even when ruff-sync exits 1 (drift detected)
     reports:
       codequality: gl-code-quality-report.json
     paths:
-      - gl-code-quality-report.json
+      - gl-code-quality-report.json   # Also expose for download/browsing
     expire_in: 1 week
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
 ```
 
+#### SAST Report / SARIF (Ultimate tier)
+
+Use `--output-format sarif` to feed the GitLab [Security & Compliance dashboard](https://docs.gitlab.com/user/application_security/) via the `sast` artifact report type:
+
+```yaml
+ruff-sync-sarif:
+  stage: lint
+  image: ghcr.io/astral-sh/uv:latest
+  script:
+    - uvx ruff-sync check --output-format sarif > ruff-sync.sarif
+  artifacts:
+    when: always
+    reports:
+      sast: ruff-sync.sarif
+    paths:
+      - ruff-sync.sarif
+    expire_in: 1 week
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+```
+
+> **Why SARIF over `codequality`?** SARIF is a portable, vendor-neutral format — the same file works for GitHub Advanced Security, GitLab SAST, SonarQube, and IDE extensions. It also carries per-key granularity: each drifted TOML key is a separate finding with a stable fingerprint that is tracked as "introduced" or "resolved" across pipeline runs. Use `codequality` for lightweight GitLab-native linting feedback; use `sarif` when you need cross-platform compatibility or want findings tracked in a security dashboard.
+
 ---
 
 You can use `ruff-sync` with `pre-commit` to ensure your configuration is always in sync before pushing.
 
 See the [Pre-commit Guide](pre-commit.md) for details on using the official hooks.
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|----------|
+| **0** | In sync — no drift detected |
+| **1** | Config drift — `[tool.ruff]` values differ from upstream |
+| **2** | CLI usage error — invalid arguments (reserved by argparse) |
+| **3** | Pre-commit hook drift — use `--pre-commit` flag to enable this check |
+| **4** | Upstream unreachable — HTTP error or network failure |
+
+All non-zero codes cause a CI step to fail. Use `artifacts: when: always` (GitLab) or `if: always()` (GitHub Actions) to ensure report artifacts are uploaded even when the job fails.
 
 ---
 

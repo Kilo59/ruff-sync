@@ -57,7 +57,7 @@ To also verify the pre-commit hook version, add the `--pre-commit` flag:
 
 ### SARIF Upload (GitHub Advanced Security)
 
-For repositories using GitHub Advanced Security, you can upload SARIF results for rich PR annotations:
+For repositories with GitHub Advanced Security enabled, upload SARIF results to track drift findings in the **Security tab** and get per-key inline PR annotations that persist across runs:
 
 ```yaml
 - name: Check Ruff config (SARIF)
@@ -69,6 +69,11 @@ For repositories using GitHub Advanced Security, you can upload SARIF results fo
     sarif_file: ruff-sync.sarif
     category: ruff-sync
 ```
+
+The `|| true` ensures the upload step always runs even when `ruff-sync` exits 1 (drift detected). Without it, GitHub Actions would skip the upload step on failure.
+
+> **Why SARIF over `--output-format github`?**
+> The `github` format creates ephemeral workflow annotations that disappear once the check re-runs. SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (`lint.select`, `target-version`, etc.) is a separate finding with a stable fingerprint — making it easy to trend configuration health over time.
 
 ---
 
@@ -100,7 +105,9 @@ ruff-sync-check:
     - if: '$CI_COMMIT_BRANCH == "main"'
 ```
 
-### GitLab SAST Report (SARIF)
+### GitLab SAST Report / SARIF (Ultimate tier)
+
+Use `--output-format sarif` to feed the GitLab [Security & Compliance dashboard](https://docs.gitlab.com/user/application_security/) via the `sast` artifact report type:
 
 ```yaml
 variables:
@@ -115,7 +122,7 @@ ruff-sync-sarif:
   script:
     - uvx ruff-sync check --output-format sarif > ruff-sync.sarif
   artifacts:
-    when: always
+    when: always          # Upload even when ruff-sync exits 1 (drift detected)
     reports:
       sast: ruff-sync.sarif
     paths:
@@ -124,6 +131,18 @@ ruff-sync-sarif:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 ```
+
+> **Why SARIF over `--output-format gitlab` (codequality)?**
+>
+> | Concern | `codequality` | `sarif` |
+> |---------|--------------|--------|
+> | GitLab tier | Free (MR widget), Ultimate (inline diff) | Ultimate (Security dashboard) |
+> | GitHub support | ❌ | ✅ via `upload-sarif` |
+> | Per-key findings | ❌ one issue per file | ✅ one finding per drifted TOML key |
+> | Finding persistence | MR widget only | Security tab, tracked across branches |
+> | Portability | GitLab only | GitHub, GitLab, SonarQube, IDE extensions |
+>
+> **Rule of thumb**: use `codequality` for lightweight GitLab-native linting feedback; use `sarif` when you need cross-platform compatibility or want findings tracked in a security/code-scanning dashboard.
 
 ---
 
