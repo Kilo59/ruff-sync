@@ -419,7 +419,7 @@ def _resolve_path(args: CLIArguments, config: Config) -> str | MissingType:
     return MISSING
 
 
-def _resolve_output_format(args: CLIArguments, config: Config) -> OutputFormat | MissingType:
+def _resolve_output_format(args: CLIArguments, config: Config) -> OutputFormat:
     """Resolve output format from CLI, config, or environment auto-detection."""
     if args.output_format:
         return args.output_format
@@ -440,7 +440,7 @@ def _resolve_output_format(args: CLIArguments, config: Config) -> OutputFormat |
         LOGGER.info(f"🤖 Auto-detected CI environment: {provider}")
         return provider
 
-    return MISSING
+    return OutputFormat.TEXT
 
 
 def _resolve_to(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> pathlib.Path:
@@ -474,7 +474,7 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
         exclude,
         branch,
         path,
-        output_format,  # type: ignore[arg-type]
+        output_format,
     )
 
 
