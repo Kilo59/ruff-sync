@@ -41,6 +41,11 @@ if TYPE_CHECKING:
             None,
         ),
         (
+            {"GITHUB_ACTIONS": "true", "GITLAB_CI": "true"},
+            OutputFormat.GITLAB,
+            IsStr(regex=".*GitLab output format detected in GitHub Actions environment.*"),
+        ),
+        (
             {},
             OutputFormat.GITHUB,
             None,
@@ -52,7 +57,7 @@ def test_validate_ci_output_format(
     caplog: LogCaptureFixture,
     env_vars: dict[str, str],
     output_format: OutputFormat,
-    expected_warning: str | None,
+    expected_warning: IsStr | None,
 ) -> None:
     """Test that _validate_ci_output_format logs correct warnings for CI mismatches."""
     # Clear existing env vars and set test ones
@@ -75,6 +80,6 @@ def test_validate_ci_output_format(
     _validate_ci_output_format(args)
 
     if expected_warning:
-        assert any(expected_warning == record.message for record in caplog.records)
+        assert any(record.message == expected_warning for record in caplog.records)
     else:
         assert not caplog.records

@@ -326,6 +326,7 @@ async def test_sync_updates_ruff_config(
     # Ensure the updated ruff config contains all original keys and matches upstream values
     upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
     assert updated_ruff_config.unwrap() == IsPartialDict(upstream_ruff_config.unwrap())
+    assert set(original_ruff_config.keys()).issubset(updated_ruff_config.keys())
 
 
 @contextlib.contextmanager

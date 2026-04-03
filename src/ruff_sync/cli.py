@@ -19,6 +19,7 @@ from typing import (
     Any,
     ClassVar,
     Final,
+    Literal,
     NamedTuple,
     cast,
 )
@@ -60,6 +61,9 @@ try:
     __version__ = metadata.version("ruff-sync")
 except metadata.PackageNotFoundError:
     __version__ = "0.0.0-dev"
+
+
+CIProvider = Literal[OutputFormat.GITHUB, OutputFormat.GITLAB]
 
 
 LOGGER = logging.getLogger(__name__)
@@ -421,14 +425,24 @@ def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
     return ResolvedArgs(upstream, to, cast("Any", exclude), cast("Any", branch), cast("Any", path))
 
 
+def _detect_ci_provider() -> CIProvider | None:
+    """Return the current CI provider, or None if not in a CI environment."""
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return OutputFormat.GITHUB
+    if os.environ.get("GITLAB_CI") == "true":
+        return OutputFormat.GITLAB
+    return None
+
+
 def _validate_ci_output_format(args: Arguments) -> None:
     """Log a warning if the specified output format does not match the CI environment."""
-    if os.environ.get("GITHUB_ACTIONS") == "true" and args.output_format == OutputFormat.GITLAB:
+    provider = _detect_ci_provider()
+    if provider is OutputFormat.GITHUB and args.output_format == OutputFormat.GITLAB:
         LOGGER.warning(
             "⚠️ GitLab output format detected in GitHub Actions environment. "
             "Did you mean '--output-format github'?"
         )
-    elif os.environ.get("GITLAB_CI") == "true" and args.output_format == OutputFormat.GITHUB:
+    elif provider is OutputFormat.GITLAB and args.output_format == OutputFormat.GITHUB:
         LOGGER.warning(
             "⚠️ GitHub output format detected in GitLab CI environment. "
             "Did you mean '--output-format gitlab'?"
