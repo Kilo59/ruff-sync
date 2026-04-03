@@ -11,6 +11,7 @@ from .cli import (
     get_config,
     main,
 )
+from .constants import OutputFormat
 from .core import (
     Config,
     FetchResult,
@@ -26,16 +27,19 @@ from .core import (
     to_git_url,
     toml_ruff_parse,
 )
+from .formatters import get_formatter
 
 __all__ = [
     "Arguments",
     "Config",
     "FetchResult",
+    "OutputFormat",
     "RuffConfigFileName",
     "__version__",
     "check",
     "fetch_upstream_config",
     "get_config",
+    "get_formatter",
     "get_ruff_config",
     "get_ruff_tool_table",
     "is_ruff_toml_file",
