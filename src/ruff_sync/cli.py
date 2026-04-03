@@ -51,6 +51,7 @@ if TYPE_CHECKING:
 __all__: Final[list[str]] = [
     "Arguments",
     "ColoredFormatter",
+    "OutputFormat",
     "get_config",
     "main",
 ]
