@@ -21,6 +21,7 @@ from typing import (
     Final,
     Literal,
     NamedTuple,
+    Protocol,
     cast,
 )
 
@@ -132,6 +133,26 @@ class ResolvedArgs(NamedTuple):
     branch: str | MissingType
     path: str | MissingType
     output_format: OutputFormat
+
+
+class CLIArguments(Protocol):
+    """Protocol for parsed CLI arguments from ArgumentParser."""
+
+    command: str | None
+    upstream: list[URL]
+    to: str | None
+    source: str | None
+    exclude: list[str] | None
+    verbose: int
+    branch: str | None
+    path: str | None
+    pre_commit: bool | None
+    output_format: OutputFormat | None
+    # Subcommand specific
+    init: bool
+    save: bool | None
+    semantic: bool
+    diff: bool
 
 
 @lru_cache(maxsize=1)
@@ -311,10 +332,10 @@ def _get_cli_parser() -> ArgumentParser:
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
-def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
+def _resolve_upstream(args: CLIArguments, config: Config) -> tuple[URL, ...]:
     """Resolve upstream URL(s) from CLI or config."""
     if args.upstream:
-        upstreams = tuple(cast("Iterable[URL]", args.upstream))
+        upstreams = tuple(args.upstream)
         # Log CLI upstreams for consistency with config sourcing
         summary = (
             f"{upstreams[0]}... ({len(upstreams)} total)"
@@ -352,7 +373,7 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
     )
 
 
-def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | MissingType:
+def _resolve_exclude(args: CLIArguments, config: Config) -> Iterable[str] | MissingType:
     """Resolve exclude patterns from CLI or config.
 
     Returns the CLI value if provided, otherwise the value from
@@ -361,7 +382,7 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | Mi
     can apply the ``DEFAULT_EXCLUDE`` set downstream.
     """
     if args.exclude is not None:
-        return cast("Iterable[str]", args.exclude)
+        return args.exclude
     if "exclude" in config:
         exclude: Iterable[str] = config["exclude"]
         LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
@@ -369,14 +390,14 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | Mi
     return MISSING
 
 
-def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+def _resolve_branch(args: CLIArguments, config: Config) -> str | MissingType:
     """Resolve branch name from CLI, config, or MISSING.
 
     An empty string (``--branch ""``) is treated as falsy and falls back to
     the config or default, preserving the original behaviour.
     """
-    if getattr(args, "branch", None):
-        return cast("str", args.branch)
+    if args.branch:
+        return args.branch
     if "branch" in config:
         branch: str = config["branch"]
         LOGGER.info(f"🌿 Using branch from [tool.ruff-sync]: {branch}")
@@ -384,14 +405,14 @@ def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     return MISSING
 
 
-def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+def _resolve_path(args: CLIArguments, config: Config) -> str | MissingType:
     """Resolve path prefix from CLI, config, or MISSING.
 
     An empty string (``--path ""``) is treated as falsy and falls back to
     the config or default, preserving the original behaviour.
     """
-    if getattr(args, "path", None):
-        return cast("str", args.path)
+    if args.path:
+        return args.path
     if "path" in config:
         path: str = config["path"]
         LOGGER.info(f"📄 Using path from [tool.ruff-sync]: {path}")
@@ -399,13 +420,15 @@ def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     return MISSING
 
 
-def _resolve_output_format(args: Any, config: Mapping[str, Any]) -> OutputFormat | MissingType:
+def _resolve_output_format(
+    args: CLIArguments, config: Config
+) -> OutputFormat | MissingType:
     """Resolve output format from CLI, config, or environment auto-detection."""
-    if getattr(args, "output_format", None):
-        return cast("OutputFormat", args.output_format)
+    if args.output_format:
+        return args.output_format
 
-    if "output-format" in config:
-        fmt_str = config["output-format"]
+    if "output_format" in config:
+        fmt_str = config["output_format"]
         try:
             fmt = OutputFormat(fmt_str)
         except ValueError:
@@ -423,7 +446,7 @@ def _resolve_output_format(args: Any, config: Mapping[str, Any]) -> OutputFormat
     return MISSING
 
 
-def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
+def _resolve_to(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> pathlib.Path:
     """Resolve target path from CLI, config, or default."""
     if args.source:
         LOGGER.warning("DeprecationWarning: --source is deprecated. Use --to instead.")
@@ -440,7 +463,7 @@ def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) 
     return initial_to
 
 
-def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> ResolvedArgs:
+def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> ResolvedArgs:
     """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
     to = _resolve_to(args, config, initial_to)
@@ -524,11 +547,9 @@ def main() -> int:
 
     upstream, to_val, exclude, branch, path, output_format = _resolve_args(args, config, initial_to)
 
-    pre_commit_arg = getattr(args, "pre_commit", None)
+    pre_commit_arg = args.pre_commit
     if pre_commit_arg is not None:
         pre_commit_val: bool | MissingType = pre_commit_arg
-    elif "pre-commit-version-sync" in config:
-        pre_commit_val = cast("Any", config).get("pre-commit-version-sync")
     elif "pre_commit_version_sync" in config:
         pre_commit_val = config.get("pre_commit_version_sync", MISSING)
     else:

@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from dirty_equals import IsStr
-
-from ruff_sync.cli import Arguments, OutputFormat, _validate_ci_output_format
+from ruff_sync.core import Config
+from ruff_sync.cli import Arguments, OutputFormat, _validate_ci_output_format, CLIArguments
 from ruff_sync.constants import MISSING, MissingType
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ def test_validate_ci_output_format(
         (
             {"GITHUB_ACTIONS": "true"},
             {},
-            {"output-format": "gitlab"},
+            {"output_format": "gitlab"},
             OutputFormat.GITLAB,
         ),
         # Auto-detection: GitHub
@@ -128,7 +128,7 @@ def test_validate_ci_output_format(
         (
             {"GITHUB_ACTIONS": "true"},
             {},
-            {"output-format": "invalid"},
+            {"output_format": "invalid"},
             OutputFormat.GITHUB,
         ),
         # Explicit CLI TEXT (with CI env)
@@ -142,7 +142,7 @@ def test_validate_ci_output_format(
         (
             {},
             {},
-            {"output-format": "text"},
+            {"output_format": "text"},
             OutputFormat.TEXT,
         ),
     ],
@@ -151,7 +151,7 @@ def test_resolve_output_format(
     monkeypatch: MonkeyPatch,
     env_vars: dict[str, str],
     cli_args: dict[str, Any],
-    config: dict[str, Any],
+    config: Config,
     expected: OutputFormat | MissingType,
 ) -> None:
     """Test that output format is correctly resolved from CLI, config, and environment."""
@@ -165,11 +165,13 @@ def test_resolve_output_format(
 
     # Mock CLI args
     class MockArgs:
+        output_format = None
+
         def __init__(self, **kwargs: Any) -> None:
             for k, v in kwargs.items():
                 setattr(self, k, v)
 
-    args = MockArgs(**cli_args)
+    args: CLIArguments = MockArgs(**cli_args)  # type: ignore[assignment]
 
     assert _resolve_output_format(args, config) == expected
 
