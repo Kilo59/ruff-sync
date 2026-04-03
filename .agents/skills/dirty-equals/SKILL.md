@@ -1,51 +1,37 @@
 ---
 name: dirty-equals
-description: Use for declarative, expressive assertions in Python tests. Ideal for matching complex data structures, TOML documents, and fuzzy matching (URLs, paths, types).
+description: Use this skill when you need to write declarative, readable, and maintainable assertions in Python tests. It is particularly effective for matching complex data structures, validating merged TOML configurations, and performing fuzzy matching on URLs, file paths, or object types. Use this when the user asks to "assert," "check," "verify," or "match" data in a test, even if they don't explicitly mention "dirty-equals."
 ---
 
+# `dirty-equals` Skill
+
+This skill provides patterns and best practices for writing declarative assertions in the `ruff-sync` project using the `dirty-equals` library.
+
 ## Overview
-`dirty-equals` allows you to write assertions that are easier to read and maintain. Instead of asserting on every field manually, compare the entire object against a template.
 
-## Common Matchers
-- `IsPositiveInt`: Matches any positive integer.
-- `IsStr(regex=...)`: Matches a string against a regex pattern.
-- `IsInstance(httpx.URL)`: Matches a valid `httpx.URL` object.
-- `IsInstance(pathlib.Path)`: Matches an instance of `pathlib.Path`.
-- `IsPartialDict(expected)`: Matches a dictionary containing at least the specified keys.
-- `IsList(..., order=False)`: Matches a list of items, optionally ignoring order.
+Instead of asserting on every field manually, compare against a "dirty" object that matches the expected structure and types.
 
-## Project Patterns & Gotchas
-
-### matching `tomlkit` documents
-`tomlkit` returns proxy objects. For reliable matching with `dirty-equals`, always call `.unwrap()` on the parsed document or table. We prefer module-level imports for matchers:
 ```python
-from dirty_equals import IsPartialDict
-import tomlkit
+from dirty_equals import IsInt, IsPartialDict, IsStr
 
-doc = tomlkit.parse('[tool.ruff]\nline-length = 80')
-# Correct: unwrap to a plain dict
-assert doc.unwrap() == IsPartialDict({
-    "tool": {
-        "ruff": {"line-length": 80}
-    }
-})
+def test_config_logic():
+    result = {"status": "active", "version": 1, "extra": "data"}
+    # Declarative assertion
+    assert result == IsPartialDict({
+        "status": IsStr(regex="act.*"),
+        "version": IsInt(gt=0),
+    })
 ```
 
-### matching `Arguments` (NamedTuple)
-To match our CLI `Arguments`, convert it to a dictionary first using `._asdict()`:
-```python
-from dirty_equals import IsInstance, IsPartialDict
-import httpx
-import pathlib
+## Detailed reference
 
-# Assuming args is a ruff_sync.Arguments instance
-assert args._asdict() == IsPartialDict({
-    "command": "pull",
-    "upstream": (IsInstance(httpx.URL),),
-    "to": IsInstance(pathlib.Path),
-})
-```
+Check these references for project-specific usage and common matchers:
 
-### Negative Testing & Logic
-- **Negation**: Use `~` (e.g., `assert x == ~IsNone`).
-- **Combining**: Use `&` and `|` (e.g., `IsInt & IsPositive`).
+- **[Common Matchers](references/common-matchers.md)**: Standard `dirty-equals` matchers like `IsPartialDict`, `IsInstance`, and more.
+- **[Specialized Matching](references/toml-matching.md)**: Handling `tomlkit.unwrap()` and `Arguments._asdict()`.
+
+## Best Practices
+
+- **Import Style**: Always use the `from dirty_equals import ...` style at the **module level** of your test files.
+- **Semantic Matching**: Use `dirty-equals` for the semantic part of your test assertions, while using string comparisons or `respx` for structural/whitespace checks where appropriate.
+- **Type Safety**: Prefer `IsInstance(httpx.URL)` or `IsInstance(pathlib.Path)` over custom regex for well-known types in the project.
