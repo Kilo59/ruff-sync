@@ -1,55 +1,46 @@
 ---
 name: mike
-description: Manage multiple versions of MkDocs-powered documentation. Use when deploying, aliasing, or managing versioned documentation sites.
+description: Use this skill to manage multiple versions of documentation for MkDocs-powered sites. Deploy new versions, update aliases (like 'latest' or 'stable'), set the default version for the site root, and manage versioned subdirectories in the deployment branch. Use this whenever the user wants to publish, version, or alias documentation, even if they don't explicitly mention "mike". Use also when the user wants to troubleshoot or debug versioned documentation.
 ---
 
 # mike: MkDocs Versioning
 
-`mike` is a tool for managing multiple versions of documentation for MkDocs-powered sites. It builds your site and commits the output into a specific Git branch (usually `gh-pages`) in versioned subdirectories.
+`mike` is used in this project to manage a versioned documentation site, allowing side-by-side availability of `dev` (main branch) and stable release docs (e.g., `0.1.4`).
 
 ## Prerequisites
 
-1.  **Install**:
-    `mike` is included in the `docs` dependency group in this project.
-    ```bash
-    # Sync all developer and documentation dependencies
-    uv sync --group docs
-    ```
-
-    To run `mike` commands:
-    ```bash
-    uv run mike <command>
-    ```
-
-2.  **Configuration**: The `mkdocs.yml` is already configured with `mike` as the versioning provider:
-    ```yaml
-    extra:
-      version:
-        provider: mike
-    ```
-
-## Core Workflow
-
-### 1. Initial Deployment
-Deploy the first version and set it as the default:
+`mike` is included in the `docs` dependency group.
 ```bash
-mike deploy 0.1.0 latest --push --update-aliases
-mike set-default --push latest
+# Sync documentation dependencies
+uv sync --group docs
 ```
 
-### 2. Deploying a New Version
+## Project Strategy
+
+This project follows a specific versioning strategy:
+1.  **`dev`**: Represents the current `main` branch.
+2.  **Stable Releases**: Versioned documentation (e.g., `0.1.4`) created upon release.
+3.  **`stable`**: An alias always pointing to the most recent non-dev release.
+
+## Core Workflows
+
+### 1. Deploying Development Docs
+Run this from the `main` branch to update the `dev` version:
 ```bash
-# Deploy version 0.2.0 and update the 'latest' alias
-mike deploy 0.2.0 latest --push --update-aliases
+mike deploy dev --push --update-aliases
 ```
 
-### 3. Managing Aliases
-Aliases are useful for pointing `latest` or `stable` to a specific version without rebuilding.
+### 2. Deploying a Stable Release
+When a new version is released (e.g., `0.1.4`), deploy it and update the `stable` alias:
 ```bash
-mike alias 0.2.0 stable --push --update-aliases
+# Deploy the specific version and update 'stable'
+mike deploy 0.1.4 stable --push --update-aliases
+
+# Set 'stable' as the default version for the site root
+mike set-default --push stable
 ```
 
-## Reference: Commands
+## Reference Commands
 
 | Action | Command |
 | :--- | :--- |
@@ -58,26 +49,16 @@ mike alias 0.2.0 stable --push --update-aliases
 | **Set Default** | `mike set-default <version>` |
 | **Alias** | `mike alias <version> <alias>` |
 | **Delete** | `mike delete <identifier>` |
-| **Delete All** | `mike delete --all` |
 
-## Options
+## CI/CD Integration
 
-- `--push`, `-p`: Automatically push the new commit to your remote Git repository.
-- `--branch`, `-b`: Specify the branch to deploy to (defaults to `gh-pages`).
-- `--update-aliases`, `-u`: Required if an alias is already assigned to another version.
-- `--alias-type`: `symlink` (default), `redirect` (HTML redirect), or `copy`.
+The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflows/ci.yaml). It automatically:
+- Extracts the version from `pyproject.toml`.
+- Deploys to `dev` if the version contains `.dev`.
+- Deploys to `<version>` and updates `stable` for official releases.
 
-## CI/CD Integration (GitHub Actions)
-
-Example step for deploying versioned docs:
-
-```yaml
-- name: Deploy versioned docs
-  run: |
-    git config --global user.name github-actions
-    git config --global user.email github-actions@github.com
-    mike deploy --push --update-aliases ${{ github.ref_name }} latest
-```
+> [!IMPORTANT]
+> **Do NOT** use `mike install-gh-pages`. It is deprecated and removed in the version used by this project. `mike deploy` handles branch initialization automatically.
 
 > [!TIP]
-> Always run `mike` commands from the specific Git tag or branch corresponding to that version of your software to ensure the documentation matches the code.
+> Use `mike serve` locally to preview the version switcher before pushing changes.
