@@ -420,6 +420,20 @@ def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
     return ResolvedArgs(upstream, to, cast("Any", exclude), cast("Any", branch), cast("Any", path))
 
 
+def _validate_ci_output_format(args: Arguments) -> None:
+    """Log a warning if the specified output format does not match the CI environment."""
+    if os.environ.get("GITHUB_ACTIONS") == "true" and args.output_format == OutputFormat.GITLAB:
+        LOGGER.warning(
+            "⚠️ GitLab output format detected in GitHub Actions environment. "
+            "Did you mean '--output-format github'?"
+        )
+    elif os.environ.get("GITLAB_CI") == "true" and args.output_format == OutputFormat.GITHUB:
+        LOGGER.warning(
+            "⚠️ GitHub output format detected in GitLab CI environment. "
+            "Did you mean '--output-format gitlab'?"
+        )
+
+
 def main() -> int:
     """Run the ruff-sync CLI."""
     # Handle backward compatibility: default to 'pull' if no command provided
@@ -498,6 +512,9 @@ def main() -> int:
         resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream
     )
     exec_args = exec_args._replace(upstream=resolved_upstream)
+
+    # Warn if the specified output format doesn't match the current CI environment
+    _validate_ci_output_format(exec_args)
 
     try:
         if exec_args.command == "check":
