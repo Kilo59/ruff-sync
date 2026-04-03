@@ -8,7 +8,7 @@ This document defines the mandatory testing standards and patterns for the `ruff
 - **No Side Effects**: Tests must be isolated and not touch the actual filesystem or make real network calls.
 - **Semantic + Structural Assertions**: When testing TOML merges, always verify **both**:
   1. **Structural/Whitespace**: The file "looks" correct (comments and spacing are preserved).
-  2. **Semantic**: The actual data in the merged result matches the expected values.
+  2. **Semantic**: The actual data in the merged result matches the expected values. Use the [dirty-equals](skills/dirty-equals/SKILL.md) Agent Skill for declarative, concise assertions.
 - **DRY with Fixtures and Parameterization**: Avoid code duplication. Use fixtures for common setups and `@pytest.mark.parametrize` for matrix testing.
 
 ## 2. Tooling and Environment

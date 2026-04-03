@@ -1,0 +1,30 @@
+[
+  {
+    "query": "I need to check if the tool.ruff section was merged correctly",
+    "should_trigger": true
+  },
+  {
+    "query": "add a unit test that verifies the output",
+    "should_trigger": true
+  },
+  {
+    "query": "where should I use dirty-equals",
+    "should_trigger": true
+  },
+  {
+    "query": "verify that this URL is from github.com",
+    "should_trigger": true
+  },
+  {
+    "query": "assert that the dictionary matches this schema",
+    "should_trigger": true
+  },
+  {
+    "query": "fix this syntax error in the CLI",
+    "should_trigger": false
+  },
+  {
+    "query": "run the tests with coverage",
+    "should_trigger": false
+  }
+]
