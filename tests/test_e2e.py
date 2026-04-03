@@ -271,32 +271,21 @@ async def test_ruff_sync_multi_upstream(fs: FakeFilesystem):
 
 
 @pytest.mark.asyncio
-async def test_check_output_formats_json(prep_env):
+async def test_check_output_formats_json(prep_env, capsys):
     """Verify that --output-format json produces valid JSON output."""
-    from io import StringIO
-
-    # Capture stdout
-    stdout = StringIO()
-    import sys
-
-    old_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        await ruff_sync.check(
-            ruff_sync.Arguments(
-                command="check",
-                upstream=(prep_env.upstream_url,),
-                to=prep_env.source_path,
-                exclude=set(),
-                verbose=0,
-                output_format=ruff_sync.OutputFormat.JSON,
-                diff=False,
-            )
+    await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=(prep_env.upstream_url,),
+            to=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            output_format=ruff_sync.OutputFormat.JSON,
+            diff=False,
         )
-    finally:
-        sys.stdout = old_stdout
+    )
 
-    output = stdout.getvalue()
+    output = capsys.readouterr().out
     # If the files are different, we expect a JSON report (NDJSON)
     if prep_env.expected_toml != prep_env.source_path.read_text():
         lines = [line for line in output.splitlines() if line.strip()]
@@ -314,31 +303,21 @@ async def test_check_output_formats_json(prep_env):
 
 
 @pytest.mark.asyncio
-async def test_check_output_formats_sarif(prep_env):
+async def test_check_output_formats_sarif(prep_env, capsys):
     """Verify that --output-format sarif produces valid SARIF output."""
-    from io import StringIO
-
-    stdout = StringIO()
-    import sys
-
-    old_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        await ruff_sync.check(
-            ruff_sync.Arguments(
-                command="check",
-                upstream=(prep_env.upstream_url,),
-                to=prep_env.source_path,
-                exclude=set(),
-                verbose=0,
-                output_format=ruff_sync.OutputFormat.SARIF,
-                diff=False,
-            )
+    await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=(prep_env.upstream_url,),
+            to=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            output_format=ruff_sync.OutputFormat.SARIF,
+            diff=False,
         )
-    finally:
-        sys.stdout = old_stdout
+    )
 
-    output = stdout.getvalue()
+    output = capsys.readouterr().out
     if prep_env.expected_toml != prep_env.source_path.read_text():
         data = json.loads(output)
         assert data["$schema"].startswith("https://json.schemastore.org/sarif-")
@@ -346,31 +325,21 @@ async def test_check_output_formats_sarif(prep_env):
 
 
 @pytest.mark.asyncio
-async def test_check_output_formats_gitlab(prep_env):
+async def test_check_output_formats_gitlab(prep_env, capsys):
     """Verify that --output-format gitlab produces valid GitLab artifacts."""
-    from io import StringIO
-
-    stdout = StringIO()
-    import sys
-
-    old_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        await ruff_sync.check(
-            ruff_sync.Arguments(
-                command="check",
-                upstream=(prep_env.upstream_url,),
-                to=prep_env.source_path,
-                exclude=set(),
-                verbose=0,
-                output_format=ruff_sync.OutputFormat.GITLAB,
-                diff=False,
-            )
+    await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=(prep_env.upstream_url,),
+            to=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            output_format=ruff_sync.OutputFormat.GITLAB,
+            diff=False,
         )
-    finally:
-        sys.stdout = old_stdout
+    )
 
-    output = stdout.getvalue()
+    output = capsys.readouterr().out
     if prep_env.expected_toml != prep_env.source_path.read_text():
         data = json.loads(output)
         assert isinstance(data, list)

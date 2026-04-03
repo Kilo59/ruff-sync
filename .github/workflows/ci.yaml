@@ -162,8 +162,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Extract version from pyproject.toml
-          VERSION=$(grep -m 1 "^version = " pyproject.toml | cut -d '"' -f 2)
+          # Extract version from pyproject.toml in a TOML-aware way using already installed dependencies
+          VERSION=$(uv run python - << 'PY'
+          import pathlib
+          import tomlkit
+
+          pyproject = pathlib.Path("pyproject.toml")
+          data = tomlkit.parse(pyproject.read_text(encoding="utf-8"))
+
+          # Support both top-level `version` and `[project]` table `version`
+          version = (
+              data.get("project", {}).get("version")
+              or data.get("version")
+          )
+          if not version:
+              raise SystemExit("Version not found in pyproject.toml")
+          print(version)
+          PY
+          )
           echo "Current Version: $VERSION"
 
           if [[ "$VERSION" == *".dev"* ]]; then
