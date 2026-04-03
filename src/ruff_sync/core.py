@@ -1020,7 +1020,7 @@ async def check(
         >>> # asyncio.run(check(args))
     """
     _branch, _path, _exclude, output_format = _resolve_defaults(args)
-    fmt = get_formatter(output_format)
+    fmt: ResultFormatter = get_formatter(output_format)
     try:
         fmt.note("🔍 Checking Ruff sync status...")
 
