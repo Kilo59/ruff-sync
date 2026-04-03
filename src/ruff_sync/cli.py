@@ -131,6 +131,7 @@ class ResolvedArgs(NamedTuple):
     exclude: Iterable[str] | MissingType
     branch: str | MissingType
     path: str | MissingType
+    output_format: OutputFormat
 
 
 @lru_cache(maxsize=1)
@@ -260,8 +261,8 @@ def _get_cli_parser() -> ArgumentParser:
         "--output-format",
         type=OutputFormat,
         choices=list(OutputFormat),
-        default=OutputFormat.TEXT,
-        help="Format for output. Default: text.",
+        default=None,
+        help="Format for output. Default: text (auto-detected in CI).",
     )
 
     # Pull subcommand (the default action)
@@ -398,6 +399,29 @@ def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     return MISSING
 
 
+def _resolve_output_format(args: Any, config: Mapping[str, Any]) -> OutputFormat | MissingType:
+    """Resolve output format from CLI, config, or environment auto-detection."""
+    if getattr(args, "output_format", None):
+        return cast("OutputFormat", args.output_format)
+
+    if "output-format" in config:
+        fmt_str = config["output-format"]
+        try:
+            fmt = OutputFormat(fmt_str)
+            LOGGER.info(f"📊 Using output format from [tool.ruff-sync]: {fmt}")
+            return fmt
+        except ValueError:
+            LOGGER.warning(f"Unknown output format in config: {fmt_str}")
+
+    # Auto-detection
+    provider = _detect_ci_provider()
+    if provider:
+        LOGGER.info(f"🤖 Auto-detected CI environment: {provider}")
+        return provider
+
+    return MISSING
+
+
 def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
     """Resolve target path from CLI, config, or default."""
     if args.source:
@@ -422,7 +446,15 @@ def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return ResolvedArgs(upstream, to, cast("Any", exclude), cast("Any", branch), cast("Any", path))
+    output_format = _resolve_output_format(args, config)
+    return ResolvedArgs(
+        upstream,
+        to,
+        cast("Any", exclude),
+        cast("Any", branch),
+        cast("Any", path),
+        cast("Any", output_format),
+    )
 
 
 def _detect_ci_provider() -> CIProvider | None:
@@ -489,7 +521,7 @@ def main() -> int:
     initial_to = pathlib.Path(arg_to) if arg_to else pathlib.Path()
     config: Config = get_config(initial_to)
 
-    upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
+    upstream, to_val, exclude, branch, path, output_format = _resolve_args(args, config, initial_to)
 
     pre_commit_arg = getattr(args, "pre_commit", None)
     if pre_commit_arg is not None:
@@ -517,12 +549,17 @@ def main() -> int:
         init=getattr(args, "init", False),
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
-        output_format=getattr(args, "output_format", OutputFormat.TEXT),
+        output_format=output_format,
     )
 
     # Use the shared helper from constants so the MISSING→default logic for
-    # branch/path cannot diverge between cli.main and core._merge_multiple_upstreams.
-    res_branch, res_path, _exclude = resolve_defaults(branch, path, exclude)
+    # branch/path/output_format cannot diverge between cli.main and
+    # core._merge_multiple_upstreams.
+    res_branch, res_path, _exclude, res_output_format = resolve_defaults(
+        branch, path, exclude, output_format
+    )
+    exec_args = exec_args._replace(output_format=res_output_format)
+
     resolved_upstream = tuple(
         resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream
     )

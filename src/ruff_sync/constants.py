@@ -65,7 +65,8 @@ def resolve_defaults(
     branch: str | MissingType,
     path: str | MissingType,
     exclude: Iterable[str] | MissingType,
-) -> tuple[str, str | None, Iterable[str]]:
+    output_format: OutputFormat | MissingType = MISSING,
+) -> tuple[str, str | None, Iterable[str], OutputFormat]:
     """Resolve MISSING sentinel values to their effective defaults.
 
     This is the single source of truth for MISSING → default resolution across
@@ -89,4 +90,5 @@ def resolve_defaults(
     # but explicit None is the canonical "root directory" sentinel.
     eff_path: str | None = raw_path or None
     eff_exclude = exclude if exclude is not MISSING else DEFAULT_EXCLUDE
-    return eff_branch, eff_path, eff_exclude
+    eff_output_format = output_format if output_format is not MISSING else OutputFormat.TEXT
+    return eff_branch, eff_path, eff_exclude, eff_output_format

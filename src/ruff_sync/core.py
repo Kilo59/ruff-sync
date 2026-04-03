@@ -34,8 +34,7 @@ from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
 from ruff_sync.constants import (
-    DEFAULT_BRANCH,
-    MISSING,
+    OutputFormat,
     resolve_defaults,
 )
 from ruff_sync.formatters import ResultFormatter, get_formatter
@@ -141,6 +140,7 @@ class Config(TypedDict, total=False):
     diff: bool
     init: bool
     pre_commit_version_sync: bool
+    output_format: str
 
 
 def resolve_target_path(
@@ -800,14 +800,14 @@ async def fetch_upstreams_concurrently(
 
 def _resolve_defaults(
     args: Arguments,
-) -> tuple[str, str | None, Iterable[str]]:
+) -> tuple[str, str | None, Iterable[str], OutputFormat]:
     """Resolve MISSING sentinel values in *args* to their effective defaults.
 
     Delegates to :func:`~ruff_sync.constants.resolve_defaults` so that the
     MISSING → default logic is centralised in one place and shared with
     ``cli.main`` without coupling the two layers together.
     """
-    return resolve_defaults(args.branch, args.path, args.exclude)
+    return resolve_defaults(args.branch, args.path, args.exclude, args.output_format)
 
 
 async def _merge_multiple_upstreams(
@@ -821,7 +821,7 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
-    branch, path, exclude = _resolve_defaults(args)
+    branch, path, exclude, _fmt = _resolve_defaults(args)
 
     fetch_results = await fetch_upstreams_concurrently(
         args.upstream, client, branch=branch, path=path
@@ -1017,7 +1017,8 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
-    fmt = get_formatter(args.output_format)
+    branch, path, exclude, output_format = _resolve_defaults(args)
+    fmt = get_formatter(output_format)
     try:
         fmt.note("🔍 Checking Ruff sync status...")
 
@@ -1194,7 +1195,8 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
-    fmt = get_formatter(args.output_format)
+    branch, path, exclude, output_format = _resolve_defaults(args)
+    fmt = get_formatter(output_format)
     try:
         fmt.note("🔄 Syncing Ruff...")
         _source_toml_path = resolve_target_path(args.to, args.upstream).resolve(strict=False)
