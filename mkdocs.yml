@@ -25,6 +25,8 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  version:
+    method: mike
   features:
     - content.code.copy
     - content.tabs.link
