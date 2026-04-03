@@ -134,6 +134,49 @@ jobs:
           echo "Verifying that --semantic check fails for kitchen-sink config (expected failure)..."
           ! ruff-sync check --semantic https://github.com/Kilo59/ruff-sync --path configs/kitchen-sink
 
+  publish-docs:
+    name: Publish Documentation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate-docs-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install dependencies
+        run: uv sync --group docs --frozen
+
+      - name: Deploy documentation
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Extract version from pyproject.toml
+          VERSION=$(grep -m 1 "^version = " pyproject.toml | cut -d '"' -f 2)
+          echo "Current Version: $VERSION"
+
+          if [[ "$VERSION" == *".dev"* ]]; then
+            echo "Deploying DEV documentation only..."
+            uv run mike deploy --push --update-aliases dev
+          else
+            echo "Deploying STABLE documentation..."
+            uv run mike deploy --push --update-aliases $VERSION stable
+            uv run mike set-default --push stable
+            # Also update dev to match stable on a full release
+            uv run mike deploy --push --update-aliases dev
+          fi
+
   publish:
     name: Build and publish to PyPI
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
