@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from dirty_equals import IsStr
-from ruff_sync.core import Config
-from ruff_sync.cli import Arguments, OutputFormat, _validate_ci_output_format, CLIArguments
+
+from ruff_sync.cli import Arguments, CLIArguments, OutputFormat, _validate_ci_output_format
 from ruff_sync.constants import MISSING, MissingType
+from ruff_sync.core import Config
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
