@@ -15,6 +15,7 @@ import httpx
 import pytest
 import respx
 import tomlkit
+from dirty_equals import IsPartialDict
 from httpx import URL
 from pytest import param
 from tomlkit import TOMLDocument, document
@@ -322,19 +323,9 @@ async def test_sync_updates_ruff_config(
     print(f"\nUpdated tool.ruff\n{sep_str}\n{tomlkit.dumps(updated_ruff_config)}")
     assert original_toml != updated_toml
 
-    assert set(original_ruff_config.keys()).issubset(set(updated_ruff_config.keys()))
-
-    # Ensure the updated ruff config has the same keys as the original
-    for key in original_ruff_config:
-        assert key in updated_ruff_config, f"Original key {key} was not in updated ruff config"
-
-    # Ensure the updated ruff config has the expected updated values from upstream
+    # Ensure the updated ruff config contains all original keys and matches upstream values
     upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
-    print("Upstream updates...")
-    for key, value in upstream_ruff_config.items():
-        print(f"  {key}", end=" ")
-        assert updated_ruff_config[key] == value, f"{key} was not updated"
-        print("✅")
+    assert updated_ruff_config.unwrap() == IsPartialDict(upstream_ruff_config.unwrap())
 
 
 @contextlib.contextmanager
@@ -504,7 +495,10 @@ def test_upstream_resolution_multiple_cli(patch_cli: CLIPatch):
     ruff_sync.main()
 
     assert len(patch_cli.captured_args) == 1
-    assert patch_cli.captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
+    assert patch_cli.captured_args[0].upstream == (
+        URL("http://u1.com"),
+        URL("http://u2.com"),
+    )
 
 
 def test_upstream_resolution_multiple_config(patch_cli: CLIPatch):
@@ -515,7 +509,10 @@ def test_upstream_resolution_multiple_config(patch_cli: CLIPatch):
     ruff_sync.main()
 
     assert len(patch_cli.captured_args) == 1
-    assert patch_cli.captured_args[0].upstream == (URL("http://u1.com"), URL("http://u2.com"))
+    assert patch_cli.captured_args[0].upstream == (
+        URL("http://u1.com"),
+        URL("http://u2.com"),
+    )
 
 
 def test_upstream_resolution_cli_precedence_over_config(patch_cli: CLIPatch) -> None:
