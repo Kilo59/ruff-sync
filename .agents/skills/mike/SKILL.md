@@ -10,13 +10,18 @@ description: Manage multiple versions of MkDocs-powered documentation. Use when 
 ## Prerequisites
 
 1.  **Install**:
+    `mike` is included in the `docs` dependency group in this project.
     ```bash
-    pip install mike
-    # OR with uv
-    uv add --dev mike
+    # Sync all developer and documentation dependencies
+    uv sync --group docs
     ```
 
-2.  **Configuration**: Add the following to your `mkdocs.yml` to enable the version selector (especially if using Material for MkDocs):
+    To run `mike` commands:
+    ```bash
+    uv run mike <command>
+    ```
+
+2.  **Configuration**: The `mkdocs.yml` is already configured with `mike` as the versioning provider:
     ```yaml
     extra:
       version:
