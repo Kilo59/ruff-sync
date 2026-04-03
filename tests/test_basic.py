@@ -670,9 +670,9 @@ def test_ruff_config_file_name_equality() -> None:
     """Test equality comparisons."""
     # intentional non-overlapping comparison
     assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML == "pyproject.toml"  # type: ignore[comparison-overlap]
-    assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"
-    assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"
-    assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML
+    assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"  # type: ignore[comparison-overlap]
+    assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"  # type: ignore[comparison-overlap]
+    assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML  # type: ignore[comparison-overlap]
 
 
 @pytest.mark.asyncio
