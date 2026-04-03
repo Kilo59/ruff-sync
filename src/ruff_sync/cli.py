@@ -408,10 +408,11 @@ def _resolve_output_format(args: Any, config: Mapping[str, Any]) -> OutputFormat
         fmt_str = config["output-format"]
         try:
             fmt = OutputFormat(fmt_str)
-            LOGGER.info(f"📊 Using output format from [tool.ruff-sync]: {fmt}")
-            return fmt
         except ValueError:
             LOGGER.warning(f"Unknown output format in config: {fmt_str}")
+        else:
+            LOGGER.info(f"📊 Using output format from [tool.ruff-sync]: {fmt}")
+            return fmt
 
     # Auto-detection
     provider = _detect_ci_provider()

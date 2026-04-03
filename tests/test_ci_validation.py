@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from dirty_equals import IsStr
 
-from ruff_sync.cli import MISSING, Arguments, OutputFormat, _validate_ci_output_format
+from ruff_sync.cli import Arguments, OutputFormat, _validate_ci_output_format
+from ruff_sync.constants import MISSING
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture

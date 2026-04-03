@@ -34,6 +34,8 @@ from tomlkit.toml_file import TOMLFile
 from typing_extensions import override
 
 from ruff_sync.constants import (
+    DEFAULT_BRANCH,
+    MISSING,
     OutputFormat,
     resolve_defaults,
 )
@@ -1017,7 +1019,7 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
-    branch, path, exclude, output_format = _resolve_defaults(args)
+    _branch, _path, _exclude, output_format = _resolve_defaults(args)
     fmt = get_formatter(output_format)
     try:
         fmt.note("🔍 Checking Ruff sync status...")
@@ -1195,7 +1197,7 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
-    branch, path, exclude, output_format = _resolve_defaults(args)
+    _branch, _path, _exclude, output_format = _resolve_defaults(args)
     fmt = get_formatter(output_format)
     try:
         fmt.note("🔄 Syncing Ruff...")

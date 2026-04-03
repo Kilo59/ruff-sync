@@ -77,6 +77,7 @@ def resolve_defaults(
         branch: The resolved branch value or ``MISSING``.
         path: The resolved path value or ``MISSING``.
         exclude: The resolved exclude iterable or ``MISSING``.
+        output_format: The resolved output format or ``MISSING``.
 
     Returns:
         A ``(branch, path, exclude)`` tuple with defaults applied.
