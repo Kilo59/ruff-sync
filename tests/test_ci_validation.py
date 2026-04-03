@@ -6,7 +6,7 @@ import pytest
 from dirty_equals import IsStr
 
 from ruff_sync.cli import Arguments, OutputFormat, _validate_ci_output_format
-from ruff_sync.constants import MISSING
+from ruff_sync.constants import MISSING, MissingType
 
 if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
@@ -117,19 +117,33 @@ def test_validate_ci_output_format(
             {},
             OutputFormat.GITLAB,
         ),
-        # Default fallback
+        # Default fallback (returns MISSING)
         (
             {},
             {},
             {},
-            OutputFormat.TEXT,
+            MISSING,
         ),
-        # Unknown config format falls back to auto-detect/default
+        # Unknown config format falls back to auto-detect/default (GitHub in this env)
         (
             {"GITHUB_ACTIONS": "true"},
             {},
             {"output-format": "invalid"},
             OutputFormat.GITHUB,
+        ),
+        # Explicit CLI TEXT (with CI env)
+        (
+            {"GITHUB_ACTIONS": "true"},
+            {"output_format": OutputFormat.TEXT},
+            {},
+            OutputFormat.TEXT,
+        ),
+        # Config TEXT (no CI env)
+        (
+            {},
+            {},
+            {"output-format": "text"},
+            OutputFormat.TEXT,
         ),
     ],
 )
@@ -138,7 +152,7 @@ def test_resolve_output_format(
     env_vars: dict[str, str],
     cli_args: dict[str, Any],
     config: dict[str, Any],
-    expected: OutputFormat,
+    expected: OutputFormat | MissingType,
 ) -> None:
     """Test that output format is correctly resolved from CLI, config, and environment."""
     from ruff_sync.cli import _resolve_output_format
@@ -157,9 +171,7 @@ def test_resolve_output_format(
 
     args = MockArgs(**cli_args)
 
-    assert _resolve_output_format(args, config) == (
-        expected if expected != OutputFormat.TEXT else MISSING
-    )
+    assert _resolve_output_format(args, config) == expected
 
 
 def test_main_resolves_output_format(monkeypatch: MonkeyPatch) -> None:
