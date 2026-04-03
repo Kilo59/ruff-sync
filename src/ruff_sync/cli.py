@@ -363,9 +363,9 @@ def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | Mi
     if args.exclude is not None:
         return cast("Iterable[str]", args.exclude)
     if "exclude" in config:
-        exclude = config["exclude"]
+        exclude: Iterable[str] = config["exclude"]
         LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
-        return cast("Iterable[str]", exclude)
+        return exclude
     return MISSING
 
 
@@ -378,7 +378,7 @@ def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     if getattr(args, "branch", None):
         return cast("str", args.branch)
     if "branch" in config:
-        branch = cast("str", config["branch"])
+        branch: str = config["branch"]
         LOGGER.info(f"🌿 Using branch from [tool.ruff-sync]: {branch}")
         return branch
     return MISSING
@@ -393,7 +393,7 @@ def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
     if getattr(args, "path", None):
         return cast("str", args.path)
     if "path" in config:
-        path = cast("str", config["path"])
+        path: str = config["path"]
         LOGGER.info(f"📄 Using path from [tool.ruff-sync]: {path}")
         return path
     return MISSING
