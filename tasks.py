@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Final, Literal
 
 import httpx
 from invoke.exceptions import Exit
@@ -132,14 +132,14 @@ def release(
     """Tag and create a GitHub release for the current project version."""
     # Check if we are on the main branch
     branch_result = ctx.run("git branch --show-current", hide=True)
-    current_branch = cast("Any", branch_result).stdout.strip()
+    current_branch = branch_result.stdout.strip()  # type: ignore[union-attr]
     if not dry_run and current_branch != "main":
         print(f"❌ Releases must be made from the 'main' branch (current: {current_branch}).")
         return
 
     # Check for dirty git state
     status_result = ctx.run("git status --porcelain", hide=True)
-    git_status = cast("Any", status_result).stdout.strip()
+    git_status = status_result.stdout.strip()  # type: ignore[union-attr]
     if git_status:
         print("❌ Git repository has uncommitted changes. Please commit or stash them first.")
         return

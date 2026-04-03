@@ -22,7 +22,6 @@ from typing import (
     Literal,
     NamedTuple,
     Protocol,
-    cast,
 )
 
 import tomlkit
@@ -194,7 +193,7 @@ def get_config(
             # Ensure 'to' is populated if 'source' was used
             if "source" in cfg_result and "to" not in cfg_result:
                 cfg_result["to"] = cfg_result["source"]
-    return cast("Config", cfg_result)
+    return cfg_result  # type: ignore[return-value]
 
 
 def _get_cli_parser() -> ArgumentParser:
@@ -420,9 +419,7 @@ def _resolve_path(args: CLIArguments, config: Config) -> str | MissingType:
     return MISSING
 
 
-def _resolve_output_format(
-    args: CLIArguments, config: Config
-) -> OutputFormat | MissingType:
+def _resolve_output_format(args: CLIArguments, config: Config) -> OutputFormat | MissingType:
     """Resolve output format from CLI, config, or environment auto-detection."""
     if args.output_format:
         return args.output_format
@@ -474,10 +471,10 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
     return ResolvedArgs(
         upstream,
         to,
-        cast("Any", exclude),
-        cast("Any", branch),
-        cast("Any", path),
-        cast("Any", output_format),
+        exclude,
+        branch,
+        path,
+        output_format,  # type: ignore[arg-type]
     )
 
 
