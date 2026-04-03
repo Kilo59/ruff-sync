@@ -162,8 +162,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Ensure gh-pages exists and is initialized (required for first run)
-          uv run mike install-gh-pages --push
+          # mike deploy handles gh-pages initialization automatically
 
           # Extract version from pyproject.toml in a TOML-aware way using already installed dependencies
           VERSION=$(uv run python - << 'PY'
