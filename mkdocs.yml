@@ -25,6 +25,8 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  version:
+    method: mike
   features:
     - content.code.copy
     - content.tabs.link
@@ -39,6 +41,10 @@ theme:
     - search.share
     - search.suggest
     - toc.follow
+    - navigation.footer
+  font:
+    text: Inter
+    code: JetBrains Mono
   icon:
     repo: fontawesome/brands/github
 
@@ -87,6 +93,8 @@ markdown_extensions:
 
 plugins:
   - search
+  - mike:
+      alias_type: copy
   - gen-files:
       scripts:
         - docs/gen_ref_pages.py

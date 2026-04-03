@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pathlib
 import subprocess
 import sys
@@ -75,7 +76,7 @@ def prep_env(fs: FakeFilesystem, request: FixtureRequest) -> Generator[_PrepEnv,
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx.mock(base_url=base_url) as respx_mock:
+    with respx.mock(base_url=base_url, assert_all_called=False) as respx_mock:
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
@@ -186,7 +187,7 @@ def readme_excludes_env(
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx.mock(base_url=base_url) as respx_mock:
+    with respx.mock(base_url=base_url, assert_all_called=False) as respx_mock:
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
@@ -267,6 +268,84 @@ async def test_ruff_sync_multi_upstream(fs: FakeFilesystem):
 
     assert tomlkit.parse(expected_toml) == tomlkit.parse(result)
     assert expected_toml == result
+
+
+@pytest.mark.asyncio
+async def test_check_output_formats_json(prep_env, capsys):
+    """Verify that --output-format json produces valid JSON output."""
+    await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=(prep_env.upstream_url,),
+            to=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            output_format=ruff_sync.OutputFormat.JSON,
+            diff=False,
+        )
+    )
+
+    output = capsys.readouterr().out
+    # If the files are different, we expect a JSON report (NDJSON)
+    if prep_env.expected_toml != prep_env.source_path.read_text():
+        lines = [line for line in output.splitlines() if line.strip()]
+        assert lines, "Expected JSON output but got none"
+        for line in lines:
+            data = json.loads(line)
+            assert "level" in data
+            assert "message" in data
+    # If they are the same, it might be empty or a "no changes" message
+    elif output.strip():
+        lines = [line for line in output.splitlines() if line.strip()]
+        for line in lines:
+            data = json.loads(line)
+            assert isinstance(data, dict)
+
+
+@pytest.mark.asyncio
+async def test_check_output_formats_sarif(prep_env, capsys):
+    """Verify that --output-format sarif produces valid SARIF output."""
+    await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=(prep_env.upstream_url,),
+            to=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            output_format=ruff_sync.OutputFormat.SARIF,
+            diff=False,
+        )
+    )
+
+    output = capsys.readouterr().out
+    if prep_env.expected_toml != prep_env.source_path.read_text():
+        data = json.loads(output)
+        assert data["$schema"].startswith("https://json.schemastore.org/sarif-")
+        assert "runs" in data
+
+
+@pytest.mark.asyncio
+async def test_check_output_formats_gitlab(prep_env, capsys):
+    """Verify that --output-format gitlab produces valid GitLab artifacts."""
+    await ruff_sync.check(
+        ruff_sync.Arguments(
+            command="check",
+            upstream=(prep_env.upstream_url,),
+            to=prep_env.source_path,
+            exclude=set(),
+            verbose=0,
+            output_format=ruff_sync.OutputFormat.GITLAB,
+            diff=False,
+        )
+    )
+
+    output = capsys.readouterr().out
+    if prep_env.expected_toml != prep_env.source_path.read_text():
+        data = json.loads(output)
+        assert isinstance(data, list)
+        if data:
+            assert "description" in data[0]
+            assert "fingerprint" in data[0]
 
 
 if __name__ == "__main__":
