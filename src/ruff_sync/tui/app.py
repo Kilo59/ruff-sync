@@ -50,6 +50,7 @@ class RuffSyncApp(App[None]):
         height: 1fr;
         padding: 1;
         background: $surface-darken-1;
+        overflow-y: auto;
     }
 
     .hidden {
@@ -117,11 +118,14 @@ class RuffSyncApp(App[None]):
 
         # Check if the node label or path matches a ruff rule
         if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
+            table.add_class("hidden")
             inspector.fetch_and_display(label_text)
         elif isinstance(data, (dict, list)):
+            table.remove_class("hidden")
             table.update_content(data)
             inspector.show_context(full_path, data)
         else:
+            table.remove_class("hidden")
             table.update_content(data)
             inspector.show_context(full_path, data)
 
@@ -145,6 +149,7 @@ class RuffSyncApp(App[None]):
 
         if rule_code:
             inspector = self.query_one(RuleInspector)
+            table.add_class("hidden")
             inspector.fetch_and_display(rule_code)
 
     def _get_node_path(self, node: Any) -> str:

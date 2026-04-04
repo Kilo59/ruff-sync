@@ -76,7 +76,6 @@ class CategoryTable(DataTable[Any]):
 class RuleInspector(Markdown):
     """A markdown widget for inspecting Ruff rules and settings."""
 
-    @override
     def on_mount(self) -> None:
         """Set initial placeholder content."""
         self.show_placeholder()
