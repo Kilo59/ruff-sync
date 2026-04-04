@@ -6,7 +6,6 @@ import pytest
 from dirty_equals import IsStr
 
 from ruff_sync.cli import Arguments, CLIArguments, OutputFormat, _validate_ci_output_format
-from ruff_sync.constants import MISSING, MissingType
 from ruff_sync.core import Config
 
 if TYPE_CHECKING:
@@ -118,12 +117,12 @@ def test_validate_ci_output_format(
             {},
             OutputFormat.GITLAB,
         ),
-        # Default fallback (returns MISSING)
+        # Default fallback (returns OutputFormat.TEXT)
         (
             {},
             {},
             {},
-            MISSING,
+            OutputFormat.TEXT,
         ),
         # Unknown config format falls back to auto-detect/default (GitHub in this env)
         (
@@ -153,7 +152,7 @@ def test_resolve_output_format(
     env_vars: dict[str, str],
     cli_args: dict[str, Any],
     config: Config,
-    expected: OutputFormat | MissingType,
+    expected: OutputFormat,
 ) -> None:
     """Test that output format is correctly resolved from CLI, config, and environment."""
     from ruff_sync.cli import _resolve_output_format

@@ -35,9 +35,8 @@ from typing_extensions import override
 
 from ruff_sync.constants import (
     DEFAULT_BRANCH,
-    MISSING,
-    OutputFormat,
-    resolve_defaults,
+    DEFAULT_EXCLUDE,
+    DEFAULT_PATH,
 )
 from ruff_sync.formatters import ResultFormatter, get_formatter
 from ruff_sync.pre_commit import sync_pre_commit
@@ -800,18 +799,6 @@ async def fetch_upstreams_concurrently(
         return fetch_results
 
 
-def _resolve_defaults(
-    args: Arguments,
-) -> tuple[str, str | None, Iterable[str], OutputFormat]:
-    """Resolve MISSING sentinel values in *args* to their effective defaults.
-
-    Delegates to :func:`~ruff_sync.constants.resolve_defaults` so that the
-    MISSING → default logic is centralised in one place and shared with
-    ``cli.main`` without coupling the two layers together.
-    """
-    return resolve_defaults(args.branch, args.path, args.exclude, args.output_format)
-
-
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
@@ -823,7 +810,7 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
-    branch, path, exclude, _fmt = _resolve_defaults(args)
+    branch, path, exclude = args.branch, args.path, args.exclude
 
     fetch_results = await fetch_upstreams_concurrently(
         args.upstream, client, branch=branch, path=path
@@ -1019,7 +1006,7 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
-    _branch, _path, _exclude, output_format = _resolve_defaults(args)
+    output_format = args.output_format
     fmt: ResultFormatter = get_formatter(output_format)
     try:
         fmt.note("🔍 Checking Ruff sync status...")
@@ -1158,20 +1145,20 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
     # Normalize excludes and de-duplicate while preserving order.
     # Only compute and persist excludes when explicitly provided so that
     # DEFAULT_EXCLUDE remains an implicit default and is not serialized.
-    if args.exclude is not MISSING:
+    if args.exclude != DEFAULT_EXCLUDE:
         normalized_excludes = list(dict.fromkeys(args.exclude))
         exclude_array = tomlkit.array()
         for ex in normalized_excludes:
             exclude_array.append(ex)
         ruff_sync_table["exclude"] = exclude_array
 
-    if args.branch is not MISSING:
+    if args.branch != DEFAULT_BRANCH:
         ruff_sync_table["branch"] = args.branch
 
-    if args.path is not MISSING:
+    if args.path != DEFAULT_PATH and args.path is not None:
         ruff_sync_table["path"] = args.path
 
-    if args.pre_commit is not MISSING:
+    if args.pre_commit:
         ruff_sync_table["pre-commit-version-sync"] = args.pre_commit
 
 
@@ -1197,7 +1184,7 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
-    _branch, _path, _exclude, output_format = _resolve_defaults(args)
+    output_format = args.output_format
     fmt = get_formatter(output_format)
     try:
         fmt.note("🔄 Syncing Ruff...")
@@ -1251,7 +1238,7 @@ async def pull(
             rel_path = _source_toml_path.resolve()
         fmt.success(f"✅ Updated {rel_path}")
 
-        if args.pre_commit is not MISSING and args.pre_commit:
+        if args.pre_commit:
             sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
         return 0
