@@ -282,10 +282,7 @@ class RuleInspector(Markdown):
                 status_icons = {"Enabled": "🟢", "Ignored": "🟡", "Disabled": "⚪"}
                 icon = status_icons.get(rule_status or "Disabled", "⚪")
                 name = rule_name or "Unknown Rule"
-                header = (
-                    f"# {icon} {target}: {name}\n\n"
-                    f"**Status**: {rule_status or 'Disabled'}\n\n---\n\n"
-                )
+                header = f"# {icon} {target}: {name}\n\n---\n\n"
 
             self.update(header + content.strip())
         else:
