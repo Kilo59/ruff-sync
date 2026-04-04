@@ -56,14 +56,23 @@ Example in `version_warning.html`:
 <div id="version-warning" style="display: none;">
   <div class="admonition warning">
     <p class="admonition-title">Warning</p>
-    <p>You are viewing the development version of the documentation.</p>
+    <p>
+      You are viewing the documentation for the <strong>development</strong> version.
+      The latest stable release can be found at <a href="https://kilo59.github.io/ruff-sync/">kilo59.github.io/ruff-sync</a>.
+    </p>
   </div>
 </div>
 <script>
   (function() {
-    var version_warning = document.getElementById("version-warning");
+    const version_warning = document.getElementById("version-warning");
     if (!version_warning) return;
-    if (window.location.pathname.includes("/dev/") || (window.mike && window.mike.version === "dev")) {
+
+    // mike provides a 'mike' object with some metadata if available
+    // Otherwise fall back to checking the pathname
+    const isDev = window.location.pathname.includes("/dev/") ||
+                 (window.mike && typeof window.mike.version === 'string' && window.mike.version === "dev");
+
+    if (isDev) {
       version_warning.style.display = "block";
     }
   })();
@@ -116,6 +125,7 @@ The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflo
 - **Incomplete `versions.json`**: If the current page's version (e.g., `stable`) is not listed in `versions.json`, some themes (like Material) may hide the selector.
 - **`site_url` Case Sensitivity**: On GitHub Pages, ensure `site_url` in `mkdocs.yml` matches the actual deployment URL (usually lowercase). Discrepancies can cause the switcher to fail to find `versions.json` due to 404s.
 - **Redundant Config**: Ensure `theme.version` is NOT set in `mkdocs.yml`. Use `extra.version.provider: mike` instead.
+- **`canonical_version` Missing**: If the switcher is hidden on the root page, adding `canonical_version: stable` (or your main alias) to the `mike` plugin configuration can help the theme associate the root with the switcher metadata.
 
 ### 404 for `versions.json`
 - If you see a 404 for `/versions.json` but `https://<user>.github.io/<repo>/versions.json` exists, the switcher is looking at the domain root instead of the project root. Verify `site_url` includes the repository name and has a trailing slash.

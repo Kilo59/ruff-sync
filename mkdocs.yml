@@ -96,6 +96,7 @@ plugins:
   - search
   - mike:
       alias_type: copy
+      canonical_version: stable
   - gen-files:
       scripts:
         - docs/gen_ref_pages.py
