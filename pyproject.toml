@@ -41,6 +41,7 @@ Changelog = "https://github.com/Kilo59/ruff-sync/releases"
 
 [project.scripts]
 ruff-sync = "ruff_sync:main"
+ruff-inspect = "ruff_sync:inspect"
 
 [dependency-groups]
 dev = [

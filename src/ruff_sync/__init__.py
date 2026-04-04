@@ -9,6 +9,7 @@ from .cli import (
     Arguments,
     __version__,
     get_config,
+    inspect,
     main,
 )
 from .config_io import (
@@ -46,6 +47,7 @@ __all__ = [
     "get_formatter",
     "get_ruff_config",
     "get_ruff_tool_table",
+    "inspect",
     "is_ruff_toml_file",
     "load_local_ruff_config",
     "main",

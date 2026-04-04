@@ -620,5 +620,20 @@ def main() -> int:
         return 4
 
 
+def inspect() -> int:
+    """Entry point for the ruff-inspect console script."""
+    # Handle optional subcommands/args if user passed any to ruff-inspect
+    # but primarily ensure "inspect" is the command.
+    if len(sys.argv) > 1 and sys.argv[1] not in ("-h", "--help", "--version"):
+        # If they passed args but no command, insert 'inspect'
+        if sys.argv[1] not in ("pull", "check", "inspect"):
+            sys.argv.insert(1, "inspect")
+    else:
+        # Default to 'inspect' if no args or just flags
+        sys.argv.insert(1, "inspect")
+
+    return main()
+
+
 if __name__ == "__main__":
     sys.exit(main())
