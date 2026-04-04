@@ -36,12 +36,13 @@ class RuffSyncApp(App[None]):
 
     #config-tree {
         width: 1fr;
+        max-width: 42;
         height: 100%;
         border-right: solid $primary-darken-2;
     }
 
     #content-pane {
-        width: 2fr;
+        width: 1fr;
         height: 100%;
     }
 
