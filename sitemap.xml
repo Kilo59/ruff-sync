@@ -1,91 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/agent-skill/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/agent-skill/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/best-practices/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/best-practices/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/ci-integration/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/ci-integration/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/configuration/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/configuration/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/contributing/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/contributing/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/installation/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/installation/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/pre-commit/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/pre-commit/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/pre-defined-configs/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/pre-defined-configs/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/troubleshooting/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/troubleshooting/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/url-resolution/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/url-resolution/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/usage/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/usage/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/SUMMARY/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/SUMMARY/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/cli/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/cli/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/config_io/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/config_io/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/constants/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/constants/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/core/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/core/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/dependencies/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/dependencies/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/formatters/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/formatters/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/pre_commit/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/pre_commit/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
-         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/system/</loc>
+         <loc>https://kilo59.github.io/ruff-sync/reference/ruff_sync/system/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
 </urlset>

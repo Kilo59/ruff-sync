@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://Kilo59.github.io/ruff-sync/reference/SUMMARY/">
+        <link rel="canonical" href="https://kilo59.github.io/ruff-sync/reference/SUMMARY/">
       
       
       
@@ -1262,16 +1262,25 @@
     <p class="admonition-title">Warning</p>
     <p>
       You are viewing the documentation for the <strong>development</strong> version.
-      The latest stable release can be found at <a href="https://Kilo59.github.io/ruff-sync/">kilo59.github.io/ruff-sync</a>.
+      The latest stable release can be found at <a href="https://kilo59.github.io/ruff-sync/">kilo59.github.io/ruff-sync</a>.
     </p>
   </div>
 </div>
 
 <script>
-  var version_warning = document.getElementById("version-warning");
-  if (window.location.pathname.includes("/dev/")) {
-    version_warning.style.display = "block";
-  }
+  (function() {
+    const version_warning = document.getElementById("version-warning");
+    if (!version_warning) return;
+
+    // mike provides a 'mike' object with some metadata if available
+    // Otherwise fall back to checking the pathname
+    const isDev = window.location.pathname.includes("/dev/") ||
+                 (window.mike && typeof window.mike.version === 'string' && window.mike.version === "dev");
+
+    if (isDev) {
+      version_warning.style.display = "block";
+    }
+  })();
 </script>
 
   
