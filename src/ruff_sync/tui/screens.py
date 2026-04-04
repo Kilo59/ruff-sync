@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from textual import on
 from textual.containers import Vertical
@@ -116,3 +116,70 @@ class OmniboxScreen(ModalScreen[str]):
     def action_cancel(self) -> None:
         """Close the screen without selection."""
         self.dismiss()
+
+
+class LegendScreen(ModalScreen[None]):
+    """A toggleable legend explaining TUI status colors and icons."""
+
+    BINDINGS: ClassVar[list[Any]] = [
+        ("escape,l,?", "dismiss", "Close Legend"),
+    ]
+
+    CSS = """
+    LegendScreen {
+        align: center middle;
+        background: black 50%;
+    }
+
+    #legend-container {
+        width: 50;
+        height: auto;
+        background: $boost;
+        border: heavy $accent;
+        padding: 1 2;
+    }
+
+    .legend-title {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+        color: $accent;
+    }
+
+    .legend-section {
+        text-style: underline;
+        margin-top: 1;
+        margin-bottom: 1;
+    }
+
+    .legend-row {
+        margin-left: 2;
+    }
+
+    #legend-footer {
+        text-align: center;
+        margin-top: 1;
+        color: $text-disabled;
+    }
+    """
+
+    @override
+    def compose(self) -> ComposeResult:
+        """Compose the legend content."""
+        with Vertical(id="legend-container"):
+            yield Static("Ruff-Sync TUI Legend", id="legend-title", classes="legend-title")
+
+            yield Static("Rule Status", classes="legend-section")
+            yield Static(
+                "🟢 [green]Enabled[/green]   - Active in configuration", classes="legend-row"
+            )
+            yield Static("🟡 [yellow]Ignored[/yellow]   - Explicitly ignored", classes="legend-row")
+            yield Static("⚪ [dim]Disabled[/dim]  - Category not selected", classes="legend-row")
+
+            yield Static("Fix Availability", classes="legend-section")
+            yield Static("[cyan]Always[/cyan]      - Automatic fix available", classes="legend-row")
+            yield Static(
+                "[yellow]Sometimes[/yellow]   - Conditional/enforced fix", classes="legend-row"
+            )
+
+            yield Static("Press [b]? [/b] or [b]Esc[/b] to close", id="legend-footer")

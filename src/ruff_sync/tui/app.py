@@ -14,7 +14,7 @@ from typing_extensions import override
 from ruff_sync.config_io import load_local_ruff_config
 from ruff_sync.system import compute_effective_rules, get_all_ruff_rules, get_ruff_linters
 from ruff_sync.tui.constants import RULE_PATTERN
-from ruff_sync.tui.screens import OmniboxScreen
+from ruff_sync.tui.screens import LegendScreen, OmniboxScreen
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
@@ -62,7 +62,8 @@ class RuffSyncApp(App[None]):
     BINDINGS: ClassVar[list[Any]] = [
         ("q", "quit", "Quit"),
         ("/", "search", "Search Rules"),
-        ("enter", "select", "View Details"),
+        ("?", "show_legend", "Show Legend"),
+        ("l", "show_legend", "Show Legend"),
     ]
 
     def __init__(self, args: Arguments, **kwargs: Any) -> None:
@@ -282,3 +283,7 @@ class RuffSyncApp(App[None]):
         """
         if rule_code:
             self._inspect_rule(rule_code)
+
+    def action_show_legend(self) -> None:
+        """Display the TUI legend modal."""
+        self.push_screen(LegendScreen())

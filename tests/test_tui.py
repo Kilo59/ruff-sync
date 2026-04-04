@@ -8,12 +8,13 @@ from textual.widgets import DataTable, Tree
 
 from ruff_sync.cli import Arguments
 from ruff_sync.tui.app import RuffSyncApp
+from ruff_sync.tui.screens import LegendScreen
 from ruff_sync.tui.widgets import RuleInspector
 
 if TYPE_CHECKING:
     import pathlib
 
-    from ruff_sync.tui.widgets import ConfigTree, RuleInspector
+    from ruff_sync.tui.widgets import ConfigTree
 
     from .conftest import CLIRunner
 
@@ -221,3 +222,17 @@ def test_cli_ruff_inspect_entry_point(
         exit_code, _out, _err = cli_run(["--to", str(tmp_path)], entry_point="ruff-inspect")
         assert exit_code == 0
         mock_run.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_ruff_sync_app_show_legend(mock_args: Arguments) -> None:
+    """The legend screen should be pushed when '?' is pressed."""
+    app = RuffSyncApp(mock_args)
+    async with app.run_test() as pilot:
+        await pilot.press("?")
+        await pilot.pause()
+        assert isinstance(app.screen, LegendScreen)
+
+        await pilot.press("escape")
+        await pilot.pause()
+        assert not isinstance(app.screen, LegendScreen)
