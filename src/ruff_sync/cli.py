@@ -31,6 +31,7 @@ from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
     DEFAULT_PATH,
+    ConfKey,
     OutputFormat,
 )
 from ruff_sync.core import (
@@ -175,21 +176,24 @@ def get_config(
                 arg_norm = arg.replace("-", "_")
 
                 # Handle aliases for pre-commit
-                if arg_norm in ("pre_commit_sync", "pre_commit"):
-                    arg_norm = "pre_commit_version_sync"
+                if arg_norm in (
+                    ConfKey.PRE_COMMIT_SYNC_LEGACY,
+                    ConfKey.PRE_COMMIT.replace("-", "_"),
+                ):
+                    arg_norm = ConfKey.PRE_COMMIT_VERSION_SYNC.replace("-", "_")
 
                 if arg_norm in allowed_keys:
-                    if arg_norm == "source":
+                    if arg_norm == ConfKey.SOURCE:
                         LOGGER.warning(
-                            "DeprecationWarning: [tool.ruff-sync] 'source' is deprecated. "
-                            "Use 'to' instead."
+                            f"DeprecationWarning: [tool.ruff-sync] '{ConfKey.SOURCE}' "
+                            f"is deprecated. Use '{ConfKey.TO}' instead."
                         )
                     cfg_result[arg_norm] = value  # type: ignore[literal-required]
                 else:
                     LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
             # Ensure 'to' is populated if 'source' was used
-            if "source" in cfg_result and "to" not in cfg_result:
-                cfg_result["to"] = cfg_result["source"]
+            if ConfKey.SOURCE in cfg_result and ConfKey.TO not in cfg_result:
+                cfg_result[ConfKey.TO] = cfg_result[ConfKey.SOURCE]  # type: ignore[literal-required]
     return cfg_result
 
 
@@ -374,8 +378,7 @@ def _resolve_exclude(args: CLIArguments, config: Config) -> Iterable[str]:
 
     Returns the CLI value if provided, otherwise the value from
     ``[tool.ruff-sync].exclude`` in the config.  If neither is set,
-    returns ``MISSING`` so that :func:`~ruff_sync.constants.resolve_defaults`
-    can apply the ``DEFAULT_EXCLUDE`` set downstream.
+    returns ``DEFAULT_EXCLUDE``.
     """
     if args.exclude is not None:
         return args.exclude
@@ -486,8 +489,9 @@ def _resolve_pre_commit(args: CLIArguments, config: Config) -> bool:
     """Resolve pre-commit sync setting from CLI or config."""
     if args.pre_commit is not None:
         return args.pre_commit
-    if "pre_commit_version_sync" in config:
-        val = config.get("pre_commit_version_sync")
+    pre_commit_key = ConfKey.PRE_COMMIT_VERSION_SYNC.replace("-", "_")
+    if pre_commit_key in config:
+        val = config.get(pre_commit_key)
         return bool(val)
     return False
 

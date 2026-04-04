@@ -15,6 +15,7 @@ __all__: Final[list[str]] = [
     "DEFAULT_EXCLUDE",
     "DEFAULT_PATH",
     "MISSING",
+    "ConfKey",
     "MissingType",
     "OutputFormat",
     "resolve_defaults",
@@ -59,6 +60,31 @@ class OutputFormat(str, enum.Enum):
     def __str__(self) -> str:
         """Return the string value for argparse help."""
         return self.value
+
+
+class ConfKey:
+    """Centralized configuration keys for [tool.ruff-sync].
+
+    These are the canonical names used in the pyproject.toml configuration file.
+    """
+
+    UPSTREAM: Final[str] = "upstream"
+    TO: Final[str] = "to"
+    EXCLUDE: Final[str] = "exclude"
+    BRANCH: Final[str] = "branch"
+    PATH: Final[str] = "path"
+    PRE_COMMIT_VERSION_SYNC: Final[str] = "pre-commit-version-sync"
+    OUTPUT_FORMAT: Final[str] = "output-format"
+    SEMANTIC: Final[str] = "semantic"
+    DIFF: Final[str] = "diff"
+    INIT: Final[str] = "init"
+    SAVE: Final[str] = "save"
+    VERBOSE: Final[str] = "verbose"
+
+    # Legacy / Alias Keys
+    SOURCE: Final[str] = "source"  # Legacy for 'to'
+    PRE_COMMIT: Final[str] = "pre-commit"  # Legacy for 'pre-commit-version-sync'
+    PRE_COMMIT_SYNC_LEGACY: Final[str] = "pre_commit_sync"  # Legacy for 'pre-commit-version-sync'
 
 
 def resolve_defaults(

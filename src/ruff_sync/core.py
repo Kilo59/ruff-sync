@@ -37,6 +37,7 @@ from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
     DEFAULT_PATH,
+    ConfKey,
 )
 from ruff_sync.formatters import ResultFormatter, get_formatter
 from ruff_sync.pre_commit import sync_pre_commit
@@ -1134,13 +1135,13 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
 
     # TODO: Consider only saving upstream if it differs from existing config
     if len(args.upstream) == 1:
-        ruff_sync_table["upstream"] = str(args.upstream[0])
+        ruff_sync_table[ConfKey.UPSTREAM] = str(args.upstream[0])
     else:
         urls_array = tomlkit.array()
         urls_array.multiline(True)
         for url in args.upstream:
             urls_array.append(str(url))
-        ruff_sync_table["upstream"] = urls_array
+        ruff_sync_table[ConfKey.UPSTREAM] = urls_array
 
     # Normalize excludes and de-duplicate while preserving order.
     # Only compute and persist excludes when explicitly provided so that
@@ -1150,16 +1151,16 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
         exclude_array = tomlkit.array()
         for ex in normalized_excludes:
             exclude_array.append(ex)
-        ruff_sync_table["exclude"] = exclude_array
+        ruff_sync_table[ConfKey.EXCLUDE] = exclude_array
 
     if args.branch != DEFAULT_BRANCH:
-        ruff_sync_table["branch"] = args.branch
+        ruff_sync_table[ConfKey.BRANCH] = args.branch
 
     if args.path != DEFAULT_PATH and args.path is not None:
-        ruff_sync_table["path"] = args.path
+        ruff_sync_table[ConfKey.PATH] = args.path
 
     if args.pre_commit:
-        ruff_sync_table["pre-commit-version-sync"] = args.pre_commit
+        ruff_sync_table[ConfKey.PRE_COMMIT_VERSION_SYNC] = args.pre_commit
 
 
 async def pull(

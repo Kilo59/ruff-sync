@@ -88,5 +88,38 @@ branch = "develop"
     assert config["branch"] == "develop"
 
 
+def test_get_config_key_normalization(
+    tmp_path: pathlib.Path, caplog: pytest.LogCaptureFixture, clean_config_cache: None
+):
+    """Verify that both dashed and legacy keys are normalized correctly."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[tool.ruff-sync]
+# Canonical dashed key
+pre-commit-version-sync = true
+# Legacy underscored key (alias)
+pre_commit_sync = false
+# Another legacy alias
+pre-commit = true
+# Canonical with dashes
+output-format = "github"
+"""
+    )
+    # Note: in a real TOML, the last value for the same normalized key WOULD win
+    # because they all map to 'pre_commit_version_sync'.
+    # But TOML itself doesn't allow duplicate keys if they have the same name.
+    # Here they have different names in TOML but map to the same name in Python.
+
+    config = get_config(tmp_path)
+
+    # 'pre-commit-version-sync' -> 'pre_commit_version_sync'
+    # 'pre_commit_sync' -> 'pre_commit_version_sync'
+    # 'pre-commit' -> 'pre_commit_version_sync'
+    # The last one in the file wins if they map to the same key.
+    assert config["pre_commit_version_sync"] is True
+    assert config["output_format"] == "github"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-vv"])
