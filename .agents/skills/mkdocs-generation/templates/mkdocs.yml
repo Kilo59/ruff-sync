@@ -10,10 +10,13 @@ repo_name: [GITHUB_USER]/[REPO_NAME]
 extra:
   version:
     provider: mike
-    default: latest
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/[GITHUB_USER]/[REPO_NAME]
 
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.sections
     - navigation.top

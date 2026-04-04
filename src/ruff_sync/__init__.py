@@ -11,16 +11,20 @@ from .cli import (
     get_config,
     main,
 )
+from .config_io import (
+    RuffConfigFileName,
+    is_ruff_toml_file,
+    load_local_ruff_config,
+    resolve_target_path,
+)
 from .constants import OutputFormat
 from .core import (
     Config,
     FetchResult,
-    RuffConfigFileName,
     check,
     fetch_upstream_config,
     get_ruff_config,
     get_ruff_tool_table,
-    is_ruff_toml_file,
     merge_ruff_toml,
     pull,
     resolve_raw_url,
@@ -43,10 +47,12 @@ __all__ = [
     "get_ruff_config",
     "get_ruff_tool_table",
     "is_ruff_toml_file",
+    "load_local_ruff_config",
     "main",
     "merge_ruff_toml",
     "pull",
     "resolve_raw_url",
+    "resolve_target_path",
     "to_git_url",
     "toml_ruff_parse",
 ]
