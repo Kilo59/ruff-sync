@@ -5,6 +5,7 @@ This document outlines additional convenience features and alternative navigatio
 **Related Documents:**
 - [TUI Requirements](tui_requirements.md)
 - [TUI Technical Design](tui_design.md)
+- [Rule Browsing Detailed Design](tui_rule_browsing_design.md)
 
 ## Background
 While the TOML hierarchy (as established in the core requirements) provides an exact structural representation (e.g., exposing `tool.ruff.lint.select`), it is not always the most intuitive way to discover or understand the net set of rules actively evaluating the project.
