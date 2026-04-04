@@ -51,6 +51,7 @@ The project uses a `src` layout. All source code lives in `src/ruff_sync/`. Deve
 | `uv run invoke deps` | `sync` | Sync dependencies with uv |
 | `uv run invoke new-case` | `new-lifecycle-tomls` | Scaffold lifecycle TOML test fixtures |
 | `uv run invoke docs` | | Build or serve documentation |
+| `uv run invoke release` | | Tag and create a GitHub release |
 
 ---
 
