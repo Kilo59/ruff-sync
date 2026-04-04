@@ -185,7 +185,9 @@ jobs:
           echo "Current Version: $VERSION"
 
           if [[ "$VERSION" == *".dev"* ]]; then
-            echo "Deploying DEV documentation only..."
+            echo "Deploying DEV documentation..."
+            # Note: mike deploy is additive to versions.json on gh-pages.
+            # This updates the 'dev' alias and adds it to the switcher if missing.
             uv run mike deploy --push --update-aliases dev
           else
             echo "Deploying STABLE documentation..."
