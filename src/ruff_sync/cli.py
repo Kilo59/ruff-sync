@@ -330,6 +330,13 @@ def _get_cli_parser() -> ArgumentParser:
         help="Do not show a diff.",
     )
 
+    # Inspect subcommand
+    subparsers.add_parser(
+        "inspect",
+        parents=[common_parser],
+        help="Open a Terminal UI to explore and interrogate your local ruff configuration.",
+    )
+
     return parser
 
 
@@ -531,6 +538,7 @@ def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] not in (
         "pull",
         "check",
+        "inspect",
         "-h",
         "--help",
         "--version",
@@ -590,6 +598,13 @@ def main() -> int:
     _validate_ci_output_format(exec_args)
 
     try:
+        if exec_args.command == "inspect":
+            from ruff_sync.dependencies import require_dependency  # noqa: PLC0415
+
+            require_dependency("textual", extra_name="tui")
+            msg = "The TUI is not yet implemented."
+            raise NotImplementedError(msg)
+
         if exec_args.command == "check":
             return asyncio.run(check(exec_args))
         return asyncio.run(pull(exec_args))
