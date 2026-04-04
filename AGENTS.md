@@ -44,7 +44,7 @@ gh label list                           # See available labels
 
 - **Python** ≥ 3.10 (target version `py310`)
 - **Package Manager**: [uv](https://docs.astral.sh/uv/) — Use `uv run <command>` for all executions to ensure the correct environment.
-- **Linter / Formatter**: [Ruff](https://docs.astral.sh/ruff/) (`^0.15.0`)
+- **Linter / Formatter**: [Ruff](https://docs.astral.sh/ruff/) (`>=0.15.0`)
 - **Type Checker**: [mypy](https://mypy-lang.org/) (strict mode)
 - **Test Framework**: [pytest](https://docs.pytest.org/) with `pytest-asyncio`, `respx`, `pyfakefs` (See [Testing Standards](.agents/TESTING.md))
 - **Coverage**: `coverage` + Codecov
@@ -67,18 +67,35 @@ gh label list                           # See available labels
         ci-integration.md
 src/ruff_sync/         # The application source
   __init__.py          # Public API
-  cli.py               # CLI, merging logic, HTTP
-  __main__.py          # -m support
-tasks.py               # Invoke tasks: lint, fmt, type-check, deps, new-case
+  __main__.py          # CLI entry point (`python -m ruff_sync`)
+  cli.py               # CLI argparse definition and orchestration
+  constants.py         # Project-wide constants and default values
+  core.py              # Core logic for merging, syncing, and repository handling
+  formatters.py        # Logic for CLI output formatting (GitHub, GitLab, etc.)
+  pre_commit.py        # Support for pre-commit hook generation and validation
+tasks.py               # Invoke tasks: lint, fmt, type-check, deps, new-case, release
 pyproject.toml         # Project config, dependencies, ruff/mypy settings
 tests/
+  conftest.py          # Shared pytest fixtures (mocking, temp dirs)
   ruff.toml            # Test-specific ruff overrides (extends ../pyproject.toml)
   test_basic.py        # Unit tests for core functions
+  test_check.py        # Tests for --check mode and drift detection
+  test_ci_integration.py # CI-specific environment tests
+  test_ci_validation.py # Environment variable and CI output detection tests
+  test_config_validation.py # Validation of local configuration
+  test_constants.py    # Tests for internal constants and sentinels
   test_corner_cases.py # Edge case tests for TOML merge logic
-  test_whitespace.py   # Tests for whitespace/comment preservation during merge
+  test_deprecation.py  # Tests for handling of deprecated flags/settings
   test_e2e.py          # End-to-end tests using lifecycle TOML fixtures
+  test_formatters.py   # Serialization and formatting tests
+  test_git_fetch.py    # Mocked git repository fetching tests
+  test_pre_commit.py   # Pre-commit hook generation and sync tests
   test_project.py      # Tests that validate project config consistency
-  test_toml_operations.py  # Tests for low-level TOML operations
+  test_scaffold.py     # Tests for the new-case scaffold task
+  test_serialization.py # Tests for tomlkit serialization edge cases
+  test_toml_operations.py # Tests for low-level TOML operations
+  test_url_handling.py # Tests for GitHub and GitLab URL parsing
+  test_whitespace.py   # Tests for whitespace/comment preservation during merge
   lifecycle_tomls/     # TOML fixture files (*_initial.toml, *_upstream.toml, *_final.toml)
 ```
 
@@ -113,7 +130,7 @@ Use this to make informed decisions rather than blindly suppressing rules.
 uv run ruff format .
 ```
 
-- Line length: **90** characters.
+- Line length: **100** characters.
 - Docstring code formatting is enabled (`docstring-code-format = true`).
 - Preview formatting features are enabled.
 
@@ -207,6 +224,7 @@ Defined in `tasks.py`. **ALWAYS** run these through uv: `uv run invoke <task>`
 | `deps`       | `sync`                | Sync dependencies with uv              |
 | `new-case`   | `new-lifecycle-tomls` | Scaffold lifecycle TOML fixtures       |
 | `docs`       |                       | Build or serve documentation           |
+| `release`    |                       | Tag and create a GitHub release        |
 
 ## CI
 

@@ -117,7 +117,7 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 
 | Flag | Meaning |
 |------|---------|
-| `--output-format` | `text` (default), `json`, `github` (PR annotations) |
+| `--output-format` | `text` (default), `json`, `github`, `gitlab`, `sarif` (auto-detected in CI) |
 | `--semantic`      | Ignore whitespace/comments in `check` |
 | `--pre-commit`    | Sync `.pre-commit-config.yaml` hook version |
 | `--save`          | Persist CLI args to `pyproject.toml` |

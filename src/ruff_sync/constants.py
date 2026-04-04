@@ -15,6 +15,7 @@ __all__: Final[list[str]] = [
     "DEFAULT_EXCLUDE",
     "DEFAULT_PATH",
     "MISSING",
+    "ConfKey",
     "MissingType",
     "OutputFormat",
     "resolve_defaults",
@@ -61,6 +62,69 @@ class OutputFormat(str, enum.Enum):
         return self.value
 
 
+@enum.unique
+class ConfKey(str, enum.Enum):
+    """Centralized configuration keys for [tool.ruff-sync].
+
+    These are the canonical names used in the pyproject.toml configuration file.
+    """
+
+    UPSTREAM = "upstream"
+    TO = "to"
+    EXCLUDE = "exclude"
+    BRANCH = "branch"
+    PATH = "path"
+    PRE_COMMIT_VERSION_SYNC = "pre-commit-version-sync"
+    OUTPUT_FORMAT = "output-format"
+    SEMANTIC = "semantic"
+    DIFF = "diff"
+    INIT = "init"
+    SAVE = "save"
+    VERBOSE = "verbose"
+
+    # Legacy / Alias Keys
+    SOURCE = "source"  # Legacy for 'to'
+    PRE_COMMIT = "pre-commit"  # Legacy for 'pre-commit-version-sync'
+    PRE_COMMIT_SYNC_LEGACY = "pre-commit-sync"  # Legacy for 'pre-commit-version-sync'
+
+    @override
+    def __str__(self) -> str:
+        """Return the string value for TOML keys."""
+        return self.value
+
+    @classmethod
+    def to_attr(cls, key: str | ConfKey) -> str:
+        """Normalize a configuration key to its Python attribute name (underscore)."""
+        return str(key).replace("-", "_")
+
+    @classmethod
+    def get_canonical(cls, key: str) -> str:
+        """Map legacy or aliased configuration keys to their canonical names.
+
+        Args:
+            key: The raw key from the configuration file.
+
+        Returns:
+            The canonical ConfKey name (still as a string for use in logic).
+        """
+        # Normalize the input key to underscores for robust alias matching
+        norm_key = cls.to_attr(key)
+
+        # Handle aliases for 'to'
+        if norm_key == cls.to_attr(cls.SOURCE):
+            return cls.TO.value
+
+        # Handle aliases for 'pre-commit-version-sync'
+        if norm_key in (
+            cls.to_attr(cls.PRE_COMMIT_SYNC_LEGACY),
+            cls.to_attr(cls.PRE_COMMIT),
+        ):
+            return cls.PRE_COMMIT_VERSION_SYNC.value
+
+        # Return the original key (even if unknown, let 'allowed_keys' handle it)
+        return key
+
+
 def resolve_defaults(
     branch: str | MissingType,
     path: str | MissingType,
@@ -69,8 +133,7 @@ def resolve_defaults(
     """Resolve MISSING sentinel values to their effective defaults.
 
     This is the single source of truth for MISSING → default resolution across
-    both ``cli.main`` and ``core._merge_multiple_upstreams``, keeping the two
-    layers in sync without introducing a circular dependency between them.
+    the CLI and internal logic, keeping the layers in sync.
 
     Args:
         branch: The resolved branch value or ``MISSING``.
@@ -80,8 +143,7 @@ def resolve_defaults(
     Returns:
         A ``(branch, path, exclude)`` tuple with defaults applied.
         ``path`` is normalised to ``None`` (not ``""``) so callers can forward
-        it directly to :func:`~ruff_sync.core.resolve_raw_url` and
-        :func:`~ruff_sync.core.fetch_upstreams_concurrently`.
+        it directly to :func:`~ruff_sync.core.resolve_raw_url`.
     """
     eff_branch = branch if branch is not MISSING else DEFAULT_BRANCH
     raw_path = path if path is not MISSING else DEFAULT_PATH

@@ -8,7 +8,7 @@ import tomlkit
 from httpx import URL
 
 from ruff_sync.cli import Arguments
-from ruff_sync.constants import MISSING, MissingType
+from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE
 from ruff_sync.core import pull, serialize_ruff_sync_config
 
 
@@ -40,33 +40,16 @@ def test_serialize_ruff_sync_config_basic():
     assert "pre-commit-version-sync = true" in s
 
 
-def test_serialize_ruff_sync_config_pre_commit_false():
-    """Explicitly passing pre_commit=False must serialize as false, not omit the key."""
+def test_serialize_ruff_sync_config_pre_commit_default_skipped():
+    """When pre_commit is False (the default), the key must be absent from the serialized config."""
     doc = tomlkit.document()
     args = Arguments(
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
         pre_commit=False,
-    )
-    serialize_ruff_sync_config(doc, args)
-
-    s = doc.as_string()
-    assert "pre-commit-version-sync = false" in s
-
-
-def test_serialize_ruff_sync_config_pre_commit_missing():
-    """When pre_commit is MISSING the key must be absent from the serialized config."""
-    doc = tomlkit.document()
-    args = Arguments(
-        command="pull",
-        upstream=(URL("https://example.com/repo/pyproject.toml"),),
-        to=pathlib.Path(),
-        exclude=MISSING,
-        verbose=0,
-        pre_commit=MISSING,
     )
     serialize_ruff_sync_config(doc, args)
 
@@ -119,7 +102,7 @@ def test_serialize_ruff_sync_config_preserves_existing():
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
     )
 
@@ -165,7 +148,7 @@ def test_get_or_create_ruff_sync_table_non_table_ruff_sync():
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
     )
     from ruff_sync.core import serialize_ruff_sync_config
@@ -181,11 +164,11 @@ def test_serialize_ruff_sync_config_omits_defaults():
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
-        branch=MISSING,
-        path=MISSING,
-        pre_commit=MISSING,
+        branch=DEFAULT_BRANCH,
+        path=None,
+        pre_commit=False,
         save=True,
     )
     serialize_ruff_sync_config(doc, args)
@@ -205,7 +188,7 @@ def test_serialize_ruff_sync_config_exclude_default_skipped():
         command="pull",
         upstream=(URL("https://example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
     )
     serialize_ruff_sync_config(doc, args)
@@ -224,7 +207,7 @@ def test_serialize_ruff_sync_config_mixed_credentials(caplog: pytest.LogCaptureF
             URL("https://user:pass@example.com/repo/pyproject.toml"),
         ),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
     )
 
@@ -242,7 +225,7 @@ def test_serialize_ruff_sync_config_skip_credentials(caplog: pytest.LogCaptureFi
         command="pull",
         upstream=(URL("https://user:pass@example.com/repo/pyproject.toml"),),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
         branch="main",
         path="",
@@ -267,7 +250,7 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
             URL("https://example.com/repo2/pyproject.toml"),
         ),
         to=pathlib.Path(),
-        exclude=MISSING,
+        exclude=DEFAULT_EXCLUDE,
         verbose=0,
     )
     serialize_ruff_sync_config(doc, args)
@@ -285,15 +268,15 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
         # baseline: init+save with explicit pre_commit=True triggers sync
         (True, None, True, True, True),
         # save without init still writes [tool.ruff-sync] but does not init hooks
-        (False, True, MISSING, False, True),
-        # when pre_commit is MISSING, sync_pre_commit is never called
-        (True, None, MISSING, False, True),
-        # when pre_commit is False, sync_pre_commit is not called
+        (False, True, False, False, True),
+        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
+        (True, None, False, False, True),
+        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
         (True, None, False, False, True),
         # init with explicit --no-save should not serialize [tool.ruff-sync]
-        (True, False, MISSING, False, False),
+        (True, False, False, False, False),
         # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (False, None, MISSING, False, False),
+        (False, None, False, False, False),
     ],
 )
 @pytest.mark.asyncio
@@ -301,7 +284,7 @@ async def test_pull_logging_and_serialization_triggers(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     tmp_path: pathlib.Path,
-    case: tuple[bool, bool | None, bool | MissingType, bool, bool],
+    case: tuple[bool, bool | None, bool, bool, bool],
 ) -> None:
     init, save, pre_commit, expect_sync_pre_commit, expect_save = case
     from ruff_sync import core

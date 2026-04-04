@@ -16,26 +16,23 @@ from functools import lru_cache
 from importlib import metadata
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     Final,
     Literal,
     NamedTuple,
-    cast,
+    Protocol,
 )
 
 import tomlkit
 from httpx import URL
-from typing_extensions import deprecated
+from typing_extensions import deprecated, override
 
 from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
     DEFAULT_PATH,
-    MISSING,
-    MissingType,
+    ConfKey,
     OutputFormat,
-    resolve_defaults,
 )
 from ruff_sync.core import (
     Config,
@@ -85,7 +82,8 @@ class ColoredFormatter(logging.Formatter):
         """Initialize the formatter with a format string."""
         super().__init__(fmt)
 
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[explicit-override]
+    @override
+    def format(self, record: logging.LogRecord) -> str:
         """Format the log record with colors if the output is a TTY."""
         if sys.stderr.isatty():
             color = self.COLORS.get(record.levelno, self.RESET)
@@ -99,14 +97,14 @@ class Arguments(NamedTuple):
     command: str
     upstream: tuple[URL, ...]
     to: pathlib.Path
-    exclude: Iterable[str] | MissingType
+    exclude: Iterable[str]
     verbose: int
-    branch: str | MissingType = MISSING
-    path: str | MissingType = MISSING
+    branch: str = DEFAULT_BRANCH
+    path: str | None = None
     semantic: bool = False
     diff: bool = True
     init: bool = False
-    pre_commit: bool | MissingType = MISSING
+    pre_commit: bool = False
     save: bool | None = None
     output_format: OutputFormat = OutputFormat.TEXT
 
@@ -128,9 +126,30 @@ class ResolvedArgs(NamedTuple):
 
     upstream: tuple[URL, ...]
     to: pathlib.Path
-    exclude: Iterable[str] | MissingType
-    branch: str | MissingType
-    path: str | MissingType
+    exclude: Iterable[str]
+    branch: str
+    path: str | None
+    output_format: OutputFormat
+
+
+class CLIArguments(Protocol):
+    """Protocol for parsed CLI arguments from ArgumentParser."""
+
+    command: str | None
+    upstream: list[URL]
+    to: str | None
+    source: str | None
+    exclude: list[str] | None
+    verbose: int
+    branch: str | None
+    path: str | None
+    pre_commit: bool | None
+    output_format: OutputFormat | None
+    # Subcommand specific
+    init: bool
+    save: bool | None
+    semantic: bool
+    diff: bool
 
 
 @lru_cache(maxsize=1)
@@ -147,32 +166,39 @@ def get_config(
     """
     local_toml = source / RuffConfigFileName.PYPROJECT_TOML
     # TODO: use pydantic to validate the toml file
-    cfg_result: dict[str, Any] = {}
+    cfg_result: Config = {}
     if local_toml.exists():
         toml = tomlkit.parse(local_toml.read_text())
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
             allowed_keys = set(Config.__annotations__.keys())
-            for arg, value in config.items():
-                arg_norm = arg.replace("-", "_")
+            for raw_key, value in config.items():
+                # Check for legacy 'source' key to emit deprecation warning
+                if raw_key.replace("-", "_") == ConfKey.to_attr(ConfKey.SOURCE):
+                    LOGGER.warning(
+                        f"DeprecationWarning: [tool.ruff-sync] '{raw_key}' "
+                        f"is deprecated. Use '{ConfKey.TO}' instead."
+                    )
 
-                # Handle aliases for pre-commit
-                if arg_norm in ("pre_commit_sync", "pre_commit"):
-                    arg_norm = "pre_commit_version_sync"
+                # Map legacy names (source, pre_commit_sync) to canonical
+                # (to, pre-commit-version-sync)
+                canonical_key = ConfKey.get_canonical(raw_key)
 
-                if arg_norm in allowed_keys:
-                    if arg_norm == "source":
-                        LOGGER.warning(
-                            "DeprecationWarning: [tool.ruff-sync] 'source' is deprecated. "
-                            "Use 'to' instead."
-                        )
-                    cfg_result[arg_norm] = value
+                # Normalize TOML key (dashes) to internal Python attribute name (underscores)
+                # e.g. "pre-commit-version-sync" -> "pre_commit_version_sync"
+                arg_attr = ConfKey.to_attr(canonical_key)
+
+                if arg_attr in allowed_keys:
+                    cfg_result[arg_attr] = value  # type: ignore[literal-required]
                 else:
-                    LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
+                    LOGGER.warning(f"Unknown ruff-sync configuration: {raw_key}")
+
             # Ensure 'to' is populated if 'source' was used
-            if "source" in cfg_result and "to" not in cfg_result:
-                cfg_result["to"] = cfg_result["source"]
-    return cast("Config", cfg_result)
+            to_attr = ConfKey.to_attr(ConfKey.TO)
+            source_attr = ConfKey.to_attr(ConfKey.SOURCE)
+            if source_attr in cfg_result and to_attr not in cfg_result:
+                cfg_result[to_attr] = cfg_result[source_attr]  # type: ignore[literal-required]
+    return cfg_result
 
 
 def _get_cli_parser() -> ArgumentParser:
@@ -260,8 +286,8 @@ def _get_cli_parser() -> ArgumentParser:
         "--output-format",
         type=OutputFormat,
         choices=list(OutputFormat),
-        default=OutputFormat.TEXT,
-        help="Format for output. Default: text.",
+        default=None,
+        help="Format for output. Default: text (auto-detected in CI).",
     )
 
     # Pull subcommand (the default action)
@@ -310,10 +336,10 @@ def _get_cli_parser() -> ArgumentParser:
 PARSER: Final[ArgumentParser] = _get_cli_parser()
 
 
-def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
+def _resolve_upstream(args: CLIArguments, config: Config) -> tuple[URL, ...]:
     """Resolve upstream URL(s) from CLI or config."""
     if args.upstream:
-        upstreams = tuple(cast("Iterable[URL]", args.upstream))
+        upstreams = tuple(args.upstream)
         # Log CLI upstreams for consistency with config sourcing
         summary = (
             f"{upstreams[0]}... ({len(upstreams)} total)"
@@ -351,54 +377,80 @@ def _resolve_upstream(args: Any, config: Mapping[str, Any]) -> tuple[URL, ...]:
     )
 
 
-def _resolve_exclude(args: Any, config: Mapping[str, Any]) -> Iterable[str] | MissingType:
+def _resolve_exclude(args: CLIArguments, config: Config) -> Iterable[str]:
     """Resolve exclude patterns from CLI or config.
 
     Returns the CLI value if provided, otherwise the value from
     ``[tool.ruff-sync].exclude`` in the config.  If neither is set,
-    returns ``MISSING`` so that :func:`~ruff_sync.constants.resolve_defaults`
-    can apply the ``DEFAULT_EXCLUDE`` set downstream.
+    returns ``DEFAULT_EXCLUDE``.
     """
     if args.exclude is not None:
-        return cast("Iterable[str]", args.exclude)
+        return args.exclude
     if "exclude" in config:
-        exclude = config["exclude"]
+        exclude: Iterable[str] = config["exclude"]
         LOGGER.info(f"🚫 Using exclude from [tool.ruff-sync]: {list(exclude)}")
-        return cast("Iterable[str]", exclude)
-    return MISSING
+        return exclude
+    return DEFAULT_EXCLUDE
 
 
-def _resolve_branch(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+def _resolve_branch(args: CLIArguments, config: Config) -> str:
     """Resolve branch name from CLI, config, or MISSING.
 
     An empty string (``--branch ""``) is treated as falsy and falls back to
     the config or default, preserving the original behaviour.
     """
-    if getattr(args, "branch", None):
-        return cast("str", args.branch)
+    if args.branch:
+        return args.branch
     if "branch" in config:
-        branch = cast("str", config["branch"])
+        branch: str = config["branch"]
         LOGGER.info(f"🌿 Using branch from [tool.ruff-sync]: {branch}")
         return branch
-    return MISSING
+    return DEFAULT_BRANCH
 
 
-def _resolve_path(args: Any, config: Mapping[str, Any]) -> str | MissingType:
+def _resolve_path(args: CLIArguments, config: Config) -> str:
     """Resolve path prefix from CLI, config, or MISSING.
 
     An empty string (``--path ""``) is treated as falsy and falls back to
     the config or default, preserving the original behaviour.
     """
-    if getattr(args, "path", None):
-        return cast("str", args.path)
+    if args.path:
+        return args.path
     if "path" in config:
-        path = cast("str", config["path"])
+        path: str = config["path"]
         LOGGER.info(f"📄 Using path from [tool.ruff-sync]: {path}")
         return path
-    return MISSING
+    return DEFAULT_PATH
 
 
-def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> pathlib.Path:
+def _resolve_output_format(args: CLIArguments, config: Config) -> OutputFormat:
+    """Resolve output format from CLI, config, or environment auto-detection."""
+    if args.output_format:
+        return args.output_format
+
+    if "output_format" in config:
+        fmt_str = config["output_format"]
+        try:
+            fmt = OutputFormat(fmt_str)
+        except ValueError:
+            valid_formats = ", ".join(f.value for f in OutputFormat)
+            LOGGER.warning(
+                f"Unknown output format in config: {fmt_str}. Valid values: {valid_formats}"
+            )
+        else:
+            LOGGER.info(f"📊 Using output format from [tool.ruff-sync]: {fmt}")
+            return fmt
+
+    # Auto-detection
+    provider = _detect_ci_provider()
+    if provider:
+        LOGGER.info(f"🤖 Auto-detected CI environment: {provider}")
+        return provider
+
+    return OutputFormat.TEXT
+
+
+def _resolve_to(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> pathlib.Path:
     """Resolve target path from CLI, config, or default."""
     if args.source:
         LOGGER.warning("DeprecationWarning: --source is deprecated. Use --to instead.")
@@ -415,14 +467,38 @@ def _resolve_to(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) 
     return initial_to
 
 
-def _resolve_args(args: Any, config: Mapping[str, Any], initial_to: pathlib.Path) -> ResolvedArgs:
+def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> ResolvedArgs:
     """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
     to = _resolve_to(args, config, initial_to)
     exclude = _resolve_exclude(args, config)
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
-    return ResolvedArgs(upstream, to, cast("Any", exclude), cast("Any", branch), cast("Any", path))
+    output_format = _resolve_output_format(args, config)
+
+    # Normalize path "" -> None to match core expectation
+    final_path: str | None = path or None
+
+    return ResolvedArgs(
+        upstream,
+        to,
+        exclude,
+        branch,
+        final_path,
+        output_format,
+    )
+
+
+def _resolve_pre_commit(args: CLIArguments, config: Config) -> bool:
+    """Resolve pre-commit sync setting from CLI or config."""
+    if args.pre_commit is not None:
+        return args.pre_commit
+
+    pre_commit_attr = ConfKey.to_attr(ConfKey.PRE_COMMIT_VERSION_SYNC)
+    if pre_commit_attr in config:
+        val = config.get(pre_commit_attr)
+        return bool(val)
+    return False
 
 
 def _detect_ci_provider() -> CIProvider | None:
@@ -489,24 +565,14 @@ def main() -> int:
     initial_to = pathlib.Path(arg_to) if arg_to else pathlib.Path()
     config: Config = get_config(initial_to)
 
-    upstream, to_val, exclude, branch, path = _resolve_args(args, config, initial_to)
+    upstream, to_val, exclude, branch, path, output_format = _resolve_args(args, config, initial_to)
+    pre_commit_val = _resolve_pre_commit(args, config)
 
-    pre_commit_arg = getattr(args, "pre_commit", None)
-    if pre_commit_arg is not None:
-        pre_commit_val: bool | MissingType = pre_commit_arg
-    elif "pre-commit-version-sync" in config:
-        pre_commit_val = cast("Any", config).get("pre-commit-version-sync")
-    elif "pre_commit_version_sync" in config:
-        pre_commit_val = config.get("pre_commit_version_sync", MISSING)
-    else:
-        pre_commit_val = MISSING
+    resolved_upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
 
-    # Build Arguments first so _resolve_defaults can centralize MISSING → default
-    # resolution for branch and path (keeps cli.main and core._merge_multiple_upstreams
-    # in sync with a single source of truth).
     exec_args = Arguments(
         command=args.command,
-        upstream=upstream,
+        upstream=resolved_upstream,
         to=to_val,
         exclude=exclude,
         verbose=args.verbose,
@@ -517,16 +583,8 @@ def main() -> int:
         init=getattr(args, "init", False),
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
-        output_format=getattr(args, "output_format", OutputFormat.TEXT),
+        output_format=output_format,
     )
-
-    # Use the shared helper from constants so the MISSING→default logic for
-    # branch/path cannot diverge between cli.main and core._merge_multiple_upstreams.
-    res_branch, res_path, _exclude = resolve_defaults(branch, path, exclude)
-    resolved_upstream = tuple(
-        resolve_raw_url(u, branch=res_branch, path=res_path) for u in upstream
-    )
-    exec_args = exec_args._replace(upstream=resolved_upstream)
 
     # Warn if the specified output format doesn't match the current CI environment
     _validate_ci_output_format(exec_args)

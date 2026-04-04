@@ -130,6 +130,6 @@ def test_my_edge_case():
 
 ## 6. Code Coverage
 
-We target **high coverage** for `ruff_sync.py`.
+We target **high coverage** for `src/ruff_sync/`.
 - Run coverage locally: `uv run coverage run -m pytest -vv && uv run coverage report`
 - New features MUST include unit tests in `tests/test_basic.py` or specialized files like `tests/test_whitespace.py` if they involve formatting logic.

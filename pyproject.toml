@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.4"
+version = "0.1.5.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -206,6 +206,7 @@ ignore = [
     "PLW1510", # subprocess check not needed in tests
     "PT013", # pytest import style, prevents importing param and or types in from style
     "TC002", # Move third-party import into type-checking block
+    "TID251", # allow cast in tests
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -222,6 +223,7 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "unittest.mock".msg = "Prefer dedicated libraries to mock at external dependencies, such as `httpx` or `pyfakefs`."
+"typing.cast".msg = "Please fix the underlying type issues instead of using typing.cast."
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from ruff_sync.constants import MISSING, OutputFormat
+from ruff_sync.constants import DEFAULT_EXCLUDE, OutputFormat
 from ruff_sync.formatters import (
     GithubFormatter,
     GitlabFormatter,
@@ -574,7 +574,7 @@ class TestCLILifecycle:
             command="check",
             upstream=(URL("https://example.com"),),
             to=pathlib.Path("pyproject.toml"),
-            exclude=MISSING,
+            exclude=DEFAULT_EXCLUDE,
             verbose=0,
             output_format=OutputFormat.TEXT,
         )
@@ -601,7 +601,7 @@ class TestCLILifecycle:
             command="check",
             upstream=(URL("https://example.com"),),
             to=pathlib.Path("nonexistent.toml"),
-            exclude=MISSING,
+            exclude=DEFAULT_EXCLUDE,
             verbose=0,
             output_format=OutputFormat.TEXT,
         )

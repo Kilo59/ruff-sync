@@ -24,7 +24,7 @@ from tomlkit.toml_file import TOMLFile
 
 import ruff_sync
 import ruff_sync.cli as ruff_sync_cli
-from ruff_sync.constants import DEFAULT_EXCLUDE, MISSING
+from ruff_sync.constants import DEFAULT_EXCLUDE
 from ruff_sync.core import (
     UpstreamError,
     _merge_multiple_upstreams,
@@ -401,12 +401,8 @@ def test_exclude_resolution_config_precedence(patch_cli: CLIPatch):
     assert patch_cli.captured_args[0].exclude == ["from-config"]
 
 
-def test_exclude_resolution_default_is_missing(patch_cli: CLIPatch):
-    """Default exclude should be MISSING when neither CLI nor config provides it.
-
-    The CLI leaves `exclude` as MISSING so that downstream resolution (in
-    `_merge_multiple_upstreams`) applies the correct DEFAULT_EXCLUDE set.
-    """
+def test_exclude_resolution_is_default(patch_cli: CLIPatch):
+    """Default exclude should be DEFAULT_EXCLUDE when neither CLI nor config provides it."""
     sys.argv = ["ruff-sync", "http://example.com"]
     # Mock get_config to return a config without 'exclude' (use defaults)
     patch_cli.set_config({})
@@ -414,13 +410,9 @@ def test_exclude_resolution_default_is_missing(patch_cli: CLIPatch):
     ruff_sync.main()
 
     assert len(patch_cli.captured_args) == 1
-    # The CLI should leave `exclude` as MISSING so that default resolution is applied later.
+    # The CLI now resolves defaults early
     exclude = patch_cli.captured_args[0].exclude
-    assert exclude is MISSING
-
-    # Simulate downstream default resolution to ensure the default exclude set is used.
-    resolved_exclude = DEFAULT_EXCLUDE if exclude is MISSING else exclude
-    assert set(resolved_exclude) == DEFAULT_EXCLUDE
+    assert exclude == DEFAULT_EXCLUDE
 
 
 def test_main_default_to_resolution(patch_cli: CLIPatch):
@@ -670,9 +662,9 @@ def test_ruff_config_file_name_equality() -> None:
     """Test equality comparisons."""
     # intentional non-overlapping comparison
     assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML == "pyproject.toml"  # type: ignore[comparison-overlap]
-    assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"
-    assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"
-    assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML
+    assert ruff_sync.RuffConfigFileName.RUFF_TOML == "ruff.toml"  # type: ignore[comparison-overlap]
+    assert ruff_sync.RuffConfigFileName.DOT_RUFF_TOML == ".ruff.toml"  # type: ignore[comparison-overlap]
+    assert ruff_sync.RuffConfigFileName.PYPROJECT_TOML != ruff_sync.RuffConfigFileName.RUFF_TOML  # type: ignore[comparison-overlap]
 
 
 @pytest.mark.asyncio
