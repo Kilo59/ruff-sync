@@ -62,7 +62,12 @@ Right now, discovering and extracting the local `pyproject.toml` is slightly cou
 ### [NEW] src/ruff_sync/tui/app.py
 - Define `RuffSyncApp` subclassing `textual.app.App`.
 - **CSS**: Define embedded TCSS.
-  - Layout: `Horizontal` split with `Tree` (left) sized `1fr`, and a `Vertical` container (right) sized `2fr`. Left side for Navigation, right side for Content & Inspector.
+  - Layout: `Horizontal` split with `Tree` (left) sized `1fr`, and a `Vertical` container (`#content-pane`) (right) sized `2fr`.
+  - **Dynamic Layout**:
+    - `#category-table` takes **40% height** by default.
+    - `#inspector` (Markdown) takes **60% height** by default.
+    - When the table is hidden, the `#inspector` uses a `.full-height` class (**100% height**) to fill the content pane.
+    - Both widgets utilize `overflow-y: auto` for vertical scrolling only when needed.
 - **Compose Method**:
   ```python
   def compose(self) -> ComposeResult:
@@ -101,11 +106,11 @@ Contains all custom Textual widgets required for this view.
 ### [MODIFY] src/ruff_sync/tui/app.py (Reactivity)
 - Tie widgets together using Textual's event routing (`@on`):
   - `@on(Tree.NodeSelected)`:
-      - If the node is a configuration section (e.g. `lint.isort`), ensure the `CategoryTable` is visible (remove "hidden" class) and populate it with settings. It also triggers `inspector.fetch_and_display(section_path, is_rule=False)` to show section-level docs if available.
-      - If the node represents a rule code, add the "hidden" class to `CategoryTable` to maximize vertical space, and display the rule in `RuleInspector` via `fetch_and_display(code, is_rule=True)`.
+      - If the node is a configuration section (e.g. `lint.isort`), ensure the `CategoryTable` is visible (remove "hidden" class), remove the `.full-height` class from the inspector, and populate it with settings. It also triggers `inspector.fetch_and_display(section_path, is_rule=False)` to show section-level docs if available.
+      - If the node represents a rule code, add the "hidden" class to `CategoryTable` to maximize vertical space, add the `.full-height` class to the `RuleInspector`, and display the rule via `fetch_and_display(code, is_rule=True)`.
   - `@on(DataTable.RowSelected)`:
-      - If the focused row represents a Ruff Rule Code (e.g., `RUF012`), hide the `CategoryTable`, reveal the `RuleInspector` widget, and call `inspector.fetch_and_display("RUF012", is_rule=True)`.
-      - If the focused row represents a configuration setting, reveal the `RuleInspector` and call `inspector.fetch_and_display(setting_key, is_rule=False)`.
+      - If the focused row represents a Ruff Rule Code (e.g., `RUF012`), hide the `CategoryTable`, reveal the `RuleInspector` widget, apply `.full-height`, and call `inspector.fetch_and_display("RUF012", is_rule=True)`.
+      - If the focused row represents a configuration setting, reveal the `RuleInspector` (at default height if table is shown) and call `inspector.fetch_and_display(setting_key, is_rule=False)`.
       - Expose related context natively based on selections.
 
 ---
