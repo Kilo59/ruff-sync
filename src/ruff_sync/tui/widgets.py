@@ -17,14 +17,17 @@ if TYPE_CHECKING:
 class ConfigTree(Tree[Any]):
     """A tree widget for navigating Ruff configuration."""
 
-    def populate(self, config: dict[str, Any]) -> None:
+    def populate(self, config: dict[str, Any], has_rules: bool = False) -> None:
         """Populate the tree with configuration sections.
 
         Args:
             config: The unwrapped dictionary of Ruff configuration.
+            has_rules: Whether to inject the 'Effective Active Rules' node.
         """
         self.clear()
         self.root.expand()
+        if has_rules:
+            self.root.add("Effective Active Rules", data="__rules__")
         self._populate_node(self.root, config)
 
     def _populate_node(self, parent: TreeNode[Any], data: Any) -> None:
@@ -62,7 +65,8 @@ class CategoryTable(DataTable[Any]):
         Args:
             data: The data to display in the table.
         """
-        self.clear()
+        self.clear(columns=True)
+        self.add_columns("Key", "Value")
         if isinstance(data, dict):
             for key, value in sorted(data.items()):
                 self.add_row(key, str(value))
@@ -71,6 +75,31 @@ class CategoryTable(DataTable[Any]):
                 self.add_row(str(i), str(item))
         else:
             self.add_row("Value", str(data))
+
+    def update_rules(self, rules: list[dict[str, Any]]) -> None:
+        """Update the table with a list of rules in multi-column format.
+
+        Args:
+            rules: The enriched rules list to display.
+        """
+        self.clear(columns=True)
+        self.add_columns("Code", "Name", "Linter", "Status", "Fix")
+        for rule in rules:
+            status = rule.get("status", "Unknown")
+            status_markup = status
+            if status == "Enabled":
+                status_markup = f"[green]{status}[/green]"
+            elif status == "Ignored":
+                status_markup = f"[red]{status}[/red]"
+
+            fix = rule.get("fix_availability", "None")
+            fix_markup = fix
+            if fix == "Always":
+                fix_markup = f"[cyan]{fix}[/cyan]"
+            elif fix in ("Sometimes", "Enforced"):
+                fix_markup = f"[yellow]{fix}[/yellow]"
+
+            self.add_row(rule["code"], rule["name"], rule["linter"], status_markup, fix_markup)
 
 
 class RuleInspector(Markdown):
@@ -107,13 +136,20 @@ class RuleInspector(Markdown):
         self.update(f"### Configuration Context\n\n**Path**: `{path}`\n\n**Value**: {summary}")
 
     @work
-    async def fetch_and_display(self, target: str, is_rule: bool = True) -> None:
+    async def fetch_and_display(
+        self, target: str, is_rule: bool = True, cached_content: str | None = None
+    ) -> None:
         """Fetch and display the documentation for a rule or setting.
 
         Args:
             target: The Ruff rule code or configuration path.
             is_rule: True if fetching a rule, False if fetching a config setting.
+            cached_content: Optional pre-fetched documentation to avoid subprocess calls.
         """
+        if cached_content:
+            self.update(cached_content.strip())
+            return
+
         # Set a loading message
         desc = "rule" if is_rule else "config"
         self.update(f"## Inspecting {target}...\n\nFetching documentation from `ruff {desc}`...")

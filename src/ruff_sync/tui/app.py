@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
-from textual import on
+from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Header, Tree
 from typing_extensions import override
 
 from ruff_sync.config_io import load_local_ruff_config
+from ruff_sync.system import compute_effective_rules, get_all_ruff_rules
 from ruff_sync.tui.constants import RULE_PATTERN
+from ruff_sync.tui.screens import OmniboxScreen
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
@@ -20,6 +22,8 @@ if TYPE_CHECKING:
 
 
 LOGGER = logging.getLogger(__name__)
+
+MIN_RULE_COLUMNS: Final = 4
 
 
 class RuffSyncApp(App[None]):
@@ -64,7 +68,7 @@ class RuffSyncApp(App[None]):
 
     BINDINGS: ClassVar[list[Any]] = [
         ("q", "quit", "Quit"),
-        ("/", "focus('config-tree')", "Search"),
+        ("/", "search", "Search Rules"),
         ("enter", "select", "View Details"),
     ]
 
@@ -78,6 +82,8 @@ class RuffSyncApp(App[None]):
         super().__init__(**kwargs)
         self.args = args
         self.config: dict[str, Any] = {}
+        self.all_rules: list[dict[str, Any]] = []
+        self.effective_rules: list[dict[str, Any]] = []
 
     @override
     def compose(self) -> ComposeResult:
@@ -100,8 +106,34 @@ class RuffSyncApp(App[None]):
             self.config = {}
 
         tree = self.query_one(ConfigTree)
-        tree.populate(self.config)
+        tree.populate(self.config, has_rules=True)
         tree.focus()
+
+        # Prime the caches in the background
+        self._prime_caches()
+
+    @work
+    async def _prime_caches(self) -> None:
+        """Fetch rules and compute effectiveness in the background."""
+        self.all_rules = await get_all_ruff_rules()
+        if self.config:
+            self.effective_rules = compute_effective_rules(self.all_rules, self.config)
+
+    @work
+    async def _display_effective_rules(self) -> None:
+        """Populate the table with the effective rules list."""
+        if not self.all_rules:
+            self.all_rules = await get_all_ruff_rules()
+            self.effective_rules = compute_effective_rules(self.all_rules, self.config)
+
+        table = self.query_one(CategoryTable)
+        table.update_rules(self.effective_rules)
+
+        inspector = self.query_one(RuleInspector)
+        inspector.update(
+            "## Effective Active Rules\n\nThis table shows the status of every Ruff rule "
+            "based on your current configuration (including defaults)."
+        )
 
     @on(Tree.NodeSelected)
     def handle_node_selected(self, event: Tree.NodeSelected[Any]) -> None:
@@ -116,6 +148,12 @@ class RuffSyncApp(App[None]):
 
         table = self.query_one(CategoryTable)
         inspector = self.query_one(RuleInspector)
+
+        if data == "__rules__":
+            table.remove_class("hidden")
+            inspector.remove_class("full-height")
+            self._display_effective_rules()
+            return
 
         # Build full path for context
         full_path = self._get_node_path(event.node)
@@ -146,8 +184,21 @@ class RuffSyncApp(App[None]):
         """
         table = self.query_one(CategoryTable)
         row = table.get_row_at(event.cursor_row)
-        key, value = row
 
+        # Handle multi-column rules view vs key-value view
+        if len(row) >= MIN_RULE_COLUMNS:
+            rule_code = str(row[0])
+            # Check for cached explanation
+            rule_data = next((r for r in self.all_rules if r["code"] == rule_code), None)
+            explanation = rule_data.get("explanation") if rule_data else None
+
+            inspector = self.query_one(RuleInspector)
+            table.add_class("hidden")
+            inspector.add_class("full-height")
+            inspector.fetch_and_display(rule_code, is_rule=True, cached_content=explanation)
+            return
+
+        key, value = row
         # Check if the value or key looks like a rule code
         rule_code = None
         if RULE_PATTERN.match(str(key)):
@@ -183,3 +234,26 @@ class RuffSyncApp(App[None]):
             path.append(label_text)
             current = current.parent
         return "tool.ruff." + ".".join(reversed(path)) if path else "tool.ruff"
+
+    def action_search(self) -> None:
+        """Launch the global fuzzy search Omnibox."""
+        if not self.all_rules:
+            self.notify("Still fetching rule metadata...", severity="warning")
+            # Even if empty, we push; the screen handles empty list
+        self.push_screen(OmniboxScreen(self.all_rules), self.handle_omnibox_result)
+
+    def handle_omnibox_result(self, rule_code: str | None) -> None:
+        """Handle the result from the Omnibox search.
+
+        Args:
+            rule_code: The selected rule code, or None if cancelled.
+        """
+        if rule_code:
+            rule_data = next((r for r in self.all_rules if r["code"] == rule_code), None)
+            explanation = rule_data.get("explanation") if rule_data else None
+
+            table = self.query_one(CategoryTable)
+            inspector = self.query_one(RuleInspector)
+            table.add_class("hidden")
+            inspector.add_class("full-height")
+            inspector.fetch_and_display(rule_code, is_rule=True, cached_content=explanation)

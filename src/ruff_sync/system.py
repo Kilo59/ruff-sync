@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
-from typing import Final
+from typing import TYPE_CHECKING, Any, Final
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +40,90 @@ async def get_ruff_config_markdown(setting_path: str) -> str | None:
     clean_path = setting_path.removeprefix("tool.ruff.")
     cmd: Final[list[str]] = ["ruff", "config", clean_path]
     return await _run_ruff_command(cmd, f"ruff config {clean_path}")
+
+
+async def get_all_ruff_rules() -> list[dict[str, Any]]:
+    """Execute `ruff rule --all --output-format json` and return the parsed rules.
+
+    Returns:
+        A list of dictionaries representing all supported Ruff rules.
+    """
+    cmd: Final[list[str]] = ["ruff", "rule", "--all", "--output-format", "json"]
+    output = await _run_ruff_command(cmd, "ruff rule --all")
+    if not output:
+        return []
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError:
+        LOGGER.exception("Failed to parse Ruff rules JSON.")
+        return []
+
+
+async def get_ruff_linters() -> list[dict[str, Any]]:
+    """Execute `ruff linter --output-format json` and return the parsed linters.
+
+    Returns:
+        A list of dictionaries representing Ruff linter categories.
+    """
+    cmd: Final[list[str]] = ["ruff", "linter", "--output-format", "json"]
+    output = await _run_ruff_command(cmd, "ruff linter")
+    if not output:
+        return []
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError:
+        LOGGER.exception("Failed to parse Ruff linters JSON.")
+        return []
+
+
+def compute_effective_rules(
+    all_rules: list[dict[str, Any]], toml_config: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Determine the status (Enabled, Ignored, Disabled) for each rule.
+
+    Args:
+        all_rules: The list of all supported rules.
+        toml_config: The local configuration dictionary.
+
+    Returns:
+        The list of rules enriched with a 'status' key.
+    """
+    lint = toml_config.get("tool", {}).get("ruff", {}).get("lint", {})
+
+    select = set(lint.get("select", [])) | set(lint.get("extend-select", []))
+    ignore = set(lint.get("ignore", [])) | set(lint.get("extend-ignore", []))
+
+    # If no select/extend-select is provided, Ruff defaults to E and F
+    if not lint.get("select") and not lint.get("extend-select"):
+        select.update(["E", "F"])
+
+    enriched: list[dict[str, Any]] = []
+    for rule in all_rules:
+        code = rule["code"]
+
+        # Find longest matching select prefix
+        best_select_len = -1
+        for s in select:
+            if code.startswith(s):
+                best_select_len = max(best_select_len, len(s))
+
+        # Find longest matching ignore prefix
+        best_ignore_len = -1
+        for i in ignore:
+            if code.startswith(i):
+                best_ignore_len = max(best_ignore_len, len(i))
+
+        status = "Disabled"
+        if best_select_len > best_ignore_len:
+            status = "Enabled"
+        elif best_ignore_len >= best_select_len and best_ignore_len != -1:
+            status = "Ignored"
+
+        rule_with_status = dict(rule)
+        rule_with_status["status"] = status
+        enriched.append(rule_with_status)
+
+    return enriched
 
 
 async def _run_ruff_command(cmd: list[str], description: str) -> str | None:
