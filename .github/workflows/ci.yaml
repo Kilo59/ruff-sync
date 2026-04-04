@@ -91,15 +91,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
       - name: Set up Python
-        run: uv python install 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
       - name: Install ruff-sync (no extras)
         # We install only the base package without 'dev' or 'tui' groups.
-        run: uv pip install .
+        run: pip install .
 
       - name: Run optional dependency validation script
         run: bash tests/test_minimal_imports.sh
