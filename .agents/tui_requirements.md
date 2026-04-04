@@ -55,11 +55,11 @@ Once the read-only layer is stabilized, the UI will be expanded into an interact
 
 ## 4. Technical Constraints & Architecture
 
-- **UI Framework:** [Textual](https://textual.textualize.io/) (v8.x.x). Must follow its progressive standard (TCSS for styling, reactivity for state updates).
+- **UI Framework:** [Textual](https://textual.textualize.io/) (v8.x.x). Must follow its progressive standard (TCSS for styling, reactivity for state updates). See our [Textual Skill](skills/textual/SKILL.md) for project-specific TUI implementation rules.
 - **Asynchronous Execution:**
   - Any potentially blocking operations like fetching GitHub upstream configs or running `ruff rule` via `subprocess` MUST be wrapped in Textual background workers (`self.run_worker()`) to avoid blocking the main TUI thread.
 - **Data Layer:**
   - Read operations should rely on the existing `tomlkit` and `core` parsing APIs within `ruff-sync`.
   - Type-safety must be maintained; the TUI components should interface cleanly with `ruff-sync`'s strictly typed dictionary/mapping representations.
 - **Optional Dependency Integration:**
-  - The TUI should be an optional CLI feature to keep the primary dependency size low. It should be bundled as `ruff-sync[tui]`, checking for `textual` availability before launching (following the optional dependency pattern).
+  - The TUI should be an optional CLI feature to keep the primary dependency size low. It should be bundled as `ruff-sync[tui]`, checking for `textual` availability before launching. Reference [DEPENDENCIES.md](DEPENDENCIES.md) for guidelines on our optional dependency and lazy-loading patterns.
