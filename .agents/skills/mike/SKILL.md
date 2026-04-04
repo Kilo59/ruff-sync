@@ -21,8 +21,50 @@ This project follows a specific versioning strategy:
 1.  **`dev`**: Represents the current `main` branch.
 2.  **Stable Releases**: Versioned documentation (e.g., `0.1.4`) created upon release.
 3.  **`stable`**: An alias always pointing to the most recent non-dev release.
+4.  **`latest`**: An alias pointing to the most recent release (including dev, if applicable).
 
-## Core Workflows
+## Theme Overrides
+
+To support the version switcher and custom banners, the project uses a `custom_dir` override in `mkdocs.yml`:
+
+```yaml
+theme:
+  name: material
+  custom_dir: docs/overrides
+```
+
+### Version switcher
+
+The version switcher is enabled via `extra.version.provider: mike`:
+
+```yaml
+extra:
+  version:
+    provider: mike
+```
+
+## Versioning Banner
+
+A custom banner is displayed when users are viewing the `dev` documentation. This is handled via `docs/overrides/main.html` and `docs/overrides/partials/version_warning.html`.
+
+### How it works:
+-   `main.html`: Extends the base template and includes the `version_warning.html` partial at the start of the `content` block.
+-   `version_warning.html`: Contains an HTML snippet that is hidden by default and shown via JavaScript if the URL path contains `/dev/`.
+
+Example in `version_warning.html`:
+```html
+<div id="version-warning" style="display: none;">
+  <div class="admonition warning">
+    <p class="admonition-title">Warning</p>
+    <p>You are viewing the development version of the documentation.</p>
+  </div>
+</div>
+<script>
+  if (window.location.pathname.includes("/dev/")) {
+    document.getElementById("version-warning").style.display = "block";
+  }
+</script>
+```
 
 ### 1. Deploying Development Docs
 Run this from the `main` branch to update the `dev` version:
