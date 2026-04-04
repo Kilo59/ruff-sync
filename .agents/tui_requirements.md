@@ -55,7 +55,7 @@ Once the read-only layer is stabilized, the UI will be expanded into an interact
 
 ## 4. Technical Constraints & Architecture
 
-- **UI Framework:** [Textual](https://textual.textualize.io/) (v8.x.x). Must follow its progressive standard (TCSS for styling, reactivity for state updates). See our [Textual Skill](skills/textual/SKILL.md) for project-specific TUI implementation rules.
+- **UI Framework:** [Textual](https://textual.textualize.io/) (>=8.2.2). Must follow its progressive standard (TCSS for styling, reactivity for state updates). See our [Textual Skill](skills/textual/SKILL.md) for project-specific TUI implementation rules.
 - **Asynchronous Execution:**
   - Any potentially blocking operations like fetching GitHub upstream configs or running `ruff rule` via `subprocess` MUST be wrapped in Textual background workers (`self.run_worker()`) to avoid blocking the main TUI thread.
 - **Data Layer:**

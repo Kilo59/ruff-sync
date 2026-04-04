@@ -3,7 +3,7 @@ name: textual
 description: Build sophisticated Terminal User Interfaces (TUIs) in Python using an async, CSS-inspired framework.
 ---
 
-# Textual TUI Framework (v8.x.x)
+# Textual TUI Framework (>=8.2.2)
 
 Textual is a Python framework for creating interactive, beautiful Terminal User Interfaces (TUIs). It uses an asynchronous engine and a layout system inspired by modern web development (Flexbox/Grid and CSS).
 
@@ -41,10 +41,10 @@ if __name__ == "__main__":
 - [**Widget Library**](references/widgets.md): Common components (DataTable, Input, ListView).
 - [**Testing**](references/testing.md): Unit testing apps with `pilot` and `App.run_test`.
 
-## Gotchas & Breaking Changes (v8.x.x)
+## Gotchas & Breaking Changes (>=8.2.2)
 
 > [!WARNING]
-> - **v8.x.x Breaking Changes**:
+> - **8.2.2 Breaking Changes**:
 >   - `Static.renderable` and `Label.renderable` are now **`Static.content`** and **`Label.content`**.
 >   - `Select.BLANK` is now **`Select.NULL`**.
 > - **Fractional Units**: Use `fr` for fractional units (e.g. `width: 1fr`). A common typo is `rf`, which is invalid.

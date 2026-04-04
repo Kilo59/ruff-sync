@@ -18,7 +18,7 @@ Add the dependency to the `[project.optional-dependencies]` section.
 
 ```toml
 [project.optional-dependencies]
-tui = ["textual>=0.50.0"]
+tui = ["textual>=8.2.2"]
 ```
 
 ### 2. Check and Lazy-Import (Locally)

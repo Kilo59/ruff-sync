@@ -27,7 +27,7 @@ Right now, discovering and extracting the local `pyproject.toml` is slightly cou
 - Under `[project.optional-dependencies]`, define the `tui` extra explicitly pinning the Textual version framework (v8.x.x):
   ```toml
   [project.optional-dependencies]
-  tui = ["textual>=0.81.0"]
+  tui = ["textual>=8.2.2"]
   ```
 
 ### [MODIFY] src/ruff_sync/cli.py
@@ -43,7 +43,7 @@ Right now, discovering and extracting the local `pyproject.toml` is slightly cou
   ```python
   if exec_args.command == "inspect":
       from ruff_sync.dependencies import require_dependency
-      require_dependency("textual", "tui")
+      require_dependency("textual", extra_name="tui")
 
       from ruff_sync.tui.app import RuffSyncApp
       return RuffSyncApp(exec_args).run()
