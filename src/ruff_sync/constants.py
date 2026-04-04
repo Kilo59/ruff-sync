@@ -65,25 +65,21 @@ def resolve_defaults(
     branch: str | MissingType,
     path: str | MissingType,
     exclude: Iterable[str] | MissingType,
-    output_format: OutputFormat | MissingType = MISSING,
-) -> tuple[str, str | None, Iterable[str], OutputFormat]:
+) -> tuple[str, str | None, Iterable[str]]:
     """Resolve MISSING sentinel values to their effective defaults.
 
     This is the single source of truth for MISSING → default resolution across
-    both ``cli.main`` and ``core._merge_multiple_upstreams``, keeping the two
-    layers in sync without introducing a circular dependency between them.
+    the CLI and internal logic, keeping the layers in sync.
 
     Args:
         branch: The resolved branch value or ``MISSING``.
         path: The resolved path value or ``MISSING``.
         exclude: The resolved exclude iterable or ``MISSING``.
-        output_format: The resolved output format or ``MISSING``.
 
     Returns:
         A ``(branch, path, exclude)`` tuple with defaults applied.
         ``path`` is normalised to ``None`` (not ``""``) so callers can forward
-        it directly to :func:`~ruff_sync.core.resolve_raw_url` and
-        :func:`~ruff_sync.core.fetch_upstreams_concurrently`.
+        it directly to :func:`~ruff_sync.core.resolve_raw_url`.
     """
     eff_branch = branch if branch is not MISSING else DEFAULT_BRANCH
     raw_path = path if path is not MISSING else DEFAULT_PATH
@@ -91,5 +87,4 @@ def resolve_defaults(
     # but explicit None is the canonical "root directory" sentinel.
     eff_path: str | None = raw_path or None
     eff_exclude = exclude if exclude is not MISSING else DEFAULT_EXCLUDE
-    eff_output_format = output_format if output_format is not MISSING else OutputFormat.TEXT
-    return eff_branch, eff_path, eff_exclude, eff_output_format
+    return eff_branch, eff_path, eff_exclude

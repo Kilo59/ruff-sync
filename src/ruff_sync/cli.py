@@ -426,7 +426,10 @@ def _resolve_output_format(args: CLIArguments, config: Config) -> OutputFormat:
         try:
             fmt = OutputFormat(fmt_str)
         except ValueError:
-            LOGGER.warning(f"Unknown output format in config: {fmt_str}")
+            valid_formats = ", ".join(f.value for f in OutputFormat)
+            LOGGER.warning(
+                f"Unknown output format in config: {fmt_str}. Valid values: {valid_formats}"
+            )
         else:
             LOGGER.info(f"📊 Using output format from [tool.ruff-sync]: {fmt}")
             return fmt

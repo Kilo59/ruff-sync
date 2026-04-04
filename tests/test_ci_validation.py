@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -149,6 +150,7 @@ def test_validate_ci_output_format(
 )
 def test_resolve_output_format(
     monkeypatch: MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
     env_vars: dict[str, str],
     cli_args: dict[str, Any],
     config: Config,
@@ -173,7 +175,15 @@ def test_resolve_output_format(
 
     args: CLIArguments = MockArgs(**cli_args)  # type: ignore[assignment]
 
-    assert _resolve_output_format(args, config) == expected
+    with caplog.at_level(logging.WARNING):
+        assert _resolve_output_format(args, config) == expected
+
+    # Only the invalid config case should produce the warning
+    if config.get("output_format") == "invalid":
+        assert "Unknown output format in config" in caplog.text
+        assert "Valid values:" in caplog.text
+    else:
+        assert "Unknown output format in config" not in caplog.text
 
 
 def test_main_resolves_output_format(monkeypatch: MonkeyPatch) -> None:
