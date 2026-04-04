@@ -152,11 +152,11 @@ async def _run_ruff_command(cmd: list[str], description: str) -> str | None:
             return None
 
         output = stdout.decode().strip()
-        return output or None
-
     except FileNotFoundError:
         LOGGER.exception("Ruff executable not found in PATH.")
         return None
     except Exception:
         LOGGER.exception(f"Unexpected error executing '{description}'")
         return None
+    else:
+        return output or None

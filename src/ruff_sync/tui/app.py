@@ -56,14 +56,6 @@ class RuffSyncApp(App[None]):
         background: $surface-darken-1;
         overflow-y: auto;
     }
-
-    .hidden {
-        display: none;
-    }
-
-    .full-height {
-        height: 100% !important;
-    }
     """
 
     BINDINGS: ClassVar[list[Any]] = [
@@ -150,8 +142,6 @@ class RuffSyncApp(App[None]):
         inspector = self.query_one(RuleInspector)
 
         if data == "__rules__":
-            table.remove_class("hidden")
-            inspector.remove_class("full-height")
             self._display_effective_rules()
             return
 
@@ -160,18 +150,12 @@ class RuffSyncApp(App[None]):
 
         # Check if the node label or path matches a ruff rule
         if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
-            table.add_class("hidden")
-            inspector.add_class("full-height")
             inspector.fetch_and_display(label_text, is_rule=True)
         elif isinstance(data, (dict, list)):
-            table.remove_class("hidden")
-            inspector.remove_class("full-height")
             table.update_content(data)
             # Fetch config documentation for the section if possible
             inspector.fetch_and_display(full_path, is_rule=False)
         else:
-            table.remove_class("hidden")
-            inspector.remove_class("full-height")
             table.update_content(data)
             inspector.fetch_and_display(full_path, is_rule=False)
 
@@ -193,8 +177,6 @@ class RuffSyncApp(App[None]):
             explanation = rule_data.get("explanation") if rule_data else None
 
             inspector = self.query_one(RuleInspector)
-            table.add_class("hidden")
-            inspector.add_class("full-height")
             inspector.fetch_and_display(rule_code, is_rule=True, cached_content=explanation)
             return
 
@@ -208,8 +190,6 @@ class RuffSyncApp(App[None]):
 
         if rule_code:
             inspector = self.query_one(RuleInspector)
-            table.add_class("hidden")
-            inspector.add_class("full-height")
             inspector.fetch_and_display(rule_code, is_rule=True)
         else:
             # It's a configuration key, show its documentation
@@ -252,8 +232,5 @@ class RuffSyncApp(App[None]):
             rule_data = next((r for r in self.all_rules if r["code"] == rule_code), None)
             explanation = rule_data.get("explanation") if rule_data else None
 
-            table = self.query_one(CategoryTable)
             inspector = self.query_one(RuleInspector)
-            table.add_class("hidden")
-            inspector.add_class("full-height")
             inspector.fetch_and_display(rule_code, is_rule=True, cached_content=explanation)
