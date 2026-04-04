@@ -172,28 +172,32 @@ def get_config(
         config = toml.get("tool", {}).get("ruff-sync")
         if config:
             allowed_keys = set(Config.__annotations__.keys())
-            for arg, value in config.items():
-                arg_norm = arg.replace("-", "_")
+            for raw_key, value in config.items():
+                # Check for legacy 'source' key to emit deprecation warning
+                if raw_key.replace("-", "_") == ConfKey.to_attr(ConfKey.SOURCE):
+                    LOGGER.warning(
+                        f"DeprecationWarning: [tool.ruff-sync] '{raw_key}' "
+                        f"is deprecated. Use '{ConfKey.TO}' instead."
+                    )
 
-                # Handle aliases for pre-commit
-                if arg_norm in (
-                    ConfKey.PRE_COMMIT_SYNC_LEGACY,
-                    ConfKey.PRE_COMMIT.replace("-", "_"),
-                ):
-                    arg_norm = ConfKey.PRE_COMMIT_VERSION_SYNC.replace("-", "_")
+                # Map legacy names (source, pre_commit_sync) to canonical
+                # (to, pre-commit-version-sync)
+                canonical_key = ConfKey.get_canonical(raw_key)
 
-                if arg_norm in allowed_keys:
-                    if arg_norm == ConfKey.SOURCE:
-                        LOGGER.warning(
-                            f"DeprecationWarning: [tool.ruff-sync] '{ConfKey.SOURCE}' "
-                            f"is deprecated. Use '{ConfKey.TO}' instead."
-                        )
-                    cfg_result[arg_norm] = value  # type: ignore[literal-required]
+                # Normalize TOML key (dashes) to internal Python attribute name (underscores)
+                # e.g. "pre-commit-version-sync" -> "pre_commit_version_sync"
+                arg_attr = ConfKey.to_attr(canonical_key)
+
+                if arg_attr in allowed_keys:
+                    cfg_result[arg_attr] = value  # type: ignore[literal-required]
                 else:
-                    LOGGER.warning(f"Unknown ruff-sync configuration: {arg}")
+                    LOGGER.warning(f"Unknown ruff-sync configuration: {raw_key}")
+
             # Ensure 'to' is populated if 'source' was used
-            if ConfKey.SOURCE in cfg_result and ConfKey.TO not in cfg_result:
-                cfg_result[ConfKey.TO] = cfg_result[ConfKey.SOURCE]  # type: ignore[literal-required]
+            to_attr = ConfKey.to_attr(ConfKey.TO)
+            source_attr = ConfKey.to_attr(ConfKey.SOURCE)
+            if source_attr in cfg_result and to_attr not in cfg_result:
+                cfg_result[to_attr] = cfg_result[source_attr]  # type: ignore[literal-required]
     return cfg_result
 
 
@@ -489,9 +493,10 @@ def _resolve_pre_commit(args: CLIArguments, config: Config) -> bool:
     """Resolve pre-commit sync setting from CLI or config."""
     if args.pre_commit is not None:
         return args.pre_commit
-    pre_commit_key = ConfKey.PRE_COMMIT_VERSION_SYNC.replace("-", "_")
-    if pre_commit_key in config:
-        val = config.get(pre_commit_key)
+
+    pre_commit_attr = ConfKey.to_attr(ConfKey.PRE_COMMIT_VERSION_SYNC)
+    if pre_commit_attr in config:
+        val = config.get(pre_commit_attr)
         return bool(val)
     return False
 

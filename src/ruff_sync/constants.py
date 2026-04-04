@@ -62,29 +62,67 @@ class OutputFormat(str, enum.Enum):
         return self.value
 
 
-class ConfKey:
+@enum.unique
+class ConfKey(str, enum.Enum):
     """Centralized configuration keys for [tool.ruff-sync].
 
     These are the canonical names used in the pyproject.toml configuration file.
     """
 
-    UPSTREAM: Final[str] = "upstream"
-    TO: Final[str] = "to"
-    EXCLUDE: Final[str] = "exclude"
-    BRANCH: Final[str] = "branch"
-    PATH: Final[str] = "path"
-    PRE_COMMIT_VERSION_SYNC: Final[str] = "pre-commit-version-sync"
-    OUTPUT_FORMAT: Final[str] = "output-format"
-    SEMANTIC: Final[str] = "semantic"
-    DIFF: Final[str] = "diff"
-    INIT: Final[str] = "init"
-    SAVE: Final[str] = "save"
-    VERBOSE: Final[str] = "verbose"
+    UPSTREAM = "upstream"
+    TO = "to"
+    EXCLUDE = "exclude"
+    BRANCH = "branch"
+    PATH = "path"
+    PRE_COMMIT_VERSION_SYNC = "pre-commit-version-sync"
+    OUTPUT_FORMAT = "output-format"
+    SEMANTIC = "semantic"
+    DIFF = "diff"
+    INIT = "init"
+    SAVE = "save"
+    VERBOSE = "verbose"
 
     # Legacy / Alias Keys
-    SOURCE: Final[str] = "source"  # Legacy for 'to'
-    PRE_COMMIT: Final[str] = "pre-commit"  # Legacy for 'pre-commit-version-sync'
-    PRE_COMMIT_SYNC_LEGACY: Final[str] = "pre_commit_sync"  # Legacy for 'pre-commit-version-sync'
+    SOURCE = "source"  # Legacy for 'to'
+    PRE_COMMIT = "pre-commit"  # Legacy for 'pre-commit-version-sync'
+    PRE_COMMIT_SYNC_LEGACY = "pre_commit_sync"  # Legacy for 'pre-commit-version-sync'
+
+    @override
+    def __str__(self) -> str:
+        """Return the string value for TOML keys."""
+        return self.value
+
+    @classmethod
+    def to_attr(cls, key: str | ConfKey) -> str:
+        """Normalize a configuration key to its Python attribute name (underscore)."""
+        return str(key).replace("-", "_")
+
+    @classmethod
+    def get_canonical(cls, key: str) -> str:
+        """Map legacy or aliased configuration keys to their canonical names.
+
+        Args:
+            key: The raw key from the configuration file.
+
+        Returns:
+            The canonical ConfKey name (still as a string for use in logic).
+        """
+        # Normalize to underscores first for easy alias checking
+        norm_key = key.replace("-", "_")
+
+        # Handle aliases for 'to'
+        if norm_key == cls.SOURCE.replace("-", "_"):
+            return cls.TO.value
+
+        # Handle aliases for 'pre-commit-version-sync'
+        if norm_key in (
+            cls.PRE_COMMIT_SYNC_LEGACY.value,
+            cls.PRE_COMMIT.replace("-", "_"),
+        ):
+            return cls.PRE_COMMIT_VERSION_SYNC.value
+
+        # Return the original key (even if unknown, let 'allowed_keys' handle it)
+        return key
 
 
 def resolve_defaults(
