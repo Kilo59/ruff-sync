@@ -8,6 +8,7 @@ from textual.widgets import DataTable, Tree
 
 from ruff_sync.cli import Arguments
 from ruff_sync.tui.app import RuffSyncApp
+from ruff_sync.tui.widgets import RuleInspector
 
 if TYPE_CHECKING:
     import pathlib
@@ -61,7 +62,11 @@ async def test_ruff_sync_app_mount_load_config_failure(
         # When config loading fails, the app should keep the default (empty) config.
         assert app.config == {}
         tree = cast("ConfigTree", app.query_one("#config-tree"))
-        assert not list(tree.root.children)
+        # Root only has "Effective Rule Status" node
+        assert len(tree.root.children) == 1
+        label = tree.root.children[0].label
+        label_text = label.plain if hasattr(label, "plain") else label
+        assert str(label_text) == "Effective Rule Status"
 
 
 @pytest.mark.asyncio
@@ -142,6 +147,14 @@ select = ["RUF012"]
 
     with patch("ruff_sync.tui.widgets.get_ruff_rule_markdown", return_value=mock_markdown):
         async with app.run_test() as pilot:
+            # Wait for the tree to be populated with linter groups
+            # This happens in the background after _prime_caches finishes
+            import asyncio
+
+            while len(app.query_one(Tree).root.children) <= 1:
+                await asyncio.sleep(0.1)
+                await pilot.pause()
+
             tree = app.query_one(Tree)
             # Find and select RUF012 node
             # It's inside tool.ruff -> lint -> select -> RUF012
@@ -166,21 +179,18 @@ select = ["RUF012"]
                 for n in select_node.children
                 if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "RUF012"
             )
+            tree.focus()
             tree.select_node(rule_node)
-            await pilot.pause()
+            await pilot.press("enter")
 
-            inspector = cast("RuleInspector", app.query_one("#inspector"))
-            assert "hidden" not in inspector.classes
-            # Wait for background fetch worker
-            # Since we mocked it to return immediately, it should be fine
-            # We might need to wait for worker completion if it was truly async
-
-            # Textual's handle_node_selected calls fetch_and_display which is a @work(thread=True)
-            # In run_test, we might need a small pause
-            await pilot.pause(0.1)
+            inspector = app.query_one("#inspector", RuleInspector)
+            # Wait for background worker and UI update
+            for _ in range(20):
+                await pilot.pause(0.2)
+                if "RUF012 Documentation" in str(inspector.source):
+                    break
 
             # Verify Markdown content (simplified check)
-            # Textual's Markdown widget has a 'source' property
             assert "RUF012 Documentation" in str(inspector.source)
 
 

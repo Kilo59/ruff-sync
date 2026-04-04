@@ -170,20 +170,28 @@ class CategoryTable(DataTable[Any]):
             self.add_row("Value", str(data))
 
     def update_rules(self, rules: list[dict[str, Any]]) -> None:
-        """Update the table with a list of rules in multi-column format.
+        """Update the table with a list of rules using row-level highlighting.
 
         Args:
             rules: The enriched rules list to display.
         """
         self.clear(columns=True)
-        self.add_columns("Code", "Name", "Linter", "Status", "Fix")
+        # Status is now indicated by row highlighting (colors), so column is removed
+        self.add_columns("Code", "Name", "Linter", "Fix")
         for rule in rules:
             status = rule.get("status", "Unknown")
-            status_markup = status
+
+            # Determine row color based on status
+            color = ""
             if status == "Enabled":
-                status_markup = f"[green]{status}[/green]"
+                color = "green"
             elif status == "Ignored":
-                status_markup = f"[red]{status}[/red]"
+                color = "yellow"
+            elif status == "Disabled":
+                color = "dim"
+
+            code_markup = f"[{color}]{rule['code']}[/{color}]" if color else rule["code"]
+            name_markup = f"[{color}]{rule['name']}[/{color}]" if color else rule["name"]
 
             fix = rule.get("fix_availability", "None")
             fix_markup = fix
@@ -192,7 +200,8 @@ class CategoryTable(DataTable[Any]):
             elif fix in ("Sometimes", "Enforced"):
                 fix_markup = f"[yellow]{fix}[/yellow]"
 
-            self.add_row(rule["code"], rule["name"], rule["linter"], status_markup, fix_markup)
+            # Note: We still keep linter as-is for clarity
+            self.add_row(code_markup, name_markup, rule["linter"], fix_markup, key=rule["code"])
 
 
 class RuleInspector(Markdown):
@@ -204,7 +213,8 @@ class RuleInspector(Markdown):
         """Set initial placeholder content."""
         self.show_placeholder()
 
-    def show_placeholder(self) -> None:
+    @work(exclusive=True, group="inspector_update")
+    async def show_placeholder(self) -> None:
         """Display a placeholder message."""
         self.update(
             "## Selection Details\n\nSelect a configuration key in the tree or a rule "
@@ -228,31 +238,56 @@ class RuleInspector(Markdown):
 
         self.update(f"### Configuration Context\n\n**Path**: `{path}`\n\n**Value**: {summary}")
 
-    @work
+    @work(exclusive=True, group="inspector_update")
     async def fetch_and_display(
-        self, target: str, is_rule: bool = True, cached_content: str | None = None
+        self,
+        target: str,
+        is_rule: bool = True,
+        cached_content: str | None = None,
+        rule_name: str | None = None,
+        rule_status: str | None = None,
     ) -> None:
         """Fetch and display the documentation for a rule or setting.
 
         Args:
             target: The Ruff rule code or configuration path.
             is_rule: True if fetching a rule, False if fetching a config setting.
-            cached_content: Optional pre-fetched documentation to avoid subprocess calls.
+            cached_content: Optional pre-fetched documentation.
+            rule_name: Optional rule name for display.
+            rule_status: Optional rule status (Enabled, Ignored, Disabled).
         """
-        if cached_content:
-            self.update(cached_content.strip())
+        if target == "tool.ruff":
+            self.show_placeholder()
             return
 
-        # Set a loading message
-        desc = "rule" if is_rule else "config"
-        self.update(f"## Inspecting {target}...\n\nFetching documentation from `ruff {desc}`...")
-
-        if is_rule:
-            content = await get_ruff_rule_markdown(target)
+        content: str | None = None
+        if cached_content:
+            content = cached_content
         else:
-            content = await get_ruff_config_markdown(target)
+            # Set a loading message
+            desc = "rule" if is_rule else "config"
+            self.update(
+                f"## Inspecting {target}...\n\nFetching documentation from `ruff {desc}`..."
+            )
+
+            if is_rule:
+                content = await get_ruff_rule_markdown(target)
+            else:
+                content = await get_ruff_config_markdown(target)
 
         if content:
-            self.update(content.strip())
+            # Prepend header if it's a rule
+            header = ""
+            if is_rule:
+                status_icons = {"Enabled": "🟢", "Ignored": "🟡", "Disabled": "⚪"}
+                icon = status_icons.get(rule_status or "Disabled", "⚪")
+                name = rule_name or "Unknown Rule"
+                header = (
+                    f"# {icon} {target}: {name}\n\n"
+                    f"**Status**: {rule_status or 'Disabled'}\n\n---\n\n"
+                )
+
+            self.update(header + content.strip())
         else:
+            desc = "rule" if is_rule else "config"
             self.update(f"## Error\n\nCould not fetch documentation for {desc} `{target}`.")

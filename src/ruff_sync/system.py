@@ -38,6 +38,8 @@ async def get_ruff_config_markdown(setting_path: str) -> str | None:
     """
     # Strip 'tool.ruff.' prefix if present as 'ruff config' expects relative paths
     clean_path = setting_path.removeprefix("tool.ruff.")
+    if not clean_path or clean_path == "tool.ruff":
+        return None
     cmd: Final[list[str]] = ["ruff", "config", clean_path]
     return await _run_ruff_command(cmd, f"ruff config {clean_path}")
 
@@ -53,10 +55,14 @@ async def get_all_ruff_rules() -> list[dict[str, Any]]:
     if not output:
         return []
     try:
-        return json.loads(output)
+        data = json.loads(output)
     except json.JSONDecodeError:
         LOGGER.exception("Failed to parse Ruff rules JSON.")
         return []
+
+    if isinstance(data, list):
+        return data
+    return []
 
 
 async def get_ruff_linters() -> list[dict[str, Any]]:
@@ -70,10 +76,14 @@ async def get_ruff_linters() -> list[dict[str, Any]]:
     if not output:
         return []
     try:
-        return json.loads(output)
+        data = json.loads(output)
     except json.JSONDecodeError:
         LOGGER.exception("Failed to parse Ruff linters JSON.")
         return []
+
+    if isinstance(data, list):
+        return data
+    return []
 
 
 def compute_effective_rules(

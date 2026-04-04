@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ruff_sync.system import compute_effective_rules
 
 
@@ -39,7 +41,7 @@ def test_compute_effective_rules_defaults():
         {"code": "E501", "name": "line-too-long", "linter": "pycodestyle"},
         {"code": "UP001", "name": "useless-metaclass", "linter": "pyupgrade"},
     ]
-    toml_config = {}  # Empty config
+    toml_config: dict[str, Any] = {}  # Empty config
 
     enriched = compute_effective_rules(all_rules, toml_config)
 

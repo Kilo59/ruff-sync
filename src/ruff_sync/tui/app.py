@@ -179,11 +179,14 @@ class RuffSyncApp(App[None]):
 
         # Check if the node label or path matches a ruff rule
         if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
-            inspector.fetch_and_display(label_text, is_rule=True)
+            self._inspect_rule(label_text)
         elif isinstance(data, (dict, list)):
             table.update_content(data)
-            # Fetch config documentation for the section if possible
-            inspector.fetch_and_display(full_path, is_rule=False)
+            # Fetch config documentation for the section if possible (skip root)
+            if full_path != "tool.ruff":
+                inspector.fetch_and_display(full_path, is_rule=False)
+            else:
+                inspector.show_placeholder()
         else:
             table.update_content(data)
             inspector.fetch_and_display(full_path, is_rule=False)
@@ -200,31 +203,47 @@ class RuffSyncApp(App[None]):
 
         # Handle multi-column rules view vs key-value view
         if len(row) >= MIN_RULE_COLUMNS:
-            rule_code = str(row[0])
-            # Check for cached explanation
-            rule_data = next((r for r in self.all_rules if r["code"] == rule_code), None)
-            explanation = rule_data.get("explanation") if rule_data else None
-
-            inspector = self.query_one(RuleInspector)
-            inspector.fetch_and_display(rule_code, is_rule=True, cached_content=explanation)
+            # Use row_key for stable rule code extraction (avoids markup)
+            rule_code = str(event.row_key.value)
+            self._inspect_rule(rule_code)
             return
 
         key, value = row
         # Check if the value or key looks like a rule code
-        rule_code = None
+        rule_code_from_kv = None
         if RULE_PATTERN.match(str(key)):
-            rule_code = str(key)
+            rule_code_from_kv = str(key)
         elif RULE_PATTERN.match(str(value)):
-            rule_code = str(value)
+            rule_code_from_kv = str(value)
 
-        if rule_code:
-            inspector = self.query_one(RuleInspector)
-            inspector.fetch_and_display(rule_code, is_rule=True)
+        if rule_code_from_kv:
+            self._inspect_rule(rule_code_from_kv)
         else:
             # It's a configuration key, show its documentation
             inspector = self.query_one(RuleInspector)
             full_path = f"{self._get_node_path(self.query_one(ConfigTree).cursor_node)}.{key}"
             inspector.fetch_and_display(full_path, is_rule=False)
+
+    def _inspect_rule(self, rule_code: str) -> None:
+        """Centralized helper for rule inspection with metadata enrichment.
+
+        Args:
+            rule_code: The Ruff rule code to inspect.
+        """
+        # Fetch metadata for enrichment
+        rule_data = next((r for r in self.effective_rules if r["code"] == rule_code), None)
+        name = rule_data.get("name") if rule_data else None
+        status = rule_data.get("status") if rule_data else "Disabled"
+        explanation = rule_data.get("explanation") if rule_data else None
+
+        inspector = self.query_one(RuleInspector)
+        inspector.fetch_and_display(
+            rule_code,
+            is_rule=True,
+            cached_content=explanation,
+            rule_name=name,
+            rule_status=status,
+        )
 
     def _get_node_path(self, node: Any) -> str:
         """Construct the full configuration path to a tree node.
@@ -237,12 +256,16 @@ class RuffSyncApp(App[None]):
         """
         path: list[str] = []
         current = node
-        while current and current != self.query_one(ConfigTree).root:
+        tree = self.query_one(ConfigTree)
+        while current and current != tree.root:
             label = current.label
             label_text = str(label.plain) if hasattr(label, "plain") else str(label)
             path.append(label_text)
             current = current.parent
-        return "tool.ruff." + ".".join(reversed(path)) if path else "tool.ruff"
+
+        if not path:
+            return "tool.ruff"
+        return "tool.ruff." + ".".join(reversed(path))
 
     def action_search(self) -> None:
         """Launch the global fuzzy search Omnibox."""
@@ -258,8 +281,4 @@ class RuffSyncApp(App[None]):
             rule_code: The selected rule code, or None if cancelled.
         """
         if rule_code:
-            rule_data = next((r for r in self.all_rules if r["code"] == rule_code), None)
-            explanation = rule_data.get("explanation") if rule_data else None
-
-            inspector = self.query_one(RuleInspector)
-            inspector.fetch_and_display(rule_code, is_rule=True, cached_content=explanation)
+            self._inspect_rule(rule_code)

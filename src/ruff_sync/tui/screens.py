@@ -9,6 +9,7 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Input, OptionList, Static
 from textual.widgets.option_list import Option
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -55,6 +56,7 @@ class OmniboxScreen(ModalScreen[str]):
         super().__init__(**kwargs)
         self.all_rules = all_rules
 
+    @override
     def compose(self) -> ComposeResult:
         """Compose the search interface."""
         with Vertical(id="omnibox-container"):
