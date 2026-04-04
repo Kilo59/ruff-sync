@@ -60,6 +60,7 @@ class RuffSyncApp(App[None]):
     BINDINGS: ClassVar[list[Any]] = [
         ("q", "quit", "Quit"),
         ("/", "focus('config-tree')", "Search"),
+        ("enter", "select", "View Details"),
     ]
 
     def __init__(self, args: Arguments, **kwargs: Any) -> None:
@@ -81,7 +82,7 @@ class RuffSyncApp(App[None]):
             yield ConfigTree("Local Configuration", id="config-tree")
             with Vertical(id="content-pane"):
                 yield CategoryTable(id="category-table")
-                yield RuleInspector(id="inspector", classes="hidden")
+                yield RuleInspector(id="inspector")
         yield Footer()
 
     async def on_mount(self) -> None:
@@ -111,16 +112,18 @@ class RuffSyncApp(App[None]):
         table = self.query_one(CategoryTable)
         inspector = self.query_one(RuleInspector)
 
-        # Basic rule code detection (e.g., PIE790, RUF012)
+        # Build full path for context
+        full_path = self._get_node_path(event.node)
+
+        # Check if the node label or path matches a ruff rule
         if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
-            inspector.remove_class("hidden")
             inspector.fetch_and_display(label_text)
         elif isinstance(data, (dict, list)):
-            inspector.add_class("hidden")
             table.update_content(data)
+            inspector.show_context(full_path, data)
         else:
-            inspector.add_class("hidden")
             table.update_content(data)
+            inspector.show_context(full_path, data)
 
     @on(DataTable.RowSelected)
     def handle_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -142,5 +145,22 @@ class RuffSyncApp(App[None]):
 
         if rule_code:
             inspector = self.query_one(RuleInspector)
-            inspector.remove_class("hidden")
             inspector.fetch_and_display(rule_code)
+
+    def _get_node_path(self, node: Any) -> str:
+        """Construct the full configuration path to a tree node.
+
+        Args:
+            node: The tree node.
+
+        Returns:
+            The dot-separated configuration path.
+        """
+        path: list[str] = []
+        current = node
+        while current and current != self.query_one(ConfigTree).root:
+            label = current.label
+            label_text = str(label.plain) if hasattr(label, "plain") else str(label)
+            path.append(label_text)
+            current = current.parent
+        return "tool.ruff." + ".".join(reversed(path)) if path else "tool.ruff"

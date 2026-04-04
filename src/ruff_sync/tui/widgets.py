@@ -74,7 +74,36 @@ class CategoryTable(DataTable[Any]):
 
 
 class RuleInspector(Markdown):
-    """A markdown widget for inspecting Ruff rules."""
+    """A markdown widget for inspecting Ruff rules and settings."""
+
+    @override
+    def on_mount(self) -> None:
+        """Set initial placeholder content."""
+        self.show_placeholder()
+
+    def show_placeholder(self) -> None:
+        """Display a placeholder message."""
+        self.update(
+            "## Selection Details\n\nSelect a configuration key in the tree or a rule "
+            "code in the table to view documentation or additional context."
+        )
+
+    def show_context(self, path: str, value: Any) -> None:
+        """Display general context for a configuration setting.
+
+        Args:
+            path: The full configuration path (e.g., 'tool.ruff.lint.select').
+            value: The value of the setting.
+        """
+        # Show a summary for complex types, or the raw value for simple ones
+        if isinstance(value, dict):
+            summary = f"Table with {len(value)} keys"
+        elif isinstance(data := value, list):
+            summary = f"List with {len(data)} items"
+        else:
+            summary = f"`{value}`"
+
+        self.update(f"### Configuration Context\n\n**Path**: `{path}`\n\n**Value**: {summary}")
 
     @work
     async def fetch_and_display(self, rule_code: str) -> None:
