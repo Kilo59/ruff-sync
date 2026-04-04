@@ -601,9 +601,14 @@ def main() -> int:
         if exec_args.command == "inspect":
             from ruff_sync.dependencies import require_dependency  # noqa: PLC0415
 
-            require_dependency("textual", extra_name="tui")
-            msg = "The TUI is not yet implemented."
-            raise NotImplementedError(msg)
+            try:
+                require_dependency("textual", extra_name="tui")
+            except ImportError as e:
+                LOGGER.error(f"❌ {e}")  # noqa: TRY400
+                return 1
+
+            LOGGER.error("❌ The Terminal UI (inspect) is not yet implemented.")
+            return 1
 
         if exec_args.command == "check":
             return asyncio.run(check(exec_args))

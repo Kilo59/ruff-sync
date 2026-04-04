@@ -44,3 +44,11 @@ async def test_get_ruff_rule_markdown_not_found() -> None:
     with patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError):
         result = await get_ruff_rule_markdown("RUF012")
         assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_ruff_rule_markdown_unexpected_exception() -> None:
+    # Test that the generic Exception catch logs and returns None
+    with patch("asyncio.create_subprocess_exec", side_effect=RuntimeError("Unexpected error")):
+        result = await get_ruff_rule_markdown("RUF012")
+        assert result is None
