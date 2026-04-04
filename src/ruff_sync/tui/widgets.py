@@ -40,6 +40,9 @@ class ConfigTree(Tree[Any]):
                 self._populate_linter_nodes(rules_node, linters, effective_rules)
         self._populate_node(self.root, config)
 
+        # Auto-expand up to 2 levels if it fits in the current view
+        self._expand_if_fits()
+
     def _is_linter_active(
         self, linter: dict[str, Any], effective_rules: list[dict[str, Any]]
     ) -> bool:
@@ -98,6 +101,46 @@ class ConfigTree(Tree[Any]):
                 node = parent.add(label, data=item)
                 if isinstance(item, (dict, list)):
                     self._populate_node(node, item)
+
+    def _expand_if_fits(self) -> None:
+        """Expand the first few levels of the tree if they fit in the vertical space."""
+        # We target depth 2 expansion (Root -> Categories -> Items)
+        target_depth = 2
+
+        # Use widget height if available, otherwise fallback to a common terminal height
+        # Subtract some margin for header/footer
+        limit = (self.size.height or 24) - 2
+
+        # Count visible nodes if we were to expand
+        to_expand: list[TreeNode[Any]] = []
+        visible_count = 1  # Start with the root
+
+        def collect_nodes(node: TreeNode[Any], depth: int) -> int:
+            nonlocal visible_count
+            if depth >= target_depth:
+                return visible_count
+
+            children = list(node.children)
+            if not children:
+                return visible_count
+
+            # If adding these children exceeds the limit, stop
+            if visible_count + len(children) > limit:
+                return visible_count
+
+            # Mark for expansion and continue
+            to_expand.append(node)
+            visible_count += len(children)
+
+            for child in children:
+                collect_nodes(child, depth + 1)
+            return visible_count
+
+        collect_nodes(self.root, 0)
+
+        # Apply the expansions
+        for node in to_expand:
+            node.expand()
 
 
 class CategoryTable(DataTable[Any]):
