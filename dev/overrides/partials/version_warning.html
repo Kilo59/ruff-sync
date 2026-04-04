@@ -1,0 +1,27 @@
+{% if config.extra.version and config.extra.version.provider == "mike" %}
+<div id="version-warning" style="display: none;">
+  <div class="admonition warning">
+    <p class="admonition-title">Warning</p>
+    <p>
+      You are viewing the documentation for the <strong>development</strong> version.
+      The latest stable release can be found at <a href="{{ config.site_url }}">kilo59.github.io/ruff-sync</a>.
+    </p>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const version_warning = document.getElementById("version-warning");
+    if (!version_warning) return;
+
+    // mike provides a 'mike' object with some metadata if available
+    // Otherwise fall back to checking the pathname
+    const isDev = window.location.pathname.includes("/dev/") ||
+                 (window.mike && typeof window.mike.version === 'string' && window.mike.version === "dev");
+
+    if (isDev) {
+      version_warning.style.display = "block";
+    }
+  })();
+</script>
+{% endif %}
