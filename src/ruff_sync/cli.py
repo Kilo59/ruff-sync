@@ -378,6 +378,9 @@ def _resolve_upstream(args: CLIArguments, config: Config) -> tuple[URL, ...]:
             f"got {type(config_upstream).__name__}"
         )
 
+    if args.command == "inspect":
+        return ()
+
     PARSER.error(
         "❌ the following arguments are required: upstream "
         f"(or define it in [tool.ruff-sync] in {RuffConfigFileName.PYPROJECT_TOML}) 💥"
@@ -609,7 +612,7 @@ def main() -> int:
 
             from ruff_sync.tui.app import RuffSyncApp  # noqa: PLC0415
 
-            return RuffSyncApp(exec_args).run()
+            return RuffSyncApp(exec_args).run() or 0
 
         if exec_args.command == "check":
             return asyncio.run(check(exec_args))

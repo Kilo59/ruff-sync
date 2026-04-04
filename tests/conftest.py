@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import logging
 import sys
-
-import pytest
-from typing_extensions import override
+from typing import Literal, Protocol, runtime_checkable
 
 import ruff_sync
 
@@ -62,3 +60,61 @@ def clear_ruff_sync_caches():
     """Clear all lru_caches in ruff_sync."""
     ruff_sync.get_config.cache_clear()
     ruff_sync.Arguments.fields.cache_clear()
+
+
+@runtime_checkable
+class CLIRunner(Protocol):
+    """Protocol for the cli_run fixture."""
+
+    def __call__(
+        self,
+        args: list[str],
+        entry_point: Literal["ruff-sync", "ruff-inspect"] = "ruff-sync",
+    ) -> tuple[int, str, str]:
+        """Run a CLI command with the given arguments."""
+        ...
+
+
+@pytest.fixture
+def cli_run(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> CLIRunner:
+    """Fixture to run the ruff-sync CLI or entry points and capture output."""
+
+    def _run(
+        args: list[str],
+        entry_point: Literal["ruff-sync", "ruff-inspect"] = "ruff-sync",
+    ) -> tuple[int, str, str]:
+        """Run a CLI command with the given arguments.
+
+        Args:
+            args: The list of CLI arguments (excluding the program name).
+            entry_point: The name of the entry point to run ('ruff-sync' or 'ruff-inspect').
+
+        Returns:
+            A tuple of (exit_code, stdout, stderr).
+        """
+        # Reset sys.argv for each run
+        monkeypatch.setattr(sys, "argv", [entry_point, *args])
+
+        exit_code = 0
+        try:
+            if entry_point == "ruff-inspect":
+                from ruff_sync.cli import inspect
+
+                exit_code = inspect()
+            else:
+                from ruff_sync.cli import main
+
+                exit_code = main()
+        except SystemExit as e:
+            # Handle sys.exit calls from argparse or main
+            if isinstance(e.code, int):
+                exit_code = e.code
+            elif e.code is None:
+                exit_code = 0
+            else:
+                exit_code = 1
+
+        captured = capsys.readouterr()
+        return exit_code, captured.out, captured.err
+
+    return _run

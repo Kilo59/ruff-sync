@@ -12,6 +12,8 @@ from ruff_sync.tui.app import RuffSyncApp
 if TYPE_CHECKING:
     import pathlib
 
+    from .conftest import CLIRunner
+
 
 @pytest.fixture
 def mock_args(tmp_path: pathlib.Path) -> Arguments:
@@ -123,3 +125,32 @@ select = ["RUF012"]
             # Verify Markdown content (simplified check)
             # Textual's Markdown widget has a 'source' property
             assert "RUF012 Documentation" in str(inspector.source)
+
+
+def test_cli_inspect_subcommand(
+    cli_run: CLIRunner, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that 'ruff-sync inspect' attempts to run the app."""
+    # Mock load_local_ruff_config where it's used in RuffSyncApp.on_mount
+    monkeypatch.setattr("ruff_sync.tui.app.load_local_ruff_config", lambda _: {})
+
+    # Use patch to prevent the App from actually running (which would block/fail in CI)
+    # and just verify it was instantiated and run() was called.
+    with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
+        exit_code, out, err = cli_run(["inspect", "--to", str(tmp_path)])
+        assert exit_code == 0
+        mock_run.assert_called_once()
+
+
+def test_cli_ruff_inspect_entry_point(
+    cli_run: CLIRunner, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that the 'ruff-inspect' entry point attempts to run the app."""
+    # Mock load_local_ruff_config where it's used in RuffSyncApp.on_mount
+    monkeypatch.setattr("ruff_sync.tui.app.load_local_ruff_config", lambda _: {})
+
+    with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
+        # Program name 'ruff-inspect' should trigger the inspect logic
+        exit_code, out, err = cli_run(["--to", str(tmp_path)], entry_point="ruff-inspect")
+        assert exit_code == 0
+        mock_run.assert_called_once()
