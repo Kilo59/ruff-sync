@@ -1636,7 +1636,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "textual", marker = "extra == 'tui'", specifier = ">=0.50.0" },
+    { name = "textual", marker = "extra == 'tui'", specifier = ">=8.2.2" },
     { name = "tomlkit", specifier = ">=0.12.3,<2.0.0" },
     { name = "typing-extensions", specifier = ">=4.5.0" },
 ]

@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-tui = ["textual>=0.50.0"]
+tui = ["textual>=8.2.2"]
 
 [project.urls]
 Homepage = "https://github.com/Kilo59/ruff-sync"

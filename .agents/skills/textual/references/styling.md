@@ -9,13 +9,17 @@ Textual uses **TCSS** (Textual Cascading Style Sheets) for design. It is similar
 - **`vh` / `vw`**: Percentage of the entire terminal window height/width.
 - **Integers**: Represent exact terminal character cells (e.g., `width: 20;`).
 
-## Layout Containers
-
-Use these built-in containers to structure your UI without complex manually-calculated offsets:
-
 - **`Vertical`**: Stack widgets top-to-bottom.
 - **`Horizontal`**: Align widgets left-to-right.
 - **`Grid`**: A flexible 2D grid layout. Define `grid-size`, `grid-columns`, and `grid-rows`.
+
+## New CSS Rules (v8.x.x)
+
+- **`pointer`**: Change the mouse cursor style (e.g., `pointer: pointer;`, `pointer: text;`).
+- **`background-tint`**: Apply a translucent color over the background (e.g., `background-tint: $primary 20%;`).
+- **`text-padding`**: Simplified padding for text content within a widget (e.g., `text-padding: 1 2;`).
+- **`scroll-bar-visibility`**: Control when scrollbars are shown (`auto`, `visible`, `hidden`).
+- **`position`**: Support for `relative` and `absolute` positioning.
 
 ## Procedure: Rapid Styling
 

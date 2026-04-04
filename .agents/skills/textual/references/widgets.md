@@ -6,13 +6,17 @@ Textual includes a rich set of built-in widgets. Always check `textual.widgets` 
 
 - **`Header`**: Standard title bar with optional clock.
 - **`Footer`**: Keybinding bar (automatically populated from `BINDINGS`).
-- **`Static`**: Pure text or basic content. Can use `renderable` or `markup=True`.
+- **`Static`**: Pure text or basic content. Use **`content`** (v8.x.x) for raw renderable or `markup=True`.
+- **`Link`**: (v8.x.x) New widget for clickable URLs.
+- **`ProgressBar`**: Real-time progress tracking.
 
 ## Interaction
 
 - **`Button`**: Standard clickable button. Variants: `success`, `error`, `primary`, `warning`.
 - **`Input`**: Text entry field. Events: `Changed`, `Submitted`.
+- **`MaskedInput`**: (v8.x.x) New widget for formatted inputs (e.g. phones, CC, etc.).
 - **`Checkbox`** / **`Switch`**: Boolean state inputs.
+- **`Select`**: Dropdown selection. Sentinel: **`Select.NULL`** (v8.x.x).
 
 ## Data & Selection
 

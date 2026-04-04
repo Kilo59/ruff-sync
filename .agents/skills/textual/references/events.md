@@ -17,6 +17,15 @@ class MySidebar(Vertical):
         self.app.notify(f"Searching for: {event.value}")
 ```
 
+## Theming (v8.x.x)
+
+Textual v8.x.x introduced a robust theming system.
+
+- **`App.theme`**: Set the active theme (e.g., `self.theme = "nord"`).
+- **`App.register_theme(theme)`**: Add custom themes to the app.
+- **`App.search_themes()`**: Bring up the theme switcher in the command palette.
+- **`variant`**: Use `Button(variant="primary")` or `Label(variant="warning")` for themed styles.
+
 ## Reactive Attributes
 
 Define `reactive` attributes to automatically trigger updates. Use `watch_<attribute_name>` to side-effect when a value changes.

@@ -17,11 +17,14 @@ async def test_button_click():
         # Simulate a button click by CSS selector or ID
         await pilot.click("#say-hello-btn")
 
-        # Verify state
-        assert app.notification_count == 1
+        # New in v8.x.x: Rapid clicks (double click)
+        await pilot.click("#say-hello-btn", times=2)
+        # OR use dedicated methods:
+        await pilot.double_click("#say-hello-btn")
+        await pilot.triple_click("#say-hello-btn")
 
-        # Take a screenshot for debugging
-        # pilot.app.save_screenshot("test_click.svg")
+        # Verify state
+        assert app.notification_count >= 1
 ```
 
 ## Developer Tools

@@ -18,7 +18,8 @@ class ReactiveApp(App[None]):
     #status {
         background: $primary;
         color: $text;
-        padding: 1;
+        /* v8.x.x: Simplified padding for text content */
+        text-padding: 1 2;
         margin-top: 1;
         width: 100%;
         text-align: center;

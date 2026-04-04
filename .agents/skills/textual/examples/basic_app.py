@@ -12,6 +12,9 @@ from textual.widgets import Button, Footer, Header, Static
 class BasicApp(App[None]):
     """A minimal Textual app boilerplate."""
 
+    # v8.x.x: Specify a default theme
+    theme: ClassVar[str] = "nord"
+
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("q", "quit", "Quit application"),
         ("d", "toggle_dark", "Toggle Dark Mode"),
@@ -33,6 +36,11 @@ class BasicApp(App[None]):
         text-align: center;
         width: 100%;
         margin-bottom: 1;
+    }
+
+    /* v8.x.x: New pointer rule */
+    Button {
+        pointer: pointer;
     }
     """
 
