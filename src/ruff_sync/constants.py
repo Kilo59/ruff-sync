@@ -85,7 +85,7 @@ class ConfKey(str, enum.Enum):
     # Legacy / Alias Keys
     SOURCE = "source"  # Legacy for 'to'
     PRE_COMMIT = "pre-commit"  # Legacy for 'pre-commit-version-sync'
-    PRE_COMMIT_SYNC_LEGACY = "pre_commit_sync"  # Legacy for 'pre-commit-version-sync'
+    PRE_COMMIT_SYNC_LEGACY = "pre-commit-sync"  # Legacy for 'pre-commit-version-sync'
 
     @override
     def __str__(self) -> str:
@@ -107,17 +107,17 @@ class ConfKey(str, enum.Enum):
         Returns:
             The canonical ConfKey name (still as a string for use in logic).
         """
-        # Normalize to underscores first for easy alias checking
-        norm_key = key.replace("-", "_")
+        # Normalize the input key to underscores for robust alias matching
+        norm_key = cls.to_attr(key)
 
         # Handle aliases for 'to'
-        if norm_key == cls.SOURCE.replace("-", "_"):
+        if norm_key == cls.to_attr(cls.SOURCE):
             return cls.TO.value
 
         # Handle aliases for 'pre-commit-version-sync'
         if norm_key in (
-            cls.PRE_COMMIT_SYNC_LEGACY.value,
-            cls.PRE_COMMIT.replace("-", "_"),
+            cls.to_attr(cls.PRE_COMMIT_SYNC_LEGACY),
+            cls.to_attr(cls.PRE_COMMIT),
         ):
             return cls.PRE_COMMIT_VERSION_SYNC.value
 
