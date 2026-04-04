@@ -186,9 +186,8 @@ jobs:
 
           if [[ "$VERSION" == *".dev"* ]]; then
             echo "Deploying DEV documentation..."
-            # Check if 'stable' already exists in mike list to avoid accidentally
-            # being the ONLY version in versions.json if it was somehow cleared.
-            # (mike list returns non-zero if versions.json is missing or handles it)
+            # Note: mike deploy is additive to versions.json on gh-pages.
+            # This updates the 'dev' alias and adds it to the switcher if missing.
             uv run mike deploy --push --update-aliases dev
           else
             echo "Deploying STABLE documentation..."

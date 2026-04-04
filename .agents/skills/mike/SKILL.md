@@ -114,7 +114,7 @@ The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflo
 ### Version Selector Not Appearing
 - **Missing `versions.json`**: Ensure `mike deploy` or `mike update-aliases` has been run. The file must exist at the site root.
 - **Incomplete `versions.json`**: If the current page's version (e.g., `stable`) is not listed in `versions.json`, some themes (like Material) may hide the selector.
-- **`site_url` Case Sensitivity**: On GitHub Pages, ensure `site_url` in `mkdocs.yml` matches the actual deployment URL (usually lowercase). Discrepancies can cause the switcher to fail finding `versions.json` due to 404s.
+- **`site_url` Case Sensitivity**: On GitHub Pages, ensure `site_url` in `mkdocs.yml` matches the actual deployment URL (usually lowercase). Discrepancies can cause the switcher to fail to find `versions.json` due to 404s.
 - **Redundant Config**: Ensure `theme.version` is NOT set in `mkdocs.yml`. Use `extra.version.provider: mike` instead.
 
 ### 404 for `versions.json`
