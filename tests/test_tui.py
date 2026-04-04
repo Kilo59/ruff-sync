@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -11,6 +11,8 @@ from ruff_sync.tui.app import RuffSyncApp
 
 if TYPE_CHECKING:
     import pathlib
+
+    from ruff_sync.tui.widgets import ConfigTree, RuleInspector
 
     from .conftest import CLIRunner
 
@@ -33,6 +35,36 @@ def test_ruff_sync_app_init(mock_args: Arguments) -> None:
 
 
 @pytest.mark.asyncio
+async def test_ruff_sync_app_mount_load_config_failure(
+    mock_args: Arguments,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """on_mount should handle a failure to load the Ruff config gracefully."""
+
+    # Force load_local_ruff_config to fail to exercise the error-handling path.
+    def mock_fail(_: Any) -> Any:
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(
+        "ruff_sync.tui.app.load_local_ruff_config",
+        mock_fail,
+    )
+
+    app = RuffSyncApp(mock_args)
+
+    # Run the app so that on_mount is invoked.
+    async with app.run_test() as pilot:
+        # Let the app process startup/mount events.
+        await pilot.pause()
+
+        # When config loading fails, the app should keep the default (empty) config.
+        assert app.config == {}
+        tree = cast("ConfigTree", app.query_one("#config-tree"))
+        assert not list(tree.root.children)
+
+
+@pytest.mark.asyncio
 async def test_ruff_sync_app_mount(mock_args: Arguments, tmp_path: pathlib.Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -49,10 +81,19 @@ select = ["E", "F"]
     async with app.run_test():
         assert app.config == {"line-length": 88, "lint": {"select": ["E", "F"]}}
         tree = app.query_one(Tree)
-        assert tree.root.label.plain == "Local Configuration"
+        assert tree.root.label is not None
+        root_label = tree.root.label
+        root_label_text = root_label.plain if hasattr(root_label, "plain") else root_label
+        assert str(root_label_text) == "Local Configuration"
         # Check some children
-        assert any(n.label.plain == "line-length" for n in tree.root.children)
-        assert any(n.label.plain == "lint" for n in tree.root.children)
+        assert any(
+            str(n.label.plain if hasattr(n.label, "plain") else n.label) == "line-length"
+            for n in tree.root.children
+        )
+        assert any(
+            str(n.label.plain if hasattr(n.label, "plain") else n.label) == "lint"
+            for n in tree.root.children
+        )
 
 
 @pytest.mark.asyncio
@@ -70,7 +111,11 @@ line-length = 88
     async with app.run_test() as pilot:
         tree = app.query_one(Tree)
         # Select "line-length"
-        node = next(n for n in tree.root.children if n.label.plain == "line-length")
+        node = next(
+            n
+            for n in tree.root.children
+            if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "line-length"
+        )
         tree.select_node(node)
         await pilot.pause()
 
@@ -78,7 +123,7 @@ line-length = 88
         # For a simple value, CategoryTable.update_content(88) adds row ("Value", "88")
         assert table.row_count == 1
         row = table.get_row_at(0)
-        assert row == ["Value", "88"]
+        assert [str(cell) for cell in row] == ["Value", "88"]
 
 
 @pytest.mark.asyncio
@@ -100,19 +145,31 @@ select = ["RUF012"]
             tree = app.query_one(Tree)
             # Find and select RUF012 node
             # It's inside tool.ruff -> lint -> select -> RUF012
-            lint_node = next(n for n in tree.root.children if n.label.plain == "lint")
+            lint_node = next(
+                n
+                for n in tree.root.children
+                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "lint"
+            )
             lint_node.expand()
             await pilot.pause()
 
-            select_node = next(n for n in lint_node.children if n.label.plain == "select")
+            select_node = next(
+                n
+                for n in lint_node.children
+                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "select"
+            )
             select_node.expand()
             await pilot.pause()
 
-            rule_node = next(n for n in select_node.children if n.label.plain == "RUF012")
+            rule_node = next(
+                n
+                for n in select_node.children
+                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "RUF012"
+            )
             tree.select_node(rule_node)
             await pilot.pause()
 
-            inspector = app.query_one("#inspector")
+            inspector = cast("RuleInspector", app.query_one("#inspector"))
             assert "hidden" not in inspector.classes
             # Wait for background fetch worker
             # Since we mocked it to return immediately, it should be fine
@@ -137,7 +194,7 @@ def test_cli_inspect_subcommand(
     # Use patch to prevent the App from actually running (which would block/fail in CI)
     # and just verify it was instantiated and run() was called.
     with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
-        exit_code, out, err = cli_run(["inspect", "--to", str(tmp_path)])
+        exit_code, _out, _err = cli_run(["inspect", "--to", str(tmp_path)])
         assert exit_code == 0
         mock_run.assert_called_once()
 
@@ -151,6 +208,6 @@ def test_cli_ruff_inspect_entry_point(
 
     with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
         # Program name 'ruff-inspect' should trigger the inspect logic
-        exit_code, out, err = cli_run(["--to", str(tmp_path)], entry_point="ruff-inspect")
+        exit_code, _out, _err = cli_run(["--to", str(tmp_path)], entry_point="ruff-inspect")
         assert exit_code == 0
         mock_run.assert_called_once()

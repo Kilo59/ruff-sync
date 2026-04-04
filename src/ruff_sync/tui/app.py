@@ -2,19 +2,24 @@
 
 from __future__ import annotations
 
-import re
+import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Header, Tree
+from typing_extensions import override
 
 from ruff_sync.config_io import load_local_ruff_config
+from ruff_sync.tui.constants import RULE_PATTERN
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RuffSyncApp(App[None]):
@@ -52,7 +57,7 @@ class RuffSyncApp(App[None]):
     }
     """
 
-    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+    BINDINGS: ClassVar[list[Any]] = [
         ("q", "quit", "Quit"),
         ("/", "focus('config-tree')", "Search"),
     ]
@@ -68,6 +73,7 @@ class RuffSyncApp(App[None]):
         self.args = args
         self.config: dict[str, Any] = {}
 
+    @override
     def compose(self) -> ComposeResult:
         """Compose the user interface elements."""
         yield Header()
@@ -83,6 +89,7 @@ class RuffSyncApp(App[None]):
         try:
             self.config = load_local_ruff_config(self.args.to)
         except Exception:
+            LOGGER.exception("Failed to load Ruff configuration.")
             self.notify("Failed to load Ruff configuration.", severity="error")
             self.config = {}
 
@@ -98,18 +105,16 @@ class RuffSyncApp(App[None]):
             event: The tree node selected event.
         """
         data = event.node.data
-        label = str(event.node.label.plain)
+        label = event.node.label
+        label_text = str(label.plain) if hasattr(label, "plain") else str(label)
 
         table = self.query_one(CategoryTable)
         inspector = self.query_one(RuleInspector)
 
         # Basic rule code detection (e.g., PIE790, RUF012)
-        if isinstance(label, str) and re.match(r"^[A-Z]+[0-9]+$", label):
+        if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
             inspector.remove_class("hidden")
-            inspector.fetch_and_display(label)
-            # Find closest parent that is a dict/list to update table
-            p_data = event.node.parent.data if event.node.parent else None  # type: ignore[union-attr]
-            table.update_content(p_data)
+            inspector.fetch_and_display(label_text)
         elif isinstance(data, (dict, list)):
             inspector.add_class("hidden")
             table.update_content(data)
@@ -129,12 +134,10 @@ class RuffSyncApp(App[None]):
         key, value = row
 
         # Check if the value or key looks like a rule code
-        rule_pattern = re.compile(r"^[A-Z]+[0-9]+$")
         rule_code = None
-
-        if rule_pattern.match(str(key)):
+        if RULE_PATTERN.match(str(key)):
             rule_code = str(key)
-        elif rule_pattern.match(str(value)):
+        elif RULE_PATTERN.match(str(value)):
             rule_code = str(value)
 
         if rule_code:

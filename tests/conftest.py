@@ -4,6 +4,9 @@ import logging
 import sys
 from typing import Literal, Protocol, runtime_checkable
 
+import pytest
+from typing_extensions import override
+
 import ruff_sync
 
 

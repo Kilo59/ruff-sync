@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from textual import work
 from textual.widgets import DataTable, Markdown, Tree
+from typing_extensions import override
 
 from ruff_sync.system import get_ruff_rule_markdown
 
@@ -49,6 +50,7 @@ class ConfigTree(Tree[Any]):
 class CategoryTable(DataTable[Any]):
     """A table widget for displaying configuration keys and values."""
 
+    @override
     def on_mount(self) -> None:
         """Initialize the table columns."""
         self.cursor_type = "row"
@@ -74,7 +76,7 @@ class CategoryTable(DataTable[Any]):
 class RuleInspector(Markdown):
     """A markdown widget for inspecting Ruff rules."""
 
-    @work(thread=True)
+    @work
     async def fetch_and_display(self, rule_code: str) -> None:
         """Fetch and display the documentation for a rule.
 
