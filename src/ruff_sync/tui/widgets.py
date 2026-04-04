@@ -124,6 +124,6 @@ class RuleInspector(Markdown):
             content = await get_ruff_config_markdown(target)
 
         if content:
-            self.update(content)
+            self.update(content.strip())
         else:
             self.update(f"## Error\n\nCould not fetch documentation for {desc} `{target}`.")

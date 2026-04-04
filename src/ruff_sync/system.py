@@ -63,7 +63,8 @@ async def _run_ruff_command(cmd: list[str], description: str) -> str | None:
             LOGGER.warning(f"Command '{description}' failed with code {process.returncode}: {msg}")
             return None
 
-        return stdout.decode().strip()
+        output = stdout.decode().strip()
+        return output or None
 
     except FileNotFoundError:
         LOGGER.exception("Ruff executable not found in PATH.")

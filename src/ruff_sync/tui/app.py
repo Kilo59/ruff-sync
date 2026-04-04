@@ -42,12 +42,12 @@ class RuffSyncApp(App[None]):
     }
 
     #category-table {
-        height: 1fr;
+        height: 40%;
         border-bottom: solid $primary-darken-2;
     }
 
     #inspector {
-        height: 1fr;
+        height: 60%;
         padding: 1;
         background: $surface-darken-1;
         overflow-y: auto;
