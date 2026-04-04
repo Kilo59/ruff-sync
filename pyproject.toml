@@ -29,6 +29,9 @@ dependencies = [
     "typing-extensions>=4.5.0",
 ]
 
+[project.optional-dependencies]
+tui = ["textual>=0.50.0"]
+
 [project.urls]
 Homepage = "https://github.com/Kilo59/ruff-sync"
 Documentation = "https://kilo59.github.io/ruff-sync/"
