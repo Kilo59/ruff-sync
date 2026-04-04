@@ -17,18 +17,68 @@ if TYPE_CHECKING:
 class ConfigTree(Tree[Any]):
     """A tree widget for navigating Ruff configuration."""
 
-    def populate(self, config: dict[str, Any], has_rules: bool = False) -> None:
+    def populate(
+        self,
+        config: dict[str, Any],
+        has_rules: bool = False,
+        linters: list[dict[str, Any]] | None = None,
+        effective_rules: list[dict[str, Any]] | None = None,
+    ) -> None:
         """Populate the tree with configuration sections.
 
         Args:
             config: The unwrapped dictionary of Ruff configuration.
-            has_rules: Whether to inject the 'Effective Active Rules' node.
+            has_rules: Whether to inject the 'Effective Rule Status' node.
+            linters: Optional linter metadata for expanding the rules node.
+            effective_rules: List of rules with status for filtering.
         """
         self.clear()
         self.root.expand()
         if has_rules:
-            self.root.add("Effective Rule Status", data="__rules__")
+            rules_node = self.root.add("Effective Rule Status", data="__rules__")
+            if linters and effective_rules:
+                self._populate_linter_nodes(rules_node, linters, effective_rules)
         self._populate_node(self.root, config)
+
+    def _is_linter_active(
+        self, linter: dict[str, Any], effective_rules: list[dict[str, Any]]
+    ) -> bool:
+        """Check if a linter (or any of its categories) has active/ignored rules."""
+        prefix = linter.get("prefix")
+        if prefix and any(
+            r["code"].startswith(prefix) and r["status"] != "Disabled" for r in effective_rules
+        ):
+            return True
+
+        if "categories" in linter:
+            return any(self._is_linter_active(c, effective_rules) for c in linter["categories"])
+
+        return False
+
+    def _populate_linter_nodes(
+        self,
+        parent: TreeNode[Any],
+        linters: list[dict[str, Any]],
+        effective_rules: list[dict[str, Any]],
+    ) -> None:
+        """Recursively add linter category nodes to the tree."""
+        # Sort linters by name for better navigation
+        for linter in sorted(linters, key=lambda x: x["name"]):
+            # Filter: only show if this linter or any category has active rules
+            if not self._is_linter_active(linter, effective_rules):
+                continue
+
+            name = linter["name"]
+            prefix = linter.get("prefix")
+            label = f"{name} ({prefix})" if prefix else name
+
+            # Use 'linter' structure in data for easy detection
+            node_data = {"type": "linter", "prefix": prefix, "name": name}
+            node = parent.add(label, data=node_data)
+
+            # Recursive call for sub-categories (e.g. Pylint, pycodestyle)
+            if "categories" in linter:
+                self._populate_linter_nodes(node, linter["categories"], effective_rules)
 
     def _populate_node(self, parent: TreeNode[Any], data: Any) -> None:
         """Recursively add nodes to the tree.

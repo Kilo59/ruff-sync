@@ -12,7 +12,7 @@ from textual.widgets import DataTable, Footer, Header, Tree
 from typing_extensions import override
 
 from ruff_sync.config_io import load_local_ruff_config
-from ruff_sync.system import compute_effective_rules, get_all_ruff_rules
+from ruff_sync.system import compute_effective_rules, get_all_ruff_rules, get_ruff_linters
 from ruff_sync.tui.constants import RULE_PATTERN
 from ruff_sync.tui.screens import OmniboxScreen
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
@@ -76,6 +76,7 @@ class RuffSyncApp(App[None]):
         self.config: dict[str, Any] = {}
         self.all_rules: list[dict[str, Any]] = []
         self.effective_rules: list[dict[str, Any]] = []
+        self.linters: list[dict[str, Any]] = []
 
     @override
     def compose(self) -> ComposeResult:
@@ -108,8 +109,19 @@ class RuffSyncApp(App[None]):
     async def _prime_caches(self) -> None:
         """Fetch rules and compute effectiveness in the background."""
         self.all_rules = await get_all_ruff_rules()
+        self.linters = await get_ruff_linters()
         if self.config:
             self.effective_rules = compute_effective_rules(self.all_rules, self.config)
+
+        # Refresh the tree once metadata is loaded to show linter groups
+        # We pass effective_rules so the tree can filter out entire groups that are disabled
+        tree = self.query_one(ConfigTree)
+        tree.populate(
+            self.config,
+            has_rules=True,
+            linters=self.linters,
+            effective_rules=self.effective_rules,
+        )
 
     @work
     async def _display_effective_rules(self) -> None:
@@ -146,6 +158,19 @@ class RuffSyncApp(App[None]):
 
         if data == "__rules__":
             self._display_effective_rules()
+            return
+
+        if isinstance(data, dict) and data.get("type") == "linter":
+            prefix = data.get("prefix", "")
+            name = data.get("name", "Unknown Linter")
+
+            # Filter effective rules by prefix
+            # We show all rules in the group (even Disabled) as per the Discovery proposal
+            filtered_rules = [r for r in self.effective_rules if r["code"].startswith(prefix)]
+
+            table.update_rules(filtered_rules)
+            msg = f"## {name} ({prefix or 'No Prefix'})\n\nShowing rules for the {name} category."
+            inspector.update(msg)
             return
 
         # Build full path for context
