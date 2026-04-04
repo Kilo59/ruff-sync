@@ -119,15 +119,16 @@ class RuffSyncApp(App[None]):
         # Check if the node label or path matches a ruff rule
         if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
             table.add_class("hidden")
-            inspector.fetch_and_display(label_text)
+            inspector.fetch_and_display(label_text, is_rule=True)
         elif isinstance(data, (dict, list)):
             table.remove_class("hidden")
             table.update_content(data)
-            inspector.show_context(full_path, data)
+            # Fetch config documentation for the section if possible
+            inspector.fetch_and_display(full_path, is_rule=False)
         else:
             table.remove_class("hidden")
             table.update_content(data)
-            inspector.show_context(full_path, data)
+            inspector.fetch_and_display(full_path, is_rule=False)
 
     @on(DataTable.RowSelected)
     def handle_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -150,7 +151,12 @@ class RuffSyncApp(App[None]):
         if rule_code:
             inspector = self.query_one(RuleInspector)
             table.add_class("hidden")
-            inspector.fetch_and_display(rule_code)
+            inspector.fetch_and_display(rule_code, is_rule=True)
+        else:
+            # It's a configuration key, show its documentation
+            inspector = self.query_one(RuleInspector)
+            full_path = f"{self._get_node_path(self.query_one(ConfigTree).cursor_node)}.{key}"
+            inspector.fetch_and_display(full_path, is_rule=False)
 
     def _get_node_path(self, node: Any) -> str:
         """Construct the full configuration path to a tree node.

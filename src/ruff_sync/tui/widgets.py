@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual import work
 from textual.widgets import DataTable, Markdown, Tree
 from typing_extensions import override
 
-from ruff_sync.system import get_ruff_rule_markdown
+from ruff_sync.system import get_ruff_config_markdown, get_ruff_rule_markdown
 
 if TYPE_CHECKING:
     from textual.widgets.tree import TreeNode
@@ -76,6 +76,8 @@ class CategoryTable(DataTable[Any]):
 class RuleInspector(Markdown):
     """A markdown widget for inspecting Ruff rules and settings."""
 
+    _current_meta: ClassVar[dict[str, str]] = {}
+
     def on_mount(self) -> None:
         """Set initial placeholder content."""
         self.show_placeholder()
@@ -97,26 +99,31 @@ class RuleInspector(Markdown):
         # Show a summary for complex types, or the raw value for simple ones
         if isinstance(value, dict):
             summary = f"Table with {len(value)} keys"
-        elif isinstance(data := value, list):
-            summary = f"List with {len(data)} items"
+        elif isinstance(value, list):
+            summary = f"List with {len(value)} items"
         else:
             summary = f"`{value}`"
 
         self.update(f"### Configuration Context\n\n**Path**: `{path}`\n\n**Value**: {summary}")
 
     @work
-    async def fetch_and_display(self, rule_code: str) -> None:
-        """Fetch and display the documentation for a rule.
+    async def fetch_and_display(self, target: str, is_rule: bool = True) -> None:
+        """Fetch and display the documentation for a rule or setting.
 
         Args:
-            rule_code: The Ruff rule code to fetch documentation for.
+            target: The Ruff rule code or configuration path.
+            is_rule: True if fetching a rule, False if fetching a config setting.
         """
         # Set a loading message
-        self.update(f"## Inspecting {rule_code}...\n\nFetching documentation from `ruff rule`...")
+        desc = "rule" if is_rule else "config"
+        self.update(f"## Inspecting {target}...\n\nFetching documentation from `ruff {desc}`...")
 
-        content = await get_ruff_rule_markdown(rule_code)
+        if is_rule:
+            content = await get_ruff_rule_markdown(target)
+        else:
+            content = await get_ruff_config_markdown(target)
 
         if content:
             self.update(content)
         else:
-            self.update(f"## Error\n\nCould not fetch documentation for rule `{rule_code}`.")
+            self.update(f"## Error\n\nCould not fetch documentation for {desc} `{target}`.")
