@@ -61,6 +61,10 @@
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
+         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/config_io/</loc>
+         <lastmod>2026-04-04</lastmod>
+    </url>
+    <url>
          <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/constants/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
@@ -69,11 +73,19 @@
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
+         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/dependencies/</loc>
+         <lastmod>2026-04-04</lastmod>
+    </url>
+    <url>
          <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/formatters/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
     <url>
          <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/pre_commit/</loc>
+         <lastmod>2026-04-04</lastmod>
+    </url>
+    <url>
+         <loc>https://Kilo59.github.io/ruff-sync/reference/ruff_sync/system/</loc>
          <lastmod>2026-04-04</lastmod>
     </url>
 </urlset>
