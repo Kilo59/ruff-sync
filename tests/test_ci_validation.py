@@ -90,11 +90,18 @@ def test_validate_ci_output_format(
 @pytest.mark.parametrize(
     ("env_vars", "cli_args", "config", "expected"),
     [
-        # CLI takes precedence
+        # CLI takes precedence over auto-detection
         (
             {"GITHUB_ACTIONS": "true"},
             {"output_format": OutputFormat.JSON},
             {},
+            OutputFormat.JSON,
+        ),
+        # CLI takes precedence over config
+        (
+            {"GITHUB_ACTIONS": "true"},
+            {"output_format": OutputFormat.JSON},
+            {"output_format": "gitlab"},
             OutputFormat.JSON,
         ),
         # Config takes precedence over auto-detection
