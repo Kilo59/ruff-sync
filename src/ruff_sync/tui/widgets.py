@@ -27,7 +27,7 @@ class ConfigTree(Tree[Any]):
         self.clear()
         self.root.expand()
         if has_rules:
-            self.root.add("Effective Active Rules", data="__rules__")
+            self.root.add("Effective Rule Status", data="__rules__")
         self._populate_node(self.root, config)
 
     def _populate_node(self, parent: TreeNode[Any], data: Any) -> None:

@@ -118,13 +118,16 @@ class RuffSyncApp(App[None]):
             self.all_rules = await get_all_ruff_rules()
             self.effective_rules = compute_effective_rules(self.all_rules, self.config)
 
+        # Filter for only Enabled or Ignored rules as per the "Effective Rules" proposal
+        effective_only = [r for r in self.effective_rules if r["status"] != "Disabled"]
+
         table = self.query_one(CategoryTable)
-        table.update_rules(self.effective_rules)
+        table.update_rules(effective_only)
 
         inspector = self.query_one(RuleInspector)
         inspector.update(
-            "## Effective Active Rules\n\nThis table shows the status of every Ruff rule "
-            "based on your current configuration (including defaults)."
+            "## Effective Rule Status\n\nThis table shows rules that are actively being used "
+            "or have been explicitly ignored in your configuration."
         )
 
     @on(Tree.NodeSelected)
