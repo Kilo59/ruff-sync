@@ -1,6 +1,6 @@
 site_name: ruff-sync
 site_description: Synchronize Ruff linter configuration across Python projects.
-site_url: https://Kilo59.github.io/ruff-sync/
+site_url: https://kilo59.github.io/ruff-sync/
 
 repo_name: Kilo59/ruff-sync
 repo_url: https://github.com/Kilo59/ruff-sync
@@ -26,8 +26,6 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-  version:
-    method: mike
   features:
     - content.code.copy
     - content.tabs.link

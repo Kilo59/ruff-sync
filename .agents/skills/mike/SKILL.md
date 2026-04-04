@@ -60,9 +60,13 @@ Example in `version_warning.html`:
   </div>
 </div>
 <script>
-  if (window.location.pathname.includes("/dev/")) {
-    document.getElementById("version-warning").style.display = "block";
-  }
+  (function() {
+    var version_warning = document.getElementById("version-warning");
+    if (!version_warning) return;
+    if (window.location.pathname.includes("/dev/") || (window.mike && window.mike.version === "dev")) {
+      version_warning.style.display = "block";
+    }
+  })();
 </script>
 ```
 
@@ -104,3 +108,14 @@ The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflo
 
 > [!TIP]
 > Use `mike serve` locally to preview the version switcher before pushing changes.
+
+## Troubleshooting
+
+### Version Selector Not Appearing
+- **Missing `versions.json`**: Ensure `mike deploy` or `mike update-aliases` has been run. The file must exist at the site root.
+- **Incomplete `versions.json`**: If the current page's version (e.g., `stable`) is not listed in `versions.json`, some themes (like Material) may hide the selector.
+- **`site_url` Case Sensitivity**: On GitHub Pages, ensure `site_url` in `mkdocs.yml` matches the actual deployment URL (usually lowercase). Discrepancies can cause the switcher to fail finding `versions.json` due to 404s.
+- **Redundant Config**: Ensure `theme.version` is NOT set in `mkdocs.yml`. Use `extra.version.provider: mike` instead.
+
+### 404 for `versions.json`
+- If you see a 404 for `/versions.json` but `https://<user>.github.io/<repo>/versions.json` exists, the switcher is looking at the domain root instead of the project root. Verify `site_url` includes the repository name and has a trailing slash.

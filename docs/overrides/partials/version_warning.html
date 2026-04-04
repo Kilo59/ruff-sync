@@ -10,9 +10,15 @@
 </div>
 
 <script>
-  var version_warning = document.getElementById("version-warning");
-  if (window.location.pathname.includes("/dev/")) {
-    version_warning.style.display = "block";
-  }
+  (function() {
+    var version_warning = document.getElementById("version-warning");
+    if (!version_warning) return;
+
+    // mike provides a 'mike' object with some metadata if available
+    // Otherwise fall back to checking the pathname
+    if (window.location.pathname.includes("/dev/") || (window.mike && window.mike.version === "dev")) {
+      version_warning.style.display = "block";
+    }
+  })();
 </script>
 {% endif %}
