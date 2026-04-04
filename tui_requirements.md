@@ -47,6 +47,9 @@ Once the read-only layer is stabilized, the UI will be expanded into an interact
 3. **Local Modification Engine:**
    - Allow users to toggle rules on/off (add/remove from `lint.select` or `lint.ignore`) visually.
    - Persist changes to disk using `tomlkit` to guarantee that whitespace, comments, and file structure are preserved exactly as they were.
+4. **Contextual Comment Attachment (TOML Parsing):**
+   - Extract in-line and block comments from `pyproject.toml` using `tomlkit` to serve as extended contextual annotations within the UI.
+   - Establish strict heuristic rules for comment association: e.g., comments immediately preceding a key belong to that key; inline trailing comments belong to that line's value; comments directly beneath a section header act as section descriptions.
 
 ---
 
