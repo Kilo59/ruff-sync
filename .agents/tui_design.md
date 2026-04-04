@@ -66,9 +66,9 @@ Right now, discovering and extracting the local `pyproject.toml` is slightly cou
       yield Header()
       with Horizontal():
           yield ConfigTree(id="config-tree")
-          with Vertical():
+          with Vertical(id="content-pane"):
               yield CategoryTable(id="category-table")
-              yield RuleInspector(id="inspector", classes="hidden")
+              yield RuleInspector(id="inspector")
       yield Footer()
   ```
 - **Lifecycle (`on_mount`)**:
@@ -98,10 +98,10 @@ Contains all custom Textual widgets required for this view.
 ### [MODIFY] src/ruff_sync/tui/app.py (Reactivity)
 - Tie widgets together using Textual's event routing (`@on`):
   - `@on(Tree.NodeSelected)`:
-      - If the node is a configuration section (e.g. `lint.isort`), hide the Inspector and populate the `CategoryTable` with settings.
-      - If the node represents a list of rules (unwrapped `lint.select`), display the active rule list in the table.
+      - If the node is a configuration section (e.g. `lint.isort`), ensure the `CategoryTable` is visible (remove "hidden" class) and populate it with settings.
+      - If the node represents a rule code, add the "hidden" class to `CategoryTable` to maximize vertical space, and display the rule in `RuleInspector`.
   - `@on(DataTable.RowSelected)`:
-      - If the focused row represents a Ruff Rule Code (e.g., `RUF012`), reveal the `RuleInspector` widget and call `inspector.fetch_and_display("RUF012")`.
+      - If the focused row represents a Ruff Rule Code (e.g., `RUF012`), hide the `CategoryTable`, reveal the `RuleInspector` widget, and call `inspector.fetch_and_display("RUF012")`.
       - Expose related context natively based on selections.
 
 ---

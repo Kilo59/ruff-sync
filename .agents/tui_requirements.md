@@ -28,8 +28,8 @@
 ### 2.2 UX / UI Layout Concept
 - **Header:** Application title and current local repository path.
 - **Left Sidebar (Navigation):** `Tree` widget for configuration categories (`Global`, `Linting`, `Formatting`, `Rule Index`).
-- **Center Area (Main Content):** `DataTable` or `ListView` showing the keys and values for the selected category.
-- **Right/Bottom Panel (Inspector):** Context-aware inspector. Because `ruff rule <CODE>` output contains proper Markdown, this panel MUST robustly render Markdown (e.g., utilizing Textual's `Markdown` widget) while dynamically adjoining related setting/rule cross-references around it.
+- **Center Area (Main Content):** `DataTable` or `ListView` showing the keys and values for the selected category. This panel is dynamically hidden when inspecting dense documentation to maximize reading space.
+- **Right/Bottom Panel (Inspector):** Context-aware scrollable inspector (`overflow-y: auto`). Because `ruff rule <CODE>` output contains proper Markdown, this panel MUST robustly render Markdown (e.g., utilizing Textual's `Markdown` widget) while dynamically adjoining related setting/rule cross-references around it.
 - **Footer:** Action key bindings (`q` to Quit, `/` to Search, `?` for Help).
 
 ---
