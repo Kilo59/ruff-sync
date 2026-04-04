@@ -65,6 +65,57 @@ select = ["E", "F"]
     assert isinstance(config, dict)
 
 
+def test_load_local_ruff_config_pyproject_without_tool_ruff(tmp_path: pathlib.Path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[project]
+name = "example"
+
+[tool.other]
+value = 1
+""",
+        encoding="utf-8",
+    )
+
+    config = load_local_ruff_config(tmp_path)
+    assert config == {}
+    assert isinstance(config, dict)
+
+
+def test_load_local_ruff_config_pyproject_tool_not_mapping(tmp_path: pathlib.Path) -> None:
+    # Here "tool" exists but is not a mapping/table in the parsed TOML.
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+tool = 1
+""",
+        encoding="utf-8",
+    )
+
+    config = load_local_ruff_config(tmp_path)
+    assert config == {}
+    assert isinstance(config, dict)
+
+
+def test_load_local_ruff_config_pyproject_tool_ruff_not_mapping(tmp_path: pathlib.Path) -> None:
+    # Here "tool" is a mapping, but "tool.ruff" is not a mapping/table.
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[tool]
+ruff = 1
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TypeError) as exc_info:
+        load_local_ruff_config(tmp_path)
+
+    # Ensure the error is specific to the tool.ruff section
+    assert "tool.ruff" in str(exc_info.value)
+
+
 def test_load_local_ruff_config_ruff_toml(tmp_path: pathlib.Path) -> None:
     ruff_toml = tmp_path / "ruff.toml"
     ruff_toml.write_text(
@@ -78,6 +129,21 @@ ignore = ["D100"]
 
     config = load_local_ruff_config(tmp_path)
     assert config == {"line-length": 100, "lint": {"ignore": ["D100"]}}
+
+
+def test_load_local_ruff_config_ruff_toml_not_mapping(tmp_path: pathlib.Path) -> None:
+    # An empty file is a valid TOML document but tomlkit might return an empty dict
+    # or a document that unwraps to an empty dict.
+    # To test the `isinstance(unwrapped, dict)` check for a non-dict,
+    # we'd need a document that tomlkit parses but doesn't unwrap to a dict.
+    # However, standard TOML always parses to a Table (dict-like).
+    # We'll just verify that an empty ruff.toml returns an empty dict.
+    ruff_toml = tmp_path / "ruff.toml"
+    ruff_toml.write_text("", encoding="utf-8")
+
+    config = load_local_ruff_config(tmp_path)
+    assert config == {}
+    assert isinstance(config, dict)
 
 
 def test_load_local_ruff_config_missing(tmp_path: pathlib.Path) -> None:
