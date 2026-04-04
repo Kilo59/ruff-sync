@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import difflib
-import enum
 import json
 import logging
 import pathlib
@@ -23,7 +22,6 @@ from typing import (
     TypedDict,
     overload,
 )
-from urllib.parse import urlparse
 
 import httpx
 import tomlkit
@@ -31,8 +29,8 @@ from httpx import URL
 from tomlkit import TOMLDocument, table
 from tomlkit.items import Table
 from tomlkit.toml_file import TOMLFile
-from typing_extensions import override
 
+from ruff_sync.config_io import RuffConfigFileName, is_ruff_toml_file, resolve_target_path
 from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
@@ -75,25 +73,6 @@ _GITLAB_HOSTS: Final[set[str]] = {"gitlab.com"}
 
 _HTTP_OK: Final = 200
 _HTTP_NOT_FOUND: Final[int] = 404
-
-
-@enum.unique
-class RuffConfigFileName(str, enum.Enum):
-    """Enumeration of Ruff configuration filenames."""
-
-    PYPROJECT_TOML = "pyproject.toml"
-    RUFF_TOML = "ruff.toml"
-    DOT_RUFF_TOML = ".ruff.toml"
-
-    @classmethod
-    def tried_order(cls) -> list[RuffConfigFileName]:
-        """Return the order in which configuration files should be tried."""
-        return [cls.RUFF_TOML, cls.DOT_RUFF_TOML, cls.PYPROJECT_TOML]
-
-    @override
-    def __str__(self) -> str:
-        """Return the filename as a string."""
-        return self.value
 
 
 class FetchResult(NamedTuple):
@@ -143,34 +122,6 @@ class Config(TypedDict, total=False):
     init: bool
     pre_commit_version_sync: bool
     output_format: str
-
-
-def resolve_target_path(
-    to: pathlib.Path, upstreams: Iterable[str | URL] | None = None
-) -> pathlib.Path:
-    """Resolve the target path for configuration files.
-
-    If 'to' is a file, it's used directly.
-    Otherwise, it looks for existing ruff/pyproject.toml in the 'to' directory.
-    If none found, it defaults to pyproject.toml unless the first upstream is a ruff.toml.
-    """
-    if to.is_file():
-        return to
-
-    # If it's a directory, look for common config files
-    for filename in RuffConfigFileName.tried_order():
-        candidate = to / filename
-        if candidate.exists():
-            return candidate
-
-    # Use the first upstream URL as a hint for the default file name
-    first_upstream = next(iter(upstreams), None) if upstreams else None
-
-    # If upstream is specified and is a ruff.toml, default to ruff.toml
-    if first_upstream and is_ruff_toml_file(first_upstream):
-        return to / RuffConfigFileName.RUFF_TOML
-
-    return to / RuffConfigFileName.PYPROJECT_TOML
 
 
 def _resolve_upstream_target_path(path: str | None) -> str:
@@ -530,29 +481,6 @@ async def fetch_upstream_config(
 
         # Re-raise with a more helpful message while preserving the original exception context
         raise httpx.HTTPStatusError(msg, request=err.request, response=err.response) from None
-
-
-def is_ruff_toml_file(path_or_url: str | URL) -> bool:
-    """Return True if the path or URL indicates a ruff.toml file.
-
-    This handles:
-    - Plain paths (e.g. "ruff.toml", ".ruff.toml", "configs/ruff.toml")
-    - URLs with query strings or fragments (e.g. "ruff.toml?ref=main", "ruff.toml#L10")
-    by examining only the path component (or the part before any query/fragment).
-    """
-    parsed = urlparse(str(path_or_url))
-
-    # If it's a URL with a scheme/netloc, use the parsed path component.
-    # Otherwise, fall back to stripping any query/fragment from the raw string.
-    if parsed.scheme or parsed.netloc:
-        path = parsed.path
-    else:
-        path = str(path_or_url).split("?", 1)[0].split("#", 1)[0]
-
-    return pathlib.Path(path).name in (
-        RuffConfigFileName.RUFF_TOML,
-        RuffConfigFileName.DOT_RUFF_TOML,
-    )
 
 
 @overload
