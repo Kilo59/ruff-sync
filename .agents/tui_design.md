@@ -106,7 +106,23 @@ Contains all custom Textual widgets required for this view.
 
 ---
 
-## 5. Verification Plan
+## 5. Strict Static Typing & mypy Guidelines
+
+Because `ruff-sync` operates under strict mypy regulations, the TUI module must explicitly conform to static type safety.
+
+**Key Typing Considerations:**
+1. **Textual App Generics:** Subclass `App` with its expected return type. If the app just runs and quits without returning a value, define it as `class RuffSyncApp(App[None]):`.
+2. **Event Handler Signatures:** Utilize specific type hints internally provided by Textual for event payloads. For example:
+   ```python
+   async def on_tree_node_selected(self, event: Tree.NodeSelected[Any]) -> None:
+   ```
+3. **Handling `tomlkit` Types (NO `cast`):** `tomlkit`'s proxy objects often resolve ambiguously. Because `typing.cast` is forbidden in production code, when calling `.unwrap()` inside the `ConfigReader` refactor, you **must use explicit `isinstance` checks`** or `TypeGuard` functions (e.g. `if not isinstance(unwrapped_data, dict): raise TypeError(...)`) to strictly narrow the type initially.
+4. **Structured Data over Dicts:** Instead of passing around plain `dict[str, Any]` between the Data Access Object and the Textual widgets, deeply recommend defining and using `TypedDict` or `NamedTuple` objects for predictable configuration structures. This provides significantly better type safety down the pipeline.
+5. **Subprocess IO:** The new `ruff_cli.py` utility function `get_ruff_rule_markdown()` must explicitly declare its return values (`-> str | None`) and the subprocess decoding pipeline should clearly handle `bytes` versus `str` boundary conversions.
+
+---
+
+## 6. Verification Plan
 
 ### Automated Tests
 - Scaffold `tests/test_tui.py`.
