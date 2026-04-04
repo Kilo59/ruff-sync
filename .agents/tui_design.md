@@ -12,7 +12,10 @@ Before we build the TUI feature itself, some of the existing codebase should be 
 Currently, `ruff-sync` is primarily concerned with TOML serialization. The TUI introduces a requirement to execute the system `ruff` binary (e.g. `ruff rule <CODE>`).
 **Refactoring Task:**
 - Create a generalized, safe abstraction for interacting with the `ruff` executable.
-- Provide a typed function `async def get_ruff_rule_markdown(rule_code: str) -> str | None` that uses `asyncio.create_subprocess_exec` (or threads with `subprocess`) to fetch and return the rule text. This prevents raw `subprocess` sprawl across TUI widgets.
+- Provide typed async functions:
+    - `async def get_ruff_rule_markdown(rule_code: str) -> str | None`
+    - `async def get_ruff_config_markdown(setting_path: str) -> str | None`
+- These should use `asyncio.create_subprocess_exec` to fetch and return the text. This prevents raw `subprocess` sprawl across TUI widgets.
 
 ### B. Configuration Reader Extraction (`src/ruff_sync/config_io.py` or similar)
 Right now, discovering and extracting the local `pyproject.toml` is slightly coupled to the lifecycle of pulling from upstreams (`pull()` / `check()` in `core.py`).
@@ -87,9 +90,9 @@ Contains all custom Textual widgets required for this view.
 - Automatically clears and updates columns/rows when a tree node is highlighted.
 
 **3. `RuleInspector` (inherits `textual.widgets.Markdown`)**:
-- Displays `ruff rule <CODE>` output.
-- Features an `async def fetch_and_display(self, rule_code: str)` method.
-- **Background Worker**: Uses Textual `@work(thread=True)` to execute our refactored `get_ruff_rule_markdown()` function.
+- Displays documentation for both rules (`ruff rule <CODE>`) and settings (`ruff config <SETTING>`).
+- Features an `async def fetch_and_display(self, target: str, is_rule: bool = True)` method.
+- **Background Worker**: Uses Textual `@work(thread=True)` to execute the appropriate refactored `get_ruff_*_markdown()` function.
 
 ---
 
@@ -98,10 +101,11 @@ Contains all custom Textual widgets required for this view.
 ### [MODIFY] src/ruff_sync/tui/app.py (Reactivity)
 - Tie widgets together using Textual's event routing (`@on`):
   - `@on(Tree.NodeSelected)`:
-      - If the node is a configuration section (e.g. `lint.isort`), ensure the `CategoryTable` is visible (remove "hidden" class) and populate it with settings.
-      - If the node represents a rule code, add the "hidden" class to `CategoryTable` to maximize vertical space, and display the rule in `RuleInspector`.
+      - If the node is a configuration section (e.g. `lint.isort`), ensure the `CategoryTable` is visible (remove "hidden" class) and populate it with settings. It also triggers `inspector.fetch_and_display(section_path, is_rule=False)` to show section-level docs if available.
+      - If the node represents a rule code, add the "hidden" class to `CategoryTable` to maximize vertical space, and display the rule in `RuleInspector` via `fetch_and_display(code, is_rule=True)`.
   - `@on(DataTable.RowSelected)`:
-      - If the focused row represents a Ruff Rule Code (e.g., `RUF012`), hide the `CategoryTable`, reveal the `RuleInspector` widget, and call `inspector.fetch_and_display("RUF012")`.
+      - If the focused row represents a Ruff Rule Code (e.g., `RUF012`), hide the `CategoryTable`, reveal the `RuleInspector` widget, and call `inspector.fetch_and_display("RUF012", is_rule=True)`.
+      - If the focused row represents a configuration setting, reveal the `RuleInspector` and call `inspector.fetch_and_display(setting_key, is_rule=False)`.
       - Expose related context natively based on selections.
 
 ---
