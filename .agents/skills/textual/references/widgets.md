@@ -57,3 +57,29 @@ def on_key(self, event: events.Key) -> None:
 
 > [!TIP]
 > Use `BINDINGS` in your `App` or `Screen` class for most navigation tasks. Textual manages the labels and shortcuts in the `Footer` for you.
+
+### `ModalScreen` & Overlays
+Modals are screens with a transparent or dim background that overlay the main app.
+```python
+from textual.screen import ModalScreen
+from textual.app import App
+
+class OmniboxScreen(ModalScreen[str]):
+    # A modal screen that returns a `str` when dismissed.
+    def compose(self) -> ComposeResult:
+        # yield your input/search widgets here
+        yield Input(placeholder="Search...")
+
+    # Dismiss the screen and return data
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self.dismiss(event.value)
+
+# In the main App or Screen:
+def on_key(self, event: events.Key) -> None:
+    if event.key == "ctrl+p":
+        self.push_screen(OmniboxScreen(), self.handle_omnibox_result)
+
+def handle_omnibox_result(self, result: str | None) -> None:
+    if result:
+        print(f"Selected: {result}")
+```
