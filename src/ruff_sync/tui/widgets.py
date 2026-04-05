@@ -184,21 +184,24 @@ class CategoryTable(DataTable[Any]):
             # Determine row color based on status
             color = ""
             if status == "Enabled":
-                color = "green"
+                color = "success"
             elif status == "Ignored":
-                color = "yellow"
+                color = "warning"
             elif status == "Disabled":
-                color = "dim"
+                color = (
+                    "dim"  # Keep dim as it's a standard Rich style that works across backgrounds
+                )
 
-            code_markup = f"[{color}]{rule['code']}[/{color}]" if color else rule["code"]
-            name_markup = f"[{color}]{rule['name']}[/{color}]" if color else rule["name"]
+            # Rich uses [/] to close the nearest open tag
+            code_markup = f"[{color}]{rule['code']}[/]" if color else rule["code"]
+            name_markup = f"[{color}]{rule['name']}[/]" if color else rule["name"]
 
             fix = rule.get("fix_availability", "None")
             fix_markup = fix
             if fix == "Always":
-                fix_markup = f"[cyan]{fix}[/cyan]"
+                fix_markup = f"[accent]{fix}[/]"
             elif fix in ("Sometimes", "Enforced"):
-                fix_markup = f"[yellow]{fix}[/yellow]"
+                fix_markup = f"[warning]{fix}[/]"
 
             # Note: We still keep linter as-is for clarity
             self.add_row(code_markup, name_markup, rule["linter"], fix_markup, key=rule["code"])

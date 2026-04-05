@@ -36,13 +36,13 @@ async def test_themes_registered(mock_args: Arguments) -> None:
         assert "material-ghost" in app.available_themes
 
         # Check default theme
-        assert app.theme == "ruff-sync-slate"
+        assert app.theme == "amber-ember"
 
         # Check the actual theme object values (smoke test)
-        # Use cast(Any, ...) for theme attributes as they may be complex
-        theme = cast("Any", app.get_theme("ruff-sync-slate"))
-        assert str(theme.primary).upper() == "#FFC107"
-        assert str(theme.background).upper() == "#0F172A"
+        # Verify high-contrast success color for Material Ghost
+        theme = cast("Any", app.get_theme("material-ghost"))
+        assert str(theme.success).upper() == "#2E7D32"
+        assert str(theme.background).upper() == "#FAFAFA"
 
 
 @pytest.mark.asyncio
