@@ -11,7 +11,7 @@
 
 The Ruff Config Inspection TUI provides a structured, interactive view of your `tool.ruff` configuration, allowing you to browse effective rules, search the full Ruff rule registry, and view detailed documentation for any rule or configuration key.
 
-![Ruff-Sync TUI Main View](assets/inspect-main.png)
+![Ruff-Sync TUI Main View](assets/screenshots/dashboard.svg)
 *The main TUI view showing the configuration tree, rule registry, and detailed inspector.*
 
 ---
@@ -85,10 +85,13 @@ The upper-right table displays the rules currently effective in your project. Ea
 
 When you select a rule, the **Rule Inspector** at the bottom-right fetches and displays the full documentation for that rule, including its rationale and code examples.
 
+![Ruff Rule Details](assets/screenshots/rule_details.svg)
+*Detailed inspection of a specific Ruff rule within the TUI.*
+
 ### ⚡ Global Rule Search (Omnibox)
 Press `/` at any time to open the **Omnibox**. This allows you to perform a fuzzy search across the entire Ruff rule registry, even for rules not currently active in your project.
 
-![Ruff Rule Search](assets/inspect-search.png)
+![Ruff Rule Search](assets/screenshots/search_omnibox.svg)
 *The Omnibox search interface for quick rule discovery.*
 
 ---
@@ -104,3 +107,6 @@ Press `/` at any time to open the **Omnibox**. This allows you to perform a fuzz
 | `Enter` | Select a node or rule to inspect. |
 | `Tab` | Move focus between the tree, table, and inspector. |
 | `Esc` | Close the current modal or search. |
+
+![TUI Keyboard Help](assets/screenshots/legend_help.svg)
+*The interactive Legend modal showing all available keyboard shortcuts.*
