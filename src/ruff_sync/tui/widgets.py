@@ -13,6 +13,8 @@ from ruff_sync.system import get_ruff_config_markdown, get_ruff_rule_markdown
 if TYPE_CHECKING:
     from textual.widgets.tree import TreeNode
 
+    from ruff_sync.models import RuffLinter, RuffRule
+
 
 class ConfigTree(Tree[Any]):
     """A tree widget for navigating Ruff configuration."""
@@ -21,8 +23,8 @@ class ConfigTree(Tree[Any]):
         self,
         config: dict[str, Any],
         has_rules: bool = False,
-        linters: list[dict[str, Any]] | None = None,
-        effective_rules: list[dict[str, Any]] | None = None,
+        linters: list[RuffLinter] | None = None,
+        effective_rules: list[RuffRule] | None = None,
     ) -> None:
         """Populate the tree with configuration sections.
 
@@ -43,9 +45,7 @@ class ConfigTree(Tree[Any]):
         # Auto-expand up to 2 levels if it fits in the current view
         self._expand_if_fits()
 
-    def _is_linter_active(
-        self, linter: dict[str, Any], effective_rules: list[dict[str, Any]]
-    ) -> bool:
+    def _is_linter_active(self, linter: RuffLinter, effective_rules: list[RuffRule]) -> bool:
         """Check if a linter (or any of its categories) has active/ignored rules."""
         prefix = linter.get("prefix")
         if prefix and any(
@@ -61,8 +61,8 @@ class ConfigTree(Tree[Any]):
     def _populate_linter_nodes(
         self,
         parent: TreeNode[Any],
-        linters: list[dict[str, Any]],
-        effective_rules: list[dict[str, Any]],
+        linters: list[RuffLinter],
+        effective_rules: list[RuffRule],
     ) -> None:
         """Recursively add linter category nodes to the tree."""
         # Sort linters by name for better navigation
@@ -169,7 +169,7 @@ class CategoryTable(DataTable[Any]):
         else:
             self.add_row("Value", str(data))
 
-    def update_rules(self, rules: list[dict[str, Any]]) -> None:
+    def update_rules(self, rules: list[RuffRule]) -> None:
         """Update the table with a list of rules using row-level highlighting.
 
         Args:

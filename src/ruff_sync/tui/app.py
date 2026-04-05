@@ -20,6 +20,7 @@ from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
+    from ruff_sync.models import RuffLinter, RuffRule
 
 
 LOGGER = logging.getLogger(__name__)
@@ -78,9 +79,9 @@ class RuffSyncApp(App[None]):
         super().__init__(**kwargs)
         self.args = args
         self.config: dict[str, Any] = {}
-        self.all_rules: list[dict[str, Any]] = []
-        self.effective_rules: list[dict[str, Any]] = []
-        self.linters: list[dict[str, Any]] = []
+        self.all_rules: list[RuffRule] = []
+        self.effective_rules: list[RuffRule] = []
+        self.linters: list[RuffLinter] = []
 
     @override
     def compose(self) -> ComposeResult:
@@ -240,7 +241,7 @@ class RuffSyncApp(App[None]):
         # Fetch metadata for enrichment
         rule_data = next((r for r in self.effective_rules if r["code"] == rule_code), None)
         name = rule_data.get("name") if rule_data else None
-        status = rule_data.get("status") if rule_data else "Disabled"
+        status = str(rule_data.get("status", "Disabled")) if rule_data else "Disabled"
         explanation = rule_data.get("explanation") if rule_data else None
 
         inspector = self.query_one(RuleInspector)

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from ruff_sync.system import compute_effective_rules
+
+if TYPE_CHECKING:
+    from ruff_sync.models import RuffRule
 
 
 def test_compute_effective_rules_basic():
@@ -23,7 +26,7 @@ def test_compute_effective_rules_basic():
         }
     }
 
-    enriched = compute_effective_rules(all_rules, toml_config)
+    enriched = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config)
 
     # F401: select matches "F" (len 1), ignore matches "F401" (len 4). Ignore wins.
     f401 = next(r for r in enriched if r["code"] == "F401")
@@ -43,7 +46,7 @@ def test_compute_effective_rules_defaults():
     ]
     toml_config: dict[str, Any] = {}  # Empty config
 
-    enriched = compute_effective_rules(all_rules, toml_config)
+    enriched = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config)
 
     # Defaults are E and F
     f401 = next(r for r in enriched if r["code"] == "F401")
@@ -62,12 +65,12 @@ def test_compute_effective_rules_specificity():
 
     # Select more specific than ignore
     toml_config_1 = {"tool": {"ruff": {"lint": {"select": ["PLR0912"], "ignore": ["PLR"]}}}}
-    enriched_1 = compute_effective_rules(all_rules, toml_config_1)
+    enriched_1 = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config_1)
     assert enriched_1[0]["status"] == "Enabled"
 
     # Ignore more specific than select
     toml_config_2 = {"tool": {"ruff": {"lint": {"select": ["PLR"], "ignore": ["PLR0912"]}}}}
-    enriched_2 = compute_effective_rules(all_rules, toml_config_2)
+    enriched_2 = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config_2)
     assert enriched_2[0]["status"] == "Ignored"
 
 
@@ -88,7 +91,7 @@ def test_compute_effective_rules_extend():
         }
     }
 
-    enriched = compute_effective_rules(all_rules, toml_config)
+    enriched = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config)
 
     # F401: Default "F" select matched, but extend-ignore "F401" is longer.
     f401 = next(r for r in enriched if r["code"] == "F401")
