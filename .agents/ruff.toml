@@ -1,0 +1,24 @@
+# Agents-specific ruff linter overrides.
+# This configuration applies to all files within the .agents/ directory.
+#
+# WHY AGENT SCRIPTS ARE TREATED DIFFERENTLY:
+# ------------------------------------------
+# 1. Faster iteration: Agent-related code (skills, scripts, and examples) is
+#    often experimental, short-lived, or used for automation.
+# 2. Lower maintenance: We relax requirements like module-level docstrings
+#    to maintain speed and reduce boilerplate.
+# 3. Local use: These scripts are usually run locally by the agent or developer
+#    rather than being part of the core production library.
+# 4. Prototyping: Allowing assert statements (S101) makes it easier to write
+#    concise validation for specialized agent workflows.
+
+# Inherit root linter settings from the project's pyproject.toml.
+extend = "../pyproject.toml"
+
+[lint]
+# Specific overrides for agent python code, scripts, and skills.
+extend-ignore = [
+    "D100", # missing-docstring-in-module - Agent scripts don't require module-level docstrings.
+    "D103", # missing-docstring-in-public-function - Agent functions don't require public docstrings.
+    "S101", # assert-statement - Asserts are preferred over other validation for internal agent scripts.
+]
