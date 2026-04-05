@@ -16,7 +16,7 @@ This plan implements Phase 3 of the `type-checking` refactoring recommendations:
 
 ---
 
-#### [NEW] [types_.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/types_.py)
+#### [NEW] [types_.py](src/ruff_sync/tui/types_.py)
 
 Create a dedicated types layer for the TUI to enforce structured payloads.
 
@@ -33,7 +33,7 @@ Create a dedicated types layer for the TUI to enforce structured payloads.
 
 ---
 
-#### [MODIFY] [widgets.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/widgets.py)
+#### [MODIFY] [widgets.py](src/ruff_sync/tui/widgets.py)
 
 Instead of the model deciding *how* it looks (`node.table_data()`), shift rendering logic to the widgets using structural polymorphism.
 
@@ -52,7 +52,7 @@ Instead of the model deciding *how* it looks (`node.table_data()`), shift render
 
 ---
 
-#### [MODIFY] [app.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/app.py)
+#### [MODIFY] [app.py](src/ruff_sync/tui/app.py)
 
 - **Initialization**: Wrap the loaded config using `wrap_data()` in `on_mount()`.
 - **Refactor `handle_node_selected()` and `handle_row_selected()`**:
