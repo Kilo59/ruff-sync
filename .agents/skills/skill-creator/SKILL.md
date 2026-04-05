@@ -67,3 +67,4 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 - [Optimizing Descriptions](references/optimizing-descriptions.md) — Reliable triggering strategies
 - [Evaluating Skills](references/evaluating-skills.md) — Eval-driven iteration and assertions
 - [Using Scripts](references/using-scripts.md) — Bundling logic and agentic script design
+- [Research Sources](references/sources.md) — External documentation used to create this skill
