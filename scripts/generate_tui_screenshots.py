@@ -17,7 +17,7 @@ from ruff_sync.tui.app import RuffSyncApp
 
 # Path to the directory where screenshots will be saved
 SCREENSHOTS_DIR = pathlib.Path("docs/assets/screenshots")
-ROOT_TOML = pathlib.Path("pyproject.toml")
+SCREENSHOT_SAMPLE_TOML = SCREENSHOTS_DIR / "screenshot_sample.toml"
 
 
 def get_default_args() -> Arguments:
@@ -25,7 +25,7 @@ def get_default_args() -> Arguments:
     return Arguments(
         command="inspect",
         upstream=(),
-        to=ROOT_TOML,
+        to=SCREENSHOT_SAMPLE_TOML,
         exclude=DEFAULT_EXCLUDE,
         verbose=0,
         branch=DEFAULT_BRANCH,
@@ -42,45 +42,62 @@ def get_default_args() -> Arguments:
 async def generate_screenshots() -> None:
     """Run the app headlessly and capture screenshots of multiple views."""
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"📸 Generating screenshots in {SCREENSHOTS_DIR}...")
+    print(f"📸 Generating screenshots in {SCREENSHOTS_DIR} using {SCREENSHOT_SAMPLE_TOML}...")
 
     args = get_default_args()
     app = RuffSyncApp(args)
 
     async with app.run_test(size=(120, 40)) as pilot:
+        # Increase initial pause to ensure background _prime_caches finishes
+        # This is critical for rule statuses and details to show up!
+        await pilot.pause(1.0)
+
         # 1. Main Dashboard (Initial View)
-        # Wait for the background caches to prime
-        await pilot.pause(0.5)
         path = SCREENSHOTS_DIR / "dashboard.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
         # 2. Rule Detail View
-        # Navigate down into the tree to select a category/rule
-        # (Assuming the structure: tool.ruff -> lint -> select)
-        await pilot.press("down", "down", "down", "enter")
+        # Navigate to "Effective Rule Status" -> "Pyflakes (F)"
+        # We start at Root ("Local Configuration"). Child 0 is "Effective Rule Status".
+        await pilot.press("down")  # Select "Effective Rule Status"
+        await pilot.press("right")  # Expand it if collapsed (no-op if expanded)
+        await pilot.press("down")  # Select first linter, usually "Pyflakes (F)"
+        await pilot.press("enter")  # Select the linter node to populate the table
+        await pilot.pause(0.5)
+
+        # Focus the table and select a specific rule (e.g., F401 or similar)
+        # Tab moves focus from Tree to DataTable
+        await pilot.press("tab")
         await pilot.pause(0.2)
+        # Scroll down to a rule we want to showcase (e.g., F401)
+        await pilot.press("down", "down")
+        # Enter triggers RowSelected, which updates the inspector with documentation
+        await pilot.press("enter")
+        # Critical: Rule documentation fetch is async; wait long enough for it to render!
+        await pilot.pause(1.0)
+
         path = SCREENSHOTS_DIR / "rule_details.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
         # 3. Omnibox / Search
         await pilot.press("/")
-        await pilot.pause(0.1)
-        # Type a search query
-        await pilot.press(*"RUF012")
-        await pilot.pause(0.1)
+        await pilot.pause(0.3)
+        # Type search: UP007 is a common, fixable rule
+        await pilot.press(*"UP007")
+        await pilot.pause(0.5)
         path = SCREENSHOTS_DIR / "search_omnibox.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
         # Close search
         await pilot.press("escape")
-        await pilot.pause(0.1)
+        await pilot.pause(0.2)
 
         # 4. Legend / Help
         await pilot.press("?")
-        await pilot.pause(0.1)
+        await pilot.pause(0.2)
         path = SCREENSHOTS_DIR / "legend_help.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
