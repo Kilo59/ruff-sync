@@ -29,6 +29,24 @@ table.add_columns("ID", "Name", "Score")
 table.add_row("1", "Alice", "100")
 ```
 
+#### Theming & Markup Resolution
+
+When adding rows to a `DataTable` that require theme-aware colors (e.g., success/error states), you cannot use Textual tokens like `$success` directly in the markup. You must resolve them to hex strings at runtime:
+
+```python
+def _render_row(self, item: Any) -> None:
+    # Resolve current theme colors safely
+    try:
+        theme = self.app.get_theme(self.app.theme)
+        success_clr = str(theme.success)
+    except (AttributeError, KeyError):
+        success_clr = "green"  # Fallback
+
+    # Use hex string in Rich markup
+    self.add_row(f"[{success_clr}]{item.name}[/]", ...)
+```
+
+
 ### `ListView` & `ListItem`
 Scrollable lists of items.
 

@@ -50,3 +50,4 @@ if __name__ == "__main__":
 > - **Fractional Units**: Use `fr` for fractional units (e.g. `width: 1fr`). A common typo is `rf`, which is invalid.
 > - **Async Handlers**: Event handlers can be `async def` or `def`. Use `async` if you need to `await` I/O or `post_message`.
 > - **Main Thread**: Do not block the main thread with long-running synchronous code. Use `self.run_worker()` for background tasks.
+- **Theme Tokens in Rich Markup**: Textual theme tokens (e.g., `$success`, `$accent`) **cannot** be used directly in Rich markup strings (like in `DataTable` cells). They must be resolved to hex strings at runtime: `str(self.app.get_theme(self.app.theme).success)`.
