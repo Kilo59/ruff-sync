@@ -102,43 +102,42 @@ class CategoryTable(DataTable[Any]):
         self.cursor_type = "row"
         self.add_columns("Key", "Value")
 
+    def _reset_columns(self, *cols: str) -> None:
+        """Clear the table and add the specified columns."""
+        self.clear(columns=True)
+        self.add_columns(*cols)
+
     @singledispatchmethod
     def render_node(self, node: Any) -> None:
         """Fallback for unhandled nodes."""
-        self.clear(columns=True)
-        self.add_columns("Key", "Value")
+        self._reset_columns("Key", "Value")
 
     @render_node.register
     def _(self, node: DictNode) -> None:
-        self.clear(columns=True)
-        self.add_columns("Key", "Value")
+        self._reset_columns("Key", "Value")
         for key, value in sorted(node.data.items()):
             self.add_row(key, str(value))
 
     @render_node.register
     def _(self, node: ListNode) -> None:
-        self.clear(columns=True)
-        self.add_columns("Key", "Value")
+        self._reset_columns("Key", "Value")
         for i, item in enumerate(node.data):
             self.add_row(str(i), str(item))
 
     @render_node.register
     def _(self, node: ScalarNode) -> None:
-        self.clear(columns=True)
-        self.add_columns("Key", "Value")
+        self._reset_columns("Key", "Value")
         self.add_row("Value", str(node.value))
 
     @render_node.register
     def _(self, node: RulesCollectionNode) -> None:
-        self.clear(columns=True)
-        self.add_columns("Code", "Name", "Linter", "Fix")
+        self._reset_columns("Code", "Name", "Linter", "Fix")
         effective_only = [r for r in node.effective_rules if r["status"] != "Disabled"]
         self._render_rules(effective_only)
 
     @render_node.register
     def _(self, node: LinterNode) -> None:
-        self.clear(columns=True)
-        self.add_columns("Code", "Name", "Linter", "Fix")
+        self._reset_columns("Code", "Name", "Linter", "Fix")
         prefix = node.linter.get("prefix", "")
         filtered = [r for r in node.effective_rules if r["code"].startswith(prefix)]
         self._render_rules(filtered)
