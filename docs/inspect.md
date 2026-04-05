@@ -20,11 +20,60 @@ The Ruff Config Inspection TUI provides a structured, interactive view of your `
 
 ### Installation
 
-The TUI components are optional to keep the base `ruff-sync` package lightweight. To use the inspection features, install `ruff-sync` with the `tui` extra:
+The TUI components are optional to keep the base `ruff-sync` package lightweight. To use the inspection features, install `ruff-sync` with the `tui` extra.
+
+#### ⚡ Recommended: Using `uv`
+
+##### Persistent Tool Installation
+
+The easiest way to use the TUI across all your projects is by installing `ruff-sync` with the `tui` extra as a [uv tool](https://docs.astral.sh/uv/guides/tools/):
 
 ```bash
-pip install "ruff-sync[tui]"
+uv tool install "ruff-sync[tui]"
+# Then simply run:
+ruff-inspect
 ```
+
+##### One-off Invocation
+
+If you just want to run the TUI once without a permanent installation, use `uvx`:
+
+```bash
+uvx --with "ruff-sync[tui]" ruff-sync inspect
+```
+
+##### Project-specific Development
+
+To use the TUI within a specific project, add it to your development dependencies:
+
+```bash
+uv add --dev "ruff-sync[tui]"
+# Then run it with:
+uv run ruff-inspect
+```
+
+---
+
+#### 🛠️ Other Installation Methods
+
+=== "pipx"
+
+    [pipx](https://github.com/pypa/pipx) is the recommended way to install Python CLIs globally in isolated environments.
+
+    ```bash
+    pipx install "ruff-sync[tui]"
+    ```
+
+=== "pip"
+
+    You can install the TUI from PyPI using `pip`:
+
+    ```bash
+    pip install "ruff-sync[tui]"
+    ```
+
+    > [!WARNING]
+    > We recommend using a virtual environment or `pipx` to avoid dependency conflicts with other global packages.
 
 ### Usage
 
