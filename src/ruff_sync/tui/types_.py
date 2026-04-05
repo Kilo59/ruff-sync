@@ -191,7 +191,19 @@ class LinterNode:
 
 
 class RuleNode:
-    """A node representing an individual Ruff rule."""
+    """A node representing an individual Ruff rule.
+
+    NOTE: Currently unused. In the read-only TUI, rule items are rendered
+    directly as `DataTable` rows rather than populated as polymorphic
+    `ConfigNode` tree elements, effectively stopping the tree hierarchy
+    at the Linter/Category level to prevent UX clutter.
+
+    This class is retained as structural scaffolding for the future
+    "Read-Write Interactive" phase. When building the Local Modification
+    Engine, `RuleNode` will be necessary as an abstraction to hold state
+    (e.g. toggled enabled/disabled, upstream drift provenance, and
+    attached `tomlkit` inline comments) mapped back to the TOML tree.
+    """
 
     def __init__(self, rule: RuffRule) -> None:
         """Initialize a Rule Node."""
