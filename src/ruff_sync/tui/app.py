@@ -15,7 +15,7 @@ from ruff_sync.config_io import load_local_ruff_config
 from ruff_sync.system import compute_effective_rules, get_all_ruff_rules, get_ruff_linters
 from ruff_sync.tui.constants import RULE_PATTERN
 from ruff_sync.tui.screens import LegendScreen, OmniboxScreen
-from ruff_sync.tui.themes import AMBER_EMBER, MATERIAL_GHOST, RUFF_SYNC_SLATE
+from ruff_sync.tui.themes import AMBER_EMBER
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
@@ -66,7 +66,6 @@ class RuffSyncApp(App[None]):
         ("?", "show_legend", "Show Legend"),
         ("l", "show_legend", "Show Legend"),
         ("c", "copy_content", "Copy Content"),
-        ("t", "change_theme", "Theme Picker"),
     ]
 
     def __init__(self, args: Arguments, **kwargs: Any) -> None:
@@ -108,9 +107,7 @@ class RuffSyncApp(App[None]):
         tree.focus()
 
         # Register and set the default theme
-        self.register_theme(RUFF_SYNC_SLATE)
         self.register_theme(AMBER_EMBER)
-        self.register_theme(MATERIAL_GHOST)
         self.theme = "amber-ember"
 
         # Prime the caches in the background
@@ -305,16 +302,3 @@ class RuffSyncApp(App[None]):
             self.notify("Copied content to clipboard", title="Clipboard")
         else:
             self.notify("No content to copy", severity="warning")
-
-    @override
-    def action_change_theme(self) -> None:
-        """Cycle through available themes."""
-        themes = list(self.available_themes)
-        try:
-            current_index = themes.index(self.theme)
-        except ValueError:
-            current_index = 0
-
-        next_index = (current_index + 1) % len(themes)
-        self.theme = themes[next_index]
-        self.notify(f"Theme changed to: {self.theme}", title="Theme Picker")
