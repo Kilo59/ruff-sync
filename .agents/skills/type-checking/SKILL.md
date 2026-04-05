@@ -54,9 +54,24 @@ Follow this checklist *before* applying any narrowing technique:
 3. **Is it a project-specific sentinel?** -> `if x is not MISSING:`.
 4. **Is it a capability check?** -> `@runtime_checkable Protocol` (only if runtime check is required).
 
+## Evaluation
+
+Verify adherence to these rules using the following test cases in `evals.json`:
+
+1. **Healthy Generics**: Confirm preference for `TypeVar` over `Any` in simple cases.
+2. **Strategic ROI**: Verify that complex core utilities are justified as high-value infrastructure.
+3. **Toxic Over-Engineering**: Ensure the "10-Second Rule" is applied to one-off CLI or UI code.
+4. **Banned Casts**: Verify that the agent rejects `typing.cast`.
+5. **Design-Phase Triggers**: Confirm that `Protocols` are recommended for new features.
+
+**Mandatory Check**: Always run the type-safety audit after any change:
+```bash
+uv run .agents/skills/type-checking/scripts/audit_types.py
+```
+
 ## References
 
 - [Generics Spectrum](references/refactoring-patterns.md) — Strategic vs. Toxic examples.
-- [Generics Best Practices](references/generics.md) — How to use TypeVars correctly in 3.10.
-- [Error Code Lookup](references/error-code-lookup.md) — Mapping Mypy codes to project-safe fixes.
+- [Generics Best Practices](references/generics.md) — How to use TypeVars correctly.
+- [Error Code Lookup](references/error-code-lookup.md) — Project-safe Mypy fixes.
 - [Protocol Patterns](references/protocol-patterns.md) — Structural typing workflows.
