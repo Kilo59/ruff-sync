@@ -846,9 +846,6 @@ def _find_changed_keys(
     """
     changed: list[str] = []
 
-    source_is_mapping = isinstance(source, Mapping)
-    merged_is_mapping = isinstance(merged, Mapping)
-
     if isinstance(source, Mapping) and isinstance(merged, Mapping):
         for key, merged_val in merged.items():
             full_key = f"{prefix}.{key}" if prefix else str(key)
@@ -871,7 +868,7 @@ def _find_changed_keys(
                     changed.extend(nested)
                 elif src_unwrapped != mrg_unwrapped:
                     changed.append(full_key)
-    elif source_is_mapping != merged_is_mapping:
+    elif isinstance(source, Mapping) != isinstance(merged, Mapping):
         # Structural type mismatch (table vs scalar or vice-versa): treat the
         # whole node as changed rather than attempting a meaningless value
         # comparison between incompatible TOML node types.
