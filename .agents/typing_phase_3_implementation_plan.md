@@ -7,7 +7,7 @@ This plan implements Phase 3 of the `type-checking` refactoring recommendations:
 > [!IMPORTANT]
 > This refactor introduces a new `ConfigNode` protocol and several concrete implementations. This changes how data is stored and accessed within the TUI widgets' `data` attributes (moving from raw `dict`/`list` to `ConfigNode` objects).
 
-- **Architectural Shift**: Complexity is "shifted" from the widget rendering logic (`widgets.py`) and selection handling (`app.py`) into polymorphic data models (`tui/models.py`).
+- **Architectural Shift**: Complexity is "shifted" from the widget rendering logic (`widgets.py`) and selection handling (`app.py`) into polymorphic data types (`tui/types_.py`).
 - **State Management**: Nodes will now handle their own "summary" and "label" generation, as well as providing a unified interface for table row generation.
 
 ## Proposed Changes
@@ -16,9 +16,9 @@ This plan implements Phase 3 of the `type-checking` refactoring recommendations:
 
 ---
 
-#### [NEW] [models.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/models.py)
+#### [NEW] [types_.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/types_.py)
 
-Create a dedicated models layer for the TUI to enforce structured payloads.
+Create a dedicated types layer for the TUI to enforce structured payloads.
 
 - **`ConfigNode` (Protocol)**: Defines the base interface for TUI nodes. Rather than bloating the model with UI-specific rendering strings, keep it focused on state:
     - `path()` / `key()`: Returns the node's configuration path or label.
@@ -68,7 +68,7 @@ Instead of the model deciding *how* it looks (`node.table_data()`), shift render
 ## Verification Plan
 
 ### Automated Tests
-- Create `tests/test_tui_models.py` to verify `wrap_data` handles deeply nested dicts/lists.
+- Create `tests/test_tui_types.py` to verify `wrap_data` handles deeply nested dicts/lists.
 - Create explicit test verifying `@singledispatchmethod` correct invocation based on Node types.
 - Ensure `uv run mypy .` is clean.
 

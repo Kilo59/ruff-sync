@@ -14,7 +14,7 @@ from typing_extensions import override
 if TYPE_CHECKING:
     from textual.app import ComposeResult
 
-    from ruff_sync.models import RuffRule
+    from ruff_sync.types_ import RuffRule
 
 MAX_SEARCH_RESULTS: Final = 15
 

@@ -1,11 +1,11 @@
-"""Data models for the TUI."""
+"""Data types for the TUI."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from ruff_sync.models import RuffLinter, RuffRule
+    from ruff_sync.types_ import RuffLinter, RuffRule
 
 
 @runtime_checkable

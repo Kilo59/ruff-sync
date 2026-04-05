@@ -1,4 +1,4 @@
-"""Core data models and TypedDicts for ruff-sync."""
+"""Core data types and TypedDicts for ruff-sync."""
 
 from __future__ import annotations
 

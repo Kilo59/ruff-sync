@@ -86,6 +86,6 @@ The codebase sometimes uses `isinstance` to distinguish between success values v
 
 ## Summary of Next Steps
 
-1. **Phase 1 [COMPLETED]:** Added `TypedDict` declarations in `src/ruff_sync/models.py` and replaced corresponding generic `dict[str, Any]` typings inside `system.py` and across the TUI application.
+1. **Phase 1 [COMPLETED]:** Added `TypedDict` declarations in `src/ruff_sync/types_.py` and replaced corresponding generic `dict[str, Any]` typings inside `system.py` and across the TUI application.
 2. **Phase 2 [COMPLETED]:** Refactored the TOML merging tree (`src/ruff_sync/core.py`) to eliminate `Any` parameters, replacing them with strict type declarations (`MutableMapping`, `Mapping`) to ensure robust static validation without runtime performance penalties.
 3. **Phase 3:** Address the nested `isinstance` logic in `tui/widgets.py` by converting raw payloads into an internal AST / Node tree prior to rendering.

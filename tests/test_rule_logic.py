@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, cast
 from ruff_sync.system import compute_effective_rules
 
 if TYPE_CHECKING:
-    from ruff_sync.models import RuffRule
+    from ruff_sync.types_ import RuffRule
 
 
 def test_compute_effective_rules_basic():

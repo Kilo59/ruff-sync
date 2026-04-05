@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Final
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from ruff_sync.models import RuffLinter, RuffRule
+    from ruff_sync.types_ import RuffLinter, RuffRule
 
 LOGGER = logging.getLogger(__name__)
 

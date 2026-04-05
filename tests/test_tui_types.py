@@ -1,8 +1,8 @@
-"""Tests for the TUI ConfigNode AST models."""
+"""Tests for the TUI ConfigNode AST types."""
 
 from __future__ import annotations
 
-from ruff_sync.tui.models import DictNode, ListNode, ScalarNode, wrap_data
+from ruff_sync.tui.types_ import DictNode, ListNode, ScalarNode, wrap_data
 
 
 def test_wrap_data_scalar() -> None:

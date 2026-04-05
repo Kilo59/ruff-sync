@@ -26,7 +26,7 @@ For nested API structure, create subdirectories:
 docs/api/
 ├── index.md      - API overview
 ├── client.md     - ::: package.client.Client
-├── models.md     - ::: package.models
+├── types_.md      - ::: package.types_
 └── entities/
     ├── user.md   - ::: package.entities.User
     └── item.md   - ::: package.entities.Item

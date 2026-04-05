@@ -14,14 +14,14 @@ from typing_extensions import override
 from ruff_sync.config_io import load_local_ruff_config
 from ruff_sync.system import compute_effective_rules, get_all_ruff_rules, get_ruff_linters
 from ruff_sync.tui.constants import RULE_PATTERN
-from ruff_sync.tui.models import ConfigNode, LinterNode, RulesCollectionNode, wrap_data
 from ruff_sync.tui.screens import LegendScreen, OmniboxScreen
 from ruff_sync.tui.themes import AMBER_EMBER
+from ruff_sync.tui.types_ import ConfigNode, LinterNode, RulesCollectionNode, wrap_data
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
-    from ruff_sync.models import RuffLinter, RuffRule
+    from ruff_sync.types_ import RuffLinter, RuffRule
 
 
 LOGGER = logging.getLogger(__name__)

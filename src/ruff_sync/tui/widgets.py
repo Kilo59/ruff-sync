@@ -10,7 +10,7 @@ from textual.widgets import DataTable, Markdown, Tree
 from typing_extensions import override
 
 from ruff_sync.system import get_ruff_config_markdown, get_ruff_rule_markdown
-from ruff_sync.tui.models import (
+from ruff_sync.tui.types_ import (
     ConfigNode,
     DictNode,
     LinterNode,
@@ -22,7 +22,7 @@ from ruff_sync.tui.models import (
 if TYPE_CHECKING:
     from textual.widgets.tree import TreeNode
 
-    from ruff_sync.models import RuffRule
+    from ruff_sync.types_ import RuffRule
 
 
 class ConfigTree(Tree[Any]):
@@ -33,7 +33,7 @@ class ConfigTree(Tree[Any]):
         root_node: ConfigNode,
         rules_node: ConfigNode | None = None,
     ) -> None:
-        """Populate the tree using ConfigNode models."""
+        """Populate the tree using ConfigNode types."""
         self.clear()
         self.root.expand()
         if rules_node:
