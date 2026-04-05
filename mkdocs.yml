@@ -130,5 +130,6 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Pre-defined Configs: pre-defined-configs.md
   - Agent Skill: agent-skill.md
+  - Ruff Config Inspection: inspect.md
   - Contributing: contributing.md
   - API Reference: reference/
