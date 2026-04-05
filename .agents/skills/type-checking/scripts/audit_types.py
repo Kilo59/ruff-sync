@@ -56,7 +56,12 @@ def scan_isinstance_chains() -> bool:
         if any(part in str(path) for part in ("site-packages", ".venv", ".agents")):
             continue
 
-        content = path.read_text(encoding="utf-8")
+        try:
+            content = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError) as e:
+            console.print(f"[yellow]⚠️ Warning:[/] Skipping unreadable file {path}: {e}")
+            continue
+
         matches = list(chain_pattern.finditer(content))
         if matches:
             for match in matches:

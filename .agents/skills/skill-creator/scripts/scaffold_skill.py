@@ -20,6 +20,12 @@ from rich.panel import Panel
 # parent.parent -> skill-creator/
 # parent.parent.parent -> skills/
 SKILLS_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+if SKILLS_ROOT.name != "skills" or SKILLS_ROOT.parent.name != ".agents":
+    print(
+        f"[red]Error:[/red] Invalid repository layout. "
+        f"SKILLS_ROOT must be '.agents/skills', but got '{SKILLS_ROOT}'."
+    )
+    sys.exit(1)
 
 SKILL_TEMPLATE = """---
 name: {name}

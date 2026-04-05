@@ -2,7 +2,7 @@
 
 In Python 3.10, variance (covariance, contravariance) is handled via `TypeVar` arguments.
 
-## Why Variance Matters?
+## Why Variance Matters
 
 Variance determines if a `List[Dog]` is compatible with a `List[Animal]`.
 

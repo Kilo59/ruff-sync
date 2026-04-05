@@ -23,7 +23,7 @@ def get_keys(data: Mapping[KT, VT]) -> list[KT]:
 
 Follow the standard Python conventions for protocols:
 - **`SupportsX`**: Use for capabilities (e.g., `SupportsClose`, `SupportsRead`).
-- **`Able` Suffix**: Use for common structural types (e.g., `Closable`, `Mergable`).
+- **`Able` Suffix**: Use for common structural types (e.g., `Closable`, `Mergeable`).
 
 ```python
 from typing import Protocol

@@ -52,5 +52,5 @@ class NestedDict(Protocol):
 
 1. **Keep it Minimal**: Only define the methods you actually need for your function. A `Protocol` with 1 method is better than 10.
 2. **Naming**: Prefer `SupportsX` or `Able` suffixes (e.g. `SupportsRead`, `Parsable`).
-3. **Internal Protocols**: Mark them with a leading underscore (e.g. `_Mergable`) if they are only used within a single module.
+3. **Internal Protocols**: Mark them with a leading underscore (e.g. `_Mergeable`) if they are only used within a single module.
 4. **Python 3.10**: Remember that `Protocol` comes from `typing`. No need for `typing_extensions` for the base class.

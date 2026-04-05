@@ -41,7 +41,7 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 4. **Develop the Procedure & Scripts**:
    - Favor procedural instructions ("To do X, run Y") over declarative ones.
    - Bundle complex logic in `scripts/` using [references/using-scripts.md](references/using-scripts.md). Ensure any helper scripts are robust (add type hints, lint with `ruff`, and consider unit tests).
-   - Include a "Quick Start" section for the most common usecase.
+   - Include a "Quick Start" section for the most common use case.
    - Use checklists for multi-step workflows.
 
 5. **Progressive Disclosure (PD)**:
