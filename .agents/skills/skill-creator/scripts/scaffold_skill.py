@@ -7,13 +7,19 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import re
+import shutil
 import sys
 
 from rich import print
 from rich.panel import Panel
 
-# The root directory for skills
-SKILLS_ROOT = pathlib.Path(".agents/skills")
+# The root directory for skills, derived relative to the script location:
+# .agents/skills/skill-creator/scripts/scaffold_skill.py
+# parent -> scripts/
+# parent.parent -> skill-creator/
+# parent.parent.parent -> skills/
+SKILLS_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 
 SKILL_TEMPLATE = """---
 name: {name}
@@ -65,48 +71,73 @@ This documentation covers the initial setup and common use cases for the `{name}
 """
 
 
+class SkillScaffoldError(Exception):
+    """Raised when skill scaffolding cannot be completed."""
+
+
+def validate_kebab_case(name: str) -> None:
+    """Validate that the name is kebab-case (lowercase, numbers, and hyphens)."""
+    if not re.match(r"^[a-z0-9-]+$", name):
+        msg = f"Invalid skill name '{name}'. Name must be kebab-case (e.g., 'my-cool-skill')."
+        raise SkillScaffoldError(msg)
+
+
 def scaffold_skill(name: str, description: str, keywords: str) -> None:
+    """Scaffold a new skill directory and template.
+
+    Raises:
+        SkillScaffoldError: If the name is invalid or the directory already exists.
+    """
+    validate_kebab_case(name)
+
     skill_dir = SKILLS_ROOT / name
     if skill_dir.exists():
-        print(f"[red]Error: Skill directory '{skill_dir}' already exists.[/red]")
-        sys.exit(1)
+        msg = f"Skill directory '{skill_dir}' already exists."
+        raise SkillScaffoldError(msg)
 
-    # Create directories
-    skill_dir.mkdir(parents=True)
-    refs_dir = skill_dir / "references"
-    refs_dir.mkdir()
-    (skill_dir / "scripts").mkdir()
-    (skill_dir / "assets").mkdir()
+    try:
+        # Create directories
+        skill_dir.mkdir(parents=True)
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+        (skill_dir / "scripts").mkdir()
+        (skill_dir / "assets").mkdir()
 
-    # Create SKILL.md
-    skill_md = skill_dir / "SKILL.md"
-    skill_md.write_text(
-        SKILL_TEMPLATE.format(
-            name=name,
-            name_title=name.replace("-", " ").title(),
-            description=description,
-            keywords=keywords,
+        # Create SKILL.md
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text(
+            SKILL_TEMPLATE.format(
+                name=name,
+                name_title=name.replace("-", " ").title(),
+                description=description,
+                keywords=keywords,
+            )
         )
-    )
 
-    # Create Quickstart reference
-    quickstart_md = refs_dir / "quickstart.md"
-    quickstart_md.write_text(
-        QUICKSTART_TEMPLATE.format(name=name, name_title=name.replace("-", " ").title())
-    )
-
-    print(
-        Panel(
-            f"[green]Successfully scaffolded new skill:[/green] [white]{name}[/white]\n"
-            f"[dim]Directory: {skill_dir}[/dim]\n\n"
-            f"[bold]Next steps:[/bold]\n"
-            f"1. Edit [blue]{skill_md}[/blue] to add procedural instructions.\n"
-            f"2. Add your reference docs in [blue]{refs_dir}[/blue].\n"
-            f"3. Run an eval to verify activation with the new description.",
-            title="Skill Scaffolder",
-            expand=False,
+        # Create Quickstart reference
+        quickstart_md = refs_dir / "quickstart.md"
+        quickstart_md.write_text(
+            QUICKSTART_TEMPLATE.format(name=name, name_title=name.replace("-", " ").title())
         )
-    )
+
+        print(
+            Panel(
+                f"[green]Successfully scaffolded new skill:[/green] [white]{name}[/white]\n"
+                f"[dim]Directory: {skill_dir}[/dim]\n\n"
+                f"[bold]Next steps:[/bold]\n"
+                f"1. Edit [blue]{skill_md}[/blue] to add procedural instructions.\n"
+                f"2. Add your reference docs in [blue]{refs_dir}[/blue].\n"
+                f"3. Run an eval to verify activation with the new description.",
+                title="Skill Scaffolder",
+                expand=False,
+            )
+        )
+    except Exception as e:
+        # Clean up if partially created
+        if skill_dir.exists():
+            shutil.rmtree(skill_dir)
+        msg = f"Failed to create skill: {e}"
+        raise SkillScaffoldError(msg) from e
 
 
 def main() -> None:
@@ -124,7 +155,15 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    scaffold_skill(args.name, args.description, args.keywords)
+
+    try:
+        scaffold_skill(args.name, args.description, args.keywords)
+    except SkillScaffoldError as e:
+        print(f"[red]Error:[/red] {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"[red]Unexpected Error:[/red] {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

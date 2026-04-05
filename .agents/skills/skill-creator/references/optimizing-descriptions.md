@@ -12,7 +12,7 @@ The `description` field in a Skill's frontmatter determines *if* the agent choos
 ## 2. Avoiding Overfitting
 
 - **Broaden the Scope**: If you miss a "should-trigger" case, broaden the description.
-- **Avoid Key-Word Stuffing**: Don't just add words from failed queries. Identify the *general category* those words represent.
+- **Avoid Keyword Stuffing**: Don't just add words from failed queries. Identify the *general category* those words represent.
 - **Structural Changes**: If tweaks fail, try a different framing or sentence structure.
 
 ## 3. Testing with Queries
