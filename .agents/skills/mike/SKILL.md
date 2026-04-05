@@ -129,3 +129,22 @@ The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflo
 
 ### 404 for `versions.json`
 - If you see a 404 for `/versions.json` but `https://<user>.github.io/<repo>/versions.json` exists, the switcher is looking at the domain root instead of the project root. Verify `site_url` includes the repository name and has a trailing slash.
+
+## Post-Mortem & Known Issues
+
+> [!CAUTION]
+> **Current Status**: Documentation versioning is currently **BROKEN** on the live site (`kilo59.github.io/ruff-sync`).
+
+### Failed Repair History
+The following fixes have been attempted and **FAILED** to resolve the issue:
+1.  **Lowercasing `site_url`**: Normalizing the repository name in the URL (e.g., `ruff-sync` instead of `Ruff-Sync`) did not fix the 404s for `versions.json`.
+2.  **Removing `theme.version`**: Removing the redundant Material 9.x config did not restore the switcher.
+3.  **Adding `canonical_version: stable`**: Adding this to the `mike` plugin in `mkdocs.yml` was intended to fix path resolution but has not fixed the root page 404.
+4.  **CI Restoration Logic**: Adding `mike alias --push stable stable` to the CI to manually repair `versions.json` hasn't restored the picker on the root page.
+
+### Root Cause Suspicions
+- **GitHub Pages Subfolder Pathing**: The site is served from a subfolder (`/ruff-sync/`). `mike`'s JavaScript for the version switcher frequently struggles with calculating relative paths to `versions.json` when served from a subfolder if `site_url` or base paths are not perfectly aligned with the deployment environment.
+- **`versions.json` Drift**: The `versions.json` file on the `gh-pages` branch frequently becomes desynchronized or loses the `stable` entry, which triggers `mkdocs-material` to hide the switcher entirely.
+
+### Guidance for Future Agents
+Before attempting another "fix," you **MUST** verify the current state of `versions.json` on the `gh-pages` branch and check the browser console on the live site for 404 paths. Do not assume standard configurations will work without manual verification of the deployed assets.

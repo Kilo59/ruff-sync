@@ -21,15 +21,19 @@
    - Provide visual grouping for rule categories (e.g., `E` for pycodestyle, `F` for Pyflakes, `TC` for flake8-type-checking).
 3. **Contextual Inspector & Documentation**
    - When a user highlights a specific rule (e.g., `RUF012`), asynchronously execute `ruff rule <CODE>` to fetch and render the official documentation as Markdown.
-   - Surface related context depending on the selection: highlighting a rule exposes its documentation AND related configuration settings; highlighting a config setting might expose its structural definition or the specific rules it governs.
-4. **Fuzzy Search**
+   - When a user highlights a configuration setting (e.g., `lint.isort.combine-as-imports`), asynchronously execute `ruff config <SETTING>` to fetch its documentation, default value, and type information.
+   - Surface related context depending on the selection: highlighting a rule exposes its documentation AND related configuration settings; highlighting a config setting (in the Tree or CategoryTable) exposes its definition and usage examples.
+4. **Rich Metadata Rendering**
+   - The Inspector should distinguish between Rule documentation and Setting documentation.
+   - Setting documentation should clearly call out **Default Value** and **Type** in a dedicated header or sidebar within the inspector.
+5. **Fuzzy Search**
    - A search bar to quickly locate a specific configuration key or rule code without manual scrolling.
 
 ### 2.2 UX / UI Layout Concept
 - **Header:** Application title and current local repository path.
 - **Left Sidebar (Navigation):** `Tree` widget for configuration categories (`Global`, `Linting`, `Formatting`, `Rule Index`).
-- **Center Area (Main Content):** `DataTable` or `ListView` showing the keys and values for the selected category.
-- **Right/Bottom Panel (Inspector):** Context-aware inspector. Because `ruff rule <CODE>` output contains proper Markdown, this panel MUST robustly render Markdown (e.g., utilizing Textual's `Markdown` widget) while dynamically adjoining related setting/rule cross-references around it.
+- **Center Area (Main Content):** `DataTable` or `ListView` showing the keys and values for the selected category. This panel is dynamically hidden when inspecting dense documentation to maximize reading space.
+- **Right/Bottom Panel (Inspector):** Context-aware scrollable inspector (`overflow-y: auto`). Because `ruff rule <CODE>` output contains proper Markdown, this panel MUST robustly render Markdown (e.g., utilizing Textual's `Markdown` widget) while dynamically adjoining related setting/rule cross-references around it.
 - **Footer:** Action key bindings (`q` to Quit, `/` to Search, `?` for Help).
 
 ---

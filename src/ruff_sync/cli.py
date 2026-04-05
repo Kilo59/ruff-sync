@@ -42,6 +42,7 @@ from ruff_sync.core import (
     pull,
     resolve_raw_url,
 )
+from ruff_sync.dependencies import DependencyError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -378,6 +379,9 @@ def _resolve_upstream(args: CLIArguments, config: Config) -> tuple[URL, ...]:
             f"got {type(config_upstream).__name__}"
         )
 
+    if args.command == "inspect":
+        return ()
+
     PARSER.error(
         "❌ the following arguments are required: upstream "
         f"(or define it in [tool.ruff-sync] in {RuffConfigFileName.PYPROJECT_TOML}) 💥"
@@ -599,24 +603,36 @@ def main() -> int:
 
     try:
         if exec_args.command == "inspect":
-            from ruff_sync.dependencies import require_dependency  # noqa: PLC0415
+            from ruff_sync.tui import get_tui_app  # noqa: PLC0415
 
-            try:
-                require_dependency("textual", extra_name="tui")
-            except ImportError as e:
-                LOGGER.error(f"❌ {e}")  # noqa: TRY400
-                return 1
-
-            LOGGER.error("❌ The Terminal UI (inspect) is not yet implemented.")
-            return 1
+            app_class = get_tui_app()
+            return app_class(exec_args).run() or 0
 
         if exec_args.command == "check":
             return asyncio.run(check(exec_args))
         return asyncio.run(pull(exec_args))
+    except DependencyError as e:
+        LOGGER.error(f"❌ {e}")  # noqa: TRY400
+        return 1
     except UpstreamError as e:
         for url, err in e.errors:
             LOGGER.error(f"❌ Failed to fetch {url}: {err}")  # noqa: TRY400
         return 4
+
+
+def inspect() -> int:
+    """Entry point for the ruff-inspect console script."""
+    # Handle optional subcommands/args if user passed any to ruff-inspect
+    # but primarily ensure "inspect" is the command.
+    if len(sys.argv) > 1 and sys.argv[1] not in ("-h", "--help", "--version"):
+        # If they passed args but no command, insert 'inspect'
+        if sys.argv[1] not in ("pull", "check", "inspect"):
+            sys.argv.insert(1, "inspect")
+    else:
+        # Default to 'inspect' if no args or just flags
+        sys.argv.insert(1, "inspect")
+
+    return main()
 
 
 if __name__ == "__main__":
