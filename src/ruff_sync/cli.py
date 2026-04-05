@@ -42,6 +42,7 @@ from ruff_sync.core import (
     pull,
     resolve_raw_url,
 )
+from ruff_sync.dependencies import DependencyError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -610,6 +611,9 @@ def main() -> int:
         if exec_args.command == "check":
             return asyncio.run(check(exec_args))
         return asyncio.run(pull(exec_args))
+    except DependencyError as e:
+        LOGGER.error(f"❌ {e}")  # noqa: TRY400
+        return 1
     except UpstreamError as e:
         for url, err in e.errors:
             LOGGER.error(f"❌ Failed to fetch {url}: {err}")  # noqa: TRY400

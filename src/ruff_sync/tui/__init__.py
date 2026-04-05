@@ -15,7 +15,7 @@ def get_tui_app() -> type[RuffSyncApp]:
         The RuffSyncApp class.
 
     Raises:
-        SystemExit: If 'textual' is not installed or the TUI cannot be loaded.
+        DependencyError: If 'textual' is not installed or the TUI cannot be loaded.
     """
     from ruff_sync.dependencies import require_dependency  # noqa: PLC0415
 

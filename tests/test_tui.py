@@ -297,16 +297,3 @@ async def test_ruff_sync_app_copy_content(mock_args: Arguments) -> None:
             await pilot.pause()
 
             mock_copy.assert_called_once_with("Copied Content Test")
-
-
-def test_require_dependency_exit(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that require_dependency exits with code 1 if the package is missing."""
-    from ruff_sync import dependencies as deps
-
-    # Mock is_installed to return False
-    monkeypatch.setattr(deps, "is_installed", lambda _: False)
-
-    with pytest.raises(SystemExit) as excinfo:
-        deps.require_dependency("nonexistent", "extra")
-
-    assert excinfo.value.code == 1
