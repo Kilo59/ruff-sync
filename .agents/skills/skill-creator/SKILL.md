@@ -26,6 +26,7 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
    - This creates `.agents/skills/<name>/SKILL.md` and standard subdirectories.
 
 2. **Research & Plan**:
+   - Check existing skills in `.agents/skills/` to prevent duplication. Identify if an existing skill can just be extended instead of creating a new one.
    - Determine the scope of the skill (e.g., CLI wrapper, documentation guide, testing helper).
    - Identify existing project artifacts (style guides, API specs, CI workflows) to pull information from.
    - Design a test case or a set of "should-trigger" queries.
@@ -38,7 +39,7 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 
 4. **Develop the Procedure & Scripts**:
    - Favor procedural instructions ("To do X, run Y") over declarative ones.
-   - Bundle complex logic in `scripts/` using [references/using-scripts.md](references/using-scripts.md).
+   - Bundle complex logic in `scripts/` using [references/using-scripts.md](references/using-scripts.md). Ensure any helper scripts are robust (add type hints, lint with `ruff`, and consider unit tests).
    - Include a "Quick Start" section for the most common usecase.
    - Use checklists for multi-step workflows.
 
@@ -52,6 +53,10 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
    - Add a "Gotchas" section to address common pitfalls.
    - Iterate on instructions based on failed assertions or high variance.
 
+7. **Global Knowledge Sync**:
+   - If the new skill introduces fundamental rules or overarching context that all agents *must* inherently know *before* using the skill, add a very brief mention in `AGENTS.md`.
+   - **Caution**: Do not bloat `AGENTS.md`. Only link to the skill or summarize the rule in 1-2 sentences. Keep the detailed documentation inside the skill folder.
+
 ## Skill Quality Checklist
 
 - [ ] **Frontmatter**: Does the name match the directory name?
@@ -59,6 +64,8 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 - [ ] **Procedural**: Does it provide clear, actionable steps for the agent to follow?
 - [ ] **Context**: Does it include project-specific context (e.g., using `uv run`, `gh`, `ruff`)?
 - [ ] **Specificity**: Does the level of detail match the fragility of the task?
+- [ ] **Overlap**: Is the domain distinct enough that it doesn't overlap excessively with existing skills?
+- [ ] **Global Sync**: Have overarching project rules been bubbled up to `AGENTS.md` (while avoiding bloat)?
 
 ## References
 
