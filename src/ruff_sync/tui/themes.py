@@ -18,4 +18,5 @@ AMBER_EMBER = Theme(
     surface="#1E1E1E",
     panel="#2C2C2C",
     boost="#2C2C2C",
+    dark=True,
 )

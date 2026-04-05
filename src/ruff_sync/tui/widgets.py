@@ -143,15 +143,31 @@ class CategoryTable(DataTable[Any]):
         self._render_rules(filtered)
 
     def _render_rules(self, rules: list[RuffRule]) -> None:
+        """Render a list of rules in the table with theme-aware highlighting."""
+        # Resolve theme colors to hex strings for Rich markup safely
+        success_clr = "green"
+        warning_clr = "yellow"
+        accent_clr = "magenta"
+
+        try:
+            # We can access the theme via the App instance
+            theme = self.app.get_theme(self.app.theme)
+            success_clr = str(theme.success)
+            warning_clr = str(theme.warning)
+            accent_clr = str(theme.accent)
+        except (AttributeError, KeyError):
+            # Fallback for headless tests or if the app is not yet initialized
+            pass
+
         for rule in rules:
             status = rule.get("status", "Unknown")
 
             # Determine row color based on status
             color = ""
             if status == "Enabled":
-                color = "success"
+                color = success_clr
             elif status == "Ignored":
-                color = "warning"
+                color = warning_clr
             elif status == "Disabled":
                 color = "dim"
 
@@ -162,9 +178,9 @@ class CategoryTable(DataTable[Any]):
             fix = rule.get("fix_availability", "None")
             fix_markup = fix
             if fix == "Always":
-                fix_markup = f"[accent]{fix}[/]"
+                fix_markup = f"[{accent_clr}]{fix}[/]"
             elif fix in ("Sometimes", "Enforced"):
-                fix_markup = f"[warning]{fix}[/]"
+                fix_markup = f"[{warning_clr}]{fix}[/]"
 
             # Note: We still keep linter as-is for clarity
             self.add_row(code_markup, name_markup, rule["linter"], fix_markup, key=rule["code"])

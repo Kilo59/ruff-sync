@@ -10,7 +10,7 @@ from textual.widgets import DataTable, Tree
 from ruff_sync.cli import Arguments
 from ruff_sync.tui.app import RuffSyncApp
 from ruff_sync.tui.screens import LegendScreen
-from ruff_sync.tui.widgets import RuleInspector
+from ruff_sync.tui.widgets import CategoryTable, RuleInspector
 
 if TYPE_CHECKING:
     import pathlib
@@ -297,3 +297,87 @@ async def test_ruff_sync_app_copy_content(mock_args: Arguments) -> None:
             await pilot.pause()
 
             mock_copy.assert_called_once_with("Copied Content Test")
+
+
+@pytest.mark.asyncio
+async def test_category_table_resolves_theme_colors(
+    mock_args: Arguments, tmp_path: pathlib.Path
+) -> None:
+    """Verify that CategoryTable resolves theme tokens to hex strings in DataTable cells."""
+    # Create mock config
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.ruff]\n", encoding="utf-8")
+
+    app = RuffSyncApp(mock_args)
+    async with app.run_test() as pilot:
+        table = app.query_one("#category-table", CategoryTable)
+
+        # Manually trigger rule rendering with a rule that should be highlighted
+        test_rule = {
+            "code": "E101",
+            "name": "test-rule",
+            "linter": "pycodestyle",
+            "status": "Enabled",
+            "fix_availability": "Always",
+        }
+
+        # Wait for app to be fully mounted and theme to be set
+        await pilot.pause()
+        assert app.theme == "amber-ember"
+
+        # Re-render rules with our test rule
+        table.clear()
+        table._reset_columns("Code", "Name", "Linter", "Fix")
+        table._render_rules([test_rule])
+        await pilot.pause()
+
+        # Get the row content
+        row = table.get_row_at(0)
+        code_cell = str(row[0])
+        fix_cell = str(row[3])
+
+        # Success color from AMBER_EMBER is #81C784
+        # Accent color from AMBER_EMBER is #D81B60
+        success_hex = "#81c784"
+        accent_hex = "#d81b60"
+
+        assert success_hex in code_cell.lower()
+        assert accent_hex in fix_cell.lower()
+
+
+@pytest.mark.asyncio
+async def test_category_table_handles_ignored_status(
+    mock_args: Arguments, tmp_path: pathlib.Path
+) -> None:
+    """Verify that CategoryTable correctly highlights Ignored status and partially available fixes."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.ruff]\n", encoding="utf-8")
+
+    app = RuffSyncApp(mock_args)
+    async with app.run_test() as pilot:
+        table = app.query_one("#category-table", CategoryTable)
+
+        test_rule = {
+            "code": "F401",
+            "name": "unused-import",
+            "linter": "pyflakes",
+            "status": "Ignored",
+            "fix_availability": "Sometimes",
+        }
+
+        await pilot.pause()
+
+        table.clear()
+        table._reset_columns("Code", "Name", "Linter", "Fix")
+        table._render_rules([test_rule])
+        await pilot.pause()
+
+        row = table.get_row_at(0)
+        code_cell = str(row[0])
+        fix_cell = str(row[3])
+
+        # Warning color from AMBER_EMBER is #FFB300
+        warning_hex = "#ffb300"
+
+        assert warning_hex in code_cell.lower()
+        assert warning_hex in fix_cell.lower()
