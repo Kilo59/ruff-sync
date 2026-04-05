@@ -15,6 +15,7 @@ from ruff_sync.config_io import load_local_ruff_config
 from ruff_sync.system import compute_effective_rules, get_all_ruff_rules, get_ruff_linters
 from ruff_sync.tui.constants import RULE_PATTERN
 from ruff_sync.tui.screens import LegendScreen, OmniboxScreen
+from ruff_sync.tui.themes import AMBER_EMBER, MATERIAL_GHOST, RUFF_SYNC_SLATE
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
@@ -65,6 +66,7 @@ class RuffSyncApp(App[None]):
         ("?", "show_legend", "Show Legend"),
         ("l", "show_legend", "Show Legend"),
         ("c", "copy_content", "Copy Content"),
+        ("t", "change_theme", "Theme Picker"),
     ]
 
     def __init__(self, args: Arguments, **kwargs: Any) -> None:
@@ -104,6 +106,12 @@ class RuffSyncApp(App[None]):
         tree = self.query_one(ConfigTree)
         tree.populate(self.config, has_rules=True)
         tree.focus()
+
+        # Register and set the default theme
+        self.register_theme(RUFF_SYNC_SLATE)
+        self.register_theme(AMBER_EMBER)
+        self.register_theme(MATERIAL_GHOST)
+        self.theme = "amber-ember"
 
         # Prime the caches in the background
         self._prime_caches()
