@@ -5717,31 +5717,31 @@ If none found, it defaults to pyproject.toml unless the first upstream is a ruff
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/ruff_sync/formatters.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-713">713</a></span>
-<span class="normal"><a href="#__codelineno-0-714">714</a></span>
-<span class="normal"><a href="#__codelineno-0-715">715</a></span>
-<span class="normal"><a href="#__codelineno-0-716">716</a></span>
-<span class="normal"><a href="#__codelineno-0-717">717</a></span>
-<span class="normal"><a href="#__codelineno-0-718">718</a></span>
-<span class="normal"><a href="#__codelineno-0-719">719</a></span>
-<span class="normal"><a href="#__codelineno-0-720">720</a></span>
-<span class="normal"><a href="#__codelineno-0-721">721</a></span>
-<span class="normal"><a href="#__codelineno-0-722">722</a></span>
-<span class="normal"><a href="#__codelineno-0-723">723</a></span>
-<span class="normal"><a href="#__codelineno-0-724">724</a></span>
-<span class="normal"><a href="#__codelineno-0-725">725</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-713"><a id="__codelineno-0-713" name="__codelineno-0-713"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_formatter</span><span class="p">(</span><span class="n">output_format</span><span class="p">:</span> <span class="n">OutputFormat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResultFormatter</span><span class="p">:</span>
-</span><span id="__span-0-714"><a id="__codelineno-0-714" name="__codelineno-0-714"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the corresponding formatter for the given format.&quot;&quot;&quot;</span>
-</span><span id="__span-0-715"><a id="__codelineno-0-715" name="__codelineno-0-715"></a>    <span class="k">match</span> <span class="n">output_format</span><span class="p">:</span>
-</span><span id="__span-0-716"><a id="__codelineno-0-716" name="__codelineno-0-716"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">TEXT</span><span class="p">:</span>
-</span><span id="__span-0-717"><a id="__codelineno-0-717" name="__codelineno-0-717"></a>            <span class="k">return</span> <span class="n">TextFormatter</span><span class="p">()</span>
-</span><span id="__span-0-718"><a id="__codelineno-0-718" name="__codelineno-0-718"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">GITHUB</span><span class="p">:</span>
-</span><span id="__span-0-719"><a id="__codelineno-0-719" name="__codelineno-0-719"></a>            <span class="k">return</span> <span class="n">GithubFormatter</span><span class="p">()</span>
-</span><span id="__span-0-720"><a id="__codelineno-0-720" name="__codelineno-0-720"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">JSON</span><span class="p">:</span>
-</span><span id="__span-0-721"><a id="__codelineno-0-721" name="__codelineno-0-721"></a>            <span class="k">return</span> <span class="n">JsonFormatter</span><span class="p">()</span>
-</span><span id="__span-0-722"><a id="__codelineno-0-722" name="__codelineno-0-722"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">GITLAB</span><span class="p">:</span>
-</span><span id="__span-0-723"><a id="__codelineno-0-723" name="__codelineno-0-723"></a>            <span class="k">return</span> <span class="n">GitlabFormatter</span><span class="p">()</span>
-</span><span id="__span-0-724"><a id="__codelineno-0-724" name="__codelineno-0-724"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">SARIF</span><span class="p">:</span>
-</span><span id="__span-0-725"><a id="__codelineno-0-725" name="__codelineno-0-725"></a>            <span class="k">return</span> <span class="n">SarifFormatter</span><span class="p">()</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-804">804</a></span>
+<span class="normal"><a href="#__codelineno-0-805">805</a></span>
+<span class="normal"><a href="#__codelineno-0-806">806</a></span>
+<span class="normal"><a href="#__codelineno-0-807">807</a></span>
+<span class="normal"><a href="#__codelineno-0-808">808</a></span>
+<span class="normal"><a href="#__codelineno-0-809">809</a></span>
+<span class="normal"><a href="#__codelineno-0-810">810</a></span>
+<span class="normal"><a href="#__codelineno-0-811">811</a></span>
+<span class="normal"><a href="#__codelineno-0-812">812</a></span>
+<span class="normal"><a href="#__codelineno-0-813">813</a></span>
+<span class="normal"><a href="#__codelineno-0-814">814</a></span>
+<span class="normal"><a href="#__codelineno-0-815">815</a></span>
+<span class="normal"><a href="#__codelineno-0-816">816</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-804"><a id="__codelineno-0-804" name="__codelineno-0-804"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_formatter</span><span class="p">(</span><span class="n">output_format</span><span class="p">:</span> <span class="n">OutputFormat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResultFormatter</span><span class="p">:</span>
+</span><span id="__span-0-805"><a id="__codelineno-0-805" name="__codelineno-0-805"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the corresponding formatter for the given format.&quot;&quot;&quot;</span>
+</span><span id="__span-0-806"><a id="__codelineno-0-806" name="__codelineno-0-806"></a>    <span class="k">match</span> <span class="n">output_format</span><span class="p">:</span>
+</span><span id="__span-0-807"><a id="__codelineno-0-807" name="__codelineno-0-807"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">TEXT</span><span class="p">:</span>
+</span><span id="__span-0-808"><a id="__codelineno-0-808" name="__codelineno-0-808"></a>            <span class="k">return</span> <span class="n">TextFormatter</span><span class="p">()</span>
+</span><span id="__span-0-809"><a id="__codelineno-0-809" name="__codelineno-0-809"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">GITHUB</span><span class="p">:</span>
+</span><span id="__span-0-810"><a id="__codelineno-0-810" name="__codelineno-0-810"></a>            <span class="k">return</span> <span class="n">GithubFormatter</span><span class="p">()</span>
+</span><span id="__span-0-811"><a id="__codelineno-0-811" name="__codelineno-0-811"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">JSON</span><span class="p">:</span>
+</span><span id="__span-0-812"><a id="__codelineno-0-812" name="__codelineno-0-812"></a>            <span class="k">return</span> <span class="n">JsonFormatter</span><span class="p">()</span>
+</span><span id="__span-0-813"><a id="__codelineno-0-813" name="__codelineno-0-813"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">GITLAB</span><span class="p">:</span>
+</span><span id="__span-0-814"><a id="__codelineno-0-814" name="__codelineno-0-814"></a>            <span class="k">return</span> <span class="n">GitlabFormatter</span><span class="p">()</span>
+</span><span id="__span-0-815"><a id="__codelineno-0-815" name="__codelineno-0-815"></a>        <span class="k">case</span> <span class="n">OutputFormat</span><span class="o">.</span><span class="n">SARIF</span><span class="p">:</span>
+</span><span id="__span-0-816"><a id="__codelineno-0-816" name="__codelineno-0-816"></a>            <span class="k">return</span> <span class="n">SarifFormatter</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>

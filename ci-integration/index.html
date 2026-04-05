@@ -809,6 +809,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#job-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job Summary
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1797,6 +1808,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#job-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job Summary
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2048,7 +2070,14 @@
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx ruff-sync check --semantic --output-format github</span>
 </span></code></pre></div>
 <p>By using <code>--output-format github</code>, <code>ruff-sync</code> will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.</p>
+<blockquote>
+<p>[!NOTE]
+If multiple configuration drifts are detected in the same file, <code>ruff-sync</code> automatically groups them into a single, combined annotation to reduce visual noise and preserve your GitHub Actions annotation limits.</p>
+</blockquote>
 <p><img alt="GitHub PR Annotation" src="../assets/github-pr-annotation.png" /></p>
+<h4 id="job-summary">Job Summary<a class="headerlink" href="#job-summary" title="Permanent link">&para;</a></h4>
+<p>In addition to inline annotations, <code>ruff-sync</code> writes a structured Markdown report to the GitHub Actions <strong>Job Summary</strong> page. This provides a high-level overview of all drifts detected across the entire run, making it easy to see exactly what needs to be synchronized without scrolling through log files.</p>
+<p><img alt="GitHub Job Summary" src="../assets/github-job-summary.png" /></p>
 <h3 id="sarif-upload-github-advanced-security">SARIF Upload (GitHub Advanced Security)<a class="headerlink" href="#sarif-upload-github-advanced-security" title="Permanent link">&para;</a></h3>
 <p>For repositories with <a href="https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security">GitHub Advanced Security</a> enabled, upload SARIF results to track drift findings in the <strong>Security tab</strong> and get per-key inline PR annotations:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Check Ruff config (SARIF)</span>
@@ -2062,7 +2091,7 @@
 </span></code></pre></div>
 <p>The <code>|| true</code> ensures the upload step always runs even when drift is detected (exit code 1).</p>
 <blockquote>
-<p><strong>Why SARIF over <code>--output-format github</code>?</strong> The <code>github</code> format creates ephemeral PR annotations that disappear after the check re-runs. SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (<code>lint.select</code>, <code>target-version</code>, etc.) appears as a separate, deduplicated finding.</p>
+<p><strong>Why SARIF over <code>--output-format github</code>?</strong> The <code>github</code> format is excellent for lightweight, immediate feedback with a summarized job report. However, SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (<code>lint.select</code>, <code>target-version</code>, etc.) appears as a separate, deduplicated finding in the GitHub Security dashboard.</p>
 </blockquote>
 <h3 id="automated-sync-prs">Automated Sync PRs<a class="headerlink" href="#automated-sync-prs" title="Permanent link">&para;</a></h3>
 <p>Instead of just checking, you can have a bot automatically open a PR when the upstream configuration changes.</p>

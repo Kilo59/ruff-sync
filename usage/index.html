@@ -2197,10 +2197,12 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <li><strong><code>--exclude KEY...</code></strong>: Dotted paths of keys to keep local and never overwrite (e.g., <code>lint.isort</code>).</li>
 <li><strong><code>--init</code></strong>: Create a new <code>pyproject.toml</code> with the upstream configuration if it doesn't already exist. This automatically saves the upstream source and any other CLI flags into the <code>[tool.ruff-sync]</code> section.</li>
 <li><strong><code>--save</code> / <code>--no-save</code></strong>: Force serialization (or prevent serialization) of the provided CLI arguments (like <code>upstream</code>, <code>exclude</code>, etc.) directly into the <code>[tool.ruff-sync]</code> section of the target <code>pyproject.toml</code> for future use. Note: any credentials present in the upstream URL will cause this operation to safely abort.</li>
-<li><strong><code>--output-format [text|json|github]</code></strong>: Specify the output format for synchronization results.<ul>
+<li><strong><code>--output-format [text|json|github|gitlab|sarif]</code></strong>: Specify the output format for synchronization results.<ul>
 <li><code>text</code> (default): Human-readable terminal output.</li>
 <li><code>json</code>: Machine-readable JSON output for tool integration.</li>
-<li><code>github</code>: GitHub Actions workflow commands (<code>::error</code>, <code>::warning</code>) for inline PR annotations.</li>
+<li><code>github</code>: GitHub Actions workflow commands and Job Summary report.</li>
+<li><code>gitlab</code>: GitLab Code Quality report (JSON format).</li>
+<li><code>sarif</code>: Static Analysis Results Interchange Format (SARIF) for GitHub Security or GitLab SAST.</li>
 </ul>
 </li>
 <li><strong><code>--pre-commit</code></strong>: Sync the <code>astral-sh/ruff-pre-commit</code> hook version inside <code>.pre-commit-config.yaml</code> with the project's Ruff version.</li>
@@ -2218,7 +2220,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <li><strong><code>UPSTREAM_URL...</code></strong>: The source URL(s). Optional if defined locally.</li>
 <li><strong><code>--semantic</code></strong>: Ignore "non-functional" differences like whitespace, comments, or key order. Only errors if the actual Python-level data differs.</li>
 <li><strong><code>--diff</code> / <code>--no-diff</code></strong>: Control the display of the unified diff in the terminal.</li>
-<li><strong><code>--output-format [text|json|github]</code></strong>: Specify the output format for check results. Defaults to <code>text</code>.</li>
+<li><strong><code>--output-format [text|json|github|gitlab|sarif]</code></strong>: Specify the output format for check results (defaults to <code>text</code>).</li>
 <li><strong><code>--pre-commit</code></strong>: Verify that the <code>astral-sh/ruff-pre-commit</code> hook version matches the project's Ruff version in addition to checking configuration drift. If you have <code>pre-commit-version-sync = true</code> configured in your <code>pyproject.toml</code>, the <code>check</code> command will automatically respect this setting and you do not need to pass this flag.</li>
 </ul>
 <hr />
