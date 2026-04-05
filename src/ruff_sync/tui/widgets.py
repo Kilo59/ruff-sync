@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import singledispatchmethod
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual import work
@@ -9,11 +10,19 @@ from textual.widgets import DataTable, Markdown, Tree
 from typing_extensions import override
 
 from ruff_sync.system import get_ruff_config_markdown, get_ruff_rule_markdown
+from ruff_sync.tui.models import (
+    ConfigNode,
+    DictNode,
+    LinterNode,
+    ListNode,
+    RulesCollectionNode,
+    ScalarNode,
+)
 
 if TYPE_CHECKING:
     from textual.widgets.tree import TreeNode
 
-    from ruff_sync.models import RuffLinter, RuffRule
+    from ruff_sync.models import RuffRule
 
 
 class ConfigTree(Tree[Any]):
@@ -21,86 +30,27 @@ class ConfigTree(Tree[Any]):
 
     def populate(
         self,
-        config: dict[str, Any],
-        has_rules: bool = False,
-        linters: list[RuffLinter] | None = None,
-        effective_rules: list[RuffRule] | None = None,
+        root_node: ConfigNode,
+        rules_node: ConfigNode | None = None,
     ) -> None:
-        """Populate the tree with configuration sections.
-
-        Args:
-            config: The unwrapped dictionary of Ruff configuration.
-            has_rules: Whether to inject the 'Effective Rule Status' node.
-            linters: Optional linter metadata for expanding the rules node.
-            effective_rules: List of rules with status for filtering.
-        """
+        """Populate the tree using ConfigNode models."""
         self.clear()
         self.root.expand()
-        if has_rules:
-            rules_node = self.root.add("Effective Rule Status", data="__rules__")
-            if linters and effective_rules:
-                self._populate_linter_nodes(rules_node, linters, effective_rules)
-        self._populate_node(self.root, config)
+        if rules_node:
+            node = self.root.add(rules_node.key, data=rules_node)
+            self._populate_node(node, rules_node)
+
+        self._populate_node(self.root, root_node)
 
         # Auto-expand up to 2 levels if it fits in the current view
         self._expand_if_fits()
 
-    def _is_linter_active(self, linter: RuffLinter, effective_rules: list[RuffRule]) -> bool:
-        """Check if a linter (or any of its categories) has active/ignored rules."""
-        prefix = linter.get("prefix")
-        if prefix and any(
-            r["code"].startswith(prefix) and r["status"] != "Disabled" for r in effective_rules
-        ):
-            return True
-
-        if "categories" in linter:
-            return any(self._is_linter_active(c, effective_rules) for c in linter["categories"])
-
-        return False
-
-    def _populate_linter_nodes(
-        self,
-        parent: TreeNode[Any],
-        linters: list[RuffLinter],
-        effective_rules: list[RuffRule],
-    ) -> None:
-        """Recursively add linter category nodes to the tree."""
-        # Sort linters by name for better navigation
-        for linter in sorted(linters, key=lambda x: x["name"]):
-            # Filter: only show if this linter or any category has active rules
-            if not self._is_linter_active(linter, effective_rules):
-                continue
-
-            name = linter["name"]
-            prefix = linter.get("prefix")
-            label = f"{name} ({prefix})" if prefix else name
-
-            # Use 'linter' structure in data for easy detection
-            node_data = {"type": "linter", "prefix": prefix, "name": name}
-            node = parent.add(label, data=node_data)
-
-            # Recursive call for sub-categories (e.g. Pylint, pycodestyle)
-            if "categories" in linter:
-                self._populate_linter_nodes(node, linter["categories"], effective_rules)
-
-    def _populate_node(self, parent: TreeNode[Any], data: Any) -> None:
-        """Recursively add nodes to the tree.
-
-        Args:
-            parent: The parent tree node.
-            data: The data to add to the tree.
-        """
-        if isinstance(data, dict):
-            for key, value in sorted(data.items()):
-                node = parent.add(key, data=value)
-                if isinstance(value, (dict, list)):
-                    self._populate_node(node, value)
-        elif isinstance(data, list):
-            for i, item in enumerate(data):
-                label = str(item) if not isinstance(item, (dict, list)) else f"[{i}]"
-                node = parent.add(label, data=item)
-                if isinstance(item, (dict, list)):
-                    self._populate_node(node, item)
+    def _populate_node(self, parent: TreeNode[Any], data: ConfigNode) -> None:
+        """Recursively add ConfigNode children to the tree."""
+        for child in data.children():
+            node = parent.add(child.key, data=child)
+            if child.children():
+                self._populate_node(node, child)
 
     def _expand_if_fits(self) -> None:
         """Expand the first few levels of the tree if they fit in the vertical space."""
@@ -152,32 +102,48 @@ class CategoryTable(DataTable[Any]):
         self.cursor_type = "row"
         self.add_columns("Key", "Value")
 
-    def update_content(self, data: Any) -> None:
-        """Update the table rows based on the selected data.
-
-        Args:
-            data: The data to display in the table.
-        """
+    @singledispatchmethod
+    def render_node(self, node: Any) -> None:
+        """Fallback for unhandled nodes."""
         self.clear(columns=True)
         self.add_columns("Key", "Value")
-        if isinstance(data, dict):
-            for key, value in sorted(data.items()):
-                self.add_row(key, str(value))
-        elif isinstance(data, list):
-            for i, item in enumerate(data):
-                self.add_row(str(i), str(item))
-        else:
-            self.add_row("Value", str(data))
 
-    def update_rules(self, rules: list[RuffRule]) -> None:
-        """Update the table with a list of rules using row-level highlighting.
-
-        Args:
-            rules: The enriched rules list to display.
-        """
+    @render_node.register
+    def _(self, node: DictNode) -> None:
         self.clear(columns=True)
-        # Status is now indicated by row highlighting (colors), so column is removed
+        self.add_columns("Key", "Value")
+        for key, value in sorted(node.data.items()):
+            self.add_row(key, str(value))
+
+    @render_node.register
+    def _(self, node: ListNode) -> None:
+        self.clear(columns=True)
+        self.add_columns("Key", "Value")
+        for i, item in enumerate(node.data):
+            self.add_row(str(i), str(item))
+
+    @render_node.register
+    def _(self, node: ScalarNode) -> None:
+        self.clear(columns=True)
+        self.add_columns("Key", "Value")
+        self.add_row("Value", str(node.value))
+
+    @render_node.register
+    def _(self, node: RulesCollectionNode) -> None:
+        self.clear(columns=True)
         self.add_columns("Code", "Name", "Linter", "Fix")
+        effective_only = [r for r in node.effective_rules if r["status"] != "Disabled"]
+        self._render_rules(effective_only)
+
+    @render_node.register
+    def _(self, node: LinterNode) -> None:
+        self.clear(columns=True)
+        self.add_columns("Code", "Name", "Linter", "Fix")
+        prefix = node.linter.get("prefix", "")
+        filtered = [r for r in node.effective_rules if r["code"].startswith(prefix)]
+        self._render_rules(filtered)
+
+    def _render_rules(self, rules: list[RuffRule]) -> None:
         for rule in rules:
             status = rule.get("status", "Unknown")
 
@@ -188,9 +154,7 @@ class CategoryTable(DataTable[Any]):
             elif status == "Ignored":
                 color = "warning"
             elif status == "Disabled":
-                color = (
-                    "dim"  # Keep dim as it's a standard Rich style that works across backgrounds
-                )
+                color = "dim"
 
             # Rich uses [/] to close the nearest open tag
             code_markup = f"[{color}]{rule['code']}[/]" if color else rule["code"]
@@ -224,22 +188,19 @@ class RuleInspector(Markdown):
             "code in the table to view documentation or additional context."
         )
 
-    def show_context(self, path: str, value: Any) -> None:
-        """Display general context for a configuration setting.
-
-        Args:
-            path: The full configuration path (e.g., 'tool.ruff.lint.select').
-            value: The value of the setting.
-        """
-        # Show a summary for complex types, or the raw value for simple ones
-        if isinstance(value, dict):
-            summary = f"Table with {len(value)} keys"
-        elif isinstance(value, list):
-            summary = f"List with {len(value)} items"
+    def show_context(self, node: ConfigNode) -> None:
+        """Display general context for a configuration setting."""
+        # Use single dispatch or node attributes
+        if isinstance(node, DictNode):
+            summary = f"Table with {len(node.data)} keys"
+        elif isinstance(node, ListNode):
+            summary = f"List with {len(node.data)} items"
+        elif isinstance(node, ScalarNode):
+            summary = f"`{node.value}`"
         else:
-            summary = f"`{value}`"
+            summary = "Unknown type"
 
-        self.update(f"### Configuration Context\n\n**Path**: `{path}`\n\n**Value**: {summary}")
+        self.update(f"### Configuration Context\n\n**Path**: `{node.path}`\n\n**Value**: {summary}")
 
     @work(exclusive=True, group="inspector_update")
     async def fetch_and_display(
