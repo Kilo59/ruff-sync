@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from ruff_sync.cli import Arguments
     from ruff_sync.tui.widgets import ConfigTree
+    from ruff_sync.types_ import RuffRule
     from tests.conftest import CLIRunner
 
 
@@ -301,10 +302,11 @@ async def test_category_table_resolves_theme_colors(
         table = app.query_one("#category-table", CategoryTable)
 
         # Manually trigger rule rendering with a rule that should be highlighted
-        test_rule = {
+        test_rule: RuffRule = {
             "code": "E101",
             "name": "test-rule",
             "linter": "pycodestyle",
+            "summary": "test summary",
             "status": "Enabled",
             "fix_availability": "Always",
         }
@@ -347,10 +349,11 @@ async def test_category_table_handles_ignored_status(
     async with app.run_test() as pilot:
         table = app.query_one("#category-table", CategoryTable)
 
-        test_rule = {
+        test_rule: RuffRule = {
             "code": "F401",
             "name": "unused-import",
             "linter": "pyflakes",
+            "summary": "test summary",
             "status": "Ignored",
             "fix_availability": "Sometimes",
         }

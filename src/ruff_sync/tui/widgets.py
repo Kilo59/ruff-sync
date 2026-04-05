@@ -152,9 +152,10 @@ class CategoryTable(DataTable[Any]):
         try:
             # We can access the theme via the App instance
             theme = self.app.get_theme(self.app.theme)
-            success_clr = str(theme.success)
-            warning_clr = str(theme.warning)
-            accent_clr = str(theme.accent)
+            if theme:
+                success_clr = str(theme.success)
+                warning_clr = str(theme.warning)
+                accent_clr = str(theme.accent)
         except (AttributeError, KeyError):
             # Fallback for headless tests or if the app is not yet initialized
             pass
