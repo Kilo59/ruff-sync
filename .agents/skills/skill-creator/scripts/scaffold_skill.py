@@ -30,6 +30,13 @@ description: >-
 
 # {name_title}
 
+<!--
+  PROGESSIVE DISCLOSURE (PD) RULES:
+  - Keep this file UNDER 110 lines.
+  - This file = PROCEDURAL (How-To, Workflows, Checklists).
+  - Move deep-dive examples, logic trees, or recipes to references/.
+-->
+
 <High-level overview of the skill's purpose.>
 
 ## Quick Start
@@ -41,7 +48,7 @@ description: >-
 
 ## Common Workflows
 
-### {name_title} Setup
+### {name_title} Main Workflow
 
 - [ ] Step 1: <action>
 - [ ] Step 2: <action>
@@ -53,17 +60,19 @@ description: >-
 
 ## References
 
-- [Quickstart](references/quickstart.md) — (Edit this to point to actual references)
+- [Examples & Recipes](references/quickstart.md) — (Move detailed examples here)
 """
 
-QUICKSTART_TEMPLATE = """# {name_title} Quickstart
+QUICKSTART_TEMPLATE = """# {name_title} Examples & Recipes
 
-This documentation covers the initial setup and common use cases for the `{name}` skill.
+This reference contains detailed illustrative examples, edge cases, and recipes
+for the `{name}` skill.
 
-## Key Concepts
+## Recipe: Common Usecase
 
-- Concept 1: <description>
-- Concept 2: <description>
+```python
+# Detailed code example here
+```
 
 ## Troubleshooting
 

@@ -44,8 +44,9 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
    - Include a "Quick Start" section for the most common usecase.
    - Use checklists for multi-step workflows.
 
-5. **Progressive Disclosure**:
-   - If the skill is complex, move detailed references to a `references/` subdirectory.
+5. **Progressive Disclosure (PD)**:
+   - **Procedural Entry Point**: Keep the main `SKILL.md` strictly procedural (The "How-To") and under 110 lines.
+   - **Offload Details**: Move illustrative recipes, deep-dive code examples, technical deep-dives, and troubleshooting logs to a `references/` subdirectory.
    - See [references/best-practices.md](references/best-practices.md) for structuring tips.
 
 6. **Validation & Iteration**:
@@ -67,6 +68,8 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 - [ ] **Specificity**: Does the level of detail match the fragility of the task?
 - [ ] **Overlap**: Is the domain distinct enough that it doesn't overlap excessively with existing skills?
 - [ ] **Global Sync**: Have overarching project rules been bubbled up to `AGENTS.md` (while avoiding bloat)?
+- [ ] **PD Audit**: Is the main file under 110 lines and free of dense examples/logic trees?
+- [ ] **Quick Start**: Does the main file have a "Quick Start" section for the primary use case?
 - [ ] **Research Efficiency**: Did you prioritize fast tools (`search_web`/`read_url_content`) over the slow browser subagent for research?
 
 ## References

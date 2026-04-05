@@ -27,8 +27,14 @@ How to write skills that are well-scoped and calibrated to the task.
 
 ## 4. Progressive Disclosure
 
-- Keep `SKILL.md` under 150 lines if possible.
-- Move details (error tables, full API references, edge case logs) to `references/`.
+**Spending context wisely: Main file = Procedural. References = Illustrative.**
+- **Limit**: Keep the main `SKILL.md` under **110 lines**.
+- **The Entry Point**: Focus strictly on the "How-To" (workflows, checklists, high-level procedures).
+- **The References**: Move anything that is "Illustrative" or "Dense" to the `references/` directory. This includes:
+  - Complex decision trees or logic tables.
+  - Multi-line code examples/recipes.
+  - Full API references or error-code lookups.
+  - Troubleshooting logs or edge-case post-mortems.
 - This ensures the agent is only "weighed down" by relevant context when needed.
 
 ## 5. Gotchas & Common Pitfalls
