@@ -1,0 +1,37 @@
+# Agents-specific ruff linter overrides.
+# This configuration applies to all files within the .agents/ directory.
+#
+# WHY AGENT SCRIPTS ARE TREATED DIFFERENTLY:
+# ------------------------------------------
+# 1. Faster iteration: Agent-related code (skills, scripts, and examples) is
+#    often experimental, short-lived, or used for automation.
+# 2. Lower maintenance: We relax requirements like module-level docstrings
+#    to maintain speed and reduce boilerplate.
+# 3. Local use: These scripts are usually run locally by the agent or developer
+#    rather than being part of the core production library.
+# 4. Prototyping: Allowing assert statements (S101) makes it easier to write
+#    concise validation for specialized agent workflows.
+# 5. Usage context for examples: We disable rules that move imports into
+#    if TYPE_CHECKING blocks because skill examples may be integrated into
+#    other applications in ways we cannot predict. Runtime access to
+#    imported objects is preserved to ensure compatibility with various
+#    application patterns (decorators, runtime reflection, etc).
+
+# Inherit root linter settings from the project's pyproject.toml.
+extend = "../pyproject.toml"
+
+[lint]
+# Specific overrides for agent python code, scripts, and skills.
+extend-ignore = [
+    "D100",   # missing-docstring-in-module - Agent scripts don't require module-level docstrings.
+    "D103",   # missing-docstring-in-public-function - Agent functions don't require public docstrings.
+    "S101",   # assert-statement - Asserts are preferred over other validation for internal agent scripts.
+
+    # Preserve runtime access for standalone examples and unknown integration:
+    # Disable rules that move imports into if TYPE_CHECKING: blocks.
+    "TC001",  # Move third-party import into a type-checking block
+    "TC002",  # Move third-party import into a type-checking block
+    "TC003",  # Move second-party import into a type-checking block
+    "TC004",  # Move first-party import into a type-checking block
+    "TC005",  # Move standard library import into a type-checking block
+]

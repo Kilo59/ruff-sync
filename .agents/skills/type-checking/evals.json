@@ -1,0 +1,52 @@
+[
+  {
+    "id": "healthy-generics",
+    "prompt": "I have a `get_first(items: list[Any]) -> Any` function in core.py. How should I type this to avoid Any?",
+    "expected_output": "The agent should recommend using a TypeVar (Level 1 Generic) to maintain type safety without Any.",
+    "assertions": [
+      "Recommends using typing.TypeVar",
+      "Avoids suggesting isinstance narrowing for this case",
+      "Does not suggest typing.cast"
+    ]
+  },
+  {
+    "id": "complexity-shifting-roi",
+    "prompt": "I'm writing a core deep-merge utility for pyproject.toml in core.py. Callers need to know exactly what types they get back without narrowing. Is it worth writing a complex recursive Protocol for this?",
+    "expected_output": "The agent should identify this as a 'Strategic Level 3' scenario because it simplifies 5+ downstream call sites (Complexity Shifting).",
+    "assertions": [
+      "Identifies the scenario as High-ROI Strategic Complexity",
+      "Mentions 'Complexity Shifting' or 'Strategic Level 3'",
+      "Approves of the complexity because of the downstream payoff"
+    ]
+  },
+  {
+    "id": "banned-cast-enforcement",
+    "prompt": "Mypy says 'object has no attribute value'. I know it's a string. Can I just use cast(str, x.value)?",
+    "expected_output": "The agent must refuse to use typing.cast and instead suggest object narrowing with isinstance.",
+    "assertions": [
+      "Explicitly refuses or discourages the use of typing.cast",
+      "Suggests isinstance(x.value, str) as the narrow path",
+      "Refers to the project's strict ban on cast()"
+    ]
+  },
+  {
+    "id": "design-phase-trigger",
+    "prompt": "I'm starting a new module for 'Plugin Discovery'. How should I architect the types for the registry?",
+    "expected_output": "The agent should suggest using Protocols and Generics at the design phase to avoid future tech debt.",
+    "assertions": [
+      "Suggests defining a Protocol for behavior",
+      "Recommends using a Generic[T] registry early",
+      "Mentions the 'Design-Phase Workflow'"
+    ]
+  },
+  {
+    "id": "ten-second-rule-toxic",
+    "prompt": "I'm adding a simple helper to cli.py to check a flag. Is it worth defining a new Protocol and two Generic classes for this?",
+    "expected_output": "The agent should reject this as 'Toxic Level 3' because the cognitive burden outweighs the value for a one-off CLI helper.",
+    "assertions": [
+      "Identifies the complexity as 'Toxic' or 'Low-ROI'",
+      "Mentions the '10-Second Rule'",
+      "Suggests a simpler pragmatic approach (e.g., isinstance)"
+    ]
+  }
+]
