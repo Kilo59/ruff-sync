@@ -41,9 +41,10 @@ def run_ruff_audit() -> bool:
 def scan_isinstance_chains() -> bool:
     """Scan for excessive or deeply nested isinstance chains."""
     console.print("[bold blue]Scanning for isinstance chains (anti-pattern)...[/]")
-    # Look for nested or consecutive isinstance (very basic heuristic)
+    # Look for consecutive isinstance checks with up to 5 lines of body code in between
     chain_pattern = re.compile(
-        r"(elif|if)\s+isinstance\(.*?\):.*?\n\s+" r"(elif|if)\s+isinstance\(", re.MULTILINE
+        r"(?:elif|if)\s+isinstance\(.*?\):(?:.*?\n){1,5}?\s*(?:elif|if)\s+isinstance\(",
+        re.MULTILINE,
     )
 
     found_any = False
@@ -53,7 +54,7 @@ def scan_isinstance_chains() -> bool:
     table.add_column("Context", style="white")
 
     for path in pathlib.Path().rglob("*.py"):
-        if any(part in str(path) for part in ("site-packages", ".venv", ".agents")):
+        if set(path.parts).intersection({".venv", ".agents", "site-packages", ".tox"}):
             continue
 
         try:
