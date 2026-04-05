@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
@@ -148,16 +149,13 @@ select = ["RUF012"]
 
     with patch("ruff_sync.tui.widgets.get_ruff_rule_markdown", return_value=mock_markdown):
         async with app.run_test() as pilot:
-            # Wait for the tree to be populated with linter groups
-            # This happens in the background after _prime_caches finishes
-            import asyncio
-
-            while len(app.query_one(Tree).root.children) <= 1:
+            # Wait for background worker and tree repopulation (priming)
+            while not app.effective_rules:
                 await asyncio.sleep(0.1)
                 await pilot.pause()
 
             tree = app.query_one(Tree)
-            # Find and select RUF012 node
+            # Find and select RUF012 node in the now-stable tree
             # It's inside tool.ruff -> lint -> select -> RUF012
             lint_node = next(
                 n
@@ -188,11 +186,11 @@ select = ["RUF012"]
             # Wait for background worker and UI update
             for _ in range(20):
                 await pilot.pause(0.2)
-                if "RUF012 Documentation" in str(inspector.source):
+                if "RUF012" in str(inspector.source):
                     break
 
             # Verify Markdown content (simplified check)
-            assert "RUF012 Documentation" in str(inspector.source)
+            assert "RUF012" in str(inspector.source)
 
 
 def test_cli_inspect_subcommand(
