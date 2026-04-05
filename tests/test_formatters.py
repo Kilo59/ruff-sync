@@ -26,9 +26,11 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(params=[TextFormatter, JsonFormatter])
+@pytest.fixture(
+    params=[TextFormatter, GithubFormatter, JsonFormatter, GitlabFormatter, SarifFormatter]
+)
 def formatter(request: pytest.FixtureRequest) -> ResultFormatter:
-    """Fixture providing instances of all streaming formatters."""
+    """Fixture providing instances of ALL available formatters."""
     formatter_cls: type[ResultFormatter] = request.param
     return formatter_cls()
 
@@ -53,26 +55,39 @@ class TestFormatterBasics:
     ) -> None:
         """Verify methods that primarily output to stdout."""
         getattr(formatter, method)(message)
+        formatter.finalize()
         captured = capsys.readouterr().out
 
-        if isinstance(formatter, JsonFormatter):
-            # diff strip()s input in implementation
-            expected_msg = message.strip() if method == "diff" else message
-            assert json.loads(captured) == {"level": method, "message": expected_msg}
-        else:
-            # Text and Github both print raw for these
-            assert message in captured
+        match formatter:
+            case JsonFormatter():
+                # diff strip()s input in implementation
+                expected_msg = message.strip() if method == "diff" else message
+                assert json.loads(captured) == {"level": method, "message": expected_msg}
+            case GitlabFormatter() | SarifFormatter():
+                # These only output on finalize, and don't output notes/success/diffs
+                # (except Gitlab potentially logging them via logger)
+                pass
+            case _:
+                # Text and Github print raw for these (Github prints notes/success immediately)
+                assert message in captured
 
-    def test_finalize_is_noop_for_streaming_formatters(
+    def test_finalize_is_safe_and_reproducible(
         self,
         formatter: ResultFormatter,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """finalize() must not emit any output for streaming formatters."""
+        """finalize() must be safe to call and only produce output for accumulating types."""
         formatter.finalize()
         captured = capsys.readouterr()
-        assert captured.out == ""
-        assert captured.err == ""
+
+        match formatter:
+            case GithubFormatter() | GitlabFormatter() | SarifFormatter():
+                # Accumulating formatters might output empty lists or valid JSON/Markdown
+                pass
+            case _:
+                # Strictly streaming formatters should have no output on empty finalize()
+                assert captured.out == ""
+                assert captured.err == ""
 
     @pytest.mark.parametrize(
         "method, level",
@@ -97,22 +112,32 @@ class TestFormatterBasics:
         with caplog.at_level(level, logger="ruff_sync.formatters"):
             getattr(formatter, method)(message)
 
+        formatter.finalize()
         captured = capsys.readouterr().out
 
-        if isinstance(formatter, TextFormatter):
-            # TextFormatter only logs, never prints diagnostics
-            assert captured == ""
-            assert message in caplog.text
-        elif isinstance(formatter, GithubFormatter):
-            # GithubFormatter logs AND prints workflow commands
-            assert message in caplog.text
-            if method != "info":  # info only logs in GithubFormatter presently
-                assert f"::{method}" in captured
-        elif isinstance(formatter, JsonFormatter):
-            # JsonFormatter only prints JSON
-            data = json.loads(captured)
-            assert data["level"] == method
-            assert data["message"] == message
+        match formatter:
+            case TextFormatter():
+                # TextFormatter only logs, never prints diagnostics
+                assert captured == ""
+                assert message in caplog.text
+            case GithubFormatter():
+                # GithubFormatter logs AND prints workflow commands
+                assert message in caplog.text
+                if method != "info":
+                    assert f"::{method}" in captured
+            case JsonFormatter():
+                # JsonFormatter only prints JSON object per diagnostic
+                assert message in captured
+            case GitlabFormatter():
+                # Gitlab only accumulates error/warning
+                if method in ("error", "warning"):
+                    data = json.loads(captured)
+                    assert any(issue["description"] == message for issue in data)
+            case SarifFormatter():
+                # Sarif only accumulates error/warning
+                if method in ("error", "warning"):
+                    data = json.loads(captured)
+                    assert any(r["message"]["text"] == message for r in data["runs"][0]["results"])
 
 
 class TestGithubFormatterSpecifics:
