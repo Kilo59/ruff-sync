@@ -41,3 +41,10 @@ How to write skills that are well-scoped and calibrated to the task.
 
 - Instruct the agent to create a plan first.
 - Provide validation scripts to check work before "committing" (e.g., linting, type-checking, or running a validator).
+
+## 7. Research Performance
+
+**Prioritize fast, text-based tools over the browser.**
+- **Fast**: Use `search_web` and `read_url_content` for documentation and general research.
+- **Slow**: Avoid `read_browser_page` (browser subagent) unless the target site is a single-page app (SPA) that requires JavaScript rendering or authentication.
+- **Guideline**: If you can see the content with a simple `curl`-like tool, do not spin up a browser. This saves significant time and keeps the agent focused.

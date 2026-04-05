@@ -27,6 +27,7 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 
 2. **Research & Plan**:
    - Check existing skills in `.agents/skills/` to prevent duplication. Identify if an existing skill can just be extended instead of creating a new one.
+   - **Research Tool Usage**: Prioritize `search_web` and `read_url_content` for gathering information. Use the browser subagent (`read_browser_page`) only as a last resort for sites requiring JavaScript or authentication.
    - Determine the scope of the skill (e.g., CLI wrapper, documentation guide, testing helper).
    - Identify existing project artifacts (style guides, API specs, CI workflows) to pull information from.
    - Design a test case or a set of "should-trigger" queries.
@@ -66,6 +67,7 @@ This skill provides a systematic approach to creating and optimizing "Agent Skil
 - [ ] **Specificity**: Does the level of detail match the fragility of the task?
 - [ ] **Overlap**: Is the domain distinct enough that it doesn't overlap excessively with existing skills?
 - [ ] **Global Sync**: Have overarching project rules been bubbled up to `AGENTS.md` (while avoiding bloat)?
+- [ ] **Research Efficiency**: Did you prioritize fast tools (`search_web`/`read_url_content`) over the slow browser subagent for research?
 
 ## References
 
