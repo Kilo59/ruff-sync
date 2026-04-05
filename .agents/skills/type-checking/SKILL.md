@@ -61,7 +61,7 @@ Verify adherence to these rules using the following test cases in `evals.json`:
 1. **Healthy Generics**: Confirm preference for `TypeVar` over `Any` in simple cases.
 2. **Strategic ROI**: Verify that complex core utilities are justified as high-value infrastructure.
 3. **Toxic Over-Engineering**: Ensure the "10-Second Rule" is applied to one-off CLI or UI code.
-4. **Banned Casts**: Verify that the agent rejects `typing.cast`.
+4. **Banned Casts**: Verify that the agent rejects `typing.cast` in source code. *(Note: `cast(Any, ...)` is permitted in `tests/` to satisfy `tomlkit` structural typing, as per project standards).*
 5. **Design-Phase Triggers**: Confirm that `Protocols` are recommended for new features.
 
 **Mandatory Check**: Always run the type-safety audit after any change:
