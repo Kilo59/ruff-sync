@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import pathlib
 from typing import Any, Final, Literal, Protocol, TypedDict
 
@@ -150,12 +151,27 @@ class TextFormatter:
         """No-op for streaming formatters."""
 
 
+class GithubIssue(TypedDict):
+    """GitHub Action output issue."""
+
+    level: Literal["error", "warning"]
+    message: str
+    file_path: pathlib.Path | None
+    check_name: str
+    drift_key: str | None
+
+
 class GithubFormatter:
     """GitHub Actions output formatter.
 
     Emits ``::error::`` and ``::warning::`` workflow commands for inline
-    annotations.
+    annotations, and writes a Markdown report to ``GITHUB_STEP_SUMMARY``.
     """
+
+    def __init__(self) -> None:
+        """Initialise an empty issue list."""
+        self._errors: list[GithubIssue] = []
+        self._warnings: list[GithubIssue] = []
 
     @staticmethod
     def _escape(value: str, is_property: bool = False) -> str:
@@ -190,17 +206,18 @@ class GithubFormatter:
         check_name: str = _DEFAULT_CHECK_NAME,
         drift_key: str | None = None,
     ) -> None:
-        """Print an error message as a GitHub Action error annotation."""
+        """Accumulate an error-level finding."""
         # Delegate standard log output to the logger to preserve context
         (logger or LOGGER).error(message)
-
-        file_val = self._escape(str(file_path), is_property=True) if file_path else ""
-        file_arg = f"file={file_val},line=1," if file_path else ""
-        title_val = self._escape("Ruff Sync Error", is_property=True)
-
-        clean_msg = message.removeprefix("❌ ").removeprefix("⚠️ ")
-        escaped_msg = self._escape(clean_msg)
-        print(f"::error {file_arg}title={title_val}::{escaped_msg}")
+        self._errors.append(
+            {
+                "level": "error",
+                "message": message,
+                "file_path": file_path,
+                "check_name": check_name,
+                "drift_key": drift_key,
+            }
+        )
 
     def warning(
         self,
@@ -210,16 +227,17 @@ class GithubFormatter:
         check_name: str = _DEFAULT_CHECK_NAME,
         drift_key: str | None = None,
     ) -> None:
-        """Print a warning message as a GitHub Action warning annotation."""
+        """Accumulate a warning-level finding."""
         (logger or LOGGER).warning(message)
-
-        file_val = self._escape(str(file_path), is_property=True) if file_path else ""
-        file_arg = f"file={file_val},line=1," if file_path else ""
-        title_val = self._escape("Ruff Sync Warning", is_property=True)
-
-        clean_msg = message.removeprefix("❌ ").removeprefix("⚠️ ")
-        escaped_msg = self._escape(clean_msg)
-        print(f"::warning {file_arg}title={title_val}::{escaped_msg}")
+        self._warnings.append(
+            {
+                "level": "warning",
+                "message": message,
+                "file_path": file_path,
+                "check_name": check_name,
+                "drift_key": drift_key,
+            }
+        )
 
     def debug(self, message: str, logger: logging.Logger | None = None) -> None:
         """Print a debug message as a GitHub Action debug annotation."""
@@ -232,7 +250,77 @@ class GithubFormatter:
         print(diff_text, end="")
 
     def finalize(self) -> None:
-        """No-op for streaming formatters."""
+        """Finalize and emit all accumulated issues as GitHub workflow commands.
+
+        If multiple issues exist for a single file/level, they are combined into
+        a single multi-line annotation to reduce visual noise.
+
+        A Markdown summary is also written to ``GITHUB_STEP_SUMMARY`` if the
+        environment variable is set.
+        """
+        all_issues = self._errors + self._warnings
+
+        # 1. Emit Inline Annotations
+        self._emit_annotations()
+
+        # 2. Write Step Summary
+        self._write_summary(all_issues)
+
+    def _emit_annotations(self) -> None:
+        """Group and emit issues as GitHub Action workflow commands."""
+        for level, issues in [("error", self._errors), ("warning", self._warnings)]:
+            # Group by file_path
+            by_file: dict[str, list[GithubIssue]] = {}
+            for issue in issues:
+                file_key = str(issue["file_path"] or "")
+                by_file.setdefault(file_key, []).append(issue)
+
+            for file_path_str, file_issues in by_file.items():
+                if not file_issues:
+                    continue
+
+                title_prefix = "Error" if level == "error" else "Warning"
+                title_val = self._escape(f"Ruff Sync {title_prefix}", is_property=True)
+                file_val = self._escape(file_path_str, is_property=True) if file_path_str else ""
+                file_arg = f"file={file_val},line=1," if file_val else ""
+
+                if len(file_issues) == 1:
+                    issue = file_issues[0]
+                    clean_msg = issue["message"].removeprefix("❌ ").removeprefix("⚠️ ")
+                    escaped_msg = self._escape(clean_msg)
+                else:
+                    # Combine into a single bulleted annotation
+                    combined_msg = (
+                        f"Multiple ruff-sync {level}s in {file_path_str or 'pyproject.toml'}:"
+                    )
+                    for issue in file_issues:
+                        clean_line = issue["message"].removeprefix("❌ ").removeprefix("⚠️ ")
+                        combined_msg += f"\n- {clean_line}"
+                    escaped_msg = self._escape(combined_msg)
+
+                print(f"::{level} {file_arg}title={title_val}::{escaped_msg}")
+
+    def _write_summary(self, all_issues: list[GithubIssue]) -> None:
+        """Write a Markdown report to the GitHub Step Summary file."""
+        summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+        if not summary_file or not all_issues:
+            return
+
+        summary_path = pathlib.Path(summary_file)
+        try:
+            with summary_path.open("a", encoding="utf-8") as f:
+                f.write("### 🔄 Ruff-Sync Drift Report\n\n")
+                f.write("| Severity | Key | Message | File |\n")
+                f.write("| :--- | :--- | :--- | :--- |\n")
+                for issue in all_issues:
+                    severity = "❌ Error" if issue["level"] == "error" else "⚠️ Warning"
+                    key = issue["drift_key"] or "-"
+                    clean_msg = issue["message"].removeprefix("❌ ").removeprefix("⚠️ ")
+                    file_name = issue["file_path"].name if issue["file_path"] else "pyproject.toml"
+                    f.write(f"| {severity} | `{key}` | {clean_msg} | `{file_name}` |\n")
+                f.write("\n")
+        except OSError:
+            LOGGER.exception(f"Failed to write to GITHUB_STEP_SUMMARY: {summary_file}")
 
 
 class JsonFormatter:

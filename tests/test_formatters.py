@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(params=[TextFormatter, GithubFormatter, JsonFormatter])
+@pytest.fixture(params=[TextFormatter, JsonFormatter])
 def formatter(request: pytest.FixtureRequest) -> ResultFormatter:
     """Fixture providing instances of all streaming formatters."""
     formatter_cls: type[ResultFormatter] = request.param
@@ -116,26 +116,110 @@ class TestFormatterBasics:
 
 
 class TestGithubFormatterSpecifics:
+    """Tests for GithubFormatter (GitHub Actions workflow commands)."""
+
     def test_escape(self) -> None:
         """Verify GitHub-specific character escaping."""
         assert GithubFormatter._escape("a%b\rc\nd") == "a%25b%0Dc%0Ad"
         assert GithubFormatter._escape("a:b,c", is_property=True) == "a%3Ab%2Cc"
+
+    def test_note_and_success_are_streaming(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """note() and success() should emit output immediately."""
+        fmt = GithubFormatter()
+        fmt.note("note msg")
+        fmt.success("success msg")
+        captured = capsys.readouterr().out
+        assert "note msg" in captured
+        assert "success msg" in captured
+
+    def test_debug_is_streaming(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """debug() should emit ::debug:: immediately."""
+        fmt = GithubFormatter()
+        fmt.debug("debug msg")
+        captured = capsys.readouterr().out
+        assert "::debug::debug msg" in captured
+
+    def test_error_and_warning_are_accumulated(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """error() and warning() must not emit output until finalize() is called."""
+        fmt = GithubFormatter()
+        fmt.error("error msg")
+        fmt.warning("warning msg")
+
+        captured = capsys.readouterr().out
+        assert "::error" not in captured
+        assert "::warning" not in captured
+
+        fmt.finalize()
+        captured = capsys.readouterr().out
+        assert "::error" in captured
+        assert "::warning" in captured
 
     def test_emoji_stripping(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Ensure leading status icons are stripped from GitHub-specific output."""
         fmt = GithubFormatter()
         fmt.error("❌ error msg")
         fmt.warning("⚠️ warning msg")
+        fmt.finalize()
 
         captured = capsys.readouterr().out
         assert "title=Ruff Sync Error::error msg" in captured
         assert "title=Ruff Sync Warning::warning msg" in captured
 
-    def test_file_path_metadata(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """Ensure file path is propagated in GitHub annotations."""
+    def test_single_issue_has_precision(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """A single issue should still include line=1 and the raw message."""
         fmt = GithubFormatter()
         fmt.error("msg", file_path=pathlib.Path("src/foo.py"))
-        assert "file=src/foo.py" in capsys.readouterr().out
+        fmt.finalize()
+        captured = capsys.readouterr().out
+        assert "file=src/foo.py,line=1," in captured
+        assert "::error" in captured
+        assert "::msg" in captured
+
+    def test_multiple_issues_are_combined(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Multiple issues in the same file should be combined into one annotation."""
+        fmt = GithubFormatter()
+        path = pathlib.Path("pyproject.toml")
+        fmt.error("msg 1", file_path=path)
+        fmt.error("msg 2", file_path=path)
+        fmt.finalize()
+
+        captured = capsys.readouterr().out
+        # Should only have ONE ::error line
+        assert captured.count("::error") == 1
+        assert "Multiple ruff-sync errors in pyproject.toml" in captured
+        assert "msg 1" in captured
+        assert "msg 2" in captured
+
+    def test_step_summary_logic(
+        self,
+        tmp_path: pathlib.Path,
+        capsys: pytest.CaptureFixture[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Verify the Markdown summary is written to GITHUB_STEP_SUMMARY."""
+        summary_file = tmp_path / "summary.md"
+        monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+
+        fmt = GithubFormatter()
+        fmt.error("error msg", drift_key="lint.select")
+        fmt.warning("warn msg", drift_key="target-version")
+        fmt.finalize()
+
+        content = summary_file.read_text()
+        assert "### 🔄 Ruff-Sync Drift Report" in content
+        assert "❌ Error" in content
+        assert "⚠️ Warning" in content
+        assert "| `lint.select` | error msg |" in content
+        assert "| `target-version` | warn msg |" in content
+
+    def test_step_summary_no_env(
+        self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Finalize should work fine and output nothing to summary if env var is missing."""
+        fmt = GithubFormatter()
+        fmt.error("error")
+        fmt.finalize()
+        # No crash occurs
 
 
 class TestJsonFormatterSpecifics:
