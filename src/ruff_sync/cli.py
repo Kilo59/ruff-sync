@@ -602,17 +602,10 @@ def main() -> int:
 
     try:
         if exec_args.command == "inspect":
-            from ruff_sync.dependencies import require_dependency  # noqa: PLC0415
+            from ruff_sync.tui import get_tui_app  # noqa: PLC0415
 
-            try:
-                require_dependency("textual", extra_name="tui")
-            except ImportError as e:
-                LOGGER.error(f"❌ {e}")  # noqa: TRY400
-                return 1
-
-            from ruff_sync.tui.app import RuffSyncApp  # noqa: PLC0415
-
-            return RuffSyncApp(exec_args).run() or 0
+            app_class = get_tui_app()
+            return app_class(exec_args).run() or 0
 
         if exec_args.command == "check":
             return asyncio.run(check(exec_args))

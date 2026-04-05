@@ -305,3 +305,16 @@ class RuffSyncApp(App[None]):
             self.notify("Copied content to clipboard", title="Clipboard")
         else:
             self.notify("No content to copy", severity="warning")
+
+    @override
+    def action_change_theme(self) -> None:
+        """Cycle through available themes."""
+        themes = list(self.available_themes)
+        try:
+            current_index = themes.index(self.theme)
+        except ValueError:
+            current_index = 0
+
+        next_index = (current_index + 1) % len(themes)
+        self.theme = themes[next_index]
+        self.notify(f"Theme changed to: {self.theme}", title="Theme Picker")

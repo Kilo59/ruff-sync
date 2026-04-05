@@ -98,7 +98,11 @@ def compute_effective_rules(
     Returns:
         The list of rules enriched with a 'status' key.
     """
-    lint = toml_config.get("tool", {}).get("ruff", {}).get("lint", {})
+    # The config may be "wrapped" (top-level 'tool' key) or
+    # "unwrapped" (direct Ruff config as returned by load_local_ruff_config).
+    lint = toml_config.get("lint")
+    if lint is None:
+        lint = toml_config.get("tool", {}).get("ruff", {}).get("lint", {})
 
     select = set(lint.get("select", [])) | set(lint.get("extend-select", []))
     ignore = set(lint.get("ignore", [])) | set(lint.get("extend-ignore", []))

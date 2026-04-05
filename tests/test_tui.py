@@ -208,18 +208,63 @@ def test_cli_inspect_subcommand(
         mock_run.assert_called_once()
 
 
-def test_cli_ruff_inspect_entry_point(
-    cli_run: CLIRunner, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    "args, expected_command",
+    [
+        ([], "inspect"),
+        (["--help"], "inspect"),
+        (["check", "--to", "."], "check"),  # Should NOT be rewritten to 'inspect'
+        (["--to", "."], "inspect"),  # Should be rewritten since '--to' is not a command
+    ],
+)
+def test_cli_ruff_inspect_entry_point_variations(
+    args: list[str],
+    expected_command: str,
+    cli_run: CLIRunner,
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test that the 'ruff-inspect' entry point attempts to run the app."""
+    """Test that the 'ruff-inspect' entry point correctly handles and rewrites arguments."""
     # Mock load_local_ruff_config where it's used in RuffSyncApp.on_mount
     monkeypatch.setattr("ruff_sync.tui.app.load_local_ruff_config", lambda _: {})
 
+    # We need to simulate the program name 'ruff-inspect'
+    # The 'to' arg is added to ensure we have a valid target if needed
+    final_args = args
+    if "--to" not in args and "--help" not in args:
+        final_args = [*args, "--to", str(tmp_path)]
+
+    # 1. Test running (using patched run() to avoid TUI execution)
     with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
-        # Program name 'ruff-inspect' should trigger the inspect logic
-        exit_code, _out, _err = cli_run(["--to", str(tmp_path)], entry_point="ruff-inspect")
-        assert exit_code == 0
-        mock_run.assert_called_once()
+        exit_code, _out, _err = cli_run(final_args, entry_point="ruff-inspect")
+
+        # If --help was passed, argparse will exit 0 and not call run()
+        if "--help" in args:
+            assert exit_code == 0
+            mock_run.assert_not_called()
+        elif expected_command == "inspect":
+            assert exit_code == 0
+            mock_run.assert_called_once()
+        else:
+            # For 'check', asyncio.run(check()) is called, not RuffSyncApp.run()
+            assert exit_code == 0
+            mock_run.assert_not_called()
+
+    # 2. Test instantiation (to verify the command was correctly resolved)
+    with (
+        patch("ruff_sync.tui.app.RuffSyncApp.__init__", return_value=None) as mock_init,
+        patch("ruff_sync.cli.asyncio.run", return_value=0),
+        patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0),
+    ):
+        cli_run(final_args, entry_point="ruff-inspect")
+
+        if "--help" not in args:
+            if expected_command == "inspect":
+                mock_init.assert_called_once()
+                exec_args = mock_init.call_args[0][0]
+                assert exec_args.command == "inspect"
+            else:
+                mock_init.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -252,3 +297,16 @@ async def test_ruff_sync_app_copy_content(mock_args: Arguments) -> None:
             await pilot.pause()
 
             mock_copy.assert_called_once_with("Copied Content Test")
+
+
+def test_require_dependency_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that require_dependency exits with code 1 if the package is missing."""
+    from ruff_sync import dependencies as deps
+
+    # Mock is_installed to return False
+    monkeypatch.setattr(deps, "is_installed", lambda _: False)
+
+    with pytest.raises(SystemExit) as excinfo:
+        deps.require_dependency("nonexistent", "extra")
+
+    assert excinfo.value.code == 1
