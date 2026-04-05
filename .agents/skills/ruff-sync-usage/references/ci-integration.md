@@ -12,7 +12,10 @@ Add this step to any existing workflow (e.g., `.github/workflows/ci.yaml`):
 ```
 
 `--semantic` ignores cosmetic differences (comments, whitespace) — only real value or rule changes cause failure.
-`--output-format github` creates inline PR annotations for errors and warnings.
+`--output-format github` creates inline PR annotations and a structured Job Summary report.
+
+> [!TIP]
+> `ruff-sync` automatically groups multiple drifts in the same file into a single annotation to reduce PR noise.
 
 ### Full Workflow Example
 
@@ -73,7 +76,13 @@ For repositories with GitHub Advanced Security enabled, upload SARIF results to 
 The `|| true` ensures the upload step always runs even when `ruff-sync` exits 1 (drift detected). Without it, GitHub Actions would skip the upload step on failure.
 
 > **Why SARIF over `--output-format github`?**
-> The `github` format creates ephemeral workflow annotations that disappear once the check re-runs. SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (`lint.select`, `target-version`, etc.) is a separate finding with a stable fingerprint — making it easy to trend configuration health over time.
+>
+> | Feature | `github` | `sarif` |
+> |---------|----------|---------|
+> | **PR Feedback** | Inline annotations (grouped) | Inline annotations (per-key) |
+> | **Job Summary** | ✅ Markdown table | ❌ (requires separate parsing) |
+> | **Persistence** | Ephemeral (until re-run) | Persistent (Security tab) |
+> | **Tracking** | Manual | Automated "introduced/resolved" |
 
 ---
 
