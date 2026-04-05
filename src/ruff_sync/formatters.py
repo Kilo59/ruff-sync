@@ -9,6 +9,7 @@ import os
 import pathlib
 from typing import Any, Final, Literal, Protocol, TypedDict
 
+from ruff_sync.config_io import RuffConfigFileName
 from ruff_sync.constants import OutputFormat
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
@@ -157,7 +158,6 @@ class GithubIssue(TypedDict):
     level: Literal["error", "warning"]
     message: str
     file_path: pathlib.Path | None
-    check_name: str
     drift_key: str | None
 
 
@@ -167,6 +167,8 @@ class GithubFormatter:
     Emits ``::error::`` and ``::warning::`` workflow commands for inline
     annotations, and writes a Markdown report to ``GITHUB_STEP_SUMMARY``.
     """
+
+    _DEFAULT_PATH: Final[pathlib.Path] = pathlib.Path(RuffConfigFileName.PYPROJECT_TOML)
 
     def __init__(self) -> None:
         """Initialise an empty issue list."""
@@ -185,6 +187,11 @@ class GithubFormatter:
         if is_property:
             return escaped.replace(":", "%3A").replace(",", "%2C")
         return escaped
+
+    @staticmethod
+    def _strip_status_prefix(message: str) -> str:
+        """Return the message without leading status emoji (e.g. ❌, ⚠️)."""
+        return message.removeprefix("❌ ").removeprefix("⚠️ ")
 
     def note(self, message: str) -> None:
         """Print a status note (standard stdout)."""
@@ -214,7 +221,6 @@ class GithubFormatter:
                 "level": "error",
                 "message": message,
                 "file_path": file_path,
-                "check_name": check_name,
                 "drift_key": drift_key,
             }
         )
@@ -234,7 +240,6 @@ class GithubFormatter:
                 "level": "warning",
                 "message": message,
                 "file_path": file_path,
-                "check_name": check_name,
                 "drift_key": drift_key,
             }
         )
@@ -269,32 +274,30 @@ class GithubFormatter:
     def _emit_annotations(self) -> None:
         """Group and emit issues as GitHub Action workflow commands."""
         for level, issues in [("error", self._errors), ("warning", self._warnings)]:
-            # Group by file_path
-            by_file: dict[str, list[GithubIssue]] = {}
+            # Group by file path object
+            by_file: dict[pathlib.Path, list[GithubIssue]] = {}
             for issue in issues:
-                file_key = str(issue["file_path"] or "")
+                file_key = issue["file_path"] or self._DEFAULT_PATH
                 by_file.setdefault(file_key, []).append(issue)
 
-            for file_path_str, file_issues in by_file.items():
+            for file_path, file_issues in by_file.items():
                 if not file_issues:
                     continue
 
                 title_prefix = "Error" if level == "error" else "Warning"
                 title_val = self._escape(f"Ruff Sync {title_prefix}", is_property=True)
-                file_val = self._escape(file_path_str, is_property=True) if file_path_str else ""
-                file_arg = f"file={file_val},line=1," if file_val else ""
+                file_val = self._escape(str(file_path), is_property=True)
+                file_arg = f"file={file_val},line=1,"
 
                 if len(file_issues) == 1:
                     issue = file_issues[0]
-                    clean_msg = issue["message"].removeprefix("❌ ").removeprefix("⚠️ ")
+                    clean_msg = self._strip_status_prefix(issue["message"])
                     escaped_msg = self._escape(clean_msg)
                 else:
                     # Combine into a single bulleted annotation
-                    combined_msg = (
-                        f"Multiple ruff-sync {level}s in {file_path_str or 'pyproject.toml'}:"
-                    )
+                    combined_msg = f"Multiple ruff-sync {level}s in {file_path}:"
                     for issue in file_issues:
-                        clean_line = issue["message"].removeprefix("❌ ").removeprefix("⚠️ ")
+                        clean_line = self._strip_status_prefix(issue["message"])
                         combined_msg += f"\n- {clean_line}"
                     escaped_msg = self._escape(combined_msg)
 
@@ -315,9 +318,9 @@ class GithubFormatter:
                 for issue in all_issues:
                     severity = "❌ Error" if issue["level"] == "error" else "⚠️ Warning"
                     key = issue["drift_key"] or "-"
-                    clean_msg = issue["message"].removeprefix("❌ ").removeprefix("⚠️ ")
-                    file_name = issue["file_path"].name if issue["file_path"] else "pyproject.toml"
-                    f.write(f"| {severity} | `{key}` | {clean_msg} | `{file_name}` |\n")
+                    clean_msg = self._strip_status_prefix(issue["message"])
+                    file_path = issue["file_path"] or self._DEFAULT_PATH
+                    f.write(f"| {severity} | `{key}` | {clean_msg} | `{file_path.name}` |\n")
                 f.write("\n")
         except OSError:
             LOGGER.exception(f"Failed to write to GITHUB_STEP_SUMMARY: {summary_file}")

@@ -32,7 +32,7 @@ jobs:
 By using `--output-format github`, `ruff-sync` will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.
 
 > [!NOTE]
-> If multiple configuration drifts are detected in the same file, `ruff-sync` automatically groups them into a single, combined annotation to reduce visual noise and preserve your GitHub Action annotation limits.
+> If multiple configuration drifts are detected in the same file, `ruff-sync` automatically groups them into a single, combined annotation to reduce visual noise and preserve your GitHub Actions annotation limits.
 
 ![GitHub PR Annotation](assets/github-pr-annotation.png)
 
