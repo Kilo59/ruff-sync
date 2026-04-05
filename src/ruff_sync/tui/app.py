@@ -64,6 +64,7 @@ class RuffSyncApp(App[None]):
         ("/", "search", "Search Rules"),
         ("?", "show_legend", "Show Legend"),
         ("l", "show_legend", "Show Legend"),
+        ("c", "copy_content", "Copy Content"),
     ]
 
     def __init__(self, args: Arguments, **kwargs: Any) -> None:
@@ -287,3 +288,12 @@ class RuffSyncApp(App[None]):
     def action_show_legend(self) -> None:
         """Display the TUI legend modal."""
         self.push_screen(LegendScreen())
+
+    def action_copy_content(self) -> None:
+        """Copy the current inspector content to the clipboard."""
+        inspector = self.query_one(RuleInspector)
+        if inspector.source:
+            self.copy_to_clipboard(str(inspector.source))
+            self.notify("Copied content to clipboard", title="Clipboard")
+        else:
+            self.notify("No content to copy", severity="warning")

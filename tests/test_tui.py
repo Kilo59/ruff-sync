@@ -236,3 +236,21 @@ async def test_ruff_sync_app_show_legend(mock_args: Arguments) -> None:
         await pilot.press("escape")
         await pilot.pause()
         assert not isinstance(app.screen, LegendScreen)
+
+
+@pytest.mark.asyncio
+async def test_ruff_sync_app_copy_content(mock_args: Arguments) -> None:
+    """The inspector content should be copied to the clipboard when 'c' is pressed."""
+    app = RuffSyncApp(mock_args)
+    # Mock copy_to_clipboard on the app instance
+    with patch.object(RuffSyncApp, "copy_to_clipboard") as mock_copy:
+        async with app.run_test() as pilot:
+            # Manually update inspector to simulate a selected rule/config
+            inspector = app.query_one(RuleInspector)
+            inspector.update("Copied Content Test")
+            await pilot.pause()
+
+            await pilot.press("c")
+            await pilot.pause()
+
+            mock_copy.assert_called_once_with("Copied Content Test")
