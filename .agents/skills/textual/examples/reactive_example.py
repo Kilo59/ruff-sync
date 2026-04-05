@@ -6,6 +6,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.widgets import Footer, Header, Input, Static
+from typing_extensions import override
 
 
 class ReactiveApp(App[None]):
@@ -26,6 +27,7 @@ class ReactiveApp(App[None]):
     }
     """
 
+    @override
     def compose(self) -> ComposeResult:
         """Compose the UI."""
         yield Header()
@@ -36,7 +38,8 @@ class ReactiveApp(App[None]):
 
     def watch_search_query(self, query: str) -> None:
         """Called automatically when search_query changes."""
-        status = self.query_one("#status")
+        # Use child type selector to return a Static widget
+        status = self.query_one("#status", Static)
         if query:
             status.update(f"Searching for: [bold]{query}[/bold]")
         else:

@@ -82,7 +82,7 @@ packages = ["src/ruff_sync"]
 
 [tool.mypy]
 python_version = "3.10"
-files = ["src", "tests/", "tasks.py"]
+files = ["src", "tests/", "tasks.py", ".agents/"]
 strict = true
 warn_unused_configs = true
 ignore_missing_imports = true
