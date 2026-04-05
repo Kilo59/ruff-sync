@@ -165,10 +165,12 @@ ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commi
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist. This automatically saves the upstream source and any other CLI flags into the `[tool.ruff-sync]` section.
 * **`--save` / `--no-save`**: Force serialization (or prevent serialization) of the provided CLI arguments (like `upstream`, `exclude`, etc.) directly into the `[tool.ruff-sync]` section of the target `pyproject.toml` for future use. Note: any credentials present in the upstream URL will cause this operation to safely abort.
-* **`--output-format [text|json|github]`**: Specify the output format for synchronization results.
+* **`--output-format [text|json|github|gitlab|sarif]`**: Specify the output format for synchronization results.
     - `text` (default): Human-readable terminal output.
     - `json`: Machine-readable JSON output for tool integration.
-    - `github`: GitHub Actions workflow commands (`::error`, `::warning`) for inline PR annotations.
+    - `github`: GitHub Actions workflow commands and Job Summary report.
+    - `gitlab`: GitLab Code Quality report (JSON format).
+    - `sarif`: Static Analysis Results Interchange Format (SARIF) for GitHub Security or GitLab SAST.
 * **`--pre-commit`**: Sync the `astral-sh/ruff-pre-commit` hook version inside `.pre-commit-config.yaml` with the project's Ruff version.
 
 ### `check`
@@ -186,7 +188,7 @@ ruff-sync check [UPSTREAM_URL...] [--semantic] [--diff] [--pre-commit]
 * **`UPSTREAM_URL...`**: The source URL(s). Optional if defined locally.
 * **`--semantic`**: Ignore "non-functional" differences like whitespace, comments, or key order. Only errors if the actual Python-level data differs.
 * **`--diff` / `--no-diff`**: Control the display of the unified diff in the terminal.
-* **`--output-format [text|json|github]`**: Specify the output format for check results. Defaults to `text`.
+* **`--output-format [text|json|github|gitlab|sarif]`**: Specify the output format for check results (defaults to `text`).
 * **`--pre-commit`**: Verify that the `astral-sh/ruff-pre-commit` hook version matches the project's Ruff version in addition to checking configuration drift. If you have `pre-commit-version-sync = true` configured in your `pyproject.toml`, the `check` command will automatically respect this setting and you do not need to pass this flag.
 
 ---

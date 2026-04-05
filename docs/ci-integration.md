@@ -31,7 +31,16 @@ jobs:
 
 By using `--output-format github`, `ruff-sync` will emit special workflow commands that GitHub translates into inline annotations directly on your Pull Request's file diff.
 
+> [!NOTE]
+> If multiple configuration drifts are detected in the same file, `ruff-sync` automatically groups them into a single, combined annotation to reduce visual noise and preserve your GitHub Actions annotation limits.
+
 ![GitHub PR Annotation](assets/github-pr-annotation.png)
+
+#### Job Summary
+
+In addition to inline annotations, `ruff-sync` writes a structured Markdown report to the GitHub Actions **Job Summary** page. This provides a high-level overview of all drifts detected across the entire run, making it easy to see exactly what needs to be synchronized without scrolling through log files.
+
+![GitHub Job Summary](assets/github-job-summary.png)
 
 ### SARIF Upload (GitHub Advanced Security)
 
@@ -50,7 +59,7 @@ For repositories with [GitHub Advanced Security](https://docs.github.com/en/get-
 
 The `|| true` ensures the upload step always runs even when drift is detected (exit code 1).
 
-> **Why SARIF over `--output-format github`?** The `github` format creates ephemeral PR annotations that disappear after the check re-runs. SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (`lint.select`, `target-version`, etc.) appears as a separate, deduplicated finding.
+> **Why SARIF over `--output-format github`?** The `github` format is excellent for lightweight, immediate feedback with a summarized job report. However, SARIF findings are persisted in the Security tab, tracked as "introduced" and "resolved" across branches, and each drifted TOML key (`lint.select`, `target-version`, etc.) appears as a separate, deduplicated finding in the GitHub Security dashboard.
 
 ### Automated Sync PRs
 
