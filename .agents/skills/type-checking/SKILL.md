@@ -1,9 +1,10 @@
 ---
 name: type-checking
 description: >-
-  Systematic, procedural workflows for resolving complex Python 3.10 static type
-  issues without typing.cast. Prioritizes healthy Refactoring (Generics,
-  Protocols) over isinstance narrowing.
+  Systematic workflows for designing types, architecting classes, and resolving
+  static type issues in Python 3.10. Trigger on "new class," "designing,"
+  "refactoring," or "mypy errors." Prioritizes healthy design (Generics,
+  Protocols) over narrowing.
 ---
 
 # Type-Checking Skill: Balanced Resolution
@@ -24,6 +25,15 @@ This skill provides procedural workflows for resolving static type ambiguity in 
   2. Protects a critical boundary (e.g., core merge engine, security logic).
   3. Provides a perfectly typed API for external/library-level consumption.
 - **Low-ROI (Toxic)**: Avoid advanced types for one-off CLI logic, TUI layout internals, or test-specific utilities.
+
+## Design-Phase Workflow (New Features)
+
+When starting a new class, module, or interface:
+
+1. **Sketch with Protocols**: Instead of a concrete base class, define the **behavior** you need as a `Protocol`.
+2. **Apply Generics Early**: If your class handles "data" or "items," use a `Generic[T]` from the start to avoid later TypeVar refactors.
+3. **Minimize Unions**: Design your data flow to avoid "Either A or B" as return types. Prefer Polymorphism (different classes for different states).
+4. **The 10-Second Check**: If your new architectural diagram requires explaining the type variance for 5 minutes, simplify it.
 
 ## Procedure: Refactor or Narrow?
 
