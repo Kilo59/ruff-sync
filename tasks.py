@@ -232,3 +232,13 @@ def docs(ctx: Context, *, serve: bool = False, build: bool = False, args: str = 
         cmds.extend(args.split())
 
     ctx.run("uv run " + " ".join(cmds), echo=True, pty=True)
+
+
+@task
+def screenshots(ctx: Context) -> None:
+    """Automatically generate TUI screenshots for documentation."""
+    # Ensure the screenshots directory exists
+    ctx.run("mkdir -p docs/assets/screenshots/", echo=True)
+    # Run the official generation script
+    ctx.run("uv run python scripts/generate_tui_screenshots.py", echo=True, pty=True)
+    print("✨ Documentation screenshots updated in docs/assets/screenshots/")
