@@ -34,6 +34,8 @@ Specific workflows, libraries, and tools are documented in `.agents/skills/`. Be
 .agents/               # Agent-specific instructions (Deep Standards)
   TESTING.md           # Mandatory testing patterns and rules
   workflows/           # Step-by-step guides for common tasks
+  decisions/           # Internal Architectural Decision Records (ADRs)
+    README.md          # Index of all architectural decisions
   skills/
     ruff-sync-usage/   # Agent Skill for users adopting ruff-sync (keep current!)
       SKILL.md
@@ -223,3 +225,10 @@ CI is defined in `.github/workflows/ci.yaml`:
 - **Prefer `read_url_content`**: If you only need to extract text or markdown from a public URL, use `read_url_content`. It is faster and lighter.
 - **Visual Interaction as Last Resort**: Only use `read_browser_page` or manual screen control when a page requires JavaScript execution, authentication, or complex visual interaction.
 - **Task Specificity**: When using the browser subagent, provide highly specific tasks and clear exit criteria to minimize redundant interactions.
+
+## Architectural Decision Records (ADRs)
+
+Significant architectural shifts and long-term design decisions are recorded as ADRs in `.agents/decisions/`. These serve as the "memory" of the project's evolution for both human and agent developers.
+
+- **Source of Truth**: Always check the [ADR Index](.agents/decisions/README.md) before proposing major architectural changes.
+- **Process**: New decisions should be captured using the [adr skill](.agents/skills/adr/SKILL.md).
