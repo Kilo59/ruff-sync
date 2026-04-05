@@ -176,7 +176,7 @@ select = ["RUF012"]
             rule_node = next(
                 n
                 for n in select_node.children
-                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "[0]"
+                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "RUF012"
             )
             tree.focus()
             tree.select_node(rule_node)

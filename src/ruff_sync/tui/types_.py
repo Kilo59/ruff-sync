@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
+from ruff_sync.tui.constants import RULE_PATTERN
+
 if TYPE_CHECKING:
     from ruff_sync.types_ import RuffLinter, RuffRule
 
@@ -82,7 +84,14 @@ class ListNode:
 
     def children(self) -> list[ConfigNode]:
         """Return the list children wrapped as ConfigNodes."""
-        return [wrap_data(f"[{i}]", v, f"{self.path}[{i}]") for i, v in enumerate(self.data)]
+        return [
+            wrap_data(
+                str(v) if isinstance(v, str) and RULE_PATTERN.match(v) else f"[{i}]",
+                v,
+                f"{self.path}[{i}]",
+            )
+            for i, v in enumerate(self.data)
+        ]
 
     def doc_target(self) -> tuple[str, Literal["rule", "config", "none"]]:
         """Resolve the primary target string and type for documentation."""
@@ -114,6 +123,8 @@ class ScalarNode:
 
     def doc_target(self) -> tuple[str, Literal["rule", "config", "none"]]:
         """Resolve the primary target string and type for documentation."""
+        if isinstance(self.value, str) and RULE_PATTERN.match(self.value):
+            return (self.value, "rule")
         return (self._path, "config")
 
 

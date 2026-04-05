@@ -64,3 +64,18 @@ def test_doc_target() -> None:
 
     child = root_dict.children()[0]
     assert child.doc_target() == ("tool.ruff.ruff", "config")
+
+
+def test_rule_node_behavior() -> None:
+    """Test that rule codes in lists get correct labels and targets."""
+    data = ["RUF012"]
+    root = wrap_data("select", data, "tool.ruff.lint.select")
+    children = root.children()
+
+    assert len(children) == 1
+    node = children[0]
+    assert isinstance(node, ScalarNode)
+    # Label should be the rule code, not "[0]"
+    assert node.key == "RUF012"
+    # Target should be the rule code for documentation
+    assert node.doc_target() == ("RUF012", "rule")
