@@ -17,6 +17,7 @@ Follow these steps when tasked with creating a new skill:
 1. **Research & Plan**:
    - Determine the scope of the skill (e.g., CLI wrapper, documentation guide, testing helper).
    - Identify existing project artifacts (style guides, API specs, CI workflows) to pull information from.
+   - Design a test case or a set of "should-trigger" queries.
    - See [references/quickstart.md](references/quickstart.md) for the basic structure.
 
 2. **Define Frontmatter**:
@@ -24,19 +25,21 @@ Follow these steps when tasked with creating a new skill:
    - `description`: Write an imperative, user-intent-focused description.
    - See [references/optimizing-descriptions.md](references/optimizing-descriptions.md) for optimization tips.
 
-3. **Develop the Procedure**:
+3. **Develop the Procedure & Scripts**:
    - Favor procedural instructions ("To do X, run Y") over declarative ones.
-   - Include a "Quick Start" section for the most common use case.
+   - Bundle complex logic in `scripts/` using [references/using-scripts.md](references/using-scripts.md).
+   - Include a "Quick Start" section for the most common usecase.
    - Use checklists for multi-step workflows.
 
 4. **Progressive Disclosure**:
    - If the skill is complex, move detailed references to a `references/` subdirectory.
    - See [references/best-practices.md](references/best-practices.md) for structuring tips.
 
-5. **Validation Loop (Plan-Validate-Execute)**:
-   - Create a test case or a set of "should-trigger" queries.
-   - Verify the skill's instructions lead to the desired outcome.
+5. **Validation & Iteration**:
+   - Run the prompt *with* and *without* the skill instructions.
+   - Use [references/evaluating-skills.md](references/evaluating-skills.md) to grade outputs with assertions.
    - Add a "Gotchas" section to address common pitfalls.
+   - Iterate on instructions based on failed assertions or high variance.
 
 ## Skill Quality Checklist
 
@@ -51,3 +54,5 @@ Follow these steps when tasked with creating a new skill:
 - [Quickstart](references/quickstart.md) — Basic SKILL.md structure
 - [Best Practices](references/best-practices.md) — How to scope and calibrate skills
 - [Optimizing Descriptions](references/optimizing-descriptions.md) — Reliable triggering strategies
+- [Evaluating Skills](references/evaluating-skills.md) — Eval-driven iteration and assertions
+- [Using Scripts](references/using-scripts.md) — Bundling logic and agentic script design
