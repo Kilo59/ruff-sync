@@ -16,10 +16,12 @@ from ruff_sync.system import compute_effective_rules, get_all_ruff_rules, get_ru
 from ruff_sync.tui.constants import RULE_PATTERN
 from ruff_sync.tui.screens import LegendScreen, OmniboxScreen
 from ruff_sync.tui.themes import AMBER_EMBER
+from ruff_sync.tui.types_ import ConfigNode, LinterNode, RulesCollectionNode, wrap_data
 from ruff_sync.tui.widgets import CategoryTable, ConfigTree, RuleInspector
 
 if TYPE_CHECKING:
     from ruff_sync.cli import Arguments
+    from ruff_sync.types_ import RuffLinter, RuffRule
 
 
 LOGGER = logging.getLogger(__name__)
@@ -78,9 +80,9 @@ class RuffSyncApp(App[None]):
         super().__init__(**kwargs)
         self.args = args
         self.config: dict[str, Any] = {}
-        self.all_rules: list[dict[str, Any]] = []
-        self.effective_rules: list[dict[str, Any]] = []
-        self.linters: list[dict[str, Any]] = []
+        self.all_rules: list[RuffRule] = []
+        self.effective_rules: list[RuffRule] = []
+        self.linters: list[RuffLinter] = []
 
     @override
     def compose(self) -> ComposeResult:
@@ -103,7 +105,8 @@ class RuffSyncApp(App[None]):
             self.config = {}
 
         tree = self.query_one(ConfigTree)
-        tree.populate(self.config, has_rules=True)
+        root_node = wrap_data("tool.ruff", self.config)
+        tree.populate(root_node)
         tree.focus()
 
         # Register and set the default theme
@@ -122,33 +125,10 @@ class RuffSyncApp(App[None]):
             self.effective_rules = compute_effective_rules(self.all_rules, self.config)
 
         # Refresh the tree once metadata is loaded to show linter groups
-        # We pass effective_rules so the tree can filter out entire groups that are disabled
         tree = self.query_one(ConfigTree)
-        tree.populate(
-            self.config,
-            has_rules=True,
-            linters=self.linters,
-            effective_rules=self.effective_rules,
-        )
-
-    @work
-    async def _display_effective_rules(self) -> None:
-        """Populate the table with the effective rules list."""
-        if not self.all_rules:
-            self.all_rules = await get_all_ruff_rules()
-            self.effective_rules = compute_effective_rules(self.all_rules, self.config)
-
-        # Filter for only Enabled or Ignored rules as per the "Effective Rules" proposal
-        effective_only = [r for r in self.effective_rules if r["status"] != "Disabled"]
-
-        table = self.query_one(CategoryTable)
-        table.update_rules(effective_only)
-
-        inspector = self.query_one(RuleInspector)
-        inspector.update(
-            "## Effective Rule Status\n\nThis table shows rules that are actively being used "
-            "or have been explicitly ignored in your configuration."
-        )
+        root_node = wrap_data("tool.ruff", self.config)
+        rules_node = RulesCollectionNode(self.linters, self.effective_rules)
+        tree.populate(root_node, rules_node)
 
     @on(Tree.NodeSelected)
     def handle_node_selected(self, event: Tree.NodeSelected[Any]) -> None:
@@ -157,46 +137,37 @@ class RuffSyncApp(App[None]):
         Args:
             event: The tree node selected event.
         """
-        data = event.node.data
-        label = event.node.label
-        label_text = str(label.plain) if hasattr(label, "plain") else str(label)
+        node = event.node.data
+        if not isinstance(node, ConfigNode):
+            return
 
         table = self.query_one(CategoryTable)
         inspector = self.query_one(RuleInspector)
 
-        if data == "__rules__":
-            self._display_effective_rules()
-            return
+        table.render_node(node)
 
-        if isinstance(data, dict) and data.get("type") == "linter":
-            prefix = data.get("prefix", "")
-            name = data.get("name", "Unknown Linter")
+        target, doc_type = node.doc_target()
 
-            # Filter effective rules by prefix
-            # We show all rules in the group (even Disabled) as per the Discovery proposal
-            filtered_rules = [r for r in self.effective_rules if r["code"].startswith(prefix)]
-
-            table.update_rules(filtered_rules)
-            msg = f"## {name} ({prefix or 'No Prefix'})\n\nShowing rules for the {name} category."
-            inspector.update(msg)
-            return
-
-        # Build full path for context
-        full_path = self._get_node_path(event.node)
-
-        # Check if the node label or path matches a ruff rule
-        if isinstance(label_text, str) and RULE_PATTERN.match(label_text):
-            self._inspect_rule(label_text)
-        elif isinstance(data, (dict, list)):
-            table.update_content(data)
-            # Fetch config documentation for the section if possible (skip root)
-            if full_path != "tool.ruff":
-                inspector.fetch_and_display(full_path, is_rule=False)
-            else:
+        if doc_type == "none":
+            if isinstance(node, RulesCollectionNode):
+                inspector.update(
+                    "## Effective Rule Status\n\n"
+                    "This table shows rules that are actively being used "
+                    "or have been explicitly ignored in your configuration."
+                )
+            elif isinstance(node, LinterNode):
+                name = node.linter["name"]
+                prefix = node.linter.get("prefix", "")
+                msg = (
+                    f"## {name} ({prefix or 'No Prefix'})\n\nShowing rules for the {name} category."
+                )
+                inspector.update(msg)
+            elif getattr(node, "path", "") == "tool.ruff":
                 inspector.show_placeholder()
-        else:
-            table.update_content(data)
-            inspector.fetch_and_display(full_path, is_rule=False)
+        elif doc_type == "rule":
+            self._inspect_rule(target)
+        elif doc_type == "config":
+            inspector.fetch_and_display(target, is_rule=False)
 
     @on(DataTable.RowSelected)
     def handle_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -228,8 +199,18 @@ class RuffSyncApp(App[None]):
         else:
             # It's a configuration key, show its documentation
             inspector = self.query_one(RuleInspector)
-            full_path = f"{self._get_node_path(self.query_one(ConfigTree).cursor_node)}.{key}"
-            inspector.fetch_and_display(full_path, is_rule=False)
+
+            cursor_node = self.query_one(ConfigTree).cursor_node
+            if cursor_node:
+                node_data = cursor_node.data
+                if isinstance(node_data, ConfigNode):
+                    # For lists/dicts the key might be index or dict key
+                    full_path = (
+                        f"{node_data.path}.{key}"
+                        if not key.startswith("[")
+                        else f"{node_data.path}{key}"
+                    )
+                    inspector.fetch_and_display(full_path, is_rule=False)
 
     def _inspect_rule(self, rule_code: str) -> None:
         """Centralized helper for rule inspection with metadata enrichment.
@@ -240,7 +221,7 @@ class RuffSyncApp(App[None]):
         # Fetch metadata for enrichment
         rule_data = next((r for r in self.effective_rules if r["code"] == rule_code), None)
         name = rule_data.get("name") if rule_data else None
-        status = rule_data.get("status") if rule_data else "Disabled"
+        status = str(rule_data.get("status", "Disabled")) if rule_data else "Disabled"
         explanation = rule_data.get("explanation") if rule_data else None
 
         inspector = self.query_one(RuleInspector)
@@ -251,28 +232,6 @@ class RuffSyncApp(App[None]):
             rule_name=name,
             rule_status=status,
         )
-
-    def _get_node_path(self, node: Any) -> str:
-        """Construct the full configuration path to a tree node.
-
-        Args:
-            node: The tree node.
-
-        Returns:
-            The dot-separated configuration path.
-        """
-        path: list[str] = []
-        current = node
-        tree = self.query_one(ConfigTree)
-        while current and current != tree.root:
-            label = current.label
-            label_text = str(label.plain) if hasattr(label, "plain") else str(label)
-            path.append(label_text)
-            current = current.parent
-
-        if not path:
-            return "tool.ruff"
-        return "tool.ruff." + ".".join(reversed(path))
 
     def action_search(self) -> None:
         """Launch the global fuzzy search Omnibox."""

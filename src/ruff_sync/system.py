@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Final
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from ruff_sync.types_ import RuffLinter, RuffRule
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -44,7 +46,7 @@ async def get_ruff_config_markdown(setting_path: str) -> str | None:
     return await _run_ruff_command(cmd, f"ruff config {clean_path}")
 
 
-async def get_all_ruff_rules() -> list[dict[str, Any]]:
+async def get_all_ruff_rules() -> list[RuffRule]:
     """Execute `ruff rule --all --output-format json` and return the parsed rules.
 
     Returns:
@@ -65,7 +67,7 @@ async def get_all_ruff_rules() -> list[dict[str, Any]]:
     return []
 
 
-async def get_ruff_linters() -> list[dict[str, Any]]:
+async def get_ruff_linters() -> list[RuffLinter]:
     """Execute `ruff linter --output-format json` and return the parsed linters.
 
     Returns:
@@ -87,8 +89,8 @@ async def get_ruff_linters() -> list[dict[str, Any]]:
 
 
 def compute_effective_rules(
-    all_rules: list[dict[str, Any]], toml_config: Mapping[str, Any]
-) -> list[dict[str, Any]]:
+    all_rules: list[RuffRule], toml_config: Mapping[str, Any]
+) -> list[RuffRule]:
     """Determine the status (Enabled, Ignored, Disabled) for each rule.
 
     Args:
@@ -111,7 +113,7 @@ def compute_effective_rules(
     if not lint.get("select") and not lint.get("extend-select"):
         select.update(["E", "F"])
 
-    enriched: list[dict[str, Any]] = []
+    enriched: list[RuffRule] = []
     for rule in all_rules:
         code = rule["code"]
 
@@ -135,7 +137,7 @@ def compute_effective_rules(
 
         rule_with_status = dict(rule)
         rule_with_status["status"] = status
-        enriched.append(rule_with_status)
+        enriched.append(rule_with_status)  # type: ignore[arg-type]
 
     return enriched
 

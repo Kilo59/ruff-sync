@@ -11,11 +11,10 @@ import re
 import subprocess
 import sys
 import tempfile
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, MutableMapping
 from io import StringIO
 from typing import (
     TYPE_CHECKING,
-    Any,
     Final,
     Literal,
     NamedTuple,
@@ -27,7 +26,7 @@ import httpx
 import tomlkit
 from httpx import URL
 from tomlkit import TOMLDocument, table
-from tomlkit.items import Table
+from tomlkit.items import Item, Table
 from tomlkit.toml_file import TOMLFile
 
 from ruff_sync.config_io import RuffConfigFileName, is_ruff_toml_file, resolve_target_path
@@ -41,6 +40,8 @@ from ruff_sync.formatters import ResultFormatter, get_formatter
 from ruff_sync.pre_commit import sync_pre_commit
 
 if TYPE_CHECKING:
+    from tomlkit.container import Container
+
     from ruff_sync.cli import Arguments
 
 __all__: Final[list[str]] = [
@@ -103,8 +104,8 @@ class DiffContext(NamedTuple):
     source_toml_path: pathlib.Path
     source_doc: TOMLDocument
     merged_doc: TOMLDocument
-    source_val: Any
-    merged_val: Any
+    source_val: object
+    merged_val: object
 
 
 class Config(TypedDict, total=False):
@@ -552,16 +553,19 @@ def _apply_exclusions(tbl: Table | TOMLDocument, exclude: Iterable[str]) -> None
     """
     for key_path in exclude:
         parts = key_path.split(".")
-        target: Any = tbl
+        target: Table | TOMLDocument | Item | Container | None = tbl
         for part in parts[:-1]:
-            target = target.get(part) if hasattr(target, "get") else None
-            if target is None:
+            if isinstance(target, Mapping):
+                target = target.get(part)
+            else:
+                target = None
                 break
-        if target is not None and hasattr(target, "pop"):
+        if isinstance(target, Mapping):
             leaf = parts[-1]
             if leaf in target:
                 LOGGER.info(f"Excluding `{key_path}` from upstream ruff config.")
-                target.pop(leaf)
+                if hasattr(target, "pop"):
+                    target.pop(leaf)
 
 
 def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
@@ -573,9 +577,11 @@ def toml_ruff_parse(toml_s: str, exclude: Iterable[str]) -> TOMLDocument:
     return ruff_toml
 
 
-def _recursive_update(source_table: Any, upstream: Any) -> None:
+def _recursive_update(
+    source_table: MutableMapping[str, object], upstream: Mapping[str, object]
+) -> None:
     """Recursively update a TOML table, preserving formatting of existing keys."""
-    if hasattr(upstream, "items") or isinstance(upstream, Mapping):
+    if isinstance(upstream, Mapping) or hasattr(upstream, "items"):
         items = upstream.items()
     else:
         return
@@ -588,26 +594,32 @@ def _recursive_update(source_table: Any, upstream: Any) -> None:
                 # Structural fix: if the target is a proxy (dotted key),
                 # and we are adding NEW keys to it, we must convert it to a real
                 # table to ensure children get correct headers.
-                source_sub_keys = set(source_table[key].keys())
-                upstream_sub_keys = set(value.keys())
+                source_key_val = source_table[key]
+                source_sub_keys = (
+                    set(source_key_val.keys()) if isinstance(source_key_val, Mapping) else set()
+                )
+                upstream_sub_keys = set(value.keys()) if isinstance(value, Mapping) else set()
                 if not upstream_sub_keys.issubset(source_sub_keys):
-                    current_val = source_table[key].unwrap()
+                    current_val = getattr(
+                        source_table[key], "unwrap", lambda k=key: source_table[k]
+                    )()
                     # DELETE PROXY FIRST to avoid structural doubling
                     del source_table[key]
                     # ADD AS REAL TABLE
-                    source_table.add(key, current_val)
+                    if hasattr(source_table, "add"):
+                        source_table.add(key, current_val)
+                    else:
+                        source_table[key] = current_val
 
-                _recursive_update(source_table[key], value)
+                child_source = source_table[key]
+                if isinstance(child_source, MutableMapping) and isinstance(value, Mapping):
+                    _recursive_update(child_source, value)
             else:
                 # Overwrite existing leaf value only if it's semantically different.
                 # Compare unwrapped values, but assign the raw tomlkit Item to
                 # preserve inline comments attached to the upstream value.
-                current_val = (
-                    source_table[key].unwrap()
-                    if hasattr(source_table[key], "unwrap")
-                    else source_table[key]
-                )
-                new_val_unwrapped = value.unwrap() if hasattr(value, "unwrap") else value
+                current_val = getattr(source_table[key], "unwrap", lambda k=key: source_table[k])()
+                new_val_unwrapped = getattr(value, "unwrap", lambda v=value: v)()
                 if current_val != new_val_unwrapped:
                     source_table[key] = value
         else:
@@ -813,8 +825,8 @@ def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
 
 
 def _find_changed_keys(
-    source: Any,
-    merged: Any,
+    source: object,
+    merged: object,
     prefix: str = "",
 ) -> list[str]:
     """Return a list of dotted TOML keys that differ between *source* and *merged*.
@@ -834,12 +846,9 @@ def _find_changed_keys(
     """
     changed: list[str] = []
 
-    source_is_mapping = isinstance(source, Mapping)
-    merged_is_mapping = isinstance(merged, Mapping)
-
-    if source_is_mapping and merged_is_mapping:
+    if isinstance(source, Mapping) and isinstance(merged, Mapping):
         for key, merged_val in merged.items():
-            full_key = f"{prefix}.{key}" if prefix else key
+            full_key = f"{prefix}.{key}" if prefix else str(key)
             source_val = source.get(key)
             if source_val is None and key not in source:
                 # Key is new (only in merged)
@@ -859,7 +868,7 @@ def _find_changed_keys(
                     changed.extend(nested)
                 elif src_unwrapped != mrg_unwrapped:
                     changed.append(full_key)
-    elif source_is_mapping != merged_is_mapping:
+    elif isinstance(source, Mapping) != isinstance(merged, Mapping):
         # Structural type mismatch (table vs scalar or vice-versa): treat the
         # whole node as changed rather than attempting a meaningless value
         # comparison between incompatible TOML node types.
@@ -889,8 +898,8 @@ def _report_drift(
     generic error.
     """
     if is_ruff_toml:
-        source_section: Any = source_doc
-        merged_section: Any = merged_doc
+        source_section: object = source_doc
+        merged_section: object = merged_doc
     else:
         source_section = source_doc.get("tool", {}).get("ruff") or {}
         merged_section = merged_doc.get("tool", {}).get("ruff") or {}
@@ -966,8 +975,8 @@ async def check(
             )
 
         is_source_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-        source_val: Any = None
-        merged_val: Any = None
+        source_val: object = None
+        merged_val: object = None
         if args.semantic:
             if is_source_ruff_toml:
                 source_ruff = source_doc

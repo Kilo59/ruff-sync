@@ -14,6 +14,8 @@ from typing_extensions import override
 if TYPE_CHECKING:
     from textual.app import ComposeResult
 
+    from ruff_sync.types_ import RuffRule
+
 MAX_SEARCH_RESULTS: Final = 15
 
 
@@ -46,7 +48,7 @@ class OmniboxScreen(ModalScreen[str]):
     }
     """
 
-    def __init__(self, all_rules: list[dict[str, Any]], **kwargs: Any) -> None:
+    def __init__(self, all_rules: list[RuffRule], **kwargs: Any) -> None:
         """Initialize the search screen.
 
         Args:
