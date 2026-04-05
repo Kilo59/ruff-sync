@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 from textual.widgets import DataTable, Tree
 
-from ruff_sync.cli import Arguments
 from ruff_sync.tui.app import RuffSyncApp
 from ruff_sync.tui.screens import LegendScreen
 from ruff_sync.tui.widgets import CategoryTable, RuleInspector
@@ -15,20 +14,9 @@ from ruff_sync.tui.widgets import CategoryTable, RuleInspector
 if TYPE_CHECKING:
     import pathlib
 
+    from ruff_sync.cli import Arguments
     from ruff_sync.tui.widgets import ConfigTree
-
-    from .conftest import CLIRunner
-
-
-@pytest.fixture
-def mock_args(tmp_path: pathlib.Path) -> Arguments:
-    return Arguments(
-        command="inspect",
-        upstream=(),
-        to=tmp_path,
-        exclude=(),
-        verbose=0,
-    )
+    from tests.conftest import CLIRunner
 
 
 def test_ruff_sync_app_init(mock_args: Arguments) -> None:
@@ -213,8 +201,8 @@ def test_cli_inspect_subcommand(
     [
         ([], "inspect"),
         (["--help"], "inspect"),
-        (["check", "--to", "."], "check"),  # Should NOT be rewritten to 'inspect'
-        (["--to", "."], "inspect"),  # Should be rewritten since '--to' is not a command
+        (["check", "--to", "."][:3], "check"),  # Should NOT be rewritten to 'inspect'
+        (["--to", "."][:2], "inspect"),  # Should be rewritten since '--to' is not a command
     ],
 )
 def test_cli_ruff_inspect_entry_point_variations(
@@ -349,7 +337,9 @@ async def test_category_table_resolves_theme_colors(
 async def test_category_table_handles_ignored_status(
     mock_args: Arguments, tmp_path: pathlib.Path
 ) -> None:
-    """Verify that CategoryTable correctly highlights Ignored status and partially available fixes."""
+    """
+    Verify that CategoryTable correctly highlights Ignored status and partially available fixes.
+    """
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text("[tool.ruff]\n", encoding="utf-8")
 
@@ -381,3 +371,7 @@ async def test_category_table_handles_ignored_status(
 
         assert warning_hex in code_cell.lower()
         assert warning_hex in fix_cell.lower()
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-vv"])

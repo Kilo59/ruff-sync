@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from ruff_sync.tui.types_ import DictNode, ListNode, ScalarNode, wrap_data
 
 
@@ -79,3 +81,7 @@ def test_rule_node_behavior() -> None:
     assert node.key == "RUF012"
     # Target should be the rule code for documentation
     assert node.doc_target() == ("RUF012", "rule")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-vv"])

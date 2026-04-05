@@ -2,24 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-if TYPE_CHECKING:
-    import pathlib
-
 import pytest
 
-from ruff_sync.cli import Arguments
 from ruff_sync.tui.app import RuffSyncApp
 
-
-@pytest.fixture
-def mock_args(tmp_path: pathlib.Path) -> Arguments:
-    return Arguments(
-        command="inspect",
-        upstream=(),
-        to=tmp_path,
-        exclude=(),
-        verbose=0,
-    )
+if TYPE_CHECKING:
+    from ruff_sync.cli import Arguments
 
 
 @pytest.mark.asyncio
@@ -42,3 +30,7 @@ async def test_themes_registered(mock_args: Arguments) -> None:
         theme = cast("Any", app.get_theme("amber-ember"))
         assert str(theme.primary).upper() == "#FFB300"
         assert str(theme.background).upper() == "#121212"
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-vv"])
