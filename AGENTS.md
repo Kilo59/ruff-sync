@@ -10,35 +10,11 @@
 
 ## GitHub Context
 
-This is a GitHub-hosted project. Use the **`gh` CLI** to gather extra context about issues, milestones, pull requests, and releases before starting work. This is especially useful for understanding the intent behind a task or finding related discussions.
+Use the GitHub CLI (`gh`) to gather extra context about issues, pull requests, and releases before starting work. For detailed workflows on managing issues, see the `gh-issues` skill in `.agents/skills/gh-issues/SKILL.md`.
 
-### Useful Commands
+## Agent Skills
 
-```bash
-# Issues
-gh issue list                           # Open issues
-gh issue view <number>                  # Read a specific issue with full context
-gh issue list --milestone "v0.1"        # Issues for a specific milestone
-
-# Pull Requests
-gh pr list                              # Open PRs
-gh pr view <number>                     # Read PR description, review comments, checks
-gh pr checks <number>                   # See CI status for a PR
-gh pr diff <number>                     # View the diff
-
-# Milestones & Releases
-gh api repos/Kilo59/ruff-sync/milestones  # List milestones
-gh release list                           # List releases
-
-# Labels
-gh label list                           # See available labels
-```
-
-### When to Use `gh`
-
-- **Before starting a task**: If the user references an issue number or milestone, read it with `gh issue view` to understand the full context, acceptance criteria, and any prior discussion.
-- **During PR work**: Use `gh pr view` and `gh pr checks` to understand review feedback and CI status.
-- **When investigating bugs**: Search issues with `gh issue list --search "<keywords>"` to find related reports or prior fixes.
+Specific workflows, libraries, and tools are documented in `.agents/skills/`. Before using unfamiliar tools like Textual, generating MkDocs, or asserting test data structures, check this directory for specialized best practices. If you create a new skill, use the `skill-creator` tool and avoid documenting full details here to prevent bloat.
 
 ## Tech Stack
 
@@ -239,7 +215,7 @@ CI is defined in `.github/workflows/ci.yaml`:
 1. **tomlkit proxy objects**: When adding new keys to a proxy table (from dotted keys), the proxy must be converted to a real table first. The `_recursive_update` function handles this. Don't bypass it.
 2. **`cast(Any, ...)` in tests**: Use `cast(Any, tomlkit.parse(...))["tool"]["ruff"]` pattern in tests to avoid mypy complaints about `tomlkit`'s `Item | Container` return types.
 3. **Pre-commit ruff version**: The ruff version in `.pre-commit-config.yaml` must stay in sync with the version in `pyproject.toml`. The test `test_pre_commit_versions_are_in_sync` enforces this.
-4. **Keep the ruff-sync-usage skill current**: After any change to CLI behavior (new flags, changed exit codes, new configuration keys, updated URL handling, etc.), update `.agents/skills/ruff-sync-usage/` accordingly. The `SKILL.md` covers quick start, workflows, exit codes, and gotchas. Detailed references live in `references/configuration.md`, `references/troubleshooting.md`, and `references/ci-integration.md`.
+4. **Keep `ruff-sync-usage` current**: Update `.agents/skills/ruff-sync-usage/` after any CLI behavior changes (flags, config keys, exits) to ensure the documentation stays accurate. Keep details inside the skill directory.
 5. **No `autouse=True` fixtures**: NEVER use `autouse=True` for pytest fixtures. All fixtures must be explicitly requested by the test functions that require them. This ensures dependencies are explicit and avoids hidden side effects.
 
 ## Browser Tool Usage
