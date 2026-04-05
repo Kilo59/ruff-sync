@@ -18,61 +18,62 @@ This plan implements Phase 3 of the `type-checking` refactoring recommendations:
 
 #### [NEW] [models.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/models.py)
 
-Create a dedicated models file for the TUI to define the node hierarchy.
+Create a dedicated models layer for the TUI to enforce structured payloads.
 
-- **`ConfigNode` (Protocol)**: Defines the interface for all TUI nodes.
-    - `to_label()`: String for the tree node.
-    - `to_summary()`: String for the inspector context.
-    - `children()`: Returns child keys/nodes for tree expansion.
-    - `table_data()`: Returns key/value pairs for the `CategoryTable`.
-    - `is_expandable`: Property to determine if recursion should continue.
-- **`DictNode`**, **`ListNode`**, **`ScalarNode`**: Standard TOML/JSON data wrappers.
-- **`LinterNode`**, **`RulesCollectionNode`**: Specialized nodes for the rule status dashboard.
-- **`wrap_data()`**: A factory function to recursively wrap raw data into nodes.
+- **`ConfigNode` (Protocol)**: Defines the base interface for TUI nodes. Rather than bloating the model with UI-specific rendering strings, keep it focused on state:
+    - `path()` / `key()`: Returns the node's configuration path or label.
+    - `children()`: Returns child nodes for tree expansion.
+    - `doc_target()`: Returns a `(target: str, doc_type: Literal["rule", "config", "none"])` tuple, eliminating path-building and regex guessing in `app.py`.
+- **Concrete Nodes**: `DictNode`, `ListNode`, `ScalarNode`, `LinterNode`, `RulesCollectionNode`.
+- **`wrap_data()`**: A factory function to recursively (or lazily) wrap the loaded configuration dictionary into instances of `ConfigNode`.
 
 ---
 
-### TUI Widgets
+### TUI Widgets (Data Rendering via Singledispatch)
 
 ---
 
 #### [MODIFY] [widgets.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/widgets.py)
 
+Instead of the model deciding *how* it looks (`node.table_data()`), shift rendering logic to the widgets using structural polymorphism.
+
+- **Use `@singledispatchmethod`**:
+    - In `CategoryTable`, replace `update_content()` and `update_rules()` with a single `@singledispatchmethod def render_node(self, node: ConfigNode)`.
+    - Register specific rules for `render_node.register(LinterNode)`, `render_node.register(DictNode)`, etc. This keeps UI styling (like rich color markup `[success]`) strictly inside the UI layer, preventing the model layer from becoming entangled with Rich text formatting.
 - **`ConfigTree`**:
-    - Update `populate()` to accept a `ConfigNode`.
-    - Refactor `_populate_node()` to use `node.children()` instead of `if isinstance(data, dict): ...`.
-- **`CategoryTable`**:
-    - Refactor `update_content()` to accept a `ConfigNode` and use `node.table_data()`.
+    - Update `populate()` to accept a root `ConfigNode`.
+    - `_populate_node()` becomes deeply flattened or leans on `node.children()`.
 - **`RuleInspector`**:
-    - Refactor `show_context()` to accept a `ConfigNode` and use `node.to_summary()`.
+    - `show_context()` delegates to `node.doc_target()` rather than trying to infer table length or list item counts manually.
 
 ---
 
-### TUI Application
+### TUI Application (Event Routing)
 
 ---
 
 #### [MODIFY] [app.py](file:///Users/gabriel/dev/ruff-sync/src/ruff_sync/tui/app.py)
 
-- Update `on_mount()` to wrap the loaded `self.config` using `wrap_data()`.
-- Refactor `handle_node_selected()`:
-    - Instead of deep `if isinstance(data, dict) and data.get("type") == "linter"`, use `if isinstance(data, LinterNode)`.
-    - Leverage polymorphic methods on the node if applicable, or keep type-checking shallow (against Classes, not raw types).
+- **Initialization**: Wrap the loaded config using `wrap_data()` in `on_mount()`.
+- **Refactor `handle_node_selected()` and `handle_row_selected()`**:
+    - Eliminate the deep `if data == "__rules__": ... elif data.get("type") == "linter": ...` logic.
+    - Rely on `@singledispatchmethod` on the application handlers, or let the widgets process the strongly typed `ConfigNode` directly. The app can fetch documentation simply by querying `node.doc_target()`.
 
 ## Open Questions
 
 - Should we include the `Arguments` object in the `ConfigNode` context for more advanced resolution, or keep it focused strictly on data representation?
-    - *Initial Thought*: Keep it focused on data, passing necessary state (like `effective_rules`) during the wrap phase.
+    - *Proposed Direction*: Keep it strictly focused on data. State like `effective_rules` and `linters` can be passed into the `wrap_data()` factory and enclosed within the specific nodes that need them.
+- How do we handle laziness? Eagerly walking the entire TOML tree to create Node instances during `on_mount` is fine for typical sizes, but might we want `DictNode.children()` to evaluate laziness to save memory?
 
 ## Verification Plan
 
 ### Automated Tests
-- Create `tests/test_tui_models.py` to verify `wrap_data` and node methods.
-- Run `uv run mypy .` to ensure the new `ConfigNode` protocol is correctly implemented.
+- Create `tests/test_tui_models.py` to verify `wrap_data` handles deeply nested dicts/lists.
+- Create explicit test verifying `@singledispatchmethod` correct invocation based on Node types.
+- Ensure `uv run mypy .` is clean.
 
 ### Manual Verification
 - Open the TUI (`uv run python -m ruff_sync inspect`).
-- Verify that navigating the tree (drill-down into `lint.select`, `lint.extend-select`, etc.) works.
-- Verify that clicking "Effective Rule Status" correctly populates the table and inspector.
-- Verify that clicking a Linter Group (e.g., `Pyflakes`) correctly filters the table view.
-- Verify that clicking an individual configuration value updates the inspector summary.
+- Verify that drill-down in the configuration tree still operates smoothly.
+- Verify node selection fetches correct markdown documentation (validating `doc_target()`).
+- Verify Linter group node selection updates the table correctly.
