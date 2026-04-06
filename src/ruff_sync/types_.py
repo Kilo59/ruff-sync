@@ -19,6 +19,8 @@ class RuffRule(TypedDict):
     explanation: NotRequired[str]
     fix_availability: NotRequired[str]
     status: NotRequired[RuleSyncStatus | dict[str, Any]]
+    matching_select: NotRequired[str | None]
+    matching_ignore: NotRequired[str | None]
     preview: NotRequired[bool]
 
 

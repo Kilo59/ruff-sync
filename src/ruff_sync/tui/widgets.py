@@ -226,6 +226,9 @@ class RuleInspector(Markdown):
         cached_content: str | None = None,
         rule_name: str | None = None,
         rule_status: str | None = None,
+        matching_select: str | None = None,
+        matching_ignore: str | None = None,
+        fix_availability: str | None = None,
     ) -> None:
         """Fetch and display the documentation for a rule or setting.
 
@@ -235,6 +238,9 @@ class RuleInspector(Markdown):
             cached_content: Optional pre-fetched documentation.
             rule_name: Optional rule name for display.
             rule_status: Optional rule status (Enabled, Ignored, Disabled).
+            matching_select: Optional prefix that matched in select.
+            matching_ignore: Optional prefix that matched in ignore.
+            fix_availability: Optional fix availability information.
         """
         if target == "tool.ruff":
             self.show_placeholder()
@@ -262,7 +268,26 @@ class RuleInspector(Markdown):
                 status_icons = {"Enabled": "🟢", "Ignored": "🟡", "Disabled": "⚪"}
                 icon = status_icons.get(rule_status or "Disabled", "⚪")
                 name = rule_name or "Unknown Rule"
-                header = f"# {icon} {target}: {name}\n\n---\n\n"
+                header = f"# {icon} {target}: {name}\n\n"
+
+                # Status and Selection details
+                status_parts = [f"**Status**: {rule_status}"]
+                if matching_select or matching_ignore:
+                    details = []
+                    if matching_select:
+                        details.append(f"selected via `{matching_select}`")
+                    if matching_ignore:
+                        details.append(f"ignored via `{matching_ignore}`")
+
+                    if details:
+                        status_parts.append(f"({', but '.join(details)})")
+
+                header += " ".join(status_parts)
+
+                if fix_availability:
+                    header += f" | **Fix**: {fix_availability}"
+
+                header += "\n\n---\n\n"
 
             self.update(header + content.strip())
         else:
