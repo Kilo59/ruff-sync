@@ -138,8 +138,8 @@ class CategoryTable(DataTable[Any]):
     @render_node.register
     def _(self, node: LinterNode) -> None:
         self._reset_columns("Code", "Name", "Linter", "Fix")
-        prefix = node.linter.get("prefix", "")
-        filtered = [r for r in node.effective_rules if r["code"].startswith(prefix)]
+        linter_name = node.linter["name"]
+        filtered = [r for r in node.effective_rules if r["linter"] == linter_name]
         self._render_rules(filtered)
 
     def _render_rules(self, rules: list[RuffRule]) -> None:

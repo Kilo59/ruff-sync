@@ -50,31 +50,45 @@ async def generate_screenshots() -> None:
     async with app.run_test(size=(120, 40)) as pilot:
         # Increase initial pause to ensure background _prime_caches finishes
         # This is critical for rule statuses and details to show up!
-        await pilot.pause(1.0)
+        await pilot.pause(2.0)
 
         # 1. Main Dashboard (Initial View)
+        # Expand "Effective Rule Status" so it looks more interesting
+        await pilot.press("down", "right")
+        await pilot.pause(0.5)
+
         path = SCREENSHOTS_DIR / "dashboard.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
         # 2. Rule Detail View
-        # Navigate to "Effective Rule Status" -> "Pyflakes (F)"
-        # We start at Root ("Local Configuration"). Child 0 is "Effective Rule Status".
+        # Navigate the Sidebar Tree to "Effective Rule Status" -> "Pyflakes (F)"
+        # This populates the DataTable with the colorful mix of statuses (Enabled/Ignored/Disabled).
+        await pilot.press("home")  # Ensure we start from the top
         await pilot.press("down")  # Select "Effective Rule Status"
-        await pilot.press("right")  # Expand it if collapsed (no-op if expanded)
-        await pilot.press("down")  # Select first linter, usually "Pyflakes (F)"
-        await pilot.press("enter")  # Select the linter node to populate the table
+        await pilot.press("right")  # Expand it if not already
         await pilot.pause(0.5)
 
-        # Focus the table and select a specific rule (e.g., F401 or similar)
-        # Tab moves focus from Tree to DataTable
+        # Navigate down into the linters list until we hit "Pyflakes (F)"
+        tree = app.query_one("#config-tree")
+        for _ in range(100):
+            await pilot.press("down")
+            node = tree.cursor_node
+            label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
+            if "Pyflakes" in label:
+                # Select it to populate the table
+                await pilot.press("enter")
+                break
+
+        # Give the table time to populate with colorful rows
+        await pilot.pause(1.5)
+
+        # Tab to the table and select rule F401 (Ignored)
         await pilot.press("tab")
-        await pilot.pause(0.2)
-        # Scroll down to a rule we want to showcase (e.g., F401)
-        await pilot.press("down", "down")
-        # Enter triggers RowSelected, which updates the inspector with documentation
+        await pilot.pause(0.3)
         await pilot.press("enter")
-        # Critical: Rule documentation fetch is async; wait long enough for it to render!
+
+        # Wait for the inspector to update with rule documentation
         await pilot.pause(1.0)
 
         path = SCREENSHOTS_DIR / "rule_details.svg"
