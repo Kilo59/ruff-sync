@@ -119,21 +119,15 @@ def compute_effective_rules(
 
         # Find longest matching select prefix
         best_select_len = -1
-        matching_select = None
         for s in select:
             if code.startswith(s):
-                if len(s) > best_select_len:
-                    best_select_len = len(s)
-                    matching_select = s
+                best_select_len = max(best_select_len, len(s))
 
         # Find longest matching ignore prefix
         best_ignore_len = -1
-        matching_ignore = None
         for i in ignore:
             if code.startswith(i):
-                if len(i) > best_ignore_len:
-                    best_ignore_len = len(i)
-                    matching_ignore = i
+                best_ignore_len = max(best_ignore_len, len(i))
 
         status = "Disabled"
         if best_select_len > best_ignore_len:
@@ -143,8 +137,6 @@ def compute_effective_rules(
 
         rule_with_status = dict(rule)
         rule_with_status["status"] = status
-        rule_with_status["matching_select"] = matching_select
-        rule_with_status["matching_ignore"] = matching_ignore
         enriched.append(rule_with_status)  # type: ignore[arg-type]
 
     return enriched

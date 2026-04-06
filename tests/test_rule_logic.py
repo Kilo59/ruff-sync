@@ -31,14 +31,10 @@ def test_compute_effective_rules_basic():
     # F401: select matches "F" (len 1), ignore matches "F401" (len 4). Ignore wins.
     f401 = next(r for r in enriched if r["code"] == "F401")
     assert f401["status"] == "Ignored"
-    assert f401["matching_select"] == "F"
-    assert f401["matching_ignore"] == "F401"
 
     # E501: no match in select/ignore. Disabled (since select is explicitly "F").
     e501 = next(r for r in enriched if r["code"] == "E501")
     assert e501["status"] == "Disabled"
-    assert e501["matching_select"] is None
-    assert e501["matching_ignore"] is None
 
 
 def test_compute_effective_rules_defaults():
@@ -55,15 +51,12 @@ def test_compute_effective_rules_defaults():
     # Defaults are E and F
     f401 = next(r for r in enriched if r["code"] == "F401")
     assert f401["status"] == "Enabled"
-    assert f401["matching_select"] == "F"
 
     e501 = next(r for r in enriched if r["code"] == "E501")
     assert e501["status"] == "Enabled"
-    assert e501["matching_select"] == "E"
 
     up001 = next(r for r in enriched if r["code"] == "UP001")
     assert up001["status"] == "Disabled"
-    assert up001["matching_select"] is None
 
 
 def test_compute_effective_rules_specificity():
@@ -74,15 +67,11 @@ def test_compute_effective_rules_specificity():
     toml_config_1 = {"tool": {"ruff": {"lint": {"select": ["PLR0912"], "ignore": ["PLR"]}}}}
     enriched_1 = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config_1)
     assert enriched_1[0]["status"] == "Enabled"
-    assert enriched_1[0]["matching_select"] == "PLR0912"
-    assert enriched_1[0]["matching_ignore"] == "PLR"
 
     # Ignore more specific than select
     toml_config_2 = {"tool": {"ruff": {"lint": {"select": ["PLR"], "ignore": ["PLR0912"]}}}}
     enriched_2 = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config_2)
     assert enriched_2[0]["status"] == "Ignored"
-    assert enriched_2[0]["matching_select"] == "PLR"
-    assert enriched_2[0]["matching_ignore"] == "PLR0912"
 
 
 def test_compute_effective_rules_extend():
