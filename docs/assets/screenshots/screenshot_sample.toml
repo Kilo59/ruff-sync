@@ -15,9 +15,7 @@ line-length = 100
 select = [
     "E",    # Enabled (some are fixable)
     "F",    # Enabled (some are fixable)
-    "UP",   # Enabled (most are fixable)
     "B",    # Enabled
-    "SIM",  # Enabled
     "T20",  # Enabled
 ]
 
@@ -26,6 +24,17 @@ ignore = [
     "E402", # Module level import not at top of file
     "F401", # Unused import (this is fixable, but we ignore it to show Ignored)
     "T201", # print() found
+]
+
+# Use extend-select/ignore to show how these categories are merged
+extend-select = [
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+]
+
+extend-ignore = [
+    "UP006", # Use `list` instead of `List` for type annotation
+    "SIM101",# Combine multiple `isinstance` calls
 ]
 
 [tool.ruff.format]
