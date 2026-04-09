@@ -29,8 +29,8 @@
 - [Pre-commit Integration](#pre-commit-integration)
 - [CI Integration](#ci-integration)
 - [Agent Skill](#agent-skill)
-- [Troubleshooting](https://kilo59.github.io/ruff-sync/troubleshooting/)
-- [API Reference](https://kilo59.github.io/ruff-sync/reference/ruff_sync/)
+- [Troubleshooting](https://kilo59.github.io/ruff-sync/stable/troubleshooting/)
+- [API Reference](https://kilo59.github.io/ruff-sync/stable/reference/ruff_sync/)
 - [Example Workflow](#example-workflow)
 - [Detailed Check Logic](#detailed-check-logic)
 - [Dogfooding](#dogfooding)
@@ -88,7 +88,7 @@ No package registry. No publishing step. Just a URL.
 
 ### Install
 
-See the [Installation Guide](https://kilo59.github.io/ruff-sync/installation/) for more detailed instructions.
+See the [Installation Guide](https://kilo59.github.io/ruff-sync/stable/installation/) for more detailed instructions.
 
 With [uv](https://docs.astral.sh/uv/) (recommended):
 
@@ -163,13 +163,13 @@ ruff-sync check https://github.com/my-org/standards
 ruff-sync check --semantic
 ```
 
-See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for more detailed examples and advanced workflows.
+See the [Usage documentation](https://kilo59.github.io/ruff-sync/stable/usage/) for more detailed examples and advanced workflows.
 
 ## Key Features
 
 - 🏗️ **Format-preserving merges** — Uses [tomlkit](https://github.com/sdispater/tomlkit) under the hood, so your comments, whitespace, and TOML structure are preserved. No reformatting surprises.
 - 📂 **Upstream Layers** — Merge configurations from several sources sequentially (e.g., base company config + team-specific overrides).
-- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs, tree (directory) URLs, or blob (file) URLs to raw content URLs. (See [URL Resolution Guide](https://kilo59.github.io/ruff-sync/url-resolution/))
+- 🌐 **GitHub & GitLab URL support** — Automatically converts GitHub/GitLab repository URLs, tree (directory) URLs, or blob (file) URLs to raw content URLs. (See [URL Resolution Guide](https://kilo59.github.io/ruff-sync/stable/url-resolution/))
 - 🔍 **Smart configuration discovery** — Point at a directory and `ruff-sync` will automatically find your config. It checks `pyproject.toml`, `ruff.toml`, and `.ruff.toml` (in that order).
 - 📥 **Git clone support** — If the URL starts with `git@` or uses the `ssh://`, `git://`, or `git+ssh://` schemes, `ruff-sync` will perform an efficient shallow clone (using `--filter=blob:none` and `--no-checkout`) to safely extract the configuration with minimal network traffic.
 - 🛡️ **Selective exclusions** — Keep project-specific overrides (like `per-file-ignores` or `target-version`) from being clobbered by the upstream config.
@@ -177,7 +177,7 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 - 🤖 **CI-ready `check` command** — Verify that your local config is in sync without modifying anything. Exits 1 if out of sync, making it perfect for pre-merge gates. ([See detailed logic](#detailed-check-logic))
 - 🧠 **Semantic mode** — Use `--semantic` to ignore cosmetic differences (comments, whitespace) and only fail on real value changes.
 - 🔗 **Pre-commit hook sync** — Use `--pre-commit` to automatically keep your `ruff-pre-commit` hook version in `.pre-commit-config.yaml` matching your project's Ruff version.
-- 🦾 **Agent Skill** — Ships a bundled [Agent Skill](https://kilo59.github.io/ruff-sync/agent-skill/) so AI coding agents can guide you through setup, configuration, and troubleshooting automatically.
+- 🦾 **Agent Skill** — Ships a bundled [Agent Skill](https://kilo59.github.io/ruff-sync/stable/agent-skill/) so AI coding agents can guide you through setup, configuration, and troubleshooting automatically.
 - 📊 **Multiple Output Formats** — Supports `text`, `json`, and GitHub Actions `github` (inline annotations) formats for seamless integration with both human developers and CI/CD pipelines.
 
 ## Ruff Inspect (TUI)
@@ -192,14 +192,14 @@ uv tool install "ruff-sync[tui]"
 ruff-inspect
 ```
 
-![Ruff Inspect TUI — dashboard view showing the Pyflakes linter selected with a colorful mix of Enabled, Ignored and Disabled rules](docs/assets/screenshots/dashboard.svg)
+![Ruff Inspect TUI — rule detail view for F401 unused-import showing status, fix availability, description and rationale](docs/assets/screenshots/rule_details.svg)
 
 > [!NOTE]
-> This feature is experimental and subject to change. See the [Ruff Config Inspection](https://kilo59.github.io/ruff-sync/inspect/) page for full details.
+> This feature is experimental and subject to change. See the [Ruff Config Inspection](https://kilo59.github.io/ruff-sync/stable/inspect/) page for full details.
 
 ## Configuration
 
-Point `ruff-sync` at your upstream source and it will handle the rest. See the [Full Configuration Guide](https://kilo59.github.io/ruff-sync/configuration/) for all available options.
+Point `ruff-sync` at your upstream source and it will handle the rest. See the [Full Configuration Guide](https://kilo59.github.io/ruff-sync/stable/configuration/) for all available options.
 
 You can configure `ruff-sync` itself in your `pyproject.toml`:
 
@@ -267,11 +267,11 @@ Ensure your configuration is always in sync before every commit. Add this to you
     - id: ruff-sync-check
 ```
 
-See the [Pre-commit Guide](https://kilo59.github.io/ruff-sync/pre-commit/) for more details.
+See the [Pre-commit Guide](https://kilo59.github.io/ruff-sync/stable/pre-commit/) for more details.
 
 ## CI Integration
 
-The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges. See the [CI Integration Guide](https://kilo59.github.io/ruff-sync/ci-integration/) for more details.
+The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges. See the [CI Integration Guide](https://kilo59.github.io/ruff-sync/stable/ci-integration/) for more details.
 
 ```yaml
 # .github/workflows/ci.yaml
@@ -299,14 +299,14 @@ $ ruff-sync check --semantic
 ```
 
 > [!TIP]
-> See the [Best Practices](https://kilo59.github.io/ruff-sync/best-practices/) guide for recommendations on whether to make your CI checks blocking or informational.
+> See the [Best Practices](https://kilo59.github.io/ruff-sync/stable/best-practices/) guide for recommendations on whether to make your CI checks blocking or informational.
 
 
 ## Agent Skill
 
 `ruff-sync` ships a bundled [Agent Skill](https://agentskills.io/home) at [`.agents/skills/ruff-sync-usage/`](.agents/skills/ruff-sync-usage/). AI coding agents that support the [Agent Skills format](https://agentskills.io/what-are-skills) (GitHub Copilot, Claude Code, Cursor, etc.) will automatically use it to guide you through setup, configuration, CI integration, and troubleshooting — without you needing to explain the tool each time.
 
-See the **[Agent Skill guide](https://kilo59.github.io/ruff-sync/agent-skill/)** for details.
+See the **[Agent Skill guide](https://kilo59.github.io/ruff-sync/stable/agent-skill/)** for details.
 
 ## Example Workflow
 
@@ -325,7 +325,7 @@ git commit -am "sync ruff config from upstream"
 
 ### Curated Examples
 
-While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly. See the [Pre-defined Configs Guide](https://kilo59.github.io/ruff-sync/pre-defined-configs/) for more detailed examples and advanced usage.
+While `ruff-sync` is designed to sync from _any_ repository or URL of your choosing, this repository also provides a few curated configurations in the [`configs/`](./configs/) directory that you can use directly. See the [Pre-defined Configs Guide](https://kilo59.github.io/ruff-sync/stable/pre-defined-configs/) for more detailed examples and advanced usage.
 
 #### Kitchen Sink
 
