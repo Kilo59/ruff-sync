@@ -10,6 +10,10 @@ from __future__ import annotations
 import asyncio
 import os
 import pathlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ruff_sync.tui.widgets import ConfigTree
 
 from ruff_sync.cli import Arguments
 from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE, OutputFormat
@@ -39,7 +43,7 @@ def get_default_args() -> Arguments:
     )
 
 
-async def generate_screenshots() -> None:
+async def generate_screenshots() -> None:  # noqa: PLR0915
     """Run the app headlessly and capture screenshots of multiple views."""
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     print(f"📸 Generating screenshots in {SCREENSHOTS_DIR} using {SCREENSHOT_SAMPLE_TOML}...")
@@ -54,7 +58,7 @@ async def generate_screenshots() -> None:
 
         # 1. Main Dashboard (Initial View)
         # Robustly wait for and select "Effective Rule Status"
-        tree = app.query_one("#config-tree")
+        tree: ConfigTree = app.query_one("#config-tree")  # type: ignore[assignment]
         await pilot.press("home", "down", "right")
         # Critical wait for 400+ nodes to populate!
         await pilot.pause(2.0)
@@ -75,12 +79,13 @@ async def generate_screenshots() -> None:
         found = False
         for _ in range(150):
             node = tree.cursor_node
-            label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
-            if "Pyflakes" in label:
-                # Select it to populate the table (triggers NodeSelected)
-                await pilot.press("enter")
-                found = True
-                break
+            if node:
+                label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
+                if "Pyflakes" in label:
+                    # Select it to populate the table (triggers NodeSelected)
+                    await pilot.press("enter")
+                    found = True
+                    break
             await pilot.press("down")
             await pilot.pause(0.02)
 

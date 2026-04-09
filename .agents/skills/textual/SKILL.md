@@ -51,3 +51,7 @@ if __name__ == "__main__":
 > - **Async Handlers**: Event handlers can be `async def` or `def`. Use `async` if you need to `await` I/O or `post_message`.
 > - **Main Thread**: Do not block the main thread with long-running synchronous code. Use `self.run_worker()` for background tasks.
 - **Theme Tokens in Rich Markup**: Textual theme tokens (e.g., `$success`, `$accent`) **cannot** be used directly in Rich markup strings (like in `DataTable` cells). They must be resolved to hex strings at runtime: `str(self.app.get_theme(self.app.theme).success)`.
+- **Type-Safe Queries (No Cast)**: If `typing.cast` is banned (e.g. by `TID251`), use a variable annotation with a targeted `# type: ignore` to resolve `query_one` results:
+  ```python
+  tree: MyTree = app.query_one("#tree-id")  # type: ignore[assignment]
+  ```

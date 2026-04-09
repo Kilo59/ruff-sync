@@ -147,7 +147,6 @@ class CategoryTable(DataTable[Any]):
         # Resolve theme colors to hex strings for Rich markup safely
         success_clr = "green"
         warning_clr = "yellow"
-        accent_clr = "magenta"
 
         try:
             # We can access the theme via the App instance
@@ -155,7 +154,6 @@ class CategoryTable(DataTable[Any]):
             if theme:
                 success_clr = str(theme.success)
                 warning_clr = str(theme.warning)
-                accent_clr = str(theme.accent)
         except (AttributeError, KeyError):
             # Fallback for headless tests or if the app is not yet initialized
             pass
@@ -226,6 +224,7 @@ class RuleInspector(Markdown):
         fix_availability: str | None = None,
     ) -> None:
         """Fetch and display the documentation for a rule or setting."""
+        content: str | None = None
         if target == "tool.ruff":
             self.show_placeholder()
             return
