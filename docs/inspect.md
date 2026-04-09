@@ -12,7 +12,7 @@
 The Ruff Config Inspection TUI provides a structured, interactive view of your `tool.ruff` configuration, allowing you to browse effective rules, search the full Ruff rule registry, and view detailed documentation for any rule or configuration key.
 
 ![Ruff-Sync TUI Main View](assets/screenshots/dashboard.svg)
-*The main TUI view showing the configuration tree, rule registry, and detailed inspector.*
+*The main TUI view — Pyflakes (F) selected in the sidebar, showing a colorful mix of Enabled, Ignored, and Disabled rule statuses in the registry table.*
 
 ---
 
@@ -92,7 +92,7 @@ When you select a rule, the **Rule Inspector** at the bottom-right fetches and d
 Press `/` at any time to open the **Omnibox**. This allows you to perform a fuzzy search across the entire Ruff rule registry, even for rules not currently active in your project.
 
 ![Ruff Rule Search](assets/screenshots/search_omnibox.svg)
-*The Omnibox search interface for quick rule discovery.*
+*Fuzzy concept search in the Omnibox — searching "import" surfaces matching rules across multiple linter families simultaneously.*
 
 ---
 

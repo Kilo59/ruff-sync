@@ -3,6 +3,12 @@
 
 Uses Textual's testing harness to launch the app headlessly,
 navigate to specific views, and capture SVG screenshots.
+
+Screenshots captured:
+  dashboard.svg       -- Full app with Pyflakes (F) selected, colorful rule table populated
+  search_omnibox.svg  -- Omnibox showing fuzzy search results for "import"
+  legend_help.svg     -- The keyboard legend / help modal
+  rule_details.svg    -- Rule detail inspector (NOT regenerated; existing file is authoritative)
 """
 
 from __future__ import annotations
@@ -43,8 +49,36 @@ def get_default_args() -> Arguments:
     )
 
 
-async def generate_screenshots() -> None:  # noqa: PLR0915
-    """Run the app headlessly and capture screenshots of multiple views."""
+async def _navigate_to_pyflakes(tree: ConfigTree, pilot: object) -> bool:
+    """Navigate down the tree until Pyflakes (F) is found and selected.
+
+    Args:
+        tree: The config tree widget.
+        pilot: The Textual pilot.
+
+    Returns:
+        True if Pyflakes was found and selected, False otherwise.
+    """
+    for _ in range(200):
+        node = tree.cursor_node
+        if node:
+            label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
+            if "Pyflakes" in label:
+                # Press enter to trigger NodeSelected → fills the CategoryTable
+                await pilot.press("enter")  # type: ignore[attr-defined]
+                return True
+        await pilot.press("down")  # type: ignore[attr-defined]
+        await pilot.pause(0.02)  # type: ignore[attr-defined]
+    return False
+
+
+async def generate_screenshots() -> None:
+    """Run the app headlessly and capture screenshots of multiple views.
+
+    NOTE: rule_details.svg is intentionally NOT regenerated here.
+    The existing file was hand-verified as high quality. Run the TUI
+    manually and use 'app.save_screenshot()' to update it if needed.
+    """
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     print(f"📸 Generating screenshots in {SCREENSHOTS_DIR} using {SCREENSHOT_SAMPLE_TOML}...")
 
@@ -52,84 +86,60 @@ async def generate_screenshots() -> None:  # noqa: PLR0915
     app = RuffSyncApp(args)
 
     async with app.run_test(size=(120, 40)) as pilot:
-        # Increase initial pause to ensure background _prime_caches finishes
-        # This is critical for rule statuses and details to show up!
-        await pilot.pause(2.0)
+        # Wait generously for the background _prime_caches worker to finish.
+        # This is critical — rule statuses and colors won't appear without it.
+        await pilot.pause(3.0)
 
-        # 1. Main Dashboard (Initial View)
-        # Robustly wait for and select "Effective Rule Status"
         tree: ConfigTree = app.query_one("#config-tree")  # type: ignore[assignment]
-        await pilot.press("home", "down", "right")
-        # Critical wait for 400+ nodes to populate!
+
+        # ── 1. Dashboard: Pyflakes (F) selected, colorful mixed-status table ──
+        # Expand "Effective Rule Status" and walk down to Pyflakes (F)
+        await pilot.press("home")
+        await pilot.press("down")  # Move to "Effective Rule Status"
+        await pilot.press("right")  # Expand node
+        await pilot.pause(0.5)
+
+        found = await _navigate_to_pyflakes(tree, pilot)
+        if not found:
+            print("  ⚠️ WARNING: Failed to find Pyflakes in tree — dashboard may be empty")
+
+        # Give the CategoryTable time to populate and colorize
         await pilot.pause(2.0)
 
         path = SCREENSHOTS_DIR / "dashboard.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
-        # 2. Rule Detail View
-        # Navigate the Sidebar Tree to "Effective Rule Status" -> "Pyflakes (F)"
-        # This populates the DataTable with the colorful mix of statuses (Enabled/Ignored/Disabled).
-        await pilot.press("home")  # Ensure we start from the top
-        await pilot.press("down")  # Select "Effective Rule Status"
-        await pilot.press("right")  # Expand it if not already
-        await pilot.pause(0.5)
-
-        # Navigate down into the linters list until we hit "Pyflakes (F)"
-        found = False
-        for _ in range(150):
-            node = tree.cursor_node
-            if node:
-                label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
-                if "Pyflakes" in label:
-                    # Select it to populate the table (triggers NodeSelected)
-                    await pilot.press("enter")
-                    found = True
-                    break
-            await pilot.press("down")
-            await pilot.pause(0.02)
-
-        if not found:
-            print("  ⚠️ WARNING: Failed to find Pyflakes in tree")
-
-        # Give the table time to populate with colorful rows
-        await pilot.pause(1.5)
-
-        # Tab to the table and select rule F401 (Ignored)
-        await pilot.press("tab")
-        await pilot.pause(0.3)
-        await pilot.press("home")  # F401 is first
-        await pilot.press("enter")
-
-        # Wait for the inspector to update with rule documentation
-        await pilot.pause(1.0)
-
-        path = SCREENSHOTS_DIR / "rule_details.svg"
-        app.save_screenshot(str(path))
-        print(f"  ✓ Saved {path}")
-
-        # 3. Omnibox / Search
-        await pilot.press("/")
-        await pilot.pause(0.3)
-        # Type search: UP007 is a common, fixable rule
-        await pilot.press(*"UP007")
-        await pilot.pause(0.5)
-        path = SCREENSHOTS_DIR / "search_omnibox.svg"
-        app.save_screenshot(str(path))
-        print(f"  ✓ Saved {path}")
-
-        # Close search
-        await pilot.press("escape")
-        await pilot.pause(0.2)
-
-        # 4. Legend / Help
+        # ── 2. Legend / Help — captured BEFORE omnibox to avoid key-routing race ──
         await pilot.press("?")
-        await pilot.pause(0.2)
+        await pilot.pause(0.6)
+
         path = SCREENSHOTS_DIR / "legend_help.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
+        # Dismiss modal; poll screen stack to confirm it's fully gone
+        await pilot.press("escape")
+        for _ in range(30):
+            await pilot.pause(0.1)
+            if len(app.screen_stack) == 1:
+                break
+        await pilot.pause(0.3)
+
+        # ── 3. Omnibox: fuzzy search for "import" — shows cross-linter results ──
+        # Searching for a concept (not an exact rule code) demonstrates how the
+        # omnibox surfaces relevant rules from multiple linter families at once.
+        await pilot.press("/")
+        await pilot.pause(0.5)  # Wait for modal mount and input focus
+        await pilot.press(*"import")
+        await pilot.pause(0.8)  # Let results render
+
+        path = SCREENSHOTS_DIR / "search_omnibox.svg"
+        app.save_screenshot(str(path))
+        print(f"  ✓ Saved {path}")
+
     print("\n🎉 Screenshot generation complete!")
+    print("   (rule_details.svg was NOT regenerated — existing file is authoritative)")
 
 
 if __name__ == "__main__":
