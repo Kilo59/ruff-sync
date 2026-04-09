@@ -7,16 +7,25 @@
 > that we don't introduce syntax errors, conflicting versions, or deprecated rules into the
 > target repository.
 
+## Design Decision: Validation is Opt-In
+
+Validation is **not run by default**. Users must explicitly request it via `--validate`.
+This avoids adding latency (a subprocess `ruff check` invocation) and an implicit dependency
+on `ruff` being available in the shell environment to every `pull` invocation.
+
+`--strict` implies `--validate`. Passing `--strict` without `--validate` is equivalent to
+passing both.
+
 ---
 
 ## Overview of Priorities
 
 | Priority | Label | Feature | Scope |
 |---|---|---|---|
-| 1 (Must Have) | 🔴 | TOML syntax + Ruff CLI validation | New `validation.py` module, hooks in `pull()` |
-| 2 (Should Have) | 🟠 | Python version consistency check | `validation.py` + warn in `pull()` |
-| 3 (Could Have) | 🟡 | Rule deprecation warnings | `validation.py` + subprocess |
-| 4 (Nice to Have) | 🟢 | `--strict` flag | `cli.py` + `Arguments` |
+| 1 (Must Have) | 🔴 | TOML syntax + Ruff CLI validation | New `validation.py` module; gated by `--validate` in `pull()` |
+| 2 (Should Have) | 🟠 | Python version consistency check | `validation.py` + warn when `--validate` is active |
+| 3 (Could Have) | 🟡 | Rule deprecation warnings | `validation.py` + subprocess; gated by `--validate` |
+| 4 (Nice to Have) | 🟢 | `--strict` flag | Upgrades warnings to failures; implies `--validate` |
 
 ---
 
@@ -156,7 +165,46 @@ def validate_merged_config(doc: TOMLDocument, is_ruff_toml: bool = False) -> boo
     return True
 ```
 
-#### Step 2 — Hook validation into `pull()` in `src/ruff_sync/core.py`
+#### Step 2 — Add `--validate` flag and `validate` field to `cli.py`
+
+Validation is **opt-in**. Before touching `core.py`, wire up the CLI flag.
+
+**In `Arguments` (NamedTuple, around line 95)**, add two new fields after the existing ones:
+
+```python
+class Arguments(NamedTuple):
+    ...
+    validate: bool = False  # run --validate checks before writing
+    strict: bool = False    # treat warnings as errors (implies validate)
+```
+
+**In `common_parser`** (around line 236), add:
+
+```python
+common_parser.add_argument(
+    "--validate",
+    action="store_true",
+    default=False,
+    help=(
+        "Validate the merged config with Ruff before writing to disk. "
+        "Aborts if Ruff rejects the config. Off by default."
+    ),
+)
+```
+
+**In `main()`**, in the `exec_args = Arguments(...)` block add:
+
+```python
+exec_args = Arguments(
+    ...
+    validate=getattr(args, "validate", False) or getattr(args, "strict", False),
+    strict=getattr(args, "strict", False),
+)
+```
+
+> `validate` is forced `True` when `strict` is `True` — strict is a superset of validate.
+
+#### Step 3 — Hook validation into `pull()` in `src/ruff_sync/core.py`
 
 Open `core.py`. Find the `pull()` function (around line 1103). Look for this block:
 
@@ -173,27 +221,30 @@ Open `core.py`. Find the `pull()` function (around line 1103). Look for this blo
 **After** this block (and **before** `should_save = args.save ...`), insert:
 
 ```python
-        # Validate the merged config before writing to disk
-        is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-        from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
-        if not validate_merged_config(source_doc, is_ruff_toml=is_ruff_toml):
-            fmt.error(
-                "❌ Merged config failed validation. Local file left unchanged.",
-                logger=LOGGER,
-            )
-            return 1
+        # Validation is opt-in — only run if --validate (or --strict) was passed
+        if args.validate:
+            is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+            from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
+            if not validate_merged_config(
+                source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict
+            ):
+                fmt.error(
+                    "❌ Merged config failed validation. Local file left unchanged.",
+                    logger=LOGGER,
+                )
+                return 1
 ```
 
 > **Note**: The inline import avoids a circular import issue if `validation.py` ever needs to
 > import from `core.py` in the future. Place it at the top of the file under `TYPE_CHECKING`
 > once you've confirmed there's no circular dependency.
 
-#### Step 3 — Export from `__init__.py`
+#### Step 4 — Export from `__init__.py`
 
 Open `src/ruff_sync/__init__.py`. Add `validate_merged_config` to `__all__` if it is public.
 Check the current `__all__` list first and follow the existing alphabetical pattern.
 
-#### Step 4 — Add tests in `tests/test_config_validation.py`
+#### Step 5 — Add tests in `tests/test_config_validation.py`
 
 > There is already a `tests/test_config_validation.py` file. **Open it first and read what's
 > already there** before adding tests, to avoid duplicates.
@@ -208,9 +259,15 @@ Tests to add:
    top-level `validate_merged_config` entrypoint.
 5. **`test_pull_aborts_on_invalid_config`** — integration-style test using `pyfakefs` +
    `respx` that asserts the local file is **not modified** when validation fails.
+   - Build `Arguments` with `validate=True`.
    - Use `respx.mock` to return an upstream config containing a deliberately invalid Ruff key.
    - Assert the return code from `pull(args)` is `1`.
    - Assert the local `pyproject.toml` content is unchanged.
+
+6. **`test_pull_skips_validation_by_default`** — same setup but `validate=False` (default).
+   - Assert the return code is `0` (pull succeeds even with a bad upstream key, because validation
+     was not requested).
+   - This is the regression guard ensuring validation is truly opt-in.
 
 **Test patterns to follow** (from project conventions):
 
@@ -520,50 +577,20 @@ Tests:
 
 ### What it does
 
-When `--strict` is passed to `ruff-sync pull` (or `ruff-sync check`), any **warning** from
-Priorities 2 or 3 above is upgraded to a **hard failure** (non-zero exit code), and the sync
-is aborted.
+When `--strict` is passed to `ruff-sync pull`, any **warning** from Priorities 2 or 3
+(version mismatch, deprecated rules) is upgraded to a **hard failure** (non-zero exit code)
+and the sync is aborted.
+
+`--strict` automatically implies `--validate`. You do not need to pass both.
 
 ### Step-by-step implementation
 
-#### Step 1 — Add `strict` to `Arguments` in `cli.py`
+#### Step 1 — `--strict` and `--validate` CLI args are added together
 
-`Arguments` is a `NamedTuple` defined around line 95. Add a new field:
+Both `--validate` and `--strict` were already added to `Arguments` and the parser in
+Priority 1 / Step 2. Refer back to that step — no additional CLI changes are needed here.
 
-```python
-class Arguments(NamedTuple):
-    ...
-    strict: bool = False   # <-- add this line after the existing fields
-```
-
-#### Step 2 — Add `--strict` to the CLI parser in `cli.py`
-
-Find `common_parser` (around line 236). Add:
-
-```python
-common_parser.add_argument(
-    "--strict",
-    action="store_true",
-    default=False,
-    help=(
-        "Treat version conflicts and deprecated rule warnings as hard failures. "
-        "Useful in CI pipelines."
-    ),
-)
-```
-
-#### Step 3 — Thread `strict` through `main()` in `cli.py`
-
-In `main()`, find where `exec_args = Arguments(...)` is constructed. Add:
-
-```python
-exec_args = Arguments(
-    ...
-    strict=getattr(args, "strict", False),
-)
-```
-
-#### Step 4 — Use `strict` in validation
+#### Step 2 — Use `strict` in `validate_merged_config`
 
 Update `validate_merged_config` signature and behavior:
 
@@ -597,20 +624,16 @@ def validate_merged_config(
 > The simplest approach: make them return a `bool` (True = OK, False = problem found),
 > and the caller decides whether to abort based on `strict`.
 
-Update the call in `pull()`:
+The call in `pull()` (added in Priority 1 / Step 3) already passes `strict=args.strict`.
+No further change to `pull()` is needed.
 
-```python
-if not validate_merged_config(source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict):
-    ...
-```
+#### Step 3 — Update `Config` TypedDict in `core.py` (if persisting flags)
 
-#### Step 5 — Update `Config` TypedDict in `core.py` (if persisting strict)
-
-If `--strict` should be saveable to `[tool.ruff-sync]`, add `strict: bool` to the `Config`
-TypedDict and a `ConfKey.STRICT = "strict"` to `constants.py`. This is optional for a first
+If `--validate` / `--strict` should be saveable to `[tool.ruff-sync]`, add them to the
+`Config` TypedDict and to `ConfKey` in `constants.py`. This is optional for a first
 implementation.
 
-#### Step 6 — Tests for `--strict`
+#### Step 4 — Tests for `--strict`
 
 Add to `tests/test_config_validation.py`:
 
@@ -630,11 +653,11 @@ Add to `tests/test_config_validation.py`:
 | File | Change Type | What changes |
 |---|---|---|
 | `src/ruff_sync/validation.py` | **NEW** | All validation logic |
-| `src/ruff_sync/core.py` | **MODIFY** | Call `validate_merged_config` in `pull()` |
-| `src/ruff_sync/cli.py` | **MODIFY** | Add `strict: bool` to `Arguments`, add `--strict` to parser, thread into `main()` |
-| `src/ruff_sync/constants.py` | **MODIFY** (optional) | Add `ConfKey.STRICT` if `strict` is saveable |
+| `src/ruff_sync/cli.py` | **MODIFY** | Add `validate: bool` + `strict: bool` to `Arguments`; add `--validate` + `--strict` to `common_parser`; thread both through `main()` (strict forces validate=True) |
+| `src/ruff_sync/core.py` | **MODIFY** | Call `validate_merged_config` in `pull()` **only when** `args.validate` is `True` |
+| `src/ruff_sync/constants.py` | **MODIFY** (optional) | Add `ConfKey.VALIDATE` / `ConfKey.STRICT` if persisting to `[tool.ruff-sync]` |
 | `src/ruff_sync/__init__.py` | **MODIFY** | Export `validate_merged_config` |
-| `tests/test_config_validation.py` | **MODIFY** | Add all new test cases listed above |
+| `tests/test_config_validation.py` | **MODIFY** | Add all new test cases listed above, including the regression test that confirms validation is skipped by default |
 
 ---
 
@@ -646,19 +669,23 @@ Execute the steps in this exact order to avoid broken intermediate states:
    and `validate_merged_config` (Priority 1 only first).
 2. Run `uv run ruff check . --fix` and `uv run ruff format .` — fix any issues.
 3. Run `uv run mypy .` — fix any type errors.
-4. Hook `validate_merged_config` into `pull()` in `core.py`.
-5. Run `uv run pytest -vv` — make sure existing tests still pass.
-6. Add Priority 1 tests to `tests/test_config_validation.py`.
-7. Run `uv run pytest tests/test_config_validation.py -vv` — make sure new tests pass.
-8. Add `check_python_version_consistency` to `validation.py` (Priority 2).
-9. Update `validate_merged_config` to call the version check.
-10. Add Priority 2 tests. Run `uv run pytest -vv`.
-11. Add `_get_deprecated_rule_codes` and `check_deprecated_rules` (Priority 3).
-12. Update `validate_merged_config` to call the deprecation check.
-13. Add Priority 3 tests. Run `uv run pytest -vv`.
-14. Add `--strict` flag (Priority 4): update `Arguments`, `cli.py`, and `validation.py`.
-15. Add Priority 4 tests. Run `uv run pytest -vv`.
-16. Final full validation:
+4. Add `validate: bool = False` and `strict: bool = False` to `Arguments` in `cli.py`.
+   Add `--validate` and `--strict` to `common_parser`. In `main()`, set
+   `validate=args.validate or args.strict` and `strict=args.strict`.
+5. Hook `validate_merged_config` into `pull()` in `core.py`, **guarded by `if args.validate:`**.
+6. Run `uv run pytest -vv` — make sure existing tests still pass.
+7. Add Priority 1 tests to `tests/test_config_validation.py`, including
+   `test_pull_skips_validation_by_default` (the opt-in regression guard).
+8. Run `uv run pytest tests/test_config_validation.py -vv` — make sure new tests pass.
+9. Add `check_python_version_consistency` to `validation.py` (Priority 2).
+10. Update `validate_merged_config` to call the version check.
+11. Add Priority 2 tests. Run `uv run pytest -vv`.
+12. Add `_get_deprecated_rule_codes` and `check_deprecated_rules` (Priority 3).
+13. Update `validate_merged_config` to call the deprecation check.
+14. Add Priority 3 tests. Run `uv run pytest -vv`.
+15. Update `validate_merged_config` to respect `strict` for P2/P3 warnings (Priority 4).
+16. Add Priority 4 tests. Run `uv run pytest -vv`.
+17. Final full validation:
     ```bash
     uv run ruff check . --fix
     uv run ruff format .
@@ -670,6 +697,11 @@ Execute the steps in this exact order to avoid broken intermediate states:
 
 ## Key Constraints & Gotchas
 
+- **Validation is opt-in**: The `pull()` guard is `if args.validate:`. Without `--validate`
+  (or `--strict`), no validation subprocess is spawned and no `validation.py` code is executed.
+  This must be verified by a dedicated regression test (`test_pull_skips_validation_by_default`).
+- **`--strict` implies `--validate`**: In `main()`, resolve
+  `validate = args.validate or args.strict`. Never require the user to pass both flags.
 - **No `unittest.mock`**: Dependency injection is required for testability. Pass Ruff output
   (or deprecated code sets) as function arguments in test scenarios.
 - **No `autouse=True`**: All test fixtures must be explicitly requested.
