@@ -1,4 +1,4 @@
-"""Main application logic for the Ruff-Sync Terminal User Interface."""
+"""Main application logic for the Ruff Inspect Terminal User Interface."""
 
 from __future__ import annotations
 
@@ -30,7 +30,9 @@ MIN_RULE_COLUMNS: Final = 4
 
 
 class RuffSyncApp(App[None]):
-    """Ruff-Sync Terminal User Interface."""
+    """Ruff Inspect Terminal User Interface."""
+
+    TITLE = "Ruff Inspect"
 
     CSS = """
     Screen {
