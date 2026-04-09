@@ -143,6 +143,38 @@ mike set-default --push stable
 ### 404 for `versions.json`
 - If you see a 404 for `/versions.json` but `https://<user>.github.io/<repo>/versions.json` exists, the switcher is looking at the domain root instead of the project root. Verify `site_url` includes the repository name and has a trailing slash.
 
+### Bootstrapping a Stable Version (One-Time)
+
+If `versions.json` only has `dev` and you need to add the latest stable release (e.g., `v0.1.4`) without waiting for a new release cycle:
+
+```bash
+# 1. Sync local gh-pages to origin (avoids diverged-branch push failures)
+git fetch origin gh-pages
+git branch -f gh-pages origin/gh-pages
+
+# 2. Check out the stable tag to build its docs
+git checkout v0.1.4
+
+# 3. Install docs deps for this version
+uv sync --group docs --frozen
+
+# 4. Configure git identity
+git config user.name "github-actions[bot]"
+git config user.email "github-actions[bot]@users.noreply.github.com"
+
+# 5. Deploy the version and set it as 'stable'
+uv run mike deploy --push --update-aliases 0.1.4 stable
+uv run mike set-default --push stable
+
+# 6. Return to your working branch
+git checkout main  # or your branch name
+```
+
+> [!IMPORTANT]
+> Always run `git branch -f gh-pages origin/gh-pages` before a manual local deploy.
+> If your local `gh-pages` has ever diverged from origin (e.g., from local experimentation),
+> mike will fail to push with a non-fast-forward error.
+
 ### Corrupted/Stale `gh-pages` Branch
 If the `gh-pages` branch was written by `mkdocs gh-deploy` instead of mike, it will be a flat site with no versioning. To reset:
 
