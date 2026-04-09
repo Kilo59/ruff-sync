@@ -5,8 +5,8 @@ Uses Textual's testing harness to launch the app headlessly,
 navigate to specific views, and capture SVG screenshots.
 
 Screenshots captured:
-  dashboard.svg       -- Full app with Pyflakes (F) selected, colorful rule table populated
-  search_omnibox.svg  -- Omnibox showing fuzzy search results for "import"
+  dashboard.svg       -- Full app with the Pyflakes (F) linter selected, colorful rule table
+  search_omnibox.svg  -- Omnibox showing fuzzy search results for OMNIBOX_QUERY
   legend_help.svg     -- The keyboard legend / help modal
   rule_details.svg    -- Rule detail inspector (NOT regenerated; existing file is authoritative)
 """
@@ -16,18 +16,43 @@ from __future__ import annotations
 import asyncio
 import os
 import pathlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
-    from ruff_sync.tui.widgets import ConfigTree
+    from textual.pilot import Pilot
+
+    from ruff_sync.tui.widgets import CategoryTable, ConfigTree
 
 from ruff_sync.cli import Arguments
 from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE, OutputFormat
 from ruff_sync.tui.app import RuffSyncApp
 
-# Path to the directory where screenshots will be saved
-SCREENSHOTS_DIR = pathlib.Path("docs/assets/screenshots")
-SCREENSHOT_SAMPLE_TOML = SCREENSHOTS_DIR / "screenshot_sample.toml"
+# ── File paths ────────────────────────────────────────────────────────────────
+SCREENSHOTS_DIR: Final = pathlib.Path("docs/assets/screenshots")
+SCREENSHOT_SAMPLE_TOML: Final = SCREENSHOTS_DIR / "screenshot_sample.toml"
+
+# ── Widget selectors (CSS IDs) ────────────────────────────────────────────────
+TREE_ID: Final = "#config-tree"
+TABLE_ID: Final = "#category-table"
+
+# ── Navigation targets ────────────────────────────────────────────────────────
+# Label of the top-level tree node that groups all linter rules.
+RULES_ROOT_LABEL: Final = "Effective Rule Status"
+# The linter whose node we navigate to for the dashboard screenshot.
+# Uses a substring match so minor wording changes (e.g. accent marks) don't break it.
+DASHBOARD_LINTER_LABEL: Final = "Pyflakes"
+
+# ── Search / omnibox ──────────────────────────────────────────────────────────
+# Concept-level query (not an exact rule code) that demonstrates how the omnibox
+# surfaces matching rules from multiple linter families at once.
+OMNIBOX_QUERY: Final = "import"
+
+# ── Polling tuning ────────────────────────────────────────────────────────────
+# Maximum iterations when polling for a condition; each step pauses POLL_STEP_S seconds.
+MAX_POLL_ITERS: Final = 50
+POLL_STEP_S: Final = 0.1
+# Max steps when walking the tree cursor looking for a labelled node.
+MAX_TREE_WALK_STEPS: Final = 200
 
 
 def get_default_args() -> Arguments:
@@ -49,26 +74,56 @@ def get_default_args() -> Arguments:
     )
 
 
-async def _navigate_to_pyflakes(tree: ConfigTree, pilot: object) -> bool:
-    """Navigate down the tree until Pyflakes (F) is found and selected.
+def _node_label(tree: ConfigTree, /) -> str:
+    """Return the plain-text label of the tree's currently focused node."""
+    node = tree.cursor_node
+    if node is None:
+        return ""
+    raw = node.label
+    return str(raw.plain if hasattr(raw, "plain") else raw)
+
+
+async def _walk_tree_to(tree: ConfigTree, pilot: Pilot[None], substring: str) -> bool:
+    """Move the tree cursor down until a node whose label contains *substring* is found.
 
     Args:
-        tree: The config tree widget.
-        pilot: The Textual pilot.
+        tree: The sidebar ConfigTree widget.
+        pilot: The active Textual Pilot.
+        substring: The substring to search for in node labels.
 
     Returns:
-        True if Pyflakes was found and selected, False otherwise.
+        True if the node was found (cursor is now on it), False if the walk
+        exhausted MAX_TREE_WALK_STEPS without a match.
     """
-    for _ in range(200):
-        node = tree.cursor_node
-        if node:
-            label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
-            if "Pyflakes" in label:
-                # Press enter to trigger NodeSelected → fills the CategoryTable
-                await pilot.press("enter")  # type: ignore[attr-defined]
-                return True
-        await pilot.press("down")  # type: ignore[attr-defined]
-        await pilot.pause(0.02)  # type: ignore[attr-defined]
+    for _ in range(MAX_TREE_WALK_STEPS):
+        if substring in _node_label(tree):
+            return True
+        await pilot.press("down")
+        await pilot.pause(0.02)
+    return False
+
+
+async def _wait_for_condition(
+    condition: object,
+    *,
+    pilot: Pilot[None],
+    label: str = "condition",
+) -> bool:
+    """Poll *condition* (a callable) until it returns truthy or MAX_POLL_ITERS is reached.
+
+    Args:
+        condition: A zero-argument callable returning a truthy value when ready.
+        pilot: The active Textual Pilot (used for controlled pausing).
+        label: A human-readable name for the condition (used in warning messages).
+
+    Returns:
+        True if the condition became truthy within the timeout, False otherwise.
+    """
+    for _ in range(MAX_POLL_ITERS):
+        if condition():  # type: ignore[operator]
+            return True
+        await pilot.pause(POLL_STEP_S)
+    print(f"  ⚠️ WARNING: Timed out waiting for {label!r}")
     return False
 
 
@@ -86,25 +141,42 @@ async def generate_screenshots() -> None:
     app = RuffSyncApp(args)
 
     async with app.run_test(size=(120, 40)) as pilot:
-        # Wait generously for the background _prime_caches worker to finish.
-        # This is critical — rule statuses and colors won't appear without it.
-        await pilot.pause(3.0)
+        tree: ConfigTree = app.query_one(TREE_ID)
+        table: CategoryTable = app.query_one(TABLE_ID)
 
-        tree: ConfigTree = app.query_one("#config-tree")  # type: ignore[assignment]
+        # ── Wait for background cache priming to finish ────────────────────────
+        # Check for `app.effective_rules` being populated rather than sleeping a
+        # fixed duration — this is resilient to machine speed variations.
+        await _wait_for_condition(
+            lambda: bool(app.effective_rules),
+            pilot=pilot,
+            label="effective_rules populated",
+        )
 
         # ── 1. Dashboard: Pyflakes (F) selected, colorful mixed-status table ──
-        # Expand "Effective Rule Status" and walk down to Pyflakes (F)
+        # Walk the tree to "Effective Rule Status" and expand it, then navigate
+        # down to the DASHBOARD_LINTER_LABEL node.
         await pilot.press("home")
-        await pilot.press("down")  # Move to "Effective Rule Status"
-        await pilot.press("right")  # Expand node
-        await pilot.pause(0.5)
+        found_rules_root = await _walk_tree_to(tree, pilot, RULES_ROOT_LABEL)
+        if not found_rules_root:
+            print(f"  ⚠️ WARNING: Could not find {RULES_ROOT_LABEL!r} node")
 
-        found = await _navigate_to_pyflakes(tree, pilot)
-        if not found:
-            print("  ⚠️ WARNING: Failed to find Pyflakes in tree — dashboard may be empty")
+        await pilot.press("right")  # Expand the "Effective Rule Status" subtree
+        await pilot.pause(0.3)
 
-        # Give the CategoryTable time to populate and colorize
-        await pilot.pause(2.0)
+        found_linter = await _walk_tree_to(tree, pilot, DASHBOARD_LINTER_LABEL)
+        if not found_linter:
+            print(f"  ⚠️ WARNING: Could not find {DASHBOARD_LINTER_LABEL!r} node")
+
+        # Select the node — fires NodeSelected → populates CategoryTable
+        await pilot.press("enter")
+
+        # Wait until the table actually has rows rather than sleeping a fixed amount.
+        await _wait_for_condition(
+            lambda: table.row_count > 0,
+            pilot=pilot,
+            label="CategoryTable row_count > 0",
+        )
 
         path = SCREENSHOTS_DIR / "dashboard.svg"
         app.save_screenshot(str(path))
@@ -112,27 +184,36 @@ async def generate_screenshots() -> None:
 
         # ── 2. Legend / Help — captured BEFORE omnibox to avoid key-routing race ──
         await pilot.press("?")
-        await pilot.pause(0.6)
+        # Poll the screen stack: legend screen is ready once it's on top
+        await _wait_for_condition(
+            lambda: len(app.screen_stack) > 1,
+            pilot=pilot,
+            label="LegendScreen pushed",
+        )
 
         path = SCREENSHOTS_DIR / "legend_help.svg"
         app.save_screenshot(str(path))
         print(f"  ✓ Saved {path}")
 
-        # Dismiss modal; poll screen stack to confirm it's fully gone
+        # Dismiss modal; poll until fully gone before sending further key events
         await pilot.press("escape")
-        for _ in range(30):
-            await pilot.pause(0.1)
-            if len(app.screen_stack) == 1:
-                break
-        await pilot.pause(0.3)
+        await _wait_for_condition(
+            lambda: len(app.screen_stack) == 1,
+            pilot=pilot,
+            label="LegendScreen dismissed",
+        )
 
-        # ── 3. Omnibox: fuzzy search for "import" — shows cross-linter results ──
-        # Searching for a concept (not an exact rule code) demonstrates how the
-        # omnibox surfaces relevant rules from multiple linter families at once.
+        # ── 3. Omnibox: fuzzy search for OMNIBOX_QUERY ─────────────────────────
         await pilot.press("/")
-        await pilot.pause(0.5)  # Wait for modal mount and input focus
-        await pilot.press(*"import")
-        await pilot.pause(0.8)  # Let results render
+        # Poll until the omnibox modal is mounted and on top
+        await _wait_for_condition(
+            lambda: len(app.screen_stack) > 1,
+            pilot=pilot,
+            label="OmniboxScreen pushed",
+        )
+        await pilot.press(*OMNIBOX_QUERY)
+        # Wait for results to appear in the OptionList
+        await pilot.pause(0.5)
 
         path = SCREENSHOTS_DIR / "search_omnibox.svg"
         app.save_screenshot(str(path))
