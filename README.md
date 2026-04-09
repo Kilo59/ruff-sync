@@ -192,7 +192,7 @@ uv tool install "ruff-sync[tui]"
 ruff-inspect
 ```
 
-![Ruff Inspect TUI — dashboard view showing the Pyflakes linter selected with a colorful mix of Enabled, Ignored and Disabled rules](docs/assets/screenshots/dashboard.svg)
+![Ruff Inspect TUI — rule detail view for F401 unused-import showing status, fix availability, description and rationale](docs/assets/screenshots/rule_details.svg)
 
 > [!NOTE]
 > This feature is experimental and subject to change. See the [Ruff Config Inspection](https://kilo59.github.io/ruff-sync/stable/inspect/) page for full details.
