@@ -19,11 +19,17 @@ select = [
     "T20",  # Enabled
 ]
 
-# Explicitly ignore some rules to show 'Ignored' (Yellow) status in TUI
+# Explicitly ignore many rules to show a colorful 'Ignored' (Yellow) status mix in TUI
 ignore = [
-    "E402", # Module level import not at top of file
-    "F401", # Unused import (this is fixable, but we ignore it to show Ignored)
-    "T201", # print() found
+    "E402",  # Module level import not at top of file
+    "F401",  # Unused import
+    "F403",  # import * used; unable to detect undefined names
+    "F405",  # name may be undefined, or defined from star imports
+    "F811",  # redefinition of unused 'name' from line n
+    "F821",  # undefined name 'name'
+    "F841",  # local variable 'name' is assigned to but never used
+    "T201",  # print() found
+    "B008",  # Do not perform function call in argument defaults
 ]
 
 # Use extend-select/ignore to show how these categories are merged
@@ -34,7 +40,9 @@ extend-select = [
 
 extend-ignore = [
     "UP006", # Use `list` instead of `List` for type annotation
+    "UP007", # Use `X | Y` for type annotations
     "SIM101",# Combine multiple `isinstance` calls
+    "SIM105",# Use `contextlib.suppress(...)` instead of `try: ... except: pass`
 ]
 
 [tool.ruff.format]

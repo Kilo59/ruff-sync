@@ -172,19 +172,16 @@ class CategoryTable(DataTable[Any]):
             elif status == "Disabled":
                 color = "dim"
 
-            # Rich uses [/] to close the nearest open tag
+            # Apply status color to all columns for maximum "colorfulness"
+            # If the row is selected, Textual/Rich will handle the background contrast.
             code_markup = f"[{color}]{rule['code']}[/]" if color else rule["code"]
             name_markup = f"[{color}]{rule['name']}[/]" if color else rule["name"]
+            linter_markup = f"[{color}]{rule['linter']}[/]" if color else rule["linter"]
 
             fix = rule.get("fix_availability", "None")
-            fix_markup = fix
-            if fix == "Always":
-                fix_markup = f"[{accent_clr}]{fix}[/]"
-            elif fix in ("Sometimes", "Enforced"):
-                fix_markup = f"[{warning_clr}]{fix}[/]"
+            fix_markup = f"[{color}]{fix}[/]" if color else fix
 
-            # Note: We still keep linter as-is for clarity
-            self.add_row(code_markup, name_markup, rule["linter"], fix_markup, key=rule["code"])
+            self.add_row(code_markup, name_markup, linter_markup, fix_markup, key=rule["code"])
 
 
 class RuleInspector(Markdown):

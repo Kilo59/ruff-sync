@@ -53,9 +53,11 @@ async def generate_screenshots() -> None:
         await pilot.pause(2.0)
 
         # 1. Main Dashboard (Initial View)
-        # Expand "Effective Rule Status" so it looks more interesting
-        await pilot.press("down", "right")
-        await pilot.pause(0.5)
+        # Robustly wait for and select "Effective Rule Status"
+        tree = app.query_one("#config-tree")
+        await pilot.press("home", "down", "right")
+        # Critical wait for 400+ nodes to populate!
+        await pilot.pause(2.0)
 
         path = SCREENSHOTS_DIR / "dashboard.svg"
         app.save_screenshot(str(path))
@@ -70,15 +72,20 @@ async def generate_screenshots() -> None:
         await pilot.pause(0.5)
 
         # Navigate down into the linters list until we hit "Pyflakes (F)"
-        tree = app.query_one("#config-tree")
-        for _ in range(100):
-            await pilot.press("down")
+        found = False
+        for _ in range(150):
             node = tree.cursor_node
             label = str(node.label.plain if hasattr(node.label, "plain") else node.label)
             if "Pyflakes" in label:
-                # Select it to populate the table
+                # Select it to populate the table (triggers NodeSelected)
                 await pilot.press("enter")
+                found = True
                 break
+            await pilot.press("down")
+            await pilot.pause(0.02)
+
+        if not found:
+            print("  ⚠️ WARNING: Failed to find Pyflakes in tree")
 
         # Give the table time to populate with colorful rows
         await pilot.pause(1.5)
@@ -86,6 +93,7 @@ async def generate_screenshots() -> None:
         # Tab to the table and select rule F401 (Ignored)
         await pilot.press("tab")
         await pilot.pause(0.3)
+        await pilot.press("home")  # F401 is first
         await pilot.press("enter")
 
         # Wait for the inspector to update with rule documentation
