@@ -51,8 +51,15 @@ async with app.run_test() as pilot:
     assert app.query_one(Input).value == "hello"
 ```
 
-### Waiting for Animations/I/O
-If your UI has transitions or performs background work, use `pilot.wait_for_scheduled_animations()` or simply `await pilot.pause(0.1)`.
+### ⏳ Brittle Navigation & Expansion
+When navigating complex structures like a `Tree` with many nodes:
+- **Expansion Wait**: Expanding a node (`pilot.press("right")`) is asynchronous. If the number of child nodes is large, you MUST provide a significant `pilot.pause()` (e.g., 1.5s - 2.0s) before attempting to select or search for children.
+- **Search-and-Verify**: Instead of fixed `down` counts, use a verification loop with a small `pilot.pause(0.02)` between steps to wait for cursor updates.
+
+### 📸 Automated Screenshots (SVG)
+When using `app.save_screenshot()` in a test:
+- **Visibility Matters**: Only widgets and rows that are currently "scrolled into view" are captured in the SVG. Large tables or trees will be truncated unless you explicitly scroll.
+- **Size Specification**: Define a repeatable terminal size in `run_test(size=(W, H))` to ensure consistent screenshot layouts across environments.
 
 > [!IMPORTANT]
 > Always use `pytest-asyncio` with the `@pytest.mark.asyncio` decorator for Textual tests. The boilerplate provided in `app.run_test()` handles the event loop lifecycle for you.

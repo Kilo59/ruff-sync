@@ -18,10 +18,27 @@ uv sync --group docs
 ## Project Strategy
 
 This project follows a specific versioning strategy:
-1.  **`dev`**: Represents the current `main` branch.
-2.  **Stable Releases**: Versioned documentation (e.g., `0.1.4`) created upon release.
+1.  **`dev`**: Represents the current `main` branch. Deployed on every push to `main` when the version string contains `.dev`.
+2.  **Stable Releases**: Versioned documentation (e.g., `0.1.4`) created upon release — when the version string does NOT contain `.dev`.
 3.  **`stable`**: An alias always pointing to the most recent non-dev release.
-4.  **`latest`**: An alias pointing to the most recent release (including dev, if applicable).
+
+## mkdocs.yml Configuration
+
+```yaml
+extra:
+  version:
+    provider: mike
+
+plugins:
+  - mike:
+      alias_type: redirect   # NOT 'copy' or 'symlink' — redirect is correct for GitHub Pages
+      canonical_version: stable
+```
+
+### Why `alias_type: redirect`?
+- **`symlink`** (default): Creates actual filesystem symlinks. GitHub Pages does not follow symlinks — the alias directory appears empty.
+- **`copy`**: Duplicates all files at the alias path. Creates stale copies when the alias moves to a new version.
+- **`redirect`**: Creates a thin HTML redirect file for each page at the alias path. Works correctly on GitHub Pages and stays current because it redirects to the canonical versioned path.
 
 ## Theme Overrides
 
@@ -35,13 +52,7 @@ theme:
 
 ### Version switcher
 
-The version switcher is enabled via `extra.version.provider: mike`:
-
-```yaml
-extra:
-  version:
-    provider: mike
-```
+The version switcher is enabled via `extra.version.provider: mike` (shown above).
 
 ## Versioning Banner
 
@@ -51,48 +62,40 @@ A custom banner is displayed when users are viewing the `dev` documentation. Thi
 -   `main.html`: Extends the base template and includes the `version_warning.html` partial at the start of the `content` block.
 -   `version_warning.html`: Contains an HTML snippet that is hidden by default and shown via JavaScript if the URL path contains `/dev/`.
 
-Example in `version_warning.html`:
-```html
-<div id="version-warning" style="display: none;">
-  <div class="admonition warning">
-    <p class="admonition-title">Warning</p>
-    <p>
-      You are viewing the documentation for the <strong>development</strong> version.
-      The latest stable release can be found at <a href="https://kilo59.github.io/ruff-sync/">kilo59.github.io/ruff-sync</a>.
-    </p>
-  </div>
-</div>
-<script>
-  (function() {
-    const version_warning = document.getElementById("version-warning");
-    if (!version_warning) return;
+## CI/CD Integration
 
-    // mike provides a 'mike' object with some metadata if available
-    // Otherwise fall back to checking the pathname
-    const isDev = window.location.pathname.includes("/dev/") ||
-                 (window.mike && typeof window.mike.version === 'string' && window.mike.version === "dev");
+> [!CAUTION]
+> **Golden Rule**: Only ONE workflow may ever write to `gh-pages`. If two workflows both deploy to `gh-pages`, the second one will overwrite the first, destroying `versions.json` and all versioned directories.
+>
+> **Never** use `mkdocs gh-deploy` alongside `mike deploy` — they are mutually exclusive deployment strategies. This project uses `mike deploy` exclusively. There is no `docs.yaml` workflow; all deployment happens in `ci.yaml`.
 
-    if (isDev) {
-      version_warning.style.display = "block";
-    }
-  })();
-</script>
-```
+The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflows/ci.yaml). The `publish-docs` job:
 
-### 1. Deploying Development Docs
-Run this from the `main` branch to update the `dev` version:
-```bash
-mike deploy dev --push --update-aliases
-```
+1. **Fetches the `gh-pages` branch** before deploying — this is required by mike to make incremental commits. Without it, mike may reset the entire branch.
+2. **Detects the version** from `pyproject.toml` using `tomlkit`.
+3. **Deploys `dev`** if the version string contains `.dev`.
+4. **Deploys a versioned release + `stable` alias** and sets `stable` as the default if not a dev version.
 
-### 2. Deploying a Stable Release
-When a new version is released (e.g., `0.1.4`), deploy it and update the `stable` alias:
-```bash
-# Deploy the specific version and update 'stable'
-mike deploy 0.1.4 stable --push --update-aliases
+### Key CI snippet
 
-# Set 'stable' as the default version for the site root
-mike set-default --push stable
+```yaml
+- name: Fetch gh-pages branch
+  # Required: mike needs the gh-pages branch history for incremental commits.
+  run: git fetch origin gh-pages --depth=1 || true
+
+- name: Deploy documentation
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    VERSION=$(uv run python -c "...")
+
+    if [[ "$VERSION" == *".dev"* ]]; then
+      uv run mike deploy --push --update-aliases dev
+    else
+      uv run mike deploy --push --update-aliases "$VERSION" stable
+      uv run mike set-default --push stable
+    fi
 ```
 
 ## Reference Commands
@@ -104,13 +107,23 @@ mike set-default --push stable
 | **Set Default** | `mike set-default <version>` |
 | **Alias** | `mike alias <version> <alias>` |
 | **Delete** | `mike delete <identifier>` |
+| **Delete all** | `mike delete --all` |
 
-## CI/CD Integration
+### Deploying Development Docs
+Run this from the `main` branch to update the `dev` version:
+```bash
+mike deploy dev --push --update-aliases
+```
 
-The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflows/ci.yaml). It automatically:
-- Extracts the version from `pyproject.toml`.
-- Deploys to `dev` if the version contains `.dev`.
-- Deploys to `<version>` and updates `stable` for official releases.
+### Deploying a Stable Release
+When a new version is released (e.g., `0.1.4`), deploy it and update the `stable` alias:
+```bash
+# Deploy the specific version and update 'stable'
+mike deploy 0.1.4 stable --push --update-aliases
+
+# Set 'stable' as the default version for the site root
+mike set-default --push stable
+```
 
 > [!IMPORTANT]
 > **Do NOT** use `mike install-gh-pages`. It is deprecated and removed in the version used by this project. `mike deploy` handles branch initialization automatically.
@@ -130,21 +143,12 @@ The deployment logic is automated in [.github/workflows/ci.yaml](.github/workflo
 ### 404 for `versions.json`
 - If you see a 404 for `/versions.json` but `https://<user>.github.io/<repo>/versions.json` exists, the switcher is looking at the domain root instead of the project root. Verify `site_url` includes the repository name and has a trailing slash.
 
-## Post-Mortem & Known Issues
+### Corrupted/Stale `gh-pages` Branch
+If the `gh-pages` branch was written by `mkdocs gh-deploy` instead of mike, it will be a flat site with no versioning. To reset:
 
-> [!CAUTION]
-> **Current Status**: Documentation versioning is currently **BROKEN** on the live site (`kilo59.github.io/ruff-sync`).
-
-### Failed Repair History
-The following fixes have been attempted and **FAILED** to resolve the issue:
-1.  **Lowercasing `site_url`**: Normalizing the repository name in the URL (e.g., `ruff-sync` instead of `Ruff-Sync`) did not fix the 404s for `versions.json`.
-2.  **Removing `theme.version`**: Removing the redundant Material 9.x config did not restore the switcher.
-3.  **Adding `canonical_version: stable`**: Adding this to the `mike` plugin in `mkdocs.yml` was intended to fix path resolution but has not fixed the root page 404.
-4.  **CI Restoration Logic**: Adding `mike alias --push stable stable` to the CI to manually repair `versions.json` hasn't restored the picker on the root page.
-
-### Root Cause Suspicions
-- **GitHub Pages Subfolder Pathing**: The site is served from a subfolder (`/ruff-sync/`). `mike`'s JavaScript for the version switcher frequently struggles with calculating relative paths to `versions.json` when served from a subfolder if `site_url` or base paths are not perfectly aligned with the deployment environment.
-- **`versions.json` Drift**: The `versions.json` file on the `gh-pages` branch frequently becomes desynchronized or loses the `stable` entry, which triggers `mkdocs-material` to hide the switcher entirely.
-
-### Guidance for Future Agents
-Before attempting another "fix," you **MUST** verify the current state of `versions.json` on the `gh-pages` branch and check the browser console on the live site for 404 paths. Do not assume standard configurations will work without manual verification of the deployed assets.
+```bash
+# WARNING: This deletes all deployed docs. Run locally, then push.
+uv run mike delete --all --push
+# Then trigger a CI run or deploy manually:
+uv run mike deploy --push --update-aliases dev
+```

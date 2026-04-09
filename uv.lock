@@ -1268,6 +1268,22 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-textual-snapshot"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "pytest" },
+    { name = "rich" },
+    { name = "syrupy" },
+    { name = "textual" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/75/2ef17ae52fa5bc848ff2d1d7bc317a702cbd6d7ad733ca991b9f899dbbae/pytest_textual_snapshot-1.0.0.tar.gz", hash = "sha256:065217055ed833b8a16f2320a0613f39a0154e8d9fee63535f29f32c6414b9d7", size = 11071, upload-time = "2024-07-22T15:17:44.629Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/2e/4bf16ed78b382b3d7c1e545475ec8cf04346870be662815540faf8f16e8c/pytest_textual_snapshot-1.0.0-py3-none-any.whl", hash = "sha256:dd3a421491a6b1987ee7b4336d7f65299524924d2b0a297e69733b73b01570e1", size = 11171, upload-time = "2024-07-22T15:17:43.167Z" },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -1594,7 +1610,7 @@ wheels = [
 
 [[package]]
 name = "ruff-sync"
-version = "0.1.5.dev5"
+version = "0.1.5.dev6"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -1619,6 +1635,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-icdiff" },
+    { name = "pytest-textual-snapshot" },
     { name = "respx" },
     { name = "ruamel-yaml" },
     { name = "ruff" },
@@ -1655,6 +1672,7 @@ dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.5" },
     { name = "pytest-icdiff", specifier = ">=0.9" },
+    { name = "pytest-textual-snapshot", specifier = ">=1.0.0" },
     { name = "respx", specifier = ">=0.21.1" },
     { name = "ruamel-yaml", specifier = ">=0.18.6" },
     { name = "ruff", specifier = ">=0.15.0" },
@@ -1686,6 +1704,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1f/ea/49c993d6dfdd7338c9b1000a0f36817ed7ec84577ae2e52f890d1a4ff909/smmap-5.0.3.tar.gz", hash = "sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c", size = 22506, upload-time = "2026-03-09T03:43:26.1Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/d4/59e74daffcb57a07668852eeeb6035af9f32cbfd7a1d2511f17d2fe6a738/smmap-5.0.3-py3-none-any.whl", hash = "sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f", size = 24390, upload-time = "2026-03-09T03:43:24.361Z" },
+]
+
+[[package]]
+name = "syrupy"
+version = "5.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2e/b0/24bca682d6a6337854be37f242d116cceeda9942571d5804c44bc1bdd427/syrupy-5.1.0.tar.gz", hash = "sha256:df543c7aa50d3cf1246e83d58fe490afe5f7dab7b41e74ecc0d8d23ae19bd4b8", size = 50495, upload-time = "2026-01-25T14:53:06.2Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/70/cf880c3b95a6034ef673e74b369941b42315c01f1554a5637a4f8b911009/syrupy-5.1.0-py3-none-any.whl", hash = "sha256:95162d2b05e61ed3e13f117b88dfab7c58bd6f90e66ebbf918e8a77114ad51c5", size = 51658, upload-time = "2026-01-25T14:53:05.105Z" },
 ]
 
 [[package]]

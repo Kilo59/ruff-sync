@@ -175,13 +175,16 @@ jobs:
       - name: Install dependencies
         run: uv sync --group docs --frozen
 
+      - name: Fetch gh-pages branch
+        # mike needs the gh-pages branch history to make incremental commits.
+        # Without fetching it first, mike may reset the entire branch.
+        run: git fetch origin gh-pages --depth=1 || true
+
       - name: Deploy documentation
         run: |
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # mike deploy handles gh-pages initialization automatically
 
           # Extract version from pyproject.toml in a TOML-aware way using already installed dependencies
           VERSION=$(uv run python - << 'PY'
@@ -205,17 +208,11 @@ jobs:
 
           if [[ "$VERSION" == *".dev"* ]]; then
             echo "Deploying DEV documentation..."
-            # Ensure 'stable' exists in versions.json so the switcher doesn't disappear.
-            # 'mike alias' will create it if missing, pointing to the current stable root.
-            # We use --push to ensure versions.json is updated on gh-pages.
-            uv run mike alias --push stable stable || true
             uv run mike deploy --push --update-aliases dev
           else
             echo "Deploying STABLE documentation..."
-            uv run mike deploy --push --update-aliases $VERSION stable
+            uv run mike deploy --push --update-aliases "$VERSION" stable
             uv run mike set-default --push stable
-            # Also update dev to match stable on a full release
-            uv run mike deploy --push --update-aliases dev
           fi
 
   publish:

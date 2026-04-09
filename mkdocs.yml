@@ -95,7 +95,7 @@ markdown_extensions:
 plugins:
   - search
   - mike:
-      alias_type: copy
+      alias_type: redirect
       canonical_version: stable
   - gen-files:
       scripts:
@@ -130,5 +130,6 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Pre-defined Configs: pre-defined-configs.md
   - Agent Skill: agent-skill.md
+  - Ruff Config Inspection: inspect.md
   - Contributing: contributing.md
   - API Reference: reference/

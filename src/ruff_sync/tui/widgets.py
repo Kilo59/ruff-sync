@@ -138,8 +138,8 @@ class CategoryTable(DataTable[Any]):
     @render_node.register
     def _(self, node: LinterNode) -> None:
         self._reset_columns("Code", "Name", "Linter", "Fix")
-        prefix = node.linter.get("prefix", "")
-        filtered = [r for r in node.effective_rules if r["code"].startswith(prefix)]
+        linter_name = node.linter["name"]
+        filtered = [r for r in node.effective_rules if r["linter"] == linter_name]
         self._render_rules(filtered)
 
     def _render_rules(self, rules: list[RuffRule]) -> None:
@@ -163,28 +163,32 @@ class CategoryTable(DataTable[Any]):
         for rule in rules:
             status = rule.get("status", "Unknown")
 
-            # Determine row color based on status
-            color = ""
+            # Status color applies to Code / Name / Linter columns
+            status_clr = ""
             if status == "Enabled":
-                color = success_clr
+                status_clr = success_clr
             elif status == "Ignored":
-                color = warning_clr
+                status_clr = warning_clr
             elif status == "Disabled":
-                color = "dim"
+                status_clr = "dim"
 
-            # Rich uses [/] to close the nearest open tag
-            code_markup = f"[{color}]{rule['code']}[/]" if color else rule["code"]
-            name_markup = f"[{color}]{rule['name']}[/]" if color else rule["name"]
+            code_markup = f"[{status_clr}]{rule['code']}[/]" if status_clr else rule["code"]
+            name_markup = f"[{status_clr}]{rule['name']}[/]" if status_clr else rule["name"]
+            linter_markup = f"[{status_clr}]{rule['linter']}[/]" if status_clr else rule["linter"]
 
+            # Fix column uses its own color keyed on fix_availability:
+            #   Always    → accent (e.g. magenta)
+            #   Sometimes → warning (same as Ignored)
+            #   None/other→ plain
             fix = rule.get("fix_availability", "None")
-            fix_markup = fix
             if fix == "Always":
                 fix_markup = f"[{accent_clr}]{fix}[/]"
-            elif fix in ("Sometimes", "Enforced"):
+            elif fix == "Sometimes":
                 fix_markup = f"[{warning_clr}]{fix}[/]"
+            else:
+                fix_markup = fix
 
-            # Note: We still keep linter as-is for clarity
-            self.add_row(code_markup, name_markup, rule["linter"], fix_markup, key=rule["code"])
+            self.add_row(code_markup, name_markup, linter_markup, fix_markup, key=rule["code"])
 
 
 class RuleInspector(Markdown):
@@ -226,21 +230,14 @@ class RuleInspector(Markdown):
         cached_content: str | None = None,
         rule_name: str | None = None,
         rule_status: str | None = None,
+        fix_availability: str | None = None,
     ) -> None:
-        """Fetch and display the documentation for a rule or setting.
-
-        Args:
-            target: The Ruff rule code or configuration path.
-            is_rule: True if fetching a rule, False if fetching a config setting.
-            cached_content: Optional pre-fetched documentation.
-            rule_name: Optional rule name for display.
-            rule_status: Optional rule status (Enabled, Ignored, Disabled).
-        """
+        """Fetch and display the documentation for a rule or setting."""
+        content: str | None = None
         if target == "tool.ruff":
             self.show_placeholder()
             return
 
-        content: str | None = None
         if cached_content:
             content = cached_content
         else:
@@ -262,7 +259,13 @@ class RuleInspector(Markdown):
                 status_icons = {"Enabled": "🟢", "Ignored": "🟡", "Disabled": "⚪"}
                 icon = status_icons.get(rule_status or "Disabled", "⚪")
                 name = rule_name or "Unknown Rule"
-                header = f"# {icon} {target}: {name}\n\n---\n\n"
+                header = f"# {icon} {target}: {name}\n\n"
+                if rule_status:
+                    header += f"**Status**: {rule_status}"
+                    if fix_availability:
+                        header += f" | **Fix**: {fix_availability}"
+                    header += "\n\n"
+                header += "---\n\n"
 
             self.update(header + content.strip())
         else:

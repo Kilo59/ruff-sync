@@ -223,6 +223,7 @@ class RuffSyncApp(App[None]):
         name = rule_data.get("name") if rule_data else None
         status = str(rule_data.get("status", "Disabled")) if rule_data else "Disabled"
         explanation = rule_data.get("explanation") if rule_data else None
+        fix = rule_data.get("fix_availability") if rule_data else None
 
         inspector = self.query_one(RuleInspector)
         inspector.fetch_and_display(
@@ -231,6 +232,7 @@ class RuffSyncApp(App[None]):
             cached_content=explanation,
             rule_name=name,
             rule_status=status,
+            fix_availability=fix,
         )
 
     def action_search(self) -> None:
