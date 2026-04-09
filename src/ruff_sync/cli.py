@@ -108,6 +108,8 @@ class Arguments(NamedTuple):
     pre_commit: bool = False
     save: bool | None = None
     output_format: OutputFormat = OutputFormat.TEXT
+    validate: bool = False  # run --validate checks before writing
+    strict: bool = False  # treat warnings as errors (implies --validate)
 
     @property
     @deprecated("Use 'to' instead")
@@ -151,6 +153,8 @@ class CLIArguments(Protocol):
     save: bool | None
     semantic: bool
     diff: bool
+    validate: bool
+    strict: bool
 
 
 @lru_cache(maxsize=1)
@@ -307,6 +311,24 @@ def _get_cli_parser() -> ArgumentParser:
         action=BooleanOptionalAction,
         default=None,
         help="Save CLI arguments to [tool.ruff-sync] in pyproject.toml.",
+    )
+    pull_parser.add_argument(
+        "--validate",
+        action="store_true",
+        default=False,
+        help=(
+            "Validate the merged config with Ruff before writing to disk. "
+            "Aborts if Ruff rejects the config. Off by default."
+        ),
+    )
+    pull_parser.add_argument(
+        "--strict",
+        action="store_true",
+        default=False,
+        help=(
+            "Treat all validation warnings as hard failures. Implies --validate. "
+            "Aborts if any version mismatch or deprecated rule is detected."
+        ),
     )
 
     # Check subcommand
@@ -596,6 +618,9 @@ def main() -> int:
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
         output_format=output_format,
+        # --strict implies --validate
+        validate=getattr(args, "validate", False) or getattr(args, "strict", False),
+        strict=getattr(args, "strict", False),
     )
 
     # Warn if the specified output format doesn't match the current CI environment

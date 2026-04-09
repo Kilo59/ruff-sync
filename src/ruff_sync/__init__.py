@@ -33,6 +33,7 @@ from .core import (
     toml_ruff_parse,
 )
 from .formatters import get_formatter
+from .validation import validate_merged_config
 
 __all__ = [
     "Arguments",
@@ -57,4 +58,5 @@ __all__ = [
     "resolve_target_path",
     "to_git_url",
     "toml_ruff_parse",
+    "validate_merged_config",
 ]

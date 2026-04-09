@@ -1158,6 +1158,18 @@ async def pull(
                 client=client,
             )
 
+        # Validation is opt-in — only run if --validate (or --strict) was passed
+        if args.validate:
+            from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
+
+            is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+            if not validate_merged_config(source_doc, is_ruff_toml=is_ruff_toml):
+                fmt.error(
+                    "❌ Merged config failed validation. Local file left unchanged.",
+                    logger=LOGGER,
+                )
+                return 1
+
         should_save = args.save if args.save is not None else args.init
         if should_save:
             if _source_toml_path.name == RuffConfigFileName.PYPROJECT_TOML:
