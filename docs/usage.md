@@ -112,6 +112,27 @@ ruff-sync --exclude lint.ignore lint.select
 
 *(By default, `lint.per-file-ignores` is always excluded so your local file-specific ignores are safe).*
 
+### Validating Before Writing
+
+Before `ruff-sync` writes the merged config to disk, you can ask it to validate the result with Ruff itself:
+
+```bash
+ruff-sync --validate
+```
+
+If Ruff rejects the merged config (e.g., because the upstream introduced an unknown key), the sync is aborted and your local file is left untouched.
+
+For stricter enforcement, use `--strict`. This upgrades any validation *warnings* — such as a Python version mismatch between `[tool.ruff] target-version` and `[project] requires-python` — into hard failures:
+
+```bash
+ruff-sync --strict
+```
+
+> [!NOTE]
+> `--strict` implies `--validate`. You do not need to pass both flags.
+>
+> Validation is **opt-in** and off by default. It requires `ruff` to be available on `PATH`. If `ruff` is not found, validation is skipped with a warning rather than blocking the sync.
+
 ---
 
 ## 🔍 Checking for Drift
@@ -165,6 +186,8 @@ ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commi
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist. This automatically saves the upstream source and any other CLI flags into the `[tool.ruff-sync]` section.
 * **`--save` / `--no-save`**: Force serialization (or prevent serialization) of the provided CLI arguments (like `upstream`, `exclude`, etc.) directly into the `[tool.ruff-sync]` section of the target `pyproject.toml` for future use. Note: any credentials present in the upstream URL will cause this operation to safely abort.
+* **`--validate`**: Run the merged config through Ruff before writing to disk. If Ruff rejects the config (e.g., due to an unknown key), the sync is aborted and the local file is left unchanged. Off by default to avoid adding latency and an implicit dependency on `ruff` being present in `PATH`.
+* **`--strict`**: Treat validation warnings (such as Python version mismatches or deprecated rules) as hard failures. Implies `--validate` — you do not need to pass both flags.
 * **`--output-format [text|json|github|gitlab|sarif]`**: Specify the output format for synchronization results.
     - `text` (default): Human-readable terminal output.
     - `json`: Machine-readable JSON output for tool integration.
@@ -207,7 +230,12 @@ graph TD
     D -- Yes --> E[Raise UpstreamError]
     D -- No --> F[Initialize Target Doc]
     F --> G[Merge Upstreams Sequentially]
-    G --> H[Save Final Configuration]
+    G --> V{--validate?}
+    V -- No --> H[Save Final Configuration]
+    V -- Yes --> VAL[Run Ruff config validation]
+    VAL --> VRES{Valid?}
+    VRES -- No --> ABORT[Abort — local file unchanged]
+    VRES -- Yes --> H[Save Final Configuration]
     H --> PC{--pre-commit?}
     PC -- Yes --> SyncPC[Sync pre-commit hook version]
     SyncPC --> I[End]
@@ -217,7 +245,10 @@ graph TD
     style A fill:#2563eb,color:#fff,stroke:#1d4ed8
     style I fill:#2563eb,color:#fff,stroke:#1d4ed8
     style E fill:#dc2626,color:#fff,stroke:#b91c1c
+    style ABORT fill:#dc2626,color:#fff,stroke:#b91c1c
     style D fill:#ca8a04,color:#fff,stroke:#a16207
+    style V fill:#ca8a04,color:#fff,stroke:#a16207
+    style VRES fill:#ca8a04,color:#fff,stroke:#a16207
     style PC fill:#ca8a04,color:#fff,stroke:#a16207
 ```
 

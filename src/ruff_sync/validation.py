@@ -27,9 +27,9 @@ def validate_toml_syntax(doc: TOMLDocument) -> bool:
     """
     try:
         tomlkit.parse(doc.as_string())
-        return True
+        return True  # noqa: TRY300
     except Exception:
-        LOGGER.error("❌ Merged config failed TOML syntax check.")
+        LOGGER.error("❌ Merged config failed TOML syntax check.")  # noqa: TRY400
         return False
 
 

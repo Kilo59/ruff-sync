@@ -117,6 +117,8 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 
 | Flag | Meaning |
 |------|---------|
+| `--validate`      | Validate merged config with Ruff before writing; aborts if Ruff rejects it |
+| `--strict`        | Like `--validate` but also treats warnings (version mismatch, deprecated rules) as failures. Implies `--validate` |
 | `--output-format` | `text` (default), `json`, `github`, `gitlab`, `sarif` (auto-detected in CI) |
 | `--semantic`      | Ignore whitespace/comments in `check` |
 | `--pre-commit`    | Sync `.pre-commit-config.yaml` hook version |
@@ -125,6 +127,9 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 ## Gotchas
 
 - **`exclude` uses dotted paths, not TOML paths.** `lint.per-file-ignores` refers to the `per-file-ignores` key inside `[tool.ruff.lint]`. Do NOT write `tool.ruff.lint.per-file-ignores`.
+- **`--validate` is opt-in.** Validation is off by default. Pass `--validate` (or `--strict`) to run the merged config through Ruff before writing. The sync is aborted if Ruff rejects the config, leaving the local file untouched.
+- **`--strict` implies `--validate`.** If you want warnings treated as failures, only `--strict` is needed — don't pass both.
+- **Validation soft-fails if `ruff` is not on PATH.** If the `ruff` binary can't be found, a warning is logged and the sync continues normally.
 - **Use `--init` only for new projects.** `ruff-sync` requires an existing `pyproject.toml` or `ruff.toml`. Pass `--init` to scaffold one if the directory is empty. This will automatically generate a `[tool.ruff-sync]` configuration block for future syncs.
 - **Use `--save` to persist CLI arguments.** If you want to update an existing `pyproject.toml` with a new upstream URL or exclusion, pass `--save` to write the new configuration to the file.
 - **`--semantic` ignores comments and whitespace.** Use it in CI to avoid false positives from cosmetic local edits. Omit it for strict byte-for-byte checks.
