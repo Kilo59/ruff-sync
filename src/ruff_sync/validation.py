@@ -28,20 +28,23 @@ def validate_toml_syntax(doc: TOMLDocument) -> bool:
     try:
         tomlkit.parse(doc.as_string())
         return True  # noqa: TRY300
-    except Exception:
-        LOGGER.error("❌ Merged config failed TOML syntax check.")  # noqa: TRY400
+    except tomlkit.exceptions.TOMLKitError:
+        LOGGER.exception("❌ Merged config failed TOML syntax check")
         return False
 
 
-def validate_ruff_accepts_config(doc: TOMLDocument, is_ruff_toml: bool = False) -> bool:
+def validate_ruff_accepts_config(
+    doc: TOMLDocument, is_ruff_toml: bool = False, strict: bool = False
+) -> bool:
     """Return True if Ruff accepts the merged configuration.
 
     Writes the merged config to a temporary file and runs:
-        ruff check --config <tmp> <dummy-py-file>
+        ruff check --isolated --config <tmp> <dummy-py-file>
 
     Args:
         doc: The merged TOML document to validate.
         is_ruff_toml: True if the document is a ruff.toml (not pyproject.toml).
+        strict: If True, treat configuration warnings (deprecated rules, etc.) as failures.
 
     Returns:
         True if Ruff accepts the config without errors, False otherwise.
@@ -58,7 +61,8 @@ def validate_ruff_accepts_config(doc: TOMLDocument, is_ruff_toml: bool = False) 
         dummy_py.write_text("# ruff-sync config validation\n", encoding="utf-8")
 
         config_flag = f"--config={tmp_path}"
-        cmd = ["ruff", "check", config_flag, str(dummy_py)]
+        # Use --isolated to ensure validation is not influenced by local user/project config
+        cmd = ["ruff", "check", "--isolated", config_flag, str(dummy_py)]
         LOGGER.debug(f"Running ruff config validation: {' '.join(cmd)}")
 
         try:
@@ -76,19 +80,33 @@ def validate_ruff_accepts_config(doc: TOMLDocument, is_ruff_toml: bool = False) 
             LOGGER.warning("⚠️  Ruff config validation timed out — skipping.")
             return True  # Soft fail on timeout
 
-        if result.returncode in (0, 1):
-            # Exit 0 = no issues found, exit 1 = issues found — both mean ruff
-            # parsed the config successfully. Exit 2 = config/usage error.
-            return True
+        # Exit 0 = no issues found, exit 1 = issues found — both mean ruff
+        # parsed the config successfully. Exit 2 = config/usage error.
+        if result.returncode not in (0, 1):
+            LOGGER.error(
+                f"❌ Ruff rejected the merged config (exit {result.returncode}):\n"
+                f"{result.stderr.strip()}"
+            )
+            return False
 
-        LOGGER.error(
-            f"❌ Ruff rejected the merged config (exit {result.returncode}):\n"
-            f"{result.stderr.strip()}"
-        )
-        return False
+        # If strict mode is enabled, check stderr for configuration warnings
+        if strict and result.stderr:
+            # Ruff emits "warning: ..." or "deprecated ..." to stderr for config issues
+            # that aren't fatal enough to cause exit code 2.
+            lower_stderr = result.stderr.lower()
+            if "warning:" in lower_stderr or "deprecated" in lower_stderr:
+                LOGGER.error(
+                    "❌ Ruff validation warning(s) detected in strict mode:\n"
+                    f"{result.stderr.strip()}"
+                )
+                return False
+
+        return True
 
 
-def validate_merged_config(doc: TOMLDocument, is_ruff_toml: bool = False) -> bool:
+def validate_merged_config(
+    doc: TOMLDocument, is_ruff_toml: bool = False, strict: bool = False
+) -> bool:
     """Run all validation checks on the merged TOML document.
 
     Returns True only if all checks pass. Returns False and logs errors
@@ -97,10 +115,11 @@ def validate_merged_config(doc: TOMLDocument, is_ruff_toml: bool = False) -> boo
     Args:
         doc: The merged TOML document to validate.
         is_ruff_toml: True if the document is a standalone ruff.toml.
+        strict: If True, treat configuration warnings as hard failures.
 
     Returns:
         True if all validation checks pass, False otherwise.
     """
     if not validate_toml_syntax(doc):
         return False
-    return validate_ruff_accepts_config(doc, is_ruff_toml=is_ruff_toml)
+    return validate_ruff_accepts_config(doc, is_ruff_toml=is_ruff_toml, strict=strict)

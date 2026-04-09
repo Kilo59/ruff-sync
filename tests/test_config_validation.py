@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import respx
@@ -160,16 +160,23 @@ def test_validate_toml_syntax_valid() -> None:
     assert validate_toml_syntax(doc) is True
 
 
-def test_validate_toml_syntax_always_true_for_tomlkit_docs() -> None:
-    """Tomlkit always produces valid TOML — round-trip should pass."""
-    # Build a doc programmatically via tomlkit API
-    doc = tomlkit.document()
-    tool = tomlkit.table(True)
-    ruff = tomlkit.table()
-    ruff.add("line-length", 88)
-    tool.add("ruff", ruff)
-    doc.add("tool", tool)
-    assert validate_toml_syntax(doc) is True
+def test_validate_toml_syntax_logs_exception(caplog: pytest.LogCaptureFixture) -> None:
+    """If tomlkit.parse raises a TOMLKitError, it should be logged."""
+    # We can't easily make tomlkit.parse(doc.as_string()) fail if doc
+    # is a TOMLDocument, because doc.as_string() is always valid TOML.
+    # However, we can mock doc.as_string() to return invalid TOML.
+
+    class BadDoc:
+        def as_string(self) -> str:
+            return "[[invalid"
+
+    with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
+        result = validate_toml_syntax(BadDoc())  # type: ignore[arg-type]
+
+    assert result is False
+    assert "Merged config failed TOML syntax check" in caplog.text
+    # tomlkit.parse('[[invalid') raises TOMLKitError
+    assert "Unexpected end of file" in caplog.text or "invalid" in caplog.text.lower()
 
 
 # ===========================================================================
@@ -218,6 +225,31 @@ def test_validate_ruff_rejects_invalid_pyproject_key(
     assert result is False
 
 
+def test_validate_ruff_accepts_config_strict_fails_on_warning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """In strict mode, config warnings should cause validation to fail."""
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="warning: `target-version` is deprecated."
+            " Use `project.requires-python` instead.",
+        )
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    doc = tomlkit.parse("[tool.ruff]\ntarget-version = 'py310'\n")
+
+    # Non-strict mode: should pass (exit code 0)
+    assert validate_ruff_accepts_config(doc, strict=False) is True
+
+    # Strict mode: should fail (warning in stderr)
+    assert validate_ruff_accepts_config(doc, strict=True) is False
+
+
 def test_validate_ruff_soft_fails_when_ruff_not_on_path(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
@@ -262,13 +294,40 @@ def test_validate_ruff_soft_fails_on_timeout(
 # ===========================================================================
 
 
-def test_validate_merged_config_valid() -> None:
+def test_validate_merged_config_valid(monkeypatch: pytest.MonkeyPatch) -> None:
     """A valid merged config should pass all checks."""
     doc = tomlkit.parse("[tool.ruff]\nline-length = 100\n")
+
     # validate_ruff_accepts_config may soft-fail if ruff isn't on PATH,
     # but validate_merged_config should still return True (not crash).
     result = validate_merged_config(doc)
     assert isinstance(result, bool)
+
+    # Also exercise the is_ruff_toml=True branch, ensuring that the
+    # ruff.toml-specific path (including filename handling) is exercised.
+    called: dict[str, object] = {}
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        called["cmd"] = cmd
+
+        class Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        return Result()  # type: ignore[return-value]
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result_ruff_toml = validate_merged_config(doc, is_ruff_toml=True)
+    assert isinstance(result_ruff_toml, bool)
+    assert "cmd" in called
+
+    cmd = cast("list[str]", called["cmd"])
+    # Check that some argument refers to a ruff.toml-specific path.
+    assert any("ruff.toml" in str(part) for part in cmd)
+    # Also verify --isolated is present
+    assert "--isolated" in cmd
 
 
 def test_validate_merged_config_returns_false_on_invalid(
