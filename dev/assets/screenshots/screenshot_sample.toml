@@ -1,0 +1,53 @@
+# Golden Sample Configuration for TUI Screenshots
+# This file is used to generate documentation visuals that showcase all rule statuses.
+
+[project]
+name = "demo-project"
+version = "1.2.3"
+description = "A comprehensive Python project for demonstrating Ruff synchronization"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+# Select some diverse linters and specific rules
+select = [
+    "E",    # Enabled (some are fixable)
+    "F",    # Enabled (some are fixable)
+    "B",    # Enabled
+    "T20",  # Enabled
+]
+
+# Explicitly ignore many rules to show a colorful 'Ignored' (Yellow) status mix in TUI
+ignore = [
+    "E402",  # Module level import not at top of file
+    "F401",  # Unused import
+    "F403",  # import * used; unable to detect undefined names
+    "F405",  # name may be undefined, or defined from star imports
+    "F811",  # redefinition of unused 'name' from line n
+    "F821",  # undefined name 'name'
+    "F841",  # local variable 'name' is assigned to but never used
+    "T201",  # print() found
+    "B008",  # Do not perform function call in argument defaults
+]
+
+# Use extend-select/ignore to show how these categories are merged
+extend-select = [
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+]
+
+extend-ignore = [
+    "UP006", # Use `list` instead of `List` for type annotation
+    "UP007", # Use `X | Y` for type annotations
+    "SIM101",# Combine multiple `isinstance` calls
+    "SIM105",# Use `contextlib.suppress(...)` instead of `try: ... except: pass`
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
