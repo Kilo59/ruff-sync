@@ -24,6 +24,7 @@
 - [How It Works](#how-it-works)
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
+- [Ruff Inspect (TUI)](#ruff-inspect-tui)
 - [Configuration](#configuration)
 - [Pre-commit Integration](#pre-commit-integration)
 - [CI Integration](#ci-integration)
@@ -178,6 +179,23 @@ See the [Usage documentation](https://kilo59.github.io/ruff-sync/usage/) for mor
 - 🔗 **Pre-commit hook sync** — Use `--pre-commit` to automatically keep your `ruff-pre-commit` hook version in `.pre-commit-config.yaml` matching your project's Ruff version.
 - 🦾 **Agent Skill** — Ships a bundled [Agent Skill](https://kilo59.github.io/ruff-sync/agent-skill/) so AI coding agents can guide you through setup, configuration, and troubleshooting automatically.
 - 📊 **Multiple Output Formats** — Supports `text`, `json`, and GitHub Actions `github` (inline annotations) formats for seamless integration with both human developers and CI/CD pipelines.
+
+## Ruff Inspect (TUI)
+
+`ruff-inspect` is an **experimental** interactive Terminal User Interface for exploring your Ruff configuration and rule documentation — shipped as an optional extra.
+
+```console
+# Install with TUI support
+uv tool install "ruff-sync[tui]"
+
+# Launch the inspector
+ruff-inspect
+```
+
+![Ruff Inspect TUI — dashboard view showing the Pyflakes linter selected with a colorful mix of Enabled, Ignored and Disabled rules](docs/assets/screenshots/dashboard.svg)
+
+> [!NOTE]
+> This feature is experimental and subject to change. See the [Ruff Config Inspection](https://kilo59.github.io/ruff-sync/inspect/) page for full details.
 
 ## Configuration
 
