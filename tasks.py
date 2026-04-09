@@ -132,14 +132,14 @@ def release(
     """Tag and create a GitHub release for the current project version."""
     # Check if we are on the main branch
     branch_result = ctx.run("git branch --show-current", hide=True)
-    current_branch = branch_result.stdout.strip()  # type: ignore[union-attr]
+    current_branch = branch_result.stdout.strip()
     if not dry_run and current_branch != "main":
         print(f"❌ Releases must be made from the 'main' branch (current: {current_branch}).")
         return
 
     # Check for dirty git state
     status_result = ctx.run("git status --porcelain", hide=True)
-    git_status = status_result.stdout.strip()  # type: ignore[union-attr]
+    git_status = status_result.stdout.strip()
     if git_status:
         print("❌ Git repository has uncommitted changes. Please commit or stash them first.")
         return

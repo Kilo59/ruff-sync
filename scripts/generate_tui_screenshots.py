@@ -21,11 +21,10 @@ from typing import TYPE_CHECKING, Final
 if TYPE_CHECKING:
     from textual.pilot import Pilot
 
-    from ruff_sync.tui.widgets import CategoryTable, ConfigTree
-
 from ruff_sync.cli import Arguments
 from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE, OutputFormat
 from ruff_sync.tui.app import RuffSyncApp
+from ruff_sync.tui.widgets import CategoryTable, ConfigTree
 
 # ── File paths ────────────────────────────────────────────────────────────────
 SCREENSHOTS_DIR: Final = pathlib.Path("docs/assets/screenshots")
@@ -141,8 +140,8 @@ async def generate_screenshots() -> None:
     app = RuffSyncApp(args)
 
     async with app.run_test(size=(120, 40)) as pilot:
-        tree: ConfigTree = app.query_one(TREE_ID)
-        table: CategoryTable = app.query_one(TABLE_ID)
+        tree = app.query_one(TREE_ID, ConfigTree)
+        table = app.query_one(TABLE_ID, CategoryTable)
 
         # ── Wait for background cache priming to finish ────────────────────────
         # Check for `app.effective_rules` being populated rather than sleeping a
