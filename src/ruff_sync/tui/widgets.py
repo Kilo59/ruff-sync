@@ -147,6 +147,7 @@ class CategoryTable(DataTable[Any]):
         # Resolve theme colors to hex strings for Rich markup safely
         success_clr = "green"
         warning_clr = "yellow"
+        accent_clr = "magenta"
 
         try:
             # We can access the theme via the App instance
@@ -154,6 +155,7 @@ class CategoryTable(DataTable[Any]):
             if theme:
                 success_clr = str(theme.success)
                 warning_clr = str(theme.warning)
+                accent_clr = str(theme.accent)
         except (AttributeError, KeyError):
             # Fallback for headless tests or if the app is not yet initialized
             pass
@@ -161,23 +163,30 @@ class CategoryTable(DataTable[Any]):
         for rule in rules:
             status = rule.get("status", "Unknown")
 
-            # Determine row color based on status
-            color = ""
+            # Status color applies to Code / Name / Linter columns
+            status_clr = ""
             if status == "Enabled":
-                color = success_clr
+                status_clr = success_clr
             elif status == "Ignored":
-                color = warning_clr
+                status_clr = warning_clr
             elif status == "Disabled":
-                color = "dim"
+                status_clr = "dim"
 
-            # Apply status color to all columns for maximum "colorfulness"
-            # If the row is selected, Textual/Rich will handle the background contrast.
-            code_markup = f"[{color}]{rule['code']}[/]" if color else rule["code"]
-            name_markup = f"[{color}]{rule['name']}[/]" if color else rule["name"]
-            linter_markup = f"[{color}]{rule['linter']}[/]" if color else rule["linter"]
+            code_markup = f"[{status_clr}]{rule['code']}[/]" if status_clr else rule["code"]
+            name_markup = f"[{status_clr}]{rule['name']}[/]" if status_clr else rule["name"]
+            linter_markup = f"[{status_clr}]{rule['linter']}[/]" if status_clr else rule["linter"]
 
+            # Fix column uses its own color keyed on fix_availability:
+            #   Always    → accent (e.g. magenta)
+            #   Sometimes → warning (same as Ignored)
+            #   None/other→ plain
             fix = rule.get("fix_availability", "None")
-            fix_markup = f"[{color}]{fix}[/]" if color else fix
+            if fix == "Always":
+                fix_markup = f"[{accent_clr}]{fix}[/]"
+            elif fix == "Sometimes":
+                fix_markup = f"[{warning_clr}]{fix}[/]"
+            else:
+                fix_markup = fix
 
             self.add_row(code_markup, name_markup, linter_markup, fix_markup, key=rule["code"])
 

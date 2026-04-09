@@ -369,8 +369,9 @@ async def test_category_table_handles_ignored_status(
         code_cell = str(row[0])
         fix_cell = str(row[3])
 
-        # Warning color from AMBER_EMBER is #FFB300
-        warning_hex = "#ffb300"
+        # Warning color from AMBER_EMBER is #FFD600 (Vibrant Yellow A700)
+        # Note: #FFB300 is the primary color, not warning.
+        warning_hex = "#ffd600"
 
         assert warning_hex in code_cell.lower()
         assert warning_hex in fix_cell.lower()
