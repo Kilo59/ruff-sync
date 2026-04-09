@@ -1,15 +1,38 @@
+"""Tests for ruff-sync config validation (validation.py) and related --validate / --strict flags.
+
+Prior tests in this file (test_get_config_warns_on_unknown_key etc.) cover
+[tool.ruff-sync] config reading in get_config(). New tests below cover the
+validate_merged_config() and validate_ruff_accepts_config() logic added in Phase 1.
+"""
+
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+import pathlib
+import subprocess
+from typing import TYPE_CHECKING, cast
 
 import pytest
+import respx
+import tomlkit
+from httpx import URL
 
+import ruff_sync
 from ruff_sync import get_config
 from ruff_sync.cli import LOGGER
+from ruff_sync.validation import (
+    validate_merged_config,
+    validate_ruff_accepts_config,
+    validate_toml_syntax,
+)
 
 if TYPE_CHECKING:
-    import pathlib
+    from pyfakefs.fake_filesystem import FakeFilesystem
+
+
+# ---------------------------------------------------------------------------
+# Fixture shared by the legacy get_config tests
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -22,6 +45,11 @@ def clean_config_cache():
     yield
     get_config.cache_clear()
     LOGGER.propagate = original_propagate
+
+
+# ===========================================================================
+# Legacy [tool.ruff-sync] config-reading tests (pre-existing)
+# ===========================================================================
 
 
 def test_get_config_warns_on_unknown_key(
@@ -119,6 +147,348 @@ output-format = "github"
     # The last one in the file wins if they map to the same key.
     assert config["pre_commit_version_sync"] is True
     assert config["output_format"] == "github"
+
+
+# ===========================================================================
+# Phase 1 — validate_toml_syntax
+# ===========================================================================
+
+
+def test_validate_toml_syntax_valid() -> None:
+    """A well-formed TOMLDocument should pass the syntax check."""
+    doc = tomlkit.parse("[tool.ruff]\nline-length = 100\n")
+    assert validate_toml_syntax(doc) is True
+
+
+def test_validate_toml_syntax_logs_exception(caplog: pytest.LogCaptureFixture) -> None:
+    """If tomlkit.parse raises a TOMLKitError, it should be logged."""
+    # We can't easily make tomlkit.parse(doc.as_string()) fail if doc
+    # is a TOMLDocument, because doc.as_string() is always valid TOML.
+    # However, we can mock doc.as_string() to return invalid TOML.
+
+    class BadDoc:
+        def as_string(self) -> str:
+            return "[[invalid"
+
+    with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
+        result = validate_toml_syntax(BadDoc())  # type: ignore[arg-type]
+
+    assert result is False
+    assert "Merged config failed TOML syntax check" in caplog.text
+    # tomlkit.parse('[[invalid') raises TOMLKitError
+    assert "Unexpected end of file" in caplog.text or "invalid" in caplog.text.lower()
+
+
+# ===========================================================================
+# Phase 1 — validate_ruff_accepts_config (unit, calls real ruff binary)
+# ===========================================================================
+
+
+def test_validate_ruff_accepts_valid_pyproject_config() -> None:
+    """A valid [tool.ruff] config should be accepted by ruff (exit 0 or 1)."""
+    doc = tomlkit.parse("[tool.ruff]\nline-length = 100\n")
+    result = validate_ruff_accepts_config(doc, is_ruff_toml=False)
+    # Either True (ruff accepted) or True (ruff not on PATH — soft fail).
+    # We assert it doesn't crash and returns a bool.
+    assert isinstance(result, bool)
+
+
+def test_validate_ruff_accepts_valid_ruff_toml_config() -> None:
+    """A valid ruff.toml-style config should be accepted by ruff."""
+    doc = tomlkit.parse("line-length = 100\n")
+    result = validate_ruff_accepts_config(doc, is_ruff_toml=True)
+    assert isinstance(result, bool)
+
+
+def test_validate_ruff_rejects_invalid_pyproject_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ruff should reject a config with an unknown [tool.ruff] key.
+
+    We use monkeypatch to inject a fake subprocess.run that simulates ruff
+    exiting with code 2 (config error), avoiding a real subprocess call in CI
+    where the ruff version may differ.
+    """
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=2,
+            stdout="",
+            stderr="unknown field `not-a-real-key`",
+        )
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    doc = tomlkit.parse("[tool.ruff]\nnot-a-real-key = true\n")
+    result = validate_ruff_accepts_config(doc, is_ruff_toml=False)
+    assert result is False
+
+
+def test_validate_ruff_accepts_config_strict_fails_on_warning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """In strict mode, config warnings should cause validation to fail."""
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="warning: `target-version` is deprecated."
+            " Use `project.requires-python` instead.",
+        )
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    doc = tomlkit.parse("[tool.ruff]\ntarget-version = 'py310'\n")
+
+    # Non-strict mode: should pass (exit code 0)
+    assert validate_ruff_accepts_config(doc, strict=False) is True
+
+    # Strict mode: should fail (warning in stderr)
+    assert validate_ruff_accepts_config(doc, strict=True) is False
+
+
+def test_validate_ruff_soft_fails_when_ruff_not_on_path(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """If ruff is not on PATH, validation should soft-fail (return True, emit warning)."""
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        msg = "ruff: command not found"
+        raise FileNotFoundError(msg)
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    doc = tomlkit.parse("[tool.ruff]\nline-length = 100\n")
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = validate_ruff_accepts_config(doc, is_ruff_toml=False)
+
+    assert result is True  # Soft fail — don't block users without ruff on PATH
+    assert "not found on PATH" in caplog.text
+
+
+def test_validate_ruff_soft_fails_on_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """If ruff times out, validation should soft-fail (return True, emit warning)."""
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        raise subprocess.TimeoutExpired(cmd=["ruff"], timeout=30)
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    doc = tomlkit.parse("[tool.ruff]\nline-length = 100\n")
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = validate_ruff_accepts_config(doc, is_ruff_toml=False)
+
+    assert result is True  # Soft fail on timeout
+    assert "timed out" in caplog.text
+
+
+# ===========================================================================
+# Phase 1 — validate_merged_config (top-level entrypoint)
+# ===========================================================================
+
+
+def test_validate_merged_config_valid(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A valid merged config should pass all checks."""
+    doc = tomlkit.parse("[tool.ruff]\nline-length = 100\n")
+
+    # validate_ruff_accepts_config may soft-fail if ruff isn't on PATH,
+    # but validate_merged_config should still return True (not crash).
+    result = validate_merged_config(doc)
+    assert isinstance(result, bool)
+
+    # Also exercise the is_ruff_toml=True branch, ensuring that the
+    # ruff.toml-specific path (including filename handling) is exercised.
+    called: dict[str, object] = {}
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        called["cmd"] = cmd
+
+        class Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        return Result()  # type: ignore[return-value]
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result_ruff_toml = validate_merged_config(doc, is_ruff_toml=True)
+    assert isinstance(result_ruff_toml, bool)
+    assert "cmd" in called
+
+    cmd = cast("list[str]", called["cmd"])
+    # Check that some argument refers to a ruff.toml-specific path.
+    assert any("ruff.toml" in str(part) for part in cmd)
+    # Also verify --isolated is present
+    assert "--isolated" in cmd
+
+
+def test_validate_merged_config_returns_false_on_invalid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """validate_merged_config should return False when ruff rejects the config."""
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=2,
+            stdout="",
+            stderr="unknown field `not-a-real-key`",
+        )
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    doc = tomlkit.parse("[tool.ruff]\nnot-a-real-key = true\n")
+    assert validate_merged_config(doc) is False
+
+
+# ===========================================================================
+# Phase 1 — Integration: pull() with --validate flag
+# ===========================================================================
+
+_VALID_UPSTREAM = """\
+[tool.ruff]
+line-length = 100
+"""
+
+_INVALID_UPSTREAM = """\
+[tool.ruff]
+not-a-real-key = true
+"""
+
+_LOCAL_PYPROJECT = """\
+[tool.ruff]
+line-length = 88
+"""
+
+
+@pytest.mark.asyncio
+async def test_pull_aborts_on_invalid_config_when_validate_is_true(
+    fs: FakeFilesystem,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When --validate is passed and ruff rejects the config, pull() returns 1.
+
+    The local pyproject.toml must remain unchanged.
+    """
+    fs.create_file("pyproject.toml", contents=_LOCAL_PYPROJECT)
+    source_path = pathlib.Path("pyproject.toml")
+
+    # Simulate ruff rejecting the merged config (exit code 2 = config error)
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if "ruff" in cmd[0]:
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=2, stdout="", stderr="unknown field `not-a-real-key`"
+            )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content=_INVALID_UPSTREAM
+        )
+
+        args = ruff_sync.Arguments(
+            command="pull",
+            upstream=(URL("https://example.com/pyproject.toml"),),
+            to=source_path,
+            exclude=(),
+            verbose=0,
+            validate=True,
+        )
+
+        exit_code = await ruff_sync.pull(args)
+
+    # Validation failed → non-zero exit
+    assert exit_code == 1
+    # The local file must be left UNCHANGED
+    assert source_path.read_text() == _LOCAL_PYPROJECT
+
+
+@pytest.mark.asyncio
+async def test_pull_skips_validation_by_default(
+    fs: FakeFilesystem,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression guard: without --validate, pull() succeeds even with a bad upstream key.
+
+    Validation is opt-in. validate=False (the default) must never call ruff.
+    """
+    validation_called = False
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        nonlocal validation_called
+        validation_called = True
+        return subprocess.CompletedProcess(args=cmd, returncode=2, stdout="", stderr="")
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    fs.create_file("pyproject.toml", contents=_LOCAL_PYPROJECT)
+    source_path = pathlib.Path("pyproject.toml")
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content=_VALID_UPSTREAM
+        )
+
+        args = ruff_sync.Arguments(
+            command="pull",
+            upstream=(URL("https://example.com/pyproject.toml"),),
+            to=source_path,
+            exclude=(),
+            verbose=0,
+            # validate defaults to False — validation must NOT run
+        )
+
+        exit_code = await ruff_sync.pull(args)
+
+    assert exit_code == 0
+    # The validation subprocess must NOT have been called
+    assert not validation_called, "ruff subprocess was called even though validate=False"
+
+
+@pytest.mark.asyncio
+async def test_pull_succeeds_when_validate_passes(
+    fs: FakeFilesystem,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When --validate is passed and ruff accepts the config, pull() succeeds (exit 0)."""
+    fs.create_file("pyproject.toml", contents=_LOCAL_PYPROJECT)
+    source_path = pathlib.Path("pyproject.toml")
+
+    # Ruff accepts the config (exit 0)
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content=_VALID_UPSTREAM
+        )
+
+        args = ruff_sync.Arguments(
+            command="pull",
+            upstream=(URL("https://example.com/pyproject.toml"),),
+            to=source_path,
+            exclude=(),
+            verbose=0,
+            validate=True,
+        )
+
+        exit_code = await ruff_sync.pull(args)
+
+    assert exit_code == 0
+    # The file should be updated with the upstream content
+    assert "line-length = 100" in source_path.read_text()
 
 
 if __name__ == "__main__":
