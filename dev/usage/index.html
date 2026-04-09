@@ -731,6 +731,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#validating-before-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validating Before Writing
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1213,6 +1224,8 @@
       
         
           
+        
+      
         
       
         
@@ -1800,6 +1813,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/ruff_sync/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1913,6 +1954,17 @@
     <span class="md-ellipsis">
       
         Excluding Specific Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validating-before-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validating Before Writing
       
     </span>
   </a>
@@ -2207,15 +2259,28 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ruff-sync<span class="w"> </span>--exclude<span class="w"> </span>lint.ignore<span class="w"> </span>lint.select
 </span></code></pre></div>
 <p><em>(By default, <code>lint.per-file-ignores</code> is always excluded so your local file-specific ignores are safe).</em></p>
+<h3 id="validating-before-writing">Validating Before Writing<a class="headerlink" href="#validating-before-writing" title="Permanent link">&para;</a></h3>
+<p>Before <code>ruff-sync</code> writes the merged config to disk, you can ask it to validate the result with Ruff itself:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ruff-sync<span class="w"> </span>--validate
+</span></code></pre></div>
+<p>If Ruff rejects the merged config (e.g., because the upstream introduced an unknown key), the sync is aborted and your local file is left untouched.</p>
+<p>For stricter enforcement, use <code>--strict</code>. This upgrades any validation <em>warnings</em> — such as a Python version mismatch between <code>[tool.ruff] target-version</code> and <code>[project] requires-python</code> — into hard failures:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ruff-sync<span class="w"> </span>--strict
+</span></code></pre></div>
+<blockquote>
+<p>[!NOTE]
+<code>--strict</code> implies <code>--validate</code>. You do not need to pass both flags.</p>
+<p>Validation is <strong>opt-in</strong> and off by default. It requires <code>ruff</code> to be available on <code>PATH</code>. If <code>ruff</code> is not found, validation is skipped with a warning rather than blocking the sync.</p>
+</blockquote>
 <hr />
 <h2 id="checking-for-drift">🔍 Checking for Drift<a class="headerlink" href="#checking-for-drift" title="Permanent link">&para;</a></h2>
 <p>To ensure your repository hasn't drifted from your organization's unified standards, use the <code>check</code> command. It compares your local config to the upstream and warns you of any divergence.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>https://github.com/my-org/standards
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>https://github.com/my-org/standards
 </span></code></pre></div>
 <p><em>(If you have <code>upstream</code> configured in your <code>pyproject.toml</code>, you can just run <code>ruff-sync check</code>.)</em></p>
 <h3 id="semantic-checking">Semantic Checking<a class="headerlink" href="#semantic-checking" title="Permanent link">&para;</a></h3>
 <p>Often, the exact ordering of keys, whitespace, or comments might slightly differ from the upstream, even though the actual rules are identical. Use the <code>--semantic</code> flag to ignore functional equivalents:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>--semantic
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>--semantic
 </span></code></pre></div>
 <p><em>(This is heavily recommended for CI pipelines.)</em></p>
 <hr />
@@ -2235,7 +2300,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <h2 id="command-reference">📚 Command Reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h2>
 <h3 id="pull-or-just-ruff-sync"><code>pull</code> (or just <code>ruff-sync</code>)<a class="headerlink" href="#pull-or-just-ruff-sync" title="Permanent link">&para;</a></h3>
 <p>Downloads the upstream configuration and merges it into your local file. Note that <code>pull</code> is the default command, so <code>ruff-sync</code> and <code>ruff-sync pull</code> are functionally identical and can be used interchangeably.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ruff-sync<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>ruff-sync<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--to<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--exclude<span class="w"> </span>KEY...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--init<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>UPSTREAM_URL...</code></strong>: One or more URLs to the source <code>pyproject.toml</code> or <code>ruff.toml</code>. Optional if defined in your local <code>[tool.ruff-sync]</code> config. Multiple URLs form a fallback/merge chain. All upstreams are fetched <strong>concurrently</strong>, but they are merged sequentially in the order they are defined. If any upstream fails to fetch, the entire operation will fail.</li>
@@ -2243,6 +2308,8 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <li><strong><code>--exclude KEY...</code></strong>: Dotted paths of keys to keep local and never overwrite (e.g., <code>lint.isort</code>).</li>
 <li><strong><code>--init</code></strong>: Create a new <code>pyproject.toml</code> with the upstream configuration if it doesn't already exist. This automatically saves the upstream source and any other CLI flags into the <code>[tool.ruff-sync]</code> section.</li>
 <li><strong><code>--save</code> / <code>--no-save</code></strong>: Force serialization (or prevent serialization) of the provided CLI arguments (like <code>upstream</code>, <code>exclude</code>, etc.) directly into the <code>[tool.ruff-sync]</code> section of the target <code>pyproject.toml</code> for future use. Note: any credentials present in the upstream URL will cause this operation to safely abort.</li>
+<li><strong><code>--validate</code></strong>: Run the merged config through Ruff before writing to disk. If Ruff rejects the config (e.g., due to an unknown key), the sync is aborted and the local file is left unchanged. Off by default to avoid adding latency and an implicit dependency on <code>ruff</code> being present in <code>PATH</code>.</li>
+<li><strong><code>--strict</code></strong>: Treat validation warnings (such as Python version mismatches or deprecated rules) as hard failures. Implies <code>--validate</code> — you do not need to pass both flags.</li>
 <li><strong><code>--output-format [text|json|github|gitlab|sarif]</code></strong>: Specify the output format for synchronization results.<ul>
 <li><code>text</code> (default): Human-readable terminal output.</li>
 <li><code>json</code>: Machine-readable JSON output for tool integration.</li>
@@ -2260,7 +2327,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <li>Exit <strong><code>1</code></strong>: <code>pyproject.toml</code> or <code>ruff.toml</code> drifted from the upstream.</li>
 <li>Exit <strong><code>2</code></strong>: Local config is in sync, but the <code>.pre-commit-config.yaml</code> hook drifted from the project's Ruff version (only applies if <code>--pre-commit</code> is enabled).</li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span><span class="o">[</span>UPSTREAM_URL...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--semantic<span class="o">]</span><span class="w"> </span><span class="o">[</span>--diff<span class="o">]</span><span class="w"> </span><span class="o">[</span>--pre-commit<span class="o">]</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>UPSTREAM_URL...</code></strong>: The source URL(s). Optional if defined locally.</li>
@@ -2280,7 +2347,12 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
     D -- Yes --&gt; E[Raise UpstreamError]
     D -- No --&gt; F[Initialize Target Doc]
     F --&gt; G[Merge Upstreams Sequentially]
-    G --&gt; H[Save Final Configuration]
+    G --&gt; V{--validate?}
+    V -- No --&gt; H[Save Final Configuration]
+    V -- Yes --&gt; VAL[Run Ruff config validation]
+    VAL --&gt; VRES{Valid?}
+    VRES -- No --&gt; ABORT[Abort — local file unchanged]
+    VRES -- Yes --&gt; H[Save Final Configuration]
     H --&gt; PC{--pre-commit?}
     PC -- Yes --&gt; SyncPC[Sync pre-commit hook version]
     SyncPC --&gt; I[End]
@@ -2290,7 +2362,10 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
     style A fill:#2563eb,color:#fff,stroke:#1d4ed8
     style I fill:#2563eb,color:#fff,stroke:#1d4ed8
     style E fill:#dc2626,color:#fff,stroke:#b91c1c
+    style ABORT fill:#dc2626,color:#fff,stroke:#b91c1c
     style D fill:#ca8a04,color:#fff,stroke:#a16207
+    style V fill:#ca8a04,color:#fff,stroke:#a16207
+    style VRES fill:#ca8a04,color:#fff,stroke:#a16207
     style PC fill:#ca8a04,color:#fff,stroke:#a16207</code></pre>
 <h3 id="check-logic">Check Logic<a class="headerlink" href="#check-logic" title="Permanent link">&para;</a></h3>
 <p>When you run <code>ruff-sync check</code>, it follows this process to determine if your project has drifted from the upstream source:</p>

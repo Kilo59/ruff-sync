@@ -992,6 +992,8 @@
       
         
       
+        
+      
     
     
     
@@ -2163,6 +2165,34 @@
     
   
     types_
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    validation
   
 
     
@@ -5654,7 +5684,21 @@ back to asyncio.gather.</p>
 <span class="normal"><a href="#__codelineno-0-1181">1181</a></span>
 <span class="normal"><a href="#__codelineno-0-1182">1182</a></span>
 <span class="normal"><a href="#__codelineno-0-1183">1183</a></span>
-<span class="normal"><a href="#__codelineno-0-1184">1184</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1103"><a id="__codelineno-0-1103" name="__codelineno-0-1103"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">pull</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-1184">1184</a></span>
+<span class="normal"><a href="#__codelineno-0-1185">1185</a></span>
+<span class="normal"><a href="#__codelineno-0-1186">1186</a></span>
+<span class="normal"><a href="#__codelineno-0-1187">1187</a></span>
+<span class="normal"><a href="#__codelineno-0-1188">1188</a></span>
+<span class="normal"><a href="#__codelineno-0-1189">1189</a></span>
+<span class="normal"><a href="#__codelineno-0-1190">1190</a></span>
+<span class="normal"><a href="#__codelineno-0-1191">1191</a></span>
+<span class="normal"><a href="#__codelineno-0-1192">1192</a></span>
+<span class="normal"><a href="#__codelineno-0-1193">1193</a></span>
+<span class="normal"><a href="#__codelineno-0-1194">1194</a></span>
+<span class="normal"><a href="#__codelineno-0-1195">1195</a></span>
+<span class="normal"><a href="#__codelineno-0-1196">1196</a></span>
+<span class="normal"><a href="#__codelineno-0-1197">1197</a></span>
+<span class="normal"><a href="#__codelineno-0-1198">1198</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1103"><a id="__codelineno-0-1103" name="__codelineno-0-1103"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">pull</span><span class="p">(</span>
 </span><span id="__span-0-1104"><a id="__codelineno-0-1104" name="__codelineno-0-1104"></a>    <span class="n">args</span><span class="p">:</span> <span class="n">Arguments</span><span class="p">,</span>
 </span><span id="__span-0-1105"><a id="__codelineno-0-1105" name="__codelineno-0-1105"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 </span><span id="__span-0-1106"><a id="__codelineno-0-1106" name="__codelineno-0-1106"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Pull the upstream ruff config and apply it to the source.</span>
@@ -5712,30 +5756,44 @@ back to asyncio.gather.</p>
 </span><span id="__span-0-1158"><a id="__codelineno-0-1158" name="__codelineno-0-1158"></a>                <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
 </span><span id="__span-0-1159"><a id="__codelineno-0-1159" name="__codelineno-0-1159"></a>            <span class="p">)</span>
 </span><span id="__span-0-1160"><a id="__codelineno-0-1160" name="__codelineno-0-1160"></a>
-</span><span id="__span-0-1161"><a id="__codelineno-0-1161" name="__codelineno-0-1161"></a>        <span class="n">should_save</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">save</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">save</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">init</span>
-</span><span id="__span-0-1162"><a id="__codelineno-0-1162" name="__codelineno-0-1162"></a>        <span class="k">if</span> <span class="n">should_save</span><span class="p">:</span>
-</span><span id="__span-0-1163"><a id="__codelineno-0-1163" name="__codelineno-0-1163"></a>            <span class="k">if</span> <span class="n">_source_toml_path</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">RuffConfigFileName</span><span class="o">.</span><span class="n">PYPROJECT_TOML</span><span class="p">:</span>
-</span><span id="__span-0-1164"><a id="__codelineno-0-1164" name="__codelineno-0-1164"></a>                <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving [tool.ruff-sync] configuration to </span><span class="si">{</span><span class="n">_source_toml_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-1165"><a id="__codelineno-0-1165" name="__codelineno-0-1165"></a>                <span class="n">serialize_ruff_sync_config</span><span class="p">(</span><span class="n">source_doc</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-</span><span id="__span-0-1166"><a id="__codelineno-0-1166" name="__codelineno-0-1166"></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-1167"><a id="__codelineno-0-1167" name="__codelineno-0-1167"></a>                <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-</span><span id="__span-0-1168"><a id="__codelineno-0-1168" name="__codelineno-0-1168"></a>                    <span class="s2">&quot;Skipping [tool.ruff-sync] configuration save &quot;</span>
-</span><span id="__span-0-1169"><a id="__codelineno-0-1169" name="__codelineno-0-1169"></a>                    <span class="s2">&quot;because target is not pyproject.toml&quot;</span>
-</span><span id="__span-0-1170"><a id="__codelineno-0-1170" name="__codelineno-0-1170"></a>                <span class="p">)</span>
-</span><span id="__span-0-1171"><a id="__codelineno-0-1171" name="__codelineno-0-1171"></a>
-</span><span id="__span-0-1172"><a id="__codelineno-0-1172" name="__codelineno-0-1172"></a>        <span class="n">source_toml_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">source_doc</span><span class="p">)</span>
-</span><span id="__span-0-1173"><a id="__codelineno-0-1173" name="__codelineno-0-1173"></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-0-1174"><a id="__codelineno-0-1174" name="__codelineno-0-1174"></a>            <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_source_toml_path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">())</span>
-</span><span id="__span-0-1175"><a id="__codelineno-0-1175" name="__codelineno-0-1175"></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-</span><span id="__span-0-1176"><a id="__codelineno-0-1176" name="__codelineno-0-1176"></a>            <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_source_toml_path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
-</span><span id="__span-0-1177"><a id="__codelineno-0-1177" name="__codelineno-0-1177"></a>        <span class="n">fmt</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Updated </span><span class="si">{</span><span class="n">rel_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-1178"><a id="__codelineno-0-1178" name="__codelineno-0-1178"></a>
-</span><span id="__span-0-1179"><a id="__codelineno-0-1179" name="__codelineno-0-1179"></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">pre_commit</span><span class="p">:</span>
-</span><span id="__span-0-1180"><a id="__codelineno-0-1180" name="__codelineno-0-1180"></a>            <span class="n">sync_pre_commit</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</span><span id="__span-0-1181"><a id="__codelineno-0-1181" name="__codelineno-0-1181"></a>
-</span><span id="__span-0-1182"><a id="__codelineno-0-1182" name="__codelineno-0-1182"></a>        <span class="k">return</span> <span class="mi">0</span>
-</span><span id="__span-0-1183"><a id="__codelineno-0-1183" name="__codelineno-0-1183"></a>    <span class="k">finally</span><span class="p">:</span>
-</span><span id="__span-0-1184"><a id="__codelineno-0-1184" name="__codelineno-0-1184"></a>        <span class="n">fmt</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+</span><span id="__span-0-1161"><a id="__codelineno-0-1161" name="__codelineno-0-1161"></a>        <span class="c1"># Validation is opt-in — only run if --validate (or --strict) was passed</span>
+</span><span id="__span-0-1162"><a id="__codelineno-0-1162" name="__codelineno-0-1162"></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">validate</span><span class="p">:</span>
+</span><span id="__span-0-1163"><a id="__codelineno-0-1163" name="__codelineno-0-1163"></a>            <span class="kn">from</span><span class="w"> </span><span class="nn">ruff_sync.validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_merged_config</span>  <span class="c1"># noqa: PLC0415</span>
+</span><span id="__span-0-1164"><a id="__codelineno-0-1164" name="__codelineno-0-1164"></a>
+</span><span id="__span-0-1165"><a id="__codelineno-0-1165" name="__codelineno-0-1165"></a>            <span class="n">is_ruff_toml</span> <span class="o">=</span> <span class="n">is_ruff_toml_file</span><span class="p">(</span><span class="n">_source_toml_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-0-1166"><a id="__codelineno-0-1166" name="__codelineno-0-1166"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_merged_config</span><span class="p">(</span>
+</span><span id="__span-0-1167"><a id="__codelineno-0-1167" name="__codelineno-0-1167"></a>                <span class="n">source_doc</span><span class="p">,</span> <span class="n">is_ruff_toml</span><span class="o">=</span><span class="n">is_ruff_toml</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">strict</span>
+</span><span id="__span-0-1168"><a id="__codelineno-0-1168" name="__codelineno-0-1168"></a>            <span class="p">):</span>
+</span><span id="__span-0-1169"><a id="__codelineno-0-1169" name="__codelineno-0-1169"></a>                <span class="n">fmt</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+</span><span id="__span-0-1170"><a id="__codelineno-0-1170" name="__codelineno-0-1170"></a>                    <span class="s2">&quot;❌ Merged config failed validation. Local file left unchanged.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-1171"><a id="__codelineno-0-1171" name="__codelineno-0-1171"></a>                    <span class="n">logger</span><span class="o">=</span><span class="n">LOGGER</span><span class="p">,</span>
+</span><span id="__span-0-1172"><a id="__codelineno-0-1172" name="__codelineno-0-1172"></a>                <span class="p">)</span>
+</span><span id="__span-0-1173"><a id="__codelineno-0-1173" name="__codelineno-0-1173"></a>                <span class="k">return</span> <span class="mi">1</span>
+</span><span id="__span-0-1174"><a id="__codelineno-0-1174" name="__codelineno-0-1174"></a>
+</span><span id="__span-0-1175"><a id="__codelineno-0-1175" name="__codelineno-0-1175"></a>        <span class="n">should_save</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">save</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">save</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">init</span>
+</span><span id="__span-0-1176"><a id="__codelineno-0-1176" name="__codelineno-0-1176"></a>        <span class="k">if</span> <span class="n">should_save</span><span class="p">:</span>
+</span><span id="__span-0-1177"><a id="__codelineno-0-1177" name="__codelineno-0-1177"></a>            <span class="k">if</span> <span class="n">_source_toml_path</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">RuffConfigFileName</span><span class="o">.</span><span class="n">PYPROJECT_TOML</span><span class="p">:</span>
+</span><span id="__span-0-1178"><a id="__codelineno-0-1178" name="__codelineno-0-1178"></a>                <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving [tool.ruff-sync] configuration to </span><span class="si">{</span><span class="n">_source_toml_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-1179"><a id="__codelineno-0-1179" name="__codelineno-0-1179"></a>                <span class="n">serialize_ruff_sync_config</span><span class="p">(</span><span class="n">source_doc</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+</span><span id="__span-0-1180"><a id="__codelineno-0-1180" name="__codelineno-0-1180"></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-1181"><a id="__codelineno-0-1181" name="__codelineno-0-1181"></a>                <span class="n">LOGGER</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+</span><span id="__span-0-1182"><a id="__codelineno-0-1182" name="__codelineno-0-1182"></a>                    <span class="s2">&quot;Skipping [tool.ruff-sync] configuration save &quot;</span>
+</span><span id="__span-0-1183"><a id="__codelineno-0-1183" name="__codelineno-0-1183"></a>                    <span class="s2">&quot;because target is not pyproject.toml&quot;</span>
+</span><span id="__span-0-1184"><a id="__codelineno-0-1184" name="__codelineno-0-1184"></a>                <span class="p">)</span>
+</span><span id="__span-0-1185"><a id="__codelineno-0-1185" name="__codelineno-0-1185"></a>
+</span><span id="__span-0-1186"><a id="__codelineno-0-1186" name="__codelineno-0-1186"></a>        <span class="n">source_toml_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">source_doc</span><span class="p">)</span>
+</span><span id="__span-0-1187"><a id="__codelineno-0-1187" name="__codelineno-0-1187"></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="__span-0-1188"><a id="__codelineno-0-1188" name="__codelineno-0-1188"></a>            <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_source_toml_path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">())</span>
+</span><span id="__span-0-1189"><a id="__codelineno-0-1189" name="__codelineno-0-1189"></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span id="__span-0-1190"><a id="__codelineno-0-1190" name="__codelineno-0-1190"></a>            <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_source_toml_path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+</span><span id="__span-0-1191"><a id="__codelineno-0-1191" name="__codelineno-0-1191"></a>        <span class="n">fmt</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Updated </span><span class="si">{</span><span class="n">rel_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-0-1192"><a id="__codelineno-0-1192" name="__codelineno-0-1192"></a>
+</span><span id="__span-0-1193"><a id="__codelineno-0-1193" name="__codelineno-0-1193"></a>        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">pre_commit</span><span class="p">:</span>
+</span><span id="__span-0-1194"><a id="__codelineno-0-1194" name="__codelineno-0-1194"></a>            <span class="n">sync_pre_commit</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-1195"><a id="__codelineno-0-1195" name="__codelineno-0-1195"></a>
+</span><span id="__span-0-1196"><a id="__codelineno-0-1196" name="__codelineno-0-1196"></a>        <span class="k">return</span> <span class="mi">0</span>
+</span><span id="__span-0-1197"><a id="__codelineno-0-1197" name="__codelineno-0-1197"></a>    <span class="k">finally</span><span class="p">:</span>
+</span><span id="__span-0-1198"><a id="__codelineno-0-1198" name="__codelineno-0-1198"></a>        <span class="n">fmt</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
