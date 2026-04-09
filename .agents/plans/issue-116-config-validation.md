@@ -20,16 +20,25 @@ passing both.
 
 ## Overview of Priorities
 
-| Priority | Label | Feature | Scope |
-|---|---|---|---|
-| 1 (Must Have) | 🔴 | TOML syntax + Ruff CLI validation | New `validation.py` module; gated by `--validate` in `pull()` |
-| 2 (Should Have) | 🟠 | Python version consistency check | `validation.py` + warn when `--validate` is active |
-| 3 (Could Have) | 🟡 | Rule deprecation warnings | `validation.py` + subprocess; gated by `--validate` |
-| 4 (Nice to Have) | 🟢 | `--strict` flag | Upgrades warnings to failures; implies `--validate` |
+> **Complexity scale**: 🟢 Simple → 🟡 Moderate → 🔴 Complex
+> Use this to pick your agent tier. Simple phases can be handled by a weak/cheap model;
+> Complex phases need a capable reasoning model.
+
+| Priority | Label | Complexity | Feature | Scope |
+|---|---|---|---|---|
+| 1 (Must Have) | 🔴 | 🟡 Moderate | TOML syntax + Ruff CLI validation | New `validation.py` module; gated by `--validate` in `pull()` |
+| 2 (Should Have) | 🟠 | 🟢 Simple | Python version consistency check | `validation.py` + warn when `--validate` is active |
+| 3 (Could Have) | 🟡 | 🔴 Complex | Rule deprecation warnings | `validation.py` + subprocess + JSON + DI; gated by `--validate` |
+| 4 (Nice to Have) | 🟢 | 🟢 Simple | `--strict` flag | Upgrades warnings to failures; implies `--validate` |
 
 ---
 
-## Priority 1 — TOML Syntax + Ruff CLI Validation
+## Priority 1 — TOML Syntax + Ruff CLI Validation `🟡 Moderate`
+
+> **Why Moderate**: Requires creating a new module from scratch, understanding Ruff subprocess
+> exit-code semantics (0/1 vs 2), implementing soft-fail behaviour, **and** wiring three files
+> (`validation.py`, `cli.py`, `core.py`) all in one phase. Any one piece alone would be Simple;
+> the cross-file coordination bumps it to Moderate.
 
 ### What it does
 
@@ -310,7 +319,11 @@ def test_validate_merged_config_invalid_ruff_key() -> None:
 
 ---
 
-## Priority 2 — Python Version Consistency Check
+## Priority 2 — Python Version Consistency Check `🟢 Simple`
+
+> **Why Simple**: Self-contained addition to an already-created module. Pure Python string
+> parsing with regex — no subprocesses, no cross-file wiring. Warning-only (no abort logic).
+> Tests use only `caplog` (built-in pytest fixture, nothing exotic).
 
 ### What it does
 
@@ -434,7 +447,12 @@ def test_version_consistency_warn_on_mismatch(caplog: pytest.LogCaptureFixture) 
 
 ---
 
-## Priority 3 — Rule Deprecation Warnings
+## Priority 3 — Rule Deprecation Warnings `🔴 Complex`
+
+> **Why Complex**: Requires a subprocess call to `ruff rule --all --output-format json` plus
+> JSON parsing, `functools.lru_cache` for caching, **and** a dependency-injection refactor of
+> `check_deprecated_rules` so tests don't invoke real subprocesses (the project forbids mocks).
+> This is the step most likely to trip up a weak agent.
 
 ### What it does
 
@@ -573,7 +591,11 @@ Tests:
 
 ---
 
-## Priority 4 — `--strict` Flag
+## Priority 4 — `--strict` Flag `🟢 Simple`
+
+> **Why Simple**: Both CLI flags (`--validate`, `--strict`) were already wired in P1. This
+> phase is purely about updating `validate_merged_config` to return `False` instead of just
+> logging a warning when `strict=True`. All scaffolding already exists.
 
 ### What it does
 
