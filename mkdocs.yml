@@ -95,7 +95,7 @@ markdown_extensions:
 plugins:
   - search
   - mike:
-      alias_type: copy
+      alias_type: redirect
       canonical_version: stable
   - gen-files:
       scripts:
