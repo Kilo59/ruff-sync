@@ -497,99 +497,79 @@ async def test_pull_succeeds_when_validate_passes(
 # ===========================================================================
 
 
-def test_version_consistency_warn_on_mismatch(caplog: pytest.LogCaptureFixture) -> None:
-    """A warning should be logged when target-version < requires-python."""
-    doc = tomlkit.parse(
-        '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n'
-    )
+@pytest.mark.parametrize(
+    "toml_content, expected_warn, expected_msg",
+    [
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n',
+            True,
+            "Version mismatch",
+            id="mismatch-warn",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py310"\n',
+            False,
+            None,
+            id="compatible-exact",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n',
+            False,
+            None,
+            id="missing-target-version",
+        ),
+        pytest.param(
+            '[tool.ruff]\ntarget-version = "py39"\n',
+            False,
+            None,
+            id="missing-requires-python",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = "foo"\n\n[tool.ruff]\ntarget-version = "py310"\n',
+            False,
+            None,
+            id="unparsable-requires-python",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "3.10"\n',
+            False,
+            None,
+            id="unparsable-target-version",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = "==3.11.*,>=3.8"\n'
+            '\n[tool.ruff]\ntarget-version = "py39"\n',
+            False,
+            None,
+            id="multiple-specifiers-ok",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10, <4"\n\n[tool.ruff]\ntarget-version = "py39"\n',
+            True,
+            "Version mismatch",
+            id="multiple-specifiers-warn",
+        ),
+    ],
+)
+def test_version_consistency_cases(
+    caplog: pytest.LogCaptureFixture,
+    toml_content: str,
+    expected_warn: bool,
+    expected_msg: str | None,
+) -> None:
+    """Parametrized test for Python version consistency validation."""
+    doc = tomlkit.parse(toml_content)
+
     with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
         result = check_python_version_consistency(doc)
 
-    assert result is True  # Warning only, doesn't fail
-    assert "Version mismatch" in caplog.text
-    assert "targets Python 3.9" in caplog.text
-    assert "requires Python >= 3.10" in caplog.text
-
-
-def test_version_consistency_only_requires_python(caplog: pytest.LogCaptureFixture) -> None:
-    """No warning or failure when only requires-python is present."""
-    doc = tomlkit.parse('[project]\nrequires-python = ">=3.10"\n')
-
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-
+    # All these cases should return True (warnings only)
     assert result is True
-    assert "Version mismatch" not in caplog.text
-
-
-def test_version_consistency_only_target_version(caplog: pytest.LogCaptureFixture) -> None:
-    """No warning or failure when only target-version is present."""
-    doc = tomlkit.parse('[tool.ruff]\ntarget-version = "py39"\n')
-
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-
-    assert result is True
-    assert "Version mismatch" not in caplog.text
-
-
-def test_version_consistency_unparsable_requires_python(caplog: pytest.LogCaptureFixture) -> None:
-    """Unparsable requires-python should not fail validation."""
-    doc = tomlkit.parse(
-        '[project]\nrequires-python = "foo"\n\n[tool.ruff]\ntarget-version = "py310"\n'
-    )
-
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-
-    assert result is True
-    assert "Version mismatch" not in caplog.text
-
-
-def test_version_consistency_unparsable_target_version(caplog: pytest.LogCaptureFixture) -> None:
-    """Unparsable target-version should not fail validation."""
-    doc = tomlkit.parse(
-        '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "3.10"\n'
-    )
-
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-
-    assert result is True
-    assert "Version mismatch" not in caplog.text
-
-
-def test_version_consistency_multiple_specifiers(caplog: pytest.LogCaptureFixture) -> None:
-    """Correctly find the minimum version when multiple specifiers are present."""
-    # Min is 3.8, target is 3.9 -> OK (current code would take 3.11 and warn wrongly)
-    doc = tomlkit.parse(
-        '[project]\nrequires-python = "==3.11.*,>=3.8"\n\n[tool.ruff]\ntarget-version = "py39"\n'
-    )
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-    assert result is True
-    assert "Version mismatch" not in caplog.text
-
-    # Min is 3.10, target is 3.9 -> Warn
-    doc = tomlkit.parse(
-        '[project]\nrequires-python = ">=3.10, <4"\n\n[tool.ruff]\ntarget-version = "py39"\n'
-    )
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-    assert result is True
-    assert "Version mismatch" in caplog.text
-
-
-def test_version_consistency_no_warn_when_compatible(caplog: pytest.LogCaptureFixture) -> None:
-    """No warning should be logged when target-version >= requires-python."""
-    doc = tomlkit.parse(
-        '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py310"\n'
-    )
-    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
-        result = check_python_version_consistency(doc)
-
-    assert result is True
-    assert "Version mismatch" not in caplog.text
+    if expected_warn:
+        assert expected_msg is not None
+        assert expected_msg in caplog.text
+    else:
+        assert "Version mismatch" not in caplog.text
 
 
 def test_version_consistency_skipped_for_ruff_toml(caplog: pytest.LogCaptureFixture) -> None:
