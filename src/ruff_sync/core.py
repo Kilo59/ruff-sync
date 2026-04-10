@@ -946,7 +946,7 @@ async def check(
         >>> # asyncio.run(check(args))
     """
     # Resolve defaults for execution logic
-    exec = args.resolve()
+    exec_args = args.resolve()
 
     output_format = args.output_format
     fmt: ResultFormatter = get_formatter(output_format)
@@ -974,7 +974,7 @@ async def check(
             merged_doc = await _merge_multiple_upstreams(
                 merged_doc,
                 is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-                args=exec,
+                args=exec_args,
                 client=client,
             )
 
@@ -995,13 +995,13 @@ async def check(
 
             if source_val == merged_val:
                 fmt.success("✅ Ruff configuration is semantically in sync.")
-                exit_code = _check_pre_commit_sync(exec.pre_commit, fmt)
+                exit_code = _check_pre_commit_sync(exec_args.pre_commit, fmt)
                 if exit_code is not None:
                     return exit_code
                 return 0
         elif source_doc.as_string() == merged_doc.as_string():
             fmt.success("✅ Ruff configuration is in sync.")
-            exit_code = _check_pre_commit_sync(exec.pre_commit, fmt)
+            exit_code = _check_pre_commit_sync(exec_args.pre_commit, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
@@ -1134,7 +1134,7 @@ async def pull(
         >>> # asyncio.run(pull(args))
     """
     # Resolve defaults for execution logic
-    exec = args.resolve()
+    exec_args = args.resolve()
 
     output_format = args.output_format
     fmt = get_formatter(output_format)
@@ -1168,17 +1168,20 @@ async def pull(
             source_doc = await _merge_multiple_upstreams(
                 source_doc,
                 is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-                args=exec,
+                args=exec_args,
                 client=client,
             )
 
         # Validation is opt-in — only run if --validate (or --strict) was passed
-        if exec.validate:
+        if exec_args.validate:
             from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
 
             is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
             if not validate_merged_config(
-                source_doc, is_ruff_toml=is_ruff_toml, strict=exec.strict, exclude=exec.exclude
+                source_doc,
+                is_ruff_toml=is_ruff_toml,
+                strict=exec_args.strict,
+                exclude=exec_args.exclude,
             ):
                 fmt.error(
                     "❌ Merged config failed validation. Local file left unchanged.",
@@ -1204,7 +1207,7 @@ async def pull(
             rel_path = _source_toml_path.resolve()
         fmt.success(f"✅ Updated {rel_path}")
 
-        if exec.pre_commit:
+        if exec_args.pre_commit:
             sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
         return 0

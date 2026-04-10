@@ -239,7 +239,7 @@ Remove the `resolve_defaults()` call at the top of `pull()`. Instead, accept
 
 ```python
 async def pull(args: Arguments) -> int:
-    exec = args.resolve()   # single resolution point
+    exec_args = args.resolve()   # single resolution point
 
     # Use exec.validate, exec.strict, exec.pre_commit for logic
     # Use args (original, with MISSING) only for serialize_ruff_sync_config()
@@ -269,7 +269,7 @@ Same pattern: call `args.resolve()` once, use the result for execution:
 
 ```python
 async def check(args: Arguments) -> int:
-    exec = args.resolve()
+    exec_args = args.resolve()
 
     ...
     exit_code = _check_pre_commit_sync(exec.pre_commit, fmt)
