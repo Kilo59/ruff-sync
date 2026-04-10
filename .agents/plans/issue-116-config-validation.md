@@ -24,12 +24,12 @@ passing both.
 > Use this to pick your agent tier. Simple phases can be handled by a weak/cheap model;
 > Complex phases need a capable reasoning model.
 
-| Priority | Label | Complexity | Feature | Scope |
-|---|---|---|---|---|
-| 1 (Must Have) | 🔴 | 🟡 Moderate | TOML syntax + Ruff CLI validation | New `validation.py` module; gated by `--validate` in `pull()` |
-| 2 (Should Have) | 🟠 | 🟢 Simple | Python version consistency check | `validation.py` + warn when `--validate` is active |
-| 3 (Could Have) | 🟡 | 🔴 Complex | Rule deprecation warnings | `validation.py` + subprocess + JSON + DI; gated by `--validate` |
-| 4 (Nice to Have) | 🟢 | 🟢 Simple | `--strict` flag | Upgrades warnings to failures; implies `--validate` |
+| Priority | Label | Complexity | Feature | Scope | Status |
+|---|---|---|---|---|---|
+| 1 (Must Have) | 🔴 | 🟡 Moderate | TOML syntax + Ruff CLI validation | New `validation.py` module; gated by `--validate` in `pull()` | ✅ Completed |
+| 2 (Should Have) | 🟠 | 🟢 Simple | Python version consistency check | `validation.py` + warn when `--validate` is active | ✅ Completed |
+| 3 (Could Have) | 🟡 | 🔴 Complex | Rule deprecation warnings | `validation.py` + subprocess + JSON + DI; gated by `--validate` | ⏳ Pending |
+| 4 (Nice to Have) | 🟢 | 🟢 Simple | `--strict` flag | Upgrades warnings to failures; implies `--validate` | 🚧 In Progress |
 
 ---
 

@@ -1164,7 +1164,7 @@ async def pull(
 
             is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
             if not validate_merged_config(
-                source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict
+                source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict, exclude=args.exclude
             ):
                 fmt.error(
                     "❌ Merged config failed validation. Local file left unchanged.",

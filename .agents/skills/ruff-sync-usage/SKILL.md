@@ -127,8 +127,9 @@ ruff-sync git@github.com:my-org/standards.git             # SSH (shallow clone)
 ## Gotchas
 
 - **`exclude` uses dotted paths, not TOML paths.** `lint.per-file-ignores` refers to the `per-file-ignores` key inside `[tool.ruff.lint]`. Do NOT write `tool.ruff.lint.per-file-ignores`.
-- **`--validate` is opt-in.** Validation is off by default. Pass `--validate` (or `--strict`) to run the merged config through Ruff before writing. The sync is aborted if Ruff rejects the config, leaving the local file untouched.
-- **`--strict` implies `--validate`.** If you want warnings treated as failures, only `--strict` is needed — don't pass both.
+- **`--validate` is opt-in.** Validation is off by default. Pass `--validate` (or `--strict`) to run the merged config through Ruff before writing. The sync is aborted if Ruff rejects the config, leaving the local file untouched. This includes a **Python version consistency check** that compares upstream `target-version` against local `requires-python`.
+- **Excluding `target-version` skips consistency validation.** If `target-version` (or `tool.ruff.target-version`) is in the `exclude` list, `ruff-sync` will skip the version consistency check and log a warning. This is useful for projects that intentionally deviate from upstream Python versions.
+- **`--strict` implies `--validate`.** If you want warnings (like version mismatches or deprecated rules) treated as failures, only `--strict` is needed — don't pass both.
 - **Validation soft-fails if `ruff` is not on PATH.** If the `ruff` binary can't be found, a warning is logged and the sync continues normally.
 - **Use `--init` only for new projects.** `ruff-sync` requires an existing `pyproject.toml` or `ruff.toml`. Pass `--init` to scaffold one if the directory is empty. This will automatically generate a `[tool.ruff-sync]` configuration block for future syncs.
 - **Use `--save` to persist CLI arguments.** If you want to update an existing `pyproject.toml` with a new upstream URL or exclusion, pass `--save` to write the new configuration to the file.

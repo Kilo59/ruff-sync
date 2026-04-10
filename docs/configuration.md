@@ -62,6 +62,9 @@ If your projects are on different Python versions but share linting rules:
 exclude = ["target-version"]
 ```
 
+> [!NOTE]
+> Excluding `target-version` also automatically skips the Python version consistency check otherwise performed during `--validate` or `--strict` runs.
+
 #### Sequential merging of multiple sources
 
 You can specify multiple upstream sources as a list. They will be merged in order—from top to bottom—with later sources overriding or extending earlier ones.

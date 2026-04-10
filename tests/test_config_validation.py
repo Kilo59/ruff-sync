@@ -21,6 +21,7 @@ import ruff_sync
 from ruff_sync import get_config
 from ruff_sync.cli import LOGGER
 from ruff_sync.validation import (
+    check_python_version_consistency,
     validate_merged_config,
     validate_ruff_accepts_config,
     validate_toml_syntax,
@@ -326,8 +327,8 @@ def test_validate_merged_config_valid(monkeypatch: pytest.MonkeyPatch) -> None:
     cmd = cast("list[str]", called["cmd"])
     # Check that some argument refers to a ruff.toml-specific path.
     assert any("ruff.toml" in str(part) for part in cmd)
-    # Also verify --isolated is present
-    assert "--isolated" in cmd
+    # verify --isolated is NOT present because it conflicts with --config
+    assert "--isolated" not in cmd
 
 
 def test_validate_merged_config_returns_false_on_invalid(
@@ -489,6 +490,167 @@ async def test_pull_succeeds_when_validate_passes(
     assert exit_code == 0
     # The file should be updated with the upstream content
     assert "line-length = 100" in source_path.read_text()
+
+
+# ===========================================================================
+# Priority 2 — Python Version Consistency Check
+# ===========================================================================
+
+
+@pytest.mark.parametrize(
+    "toml_content, expected_warn, expected_msg",
+    [
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n',
+            True,
+            "Version mismatch",
+            id="mismatch-warn",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py310"\n',
+            False,
+            None,
+            id="compatible-exact",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n',
+            False,
+            None,
+            id="missing-target-version",
+        ),
+        pytest.param(
+            '[tool.ruff]\ntarget-version = "py39"\n',
+            False,
+            None,
+            id="missing-requires-python",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = "foo"\n\n[tool.ruff]\ntarget-version = "py310"\n',
+            False,
+            None,
+            id="unparsable-requires-python",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "3.10"\n',
+            False,
+            None,
+            id="unparsable-target-version",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = "==3.11.*,>=3.8"\n'
+            '\n[tool.ruff]\ntarget-version = "py39"\n',
+            False,
+            None,
+            id="multiple-specifiers-ok",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10, <4"\n\n[tool.ruff]\ntarget-version = "py39"\n',
+            True,
+            "Version mismatch",
+            id="multiple-specifiers-warn",
+        ),
+    ],
+)
+def test_version_consistency_cases(
+    caplog: pytest.LogCaptureFixture,
+    toml_content: str,
+    expected_warn: bool,
+    expected_msg: str | None,
+) -> None:
+    """Parametrized test for Python version consistency validation."""
+    doc = tomlkit.parse(toml_content)
+
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_python_version_consistency(doc)
+
+    # All these cases should return True (warnings only)
+    assert result is True
+    if expected_warn:
+        assert expected_msg is not None
+        assert expected_msg in caplog.text
+    else:
+        assert "Version mismatch" not in caplog.text
+
+
+def test_version_consistency_skipped_for_ruff_toml(caplog: pytest.LogCaptureFixture) -> None:
+    """Standalone ruff.toml files lack [project], so the check should be skipped."""
+    doc = tomlkit.parse("target-version = 'py39'\n")
+    # validate_merged_config skips the check if is_ruff_toml=True
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = validate_merged_config(doc, is_ruff_toml=True)
+
+    assert result is True
+    assert "Version mismatch" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "toml_content, expected_suffix",
+    [
+        pytest.param(
+            "",
+            "missing [tool.ruff] target-version, [project] requires-python.",
+            id="missing-both",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n',
+            "missing [tool.ruff] target-version.",
+            id="missing-target",
+        ),
+        pytest.param(
+            '[tool.ruff]\ntarget-version = "py310"\n',
+            "missing [project] requires-python.",
+            id="missing-requires",
+        ),
+    ],
+)
+def test_version_consistency_logs_skip_decision(
+    caplog: pytest.LogCaptureFixture, toml_content: str, expected_suffix: str
+) -> None:
+    """It should log a warning message when skipping due to missing version keys."""
+    doc = tomlkit.parse(toml_content)
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        check_python_version_consistency(doc)
+
+    expected_msg = f"Skipping Python version consistency check: {expected_suffix}"
+    assert expected_msg in caplog.text
+
+
+def test_version_consistency_skipped_when_excluded(caplog: pytest.LogCaptureFixture) -> None:
+    """It should log a specific warning when target-version is explicitly excluded."""
+    # mismatch that would normally warn
+    toml_content = '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n'
+    doc = tomlkit.parse(toml_content)
+
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        # Case 1: excluded via 'target-version'
+        result = check_python_version_consistency(doc, exclude=("target-version",))
+        assert result is True
+        assert (
+            "Skipping Python version consistency check: 'target-version' is "
+            "excluded in [tool.ruff-sync]."
+        ) in caplog.text
+
+        caplog.clear()
+
+        # Case 2: excluded via 'tool.ruff.target-version'
+        result = check_python_version_consistency(doc, exclude=("tool.ruff.target-version",))
+        assert result is True
+        assert (
+            "Skipping Python version consistency check: 'target-version' is "
+            "excluded in [tool.ruff-sync]."
+        ) in caplog.text
+
+
+def test_strict_mode_fails_on_version_mismatch(caplog: pytest.LogCaptureFixture) -> None:
+    """In strict mode, a version mismatch should cause validation to fail."""
+    doc = tomlkit.parse(
+        '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n'
+    )
+    with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
+        result = validate_merged_config(doc, strict=True)
+
+    assert result is False
+    assert "Version mismatch" in caplog.text
 
 
 if __name__ == "__main__":

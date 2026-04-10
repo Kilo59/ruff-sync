@@ -77,6 +77,26 @@ ruff-sync          # pulls config AND updates the hook rev (if pre-commit-versio
 ```
 
 To suppress this check entirely, omit `--pre-commit` from `ruff-sync check` or set `pre-commit-version-sync = false`.
+---
+
+## Python Version Mismatch Warning
+
+**Symptom:** Sync succeeds but logs a warning like:
+```
+⚠️  Version mismatch: upstream [tool.ruff] target-version='py39' targets Python 3.9, but local [project] requires-python='>=3.10' requires Python >= 3.10.
+```
+
+**Cause:** The upstream configuration is targeting an older Python version than your project requires. This can lead to Ruff not using newer rules or features available to your project.
+
+**Fix:**
+1. **Update Upstream:** The ideal fix is to update the `target-version` in the upstream repository to a newer version (e.g., `py311`).
+2. **Exclude the key:** If you need to stay on a specific version locally, add `target-version` to your `exclude` list:
+   ```toml
+   [tool.ruff-sync]
+   exclude = ["target-version"]
+   ```
+
+In **`--strict`** mode, this warning is upgraded to a hard failure and will abort the sync.
 
 ---
 
