@@ -29,7 +29,7 @@
 | **Duplicated resolution** | `resolve_defaults()` is called 3 times (in `pull`, `check`, `_merge_multiple_upstreams`) with the same args. Each call independently resolves the same values. |
 | **Bloated `resolve_defaults()`** | This function's original purpose was URL parameter defaults (branch, path, exclude). Boolean flags have nothing to do with URL resolution—they were bolted on. |
 | **6-tuple destructuring** | `(branch, path, exclude, validate, strict, pre_commit) = resolve_defaults(...)` is fragile and unreadable. Adding one more field breaks every call site. |
-| **Two representations, unclear boundary** | `Arguments` now holds `MISSING` values, but the CLI layer already resolved them in `_resolve_validate()` / `_resolve_strict()`. So `MISSING` can appear in `Arguments` from two sources: (a) the CLI resolver returned it, or (b) direct construction in tests. The semantic is unclear. |
+| **Two representations, unclear boundary** | `Arguments` now holds `MISSING` values, but the CLI layer already resolved them in `_resolve_validate()` / `_resolve_strict()`. So `MISSING` can appear in `Arguments` from two sources: (a) the CLI resolver returned it, or (b) direct construction in tests. The semantics are unclear. |
 
 ### The real requirement
 

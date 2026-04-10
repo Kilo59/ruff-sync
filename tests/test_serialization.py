@@ -57,6 +57,52 @@ def test_serialize_ruff_sync_config_pre_commit_default_skipped():
     assert "pre-commit-version-sync" not in s
 
 
+def test_serialize_validate_and_strict_missing():
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=MISSING,
+        strict=MISSING,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+    toml_str = tomlkit.dumps(doc)
+
+    # When validate/strict are MISSING, they should not be persisted
+    assert "validate" not in toml_str
+    assert "strict" not in toml_str
+
+
+def test_serialize_validate_and_strict_explicit():
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=True,
+        strict=False,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+    toml_str = tomlkit.dumps(doc)
+
+    # When validate/strict are explicitly provided, they should be persisted
+    assert "validate = true" in toml_str
+    assert "strict = false" in toml_str
+
+
 def test_serialize_ruff_sync_config_exclude_deduplication():
     # Case: duplicates and extra entries -> written, deduped, first-occurrence order
     doc = tomlkit.document()
@@ -265,16 +311,16 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
     "case",
     [
         # (init, save, pre_commit, expect_sync_pre_commit, expect_save)
-        # MISSING now defaults to True for sync
-        (True, None, MISSING, True, True),
+        # MISSING now defaults to False for sync (preserving historical behavior)
+        (True, None, MISSING, False, True),
         # explicit False disables sync
         (True, None, False, False, True),
         # save without init still writes [tool.ruff-sync] but does not init hooks
-        (False, True, MISSING, True, True),
+        (False, True, MISSING, False, True),
         # init with explicit --no-save should not serialize [tool.ruff-sync]
-        (True, False, MISSING, True, False),
+        (True, False, MISSING, False, False),
         # neither init nor save is truthy: no [tool.ruff-sync] section written
-        (False, None, MISSING, True, False),
+        (False, None, MISSING, False, False),
     ],
 )
 @pytest.mark.asyncio

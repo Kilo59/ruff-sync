@@ -35,6 +35,7 @@ from ruff_sync.constants import (
     ConfKey,
     MissingType,
     OutputFormat,
+    apply_bool_precedence,
 )
 from ruff_sync.core import (
     Config,
@@ -555,19 +556,10 @@ def _resolve_validate(args: CLIArguments, config: Config) -> bool | MissingType:
     if args.validate is not None:
         return args.validate
 
-    # CLI --strict flag wins if it's explicitly True (implies validate=True)
-    if args.strict is True:
-        return True
-
     # Fallback to config
     validate_attr = ConfKey.to_attr(ConfKey.VALIDATE)
     if validate_attr in config:
         return bool(config[validate_attr])  # type: ignore[literal-required]
-
-    # Special case: config 'strict = true' also implies 'validate = true'
-    strict_attr = ConfKey.to_attr(ConfKey.STRICT)
-    if strict_attr in config:
-        return bool(config[strict_attr])  # type: ignore[literal-required]
 
     return MISSING
 
@@ -692,6 +684,12 @@ def main() -> int:
         resolve_raw_url(u, branch=resolved.branch, path=resolved.path) for u in resolved.upstream
     )
 
+    # Resolve validation flags with prioritized CLI vs Config rules,
+    # then apply bitdirectional implications (strict -> validate, !validate -> !strict)
+    raw_validate = _resolve_validate(args, config)
+    raw_strict = _resolve_strict(args, config)
+    validate, strict = apply_bool_precedence(raw_validate, raw_strict)
+
     exec_args = Arguments(
         command=args.command,
         upstream=resolved_upstream,
@@ -706,8 +704,8 @@ def main() -> int:
         pre_commit=_resolve_pre_commit(args, config),
         save=getattr(args, "save", None),
         output_format=resolved.output_format,
-        validate=_resolve_validate(args, config),
-        strict=_resolve_strict(args, config),
+        validate=validate,
+        strict=strict,
     )
 
     # Warn if the specified output format doesn't match the current CI environment

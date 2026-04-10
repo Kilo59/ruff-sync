@@ -157,6 +157,21 @@ def resolve_defaults(
     return eff_branch, eff_path, eff_exclude
 
 
+def apply_bool_precedence(
+    validate: bool | MissingType, strict: bool | MissingType
+) -> tuple[bool | MissingType, bool | MissingType]:
+    """Apply precedence rules for validate and strict flags.
+
+    1. Disabling validation implicitly disables strict mode.
+    2. Strict mode implicitly enables validation.
+    """
+    if validate is False:
+        strict = False
+    elif strict is True:
+        validate = True
+    return validate, strict
+
+
 def resolve_bool_flags(
     validate: bool | MissingType = MISSING,
     strict: bool | MissingType = MISSING,
@@ -168,9 +183,10 @@ def resolve_bool_flags(
         A ``(validate, strict, pre_commit)`` tuple with defaults applied.
         ``strict=True`` implicitly enables ``validate``.
     """
+    validate, strict = apply_bool_precedence(validate, strict)
+
+    eff_validate = validate if validate is not MISSING else False
     eff_strict = strict if strict is not MISSING else False
-    # strict mode implicitly enables validation
-    eff_validate = (validate if validate is not MISSING else False) or eff_strict
-    eff_pre_commit = pre_commit if pre_commit is not MISSING else True
+    eff_pre_commit = pre_commit if pre_commit is not MISSING else False
 
     return eff_validate, eff_strict, eff_pre_commit

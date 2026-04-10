@@ -186,6 +186,104 @@ def test_get_config_includes_validation_flags(
     assert config.get("strict", False) is expected_strict
 
 
+@pytest.mark.parametrize(
+    "config_toml, cli_args, expected_validate, expected_strict",
+    [
+        # Config `strict = true`, CLI `--no-strict` / `--no-validate` should let CLI win
+        pytest.param(
+            "validate = true\nstrict = true\n",
+            ["--no-strict"],
+            True,
+            False,
+            id="config-strict-true-cli-no-strict",
+        ),
+        pytest.param(
+            "validate = true\nstrict = true\n",
+            ["--no-validate"],
+            False,
+            False,
+            id="config-strict-true-cli-no-validate",
+        ),
+        # Config `validate = true` only, CLI `--strict` (strict still implies validate)
+        pytest.param(
+            "validate = true\n",
+            ["--strict"],
+            True,
+            True,
+            id="config-validate-true-cli-strict",
+        ),
+        pytest.param(
+            "",
+            ["--strict"],
+            True,
+            True,
+            id="config-none-cli-strict",
+        ),
+        # Config sets both flags, CLI passes them again with different values
+        pytest.param(
+            "validate = true\nstrict = true\n",
+            ["--no-validate", "--no-strict"],
+            False,
+            False,
+            id="config-both-true-cli-both-false",
+        ),
+        pytest.param(
+            "validate = false\nstrict = false\n",
+            ["--validate", "--strict"],
+            True,
+            True,
+            id="config-both-false-cli-both-true",
+        ),
+    ],
+)
+def test_validation_flags_cli_vs_config_precedence(
+    tmp_path: pathlib.Path,
+    clean_config_cache: None,
+    config_toml: str,
+    cli_args: list[str],
+    expected_validate: bool,
+    expected_strict: bool,
+):
+    """
+    Verify that CLI flags override config values where intended, and that
+    `strict` always implies `validate` regardless of whether it comes from
+    the config file or CLI flags.
+    """
+    from ruff_sync.cli import PARSER, Arguments, _resolve_strict, _resolve_validate
+
+    # Write per-test config
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(f"[tool.ruff-sync]\n{config_toml}")
+
+    # Parse CLI args
+    # We add a dummy 'upstream' to satisfy argparse requirements
+    parsed_args = PARSER.parse_args(["pull", "https://example.com", *cli_args])
+
+    # Get config (from the mocked pyproject.toml)
+    config = get_config(tmp_path)
+
+    # Resolve to Arguments (transport layer)
+    args = Arguments(
+        command=parsed_args.command,
+        upstream=tuple(parsed_args.upstream),
+        to=tmp_path,
+        exclude=[],
+        verbose=0,
+        validate=_resolve_validate(parsed_args, config),
+        strict=_resolve_strict(parsed_args, config),
+    )
+
+    # Resolve to ExecutionArgs (logic layer)
+    exec_args = args.resolve()
+
+    assert exec_args.validate is expected_validate
+    assert exec_args.strict is expected_strict
+
+    # Guard that `strict` continues to imply `validate` at runtime
+    if exec_args.strict:
+        assert exec_args.validate is True
+
+
 # ===========================================================================
 # Phase 1 — validate_toml_syntax
 # ===========================================================================
@@ -683,6 +781,8 @@ def test_strict_mode_fails_on_version_mismatch(caplog: pytest.LogCaptureFixture)
         '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n'
     )
     with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
+        from ruff_sync.validation import validate_merged_config
+
         result = validate_merged_config(doc, strict=True)
 
     assert result is False

@@ -68,7 +68,7 @@ def test_resolve_bool_flags_all_missing():
     validate, strict, pre_commit = resolve_bool_flags(MISSING, MISSING, MISSING)
     assert validate is False
     assert strict is False
-    assert pre_commit is True
+    assert pre_commit is False
 
 
 def test_resolve_bool_flags_strict_implies_validate():
@@ -77,10 +77,10 @@ def test_resolve_bool_flags_strict_implies_validate():
     assert validate is True
     assert strict is True
 
-    # Even if validate is explicitly False, strict=True wins
+    # If validate is explicitly False, it wins and disables strict mode
     validate, strict, _ = resolve_bool_flags(False, True, MISSING)
-    assert validate is True
-    assert strict is True
+    assert validate is False
+    assert strict is False
 
 
 def test_resolve_bool_flags_explicit_false():
