@@ -36,7 +36,6 @@ from ruff_sync.constants import (
     DEFAULT_PATH,
     MISSING,
     ConfKey,
-    resolve_defaults,
 )
 from ruff_sync.formatters import ResultFormatter, get_formatter
 from ruff_sync.pre_commit import sync_pre_commit
@@ -44,7 +43,7 @@ from ruff_sync.pre_commit import sync_pre_commit
 if TYPE_CHECKING:
     from tomlkit.container import Container
 
-    from ruff_sync.cli import Arguments
+    from ruff_sync.cli import Arguments, ExecutionArgs
 
 __all__: Final[list[str]] = [
     "Config",
@@ -747,7 +746,7 @@ async def fetch_upstreams_concurrently(
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
-    args: Arguments,
+    args: ExecutionArgs,
     client: httpx.AsyncClient,
 ) -> TOMLDocument:
     """Fetch and merge all upstreams into the target document.
@@ -755,15 +754,8 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
-    # Resolve defaults for internal logic using the single source of truth
-    res_branch, res_path, res_exclude, _, _, _ = resolve_defaults(
-        args.branch,
-        args.path,
-        args.exclude,
-    )
-
     fetch_results = await fetch_upstreams_concurrently(
-        args.upstream, client, branch=res_branch, path=res_path
+        args.upstream, client, branch=args.branch, path=args.path
     )
 
     # Sequentially merge the results in the original order
@@ -776,7 +768,7 @@ async def _merge_multiple_upstreams(
             fetch_result.buffer.read(),
             is_ruff_toml=is_upstream_ruff_toml,
             create_if_missing=False,
-            exclude=res_exclude,
+            exclude=args.exclude,
         )
 
         target_doc = merge_ruff_toml(
@@ -954,21 +946,7 @@ async def check(
         >>> # asyncio.run(check(args))
     """
     # Resolve defaults for execution logic
-    (
-        _res_branch,
-        _res_path,
-        _res_exclude,
-        _res_validate,
-        _res_strict,
-        res_pre_commit,
-    ) = resolve_defaults(
-        args.branch,
-        args.path,
-        args.exclude,
-        args.validate,
-        args.strict,
-        args.pre_commit,
-    )
+    exec = args.resolve()
 
     output_format = args.output_format
     fmt: ResultFormatter = get_formatter(output_format)
@@ -996,7 +974,7 @@ async def check(
             merged_doc = await _merge_multiple_upstreams(
                 merged_doc,
                 is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-                args=args,
+                args=exec,
                 client=client,
             )
 
@@ -1017,13 +995,13 @@ async def check(
 
             if source_val == merged_val:
                 fmt.success("✅ Ruff configuration is semantically in sync.")
-                exit_code = _check_pre_commit_sync(res_pre_commit, fmt)
+                exit_code = _check_pre_commit_sync(exec.pre_commit, fmt)
                 if exit_code is not None:
                     return exit_code
                 return 0
         elif source_doc.as_string() == merged_doc.as_string():
             fmt.success("✅ Ruff configuration is in sync.")
-            exit_code = _check_pre_commit_sync(res_pre_commit, fmt)
+            exit_code = _check_pre_commit_sync(exec.pre_commit, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
@@ -1156,21 +1134,7 @@ async def pull(
         >>> # asyncio.run(pull(args))
     """
     # Resolve defaults for execution logic
-    (
-        _res_branch,
-        _res_path,
-        res_exclude,
-        res_validate,
-        res_strict,
-        res_pre_commit,
-    ) = resolve_defaults(
-        args.branch,
-        args.path,
-        args.exclude,
-        args.validate,
-        args.strict,
-        args.pre_commit,
-    )
+    exec = args.resolve()
 
     output_format = args.output_format
     fmt = get_formatter(output_format)
@@ -1204,17 +1168,17 @@ async def pull(
             source_doc = await _merge_multiple_upstreams(
                 source_doc,
                 is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-                args=args,
+                args=exec,
                 client=client,
             )
 
         # Validation is opt-in — only run if --validate (or --strict) was passed
-        if res_validate:
+        if exec.validate:
             from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
 
             is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
             if not validate_merged_config(
-                source_doc, is_ruff_toml=is_ruff_toml, strict=res_strict, exclude=res_exclude
+                source_doc, is_ruff_toml=is_ruff_toml, strict=exec.strict, exclude=exec.exclude
             ):
                 fmt.error(
                     "❌ Merged config failed validation. Local file left unchanged.",
@@ -1240,7 +1204,7 @@ async def pull(
             rel_path = _source_toml_path.resolve()
         fmt.success(f"✅ Updated {rel_path}")
 
-        if res_pre_commit:
+        if exec.pre_commit:
             sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
         return 0

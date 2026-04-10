@@ -125,6 +125,53 @@ class Arguments(NamedTuple):
         """Return the set of all field names, including deprecated ones."""
         return set(cls._fields) | {"source"}
 
+    def resolve(self) -> ExecutionArgs:
+        """Resolve all MISSING sentinels to their effective defaults for execution."""
+        from ruff_sync.constants import resolve_bool_flags  # noqa: PLC0415
+
+        eff_validate, eff_strict, eff_pre_commit = resolve_bool_flags(
+            self.validate,
+            self.strict,
+            self.pre_commit,
+        )
+        return ExecutionArgs(
+            command=self.command,
+            upstream=self.upstream,
+            to=self.to,
+            exclude=self.exclude,
+            verbose=self.verbose,
+            branch=self.branch,
+            path=self.path,
+            semantic=self.semantic,
+            diff=self.diff,
+            init=self.init,
+            pre_commit=eff_pre_commit,
+            save=self.save,
+            output_format=self.output_format,
+            validate=eff_validate,
+            strict=eff_strict,
+        )
+
+
+class ExecutionArgs(NamedTuple):
+    """Resolved arguments for execution logic — all sentinels replaced with concrete values."""
+
+    command: str
+    upstream: tuple[URL, ...]
+    to: pathlib.Path
+    exclude: Iterable[str]
+    verbose: int
+    branch: str
+    path: str | None
+    semantic: bool
+    diff: bool
+    init: bool
+    pre_commit: bool  # plain bool — MISSING resolved to default
+    save: bool | None
+    output_format: OutputFormat
+    validate: bool  # plain bool — MISSING resolved to default
+    strict: bool  # plain bool — MISSING resolved to default
+
 
 class ResolvedArgs(NamedTuple):
     """Internal container for resolved arguments."""
@@ -135,9 +182,6 @@ class ResolvedArgs(NamedTuple):
     branch: str
     path: str | None
     output_format: OutputFormat
-    validate: bool | MissingType
-    strict: bool | MissingType
-    pre_commit: bool | MissingType
 
 
 class CLIArguments(Protocol):
@@ -550,9 +594,6 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
     output_format = _resolve_output_format(args, config)
-    validate = _resolve_validate(args, config)
-    strict = _resolve_strict(args, config)
-    pre_commit = _resolve_pre_commit(args, config)
 
     # Normalize path "" -> None to match core expectation
     final_path: str | None = path or None
@@ -564,9 +605,6 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
         branch,
         final_path,
         output_format,
-        validate,
-        strict,
-        pre_commit,
     )
 
 
@@ -665,11 +703,11 @@ def main() -> int:
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
-        pre_commit=resolved.pre_commit,
+        pre_commit=_resolve_pre_commit(args, config),
         save=getattr(args, "save", None),
         output_format=resolved.output_format,
-        validate=resolved.validate,
-        strict=resolved.strict,
+        validate=_resolve_validate(args, config),
+        strict=_resolve_strict(args, config),
     )
 
     # Warn if the specified output format doesn't match the current CI environment
