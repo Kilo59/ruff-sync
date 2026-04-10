@@ -111,7 +111,7 @@ def check_python_version_consistency(
     return True
 
 
-_RULE_LIST_KEYS: frozenset[str] = frozenset({"select", "extend-select", "ignore"})
+_RULE_LIST_KEYS: frozenset[str] = frozenset({"select", "extend-select", "ignore", "extend-ignore"})
 
 
 @functools.lru_cache(maxsize=1)

@@ -667,6 +667,16 @@ def test_deprecated_rule_warning_emitted(caplog: pytest.LogCaptureFixture) -> No
     assert "deprecated rule 'UP036'" in caplog.text
 
 
+def test_deprecated_rule_ruff_toml_warning_emitted(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(
+            doc, is_ruff_toml=True, _deprecated_codes=frozenset({"UP036"})
+        )
+    assert result is True
+    assert "deprecated rule 'UP036'" in caplog.text
+
+
 def test_no_warning_for_valid_rules(caplog: pytest.LogCaptureFixture) -> None:
     doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["E501"]\n')
     with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
