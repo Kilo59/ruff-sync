@@ -7,9 +7,13 @@ import pathlib
 import re
 import subprocess
 import tempfile
+from typing import TYPE_CHECKING
 
 import tomlkit
 from tomlkit import TOMLDocument
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 __all__ = [
     "validate_merged_config",
@@ -48,17 +52,26 @@ def _requires_python_min_version(requires_python: str) -> tuple[int, int] | None
     return None
 
 
-def check_python_version_consistency(doc: TOMLDocument, strict: bool = False) -> bool:
+def check_python_version_consistency(
+    doc: TOMLDocument, strict: bool = False, exclude: Iterable[str] = ()
+) -> bool:
     """Warn if the merged ruff target-version conflicts with requires-python.
 
     Args:
         doc: The merged TOML document (pyproject.toml format).
         strict: If True, treat version mismatch as a failure.
+        exclude: List of keys excluded from the ruff configuration.
 
     Returns:
         True if versions are consistent or if check is skipped.
         False if strict=True and versions are inconsistent.
     """
+    if "target-version" in exclude or "tool.ruff.target-version" in exclude:
+        LOGGER.warning(
+            "Skipping Python version consistency check: 'target-version' is "
+            "excluded in [tool.ruff-sync]."
+        )
+        return True
     try:
         ruff_section = doc.get("tool", {}).get("ruff", {})
         target_version = ruff_section.get("target-version")
@@ -182,7 +195,10 @@ def validate_ruff_accepts_config(
 
 
 def validate_merged_config(
-    doc: TOMLDocument, is_ruff_toml: bool = False, strict: bool = False
+    doc: TOMLDocument,
+    is_ruff_toml: bool = False,
+    strict: bool = False,
+    exclude: Iterable[str] = (),
 ) -> bool:
     """Run all validation checks on the merged TOML document.
 
@@ -193,6 +209,7 @@ def validate_merged_config(
         doc: The merged TOML document to validate.
         is_ruff_toml: True if the document is a standalone ruff.toml.
         strict: If True, treat configuration warnings as hard failures.
+        exclude: List of keys excluded from the ruff configuration.
 
     Returns:
         True if all validation checks pass, False otherwise.
@@ -202,5 +219,5 @@ def validate_merged_config(
     if not validate_ruff_accepts_config(doc, is_ruff_toml=is_ruff_toml, strict=strict):
         return False
     if not is_ruff_toml:
-        return check_python_version_consistency(doc, strict=strict)
+        return check_python_version_consistency(doc, strict=strict, exclude=exclude)
     return True

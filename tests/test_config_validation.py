@@ -615,6 +615,32 @@ def test_version_consistency_logs_skip_decision(
     assert expected_msg in caplog.text
 
 
+def test_version_consistency_skipped_when_excluded(caplog: pytest.LogCaptureFixture) -> None:
+    """It should log a specific warning when target-version is explicitly excluded."""
+    # mismatch that would normally warn
+    toml_content = '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n'
+    doc = tomlkit.parse(toml_content)
+
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        # Case 1: excluded via 'target-version'
+        result = check_python_version_consistency(doc, exclude=("target-version",))
+        assert result is True
+        assert (
+            "Skipping Python version consistency check: 'target-version' is "
+            "excluded in [tool.ruff-sync]."
+        ) in caplog.text
+
+        caplog.clear()
+
+        # Case 2: excluded via 'tool.ruff.target-version'
+        result = check_python_version_consistency(doc, exclude=("tool.ruff.target-version",))
+        assert result is True
+        assert (
+            "Skipping Python version consistency check: 'target-version' is "
+            "excluded in [tool.ruff-sync]."
+        ) in caplog.text
+
+
 def test_strict_mode_fails_on_version_mismatch(caplog: pytest.LogCaptureFixture) -> None:
     """In strict mode, a version mismatch should cause validation to fail."""
     doc = tomlkit.parse(
