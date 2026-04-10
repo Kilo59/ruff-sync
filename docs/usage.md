@@ -122,11 +122,14 @@ ruff-sync --validate
 
 If Ruff rejects the merged config (e.g., because the upstream introduced an unknown key), the sync is aborted and your local file is left untouched.
 
-For stricter enforcement, use `--strict`. This upgrades any validation *warnings* — such as a Python version mismatch between `[tool.ruff] target-version` and `[project] requires-python` — into hard failures:
+For stricter enforcement, use `--strict`. This upgrades any validation *warnings* into hard failures. This includes a **Python version consistency check** that compares the upstream `[tool.ruff] target-version` against your local `[project] requires-python`:
 
 ```bash
 ruff-sync --strict
 ```
+
+> [!TIP]
+> If you intentionally manage your Python version locally and it differs from the upstream, you can add `target-version` to your `exclude` list. `ruff-sync` will then skip the consistency check and log a warning explaining why.
 
 > [!NOTE]
 > `--strict` implies `--validate`. You do not need to pass both flags.
