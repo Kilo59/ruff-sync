@@ -147,6 +147,7 @@ def check_deprecated_rules(
     is_ruff_toml: bool = False,
     strict: bool = False,
     _deprecated_codes: frozenset[str] | None = None,
+    exclude: Iterable[str] = (),
 ) -> bool:
     """Warn if the merged config references any deprecated Ruff rules.
 
@@ -155,6 +156,7 @@ def check_deprecated_rules(
         is_ruff_toml: True if the document is a standalone ruff.toml.
         strict: If True, treat deprecated rules as a failure.
         _deprecated_codes: Optional set of deprecated codes to use (for testing).
+        exclude: List of keys excluded from the ruff configuration.
 
     Returns:
         True if no deprecated rules are found, or if strict=False.
@@ -176,6 +178,10 @@ def check_deprecated_rules(
 
     found_deprecated = False
     for key in _RULE_LIST_KEYS:
+        full_key = f"lint.{key}" if is_ruff_toml else f"tool.ruff.lint.{key}"
+        if key in exclude or full_key in exclude:
+            continue
+
         rule_list = lint_section.get(key, [])
         if not isinstance(rule_list, list):
             continue
@@ -310,6 +316,8 @@ def validate_merged_config(
     if not is_ruff_toml:
         version_ok = check_python_version_consistency(doc, strict=strict, exclude=exclude)
 
-    deprecated_ok = check_deprecated_rules(doc, is_ruff_toml=is_ruff_toml, strict=strict)
+    deprecated_ok = check_deprecated_rules(
+        doc, is_ruff_toml=is_ruff_toml, strict=strict, exclude=exclude
+    )
 
     return version_ok and deprecated_ok
