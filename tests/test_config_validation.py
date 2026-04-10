@@ -21,6 +21,7 @@ import ruff_sync
 from ruff_sync import get_config
 from ruff_sync.cli import LOGGER
 from ruff_sync.validation import (
+    check_deprecated_rules,
     check_python_version_consistency,
     validate_merged_config,
     validate_ruff_accepts_config,
@@ -651,6 +652,79 @@ def test_strict_mode_fails_on_version_mismatch(caplog: pytest.LogCaptureFixture)
 
     assert result is False
     assert "Version mismatch" in caplog.text
+
+
+# ===========================================================================
+# Priority 3 — Rule Deprecation Warnings
+# ===========================================================================
+
+
+def test_deprecated_rule_warning_emitted(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(doc, _deprecated_codes=frozenset({"UP036"}))
+    assert result is True
+    assert "deprecated rule 'UP036'" in caplog.text
+
+
+def test_deprecated_rule_ruff_toml_warning_emitted(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(
+            doc, is_ruff_toml=True, _deprecated_codes=frozenset({"UP036"})
+        )
+    assert result is True
+    assert "deprecated rule 'UP036'" in caplog.text
+
+
+def test_deprecated_rules_skipped_when_excluded(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(
+            doc, _deprecated_codes=frozenset({"UP036"}), exclude=("tool.ruff.lint.select",)
+        )
+    assert result is True
+    assert "deprecated rule" not in caplog.text
+
+    # Also check short name exclusion works
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(
+            doc, _deprecated_codes=frozenset({"UP036"}), exclude=("select",)
+        )
+    assert result is True
+    assert "deprecated rule" not in caplog.text
+
+
+def test_no_warning_for_valid_rules(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["E501"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(doc, _deprecated_codes=frozenset({"UP036"}))
+    assert result is True
+    assert "deprecated rule" not in caplog.text
+
+
+def test_deprecated_rules_skipped_when_ruff_unavailable(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(doc, _deprecated_codes=frozenset())
+    assert result is True
+    assert "deprecated rule" not in caplog.text
+
+
+def test_strict_mode_fails_on_deprecated_rules(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(doc, strict=True, _deprecated_codes=frozenset({"UP036"}))
+    assert result is False
+    assert "deprecated rule 'UP036'" in caplog.text
+
+
+def test_non_strict_mode_passes_on_deprecated_rules(caplog: pytest.LogCaptureFixture) -> None:
+    doc = tomlkit.parse('[tool.ruff.lint]\nselect = ["UP036"]\n')
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        result = check_deprecated_rules(doc, strict=False, _deprecated_codes=frozenset({"UP036"}))
+    assert result is True
+    assert "deprecated rule 'UP036'" in caplog.text
 
 
 if __name__ == "__main__":

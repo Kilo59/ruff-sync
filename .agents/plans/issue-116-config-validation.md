@@ -28,8 +28,8 @@ passing both.
 |---|---|---|---|---|---|
 | 1 (Must Have) | 🔴 | 🟡 Moderate | TOML syntax + Ruff CLI validation | New `validation.py` module; gated by `--validate` in `pull()` | ✅ Completed |
 | 2 (Should Have) | 🟠 | 🟢 Simple | Python version consistency check | `validation.py` + warn when `--validate` is active | ✅ Completed |
-| 3 (Could Have) | 🟡 | 🔴 Complex | Rule deprecation warnings | `validation.py` + subprocess + JSON + DI; gated by `--validate` | ⏳ Pending |
-| 4 (Nice to Have) | 🟢 | 🟢 Simple | `--strict` flag | Upgrades warnings to failures; implies `--validate` | 🚧 In Progress |
+| 3 (Could Have) | 🟡 | 🔴 Complex | Rule deprecation warnings | `validation.py` + subprocess + JSON + DI; gated by `--validate` | ✅ Completed |
+| 4 (Nice to Have) | 🟢 | 🟢 Simple | `--strict` flag | Upgrades warnings to failures; implies `--validate` | ✅ Completed |
 
 ---
 

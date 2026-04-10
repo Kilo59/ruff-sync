@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+import json
 import logging
 import pathlib
 import re
@@ -107,6 +109,97 @@ def check_python_version_consistency(
         LOGGER.warning(f"⚠️  {msg}")
 
     return True
+
+
+_RULE_LIST_KEYS: frozenset[str] = frozenset({"select", "extend-select", "ignore", "extend-ignore"})
+
+
+@functools.lru_cache(maxsize=1)
+def _get_deprecated_rule_codes() -> frozenset[str]:
+    """Return the set of deprecated rule codes reported by the installed Ruff version.
+
+    Returns an empty frozenset if ruff is not found or output cannot be parsed.
+    """
+    try:
+        result = subprocess.run(
+            ["ruff", "rule", "--all", "--output-format", "json"],  # noqa: S607
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if result.returncode != 0:
+            return frozenset()
+        rules = json.loads(result.stdout)
+        return frozenset(r["code"] for r in rules if r.get("deprecated") is True)
+    except (
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+        json.JSONDecodeError,
+        KeyError,
+        TypeError,
+    ):
+        return frozenset()
+
+
+def check_deprecated_rules(
+    doc: TOMLDocument,
+    is_ruff_toml: bool = False,
+    strict: bool = False,
+    _deprecated_codes: frozenset[str] | None = None,
+    exclude: Iterable[str] = (),
+) -> bool:
+    """Warn if the merged config references any deprecated Ruff rules.
+
+    Args:
+        doc: The merged TOML document.
+        is_ruff_toml: True if the document is a standalone ruff.toml.
+        strict: If True, treat deprecated rules as a failure.
+        _deprecated_codes: Optional set of deprecated codes to use (for testing).
+        exclude: List of keys excluded from the ruff configuration.
+
+    Returns:
+        True if no deprecated rules are found, or if strict=False.
+        False if strict=True and deprecated rules are found.
+    """
+    deprecated_codes = (
+        _deprecated_codes if _deprecated_codes is not None else _get_deprecated_rule_codes()
+    )
+    if not deprecated_codes:
+        return True  # Nothing to check (ruff not found or returned no deprecated rules)
+
+    if is_ruff_toml:
+        lint_section = doc.get("lint", {})
+    else:
+        lint_section = doc.get("tool", {}).get("ruff", {}).get("lint", {})
+
+    if not isinstance(lint_section, dict):
+        return True
+
+    found_deprecated = False
+    for key in _RULE_LIST_KEYS:
+        full_key = f"lint.{key}" if is_ruff_toml else f"tool.ruff.lint.{key}"
+        if key in exclude or full_key in exclude:
+            continue
+
+        rule_list = lint_section.get(key, [])
+        if not isinstance(rule_list, list):
+            continue
+        for rule_code in rule_list:
+            rule_str = str(rule_code).strip().upper()
+            if rule_str in deprecated_codes:
+                found_deprecated = True
+                msg = (
+                    f"Upstream config uses deprecated rule '{rule_str}' "
+                    f"(found in [{'lint' if is_ruff_toml else 'tool.ruff.lint'}].{key}). "
+                    "This rule may be removed in a future Ruff version."
+                )
+                if strict:
+                    LOGGER.error(f"❌ {msg}")
+                else:
+                    LOGGER.warning(f"⚠️  {msg}")
+
+    return not (strict and found_deprecated)
 
 
 def validate_toml_syntax(doc: TOMLDocument) -> bool:
@@ -218,6 +311,13 @@ def validate_merged_config(
         return False
     if not validate_ruff_accepts_config(doc, is_ruff_toml=is_ruff_toml, strict=strict):
         return False
+
+    version_ok = True
     if not is_ruff_toml:
-        return check_python_version_consistency(doc, strict=strict, exclude=exclude)
-    return True
+        version_ok = check_python_version_consistency(doc, strict=strict, exclude=exclude)
+
+    deprecated_ok = check_deprecated_rules(
+        doc, is_ruff_toml=is_ruff_toml, strict=strict, exclude=exclude
+    )
+
+    return version_ok and deprecated_ok
