@@ -36,6 +36,31 @@ By using `--output-format github`, `ruff-sync` will emit special workflow comman
 
 ![GitHub PR Annotation](assets/github-pr-annotation.png)
 
+#### With Validation
+
+To catch broken or deprecated Ruff configuration during CI, add `--strict` to upgrade validation warnings into failures:
+
+```yaml
+name: "Standards Check"
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  ruff-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Check Ruff Config
+        run: uvx ruff-sync check --semantic --strict --output-format github
+```
+
+> [!TIP]
+> `--strict` implies `--validate`. You do not need to pass both flags. This will catch deprecated Ruff rules and Python version mismatches in addition to configuration drift.
+
+
 #### Job Summary
 
 In addition to inline annotations, `ruff-sync` writes a structured Markdown report to the GitHub Actions **Job Summary** page. This provides a high-level overview of all drifts detected across the entire run, making it easy to see exactly what needs to be synchronized without scrolling through log files.
@@ -80,7 +105,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Pull upstream
-        run: uvx ruff-sync
+        run: uvx ruff-sync --validate
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
@@ -150,7 +175,7 @@ See the [Pre-commit Guide](pre-commit.md) for details on using the official hook
 | Code | Meaning |
 |------|----------|
 | **0** | In sync — no drift detected |
-| **1** | Config drift — `[tool.ruff]` values differ from upstream |
+| **1** | Config drift (`check`), validation failure (`pull --validate`), or sync error |
 | **2** | CLI usage error — invalid arguments (reserved by argparse) |
 | **3** | Pre-commit hook drift — use `--pre-commit` flag to enable this check |
 | **4** | Upstream unreachable — HTTP error or network failure |

@@ -189,8 +189,8 @@ ruff-sync [UPSTREAM_URL...] [--to PATH] [--exclude KEY...] [--init] [--pre-commi
 * **`--exclude KEY...`**: Dotted paths of keys to keep local and never overwrite (e.g., `lint.isort`).
 * **`--init`**: Create a new `pyproject.toml` with the upstream configuration if it doesn't already exist. This automatically saves the upstream source and any other CLI flags into the `[tool.ruff-sync]` section.
 * **`--save` / `--no-save`**: Force serialization (or prevent serialization) of the provided CLI arguments (like `upstream`, `exclude`, etc.) directly into the `[tool.ruff-sync]` section of the target `pyproject.toml` for future use. Note: any credentials present in the upstream URL will cause this operation to safely abort.
-* **`--validate`**: Run the merged config through Ruff before writing to disk. If Ruff rejects the config (e.g., due to an unknown key), the sync is aborted and the local file is left unchanged. Off by default to avoid adding latency and an implicit dependency on `ruff` being present in `PATH`.
-* **`--strict`**: Treat validation warnings (such as Python version mismatches or deprecated rules) as hard failures. Implies `--validate` — you do not need to pass both flags.
+* **`--validate` / `--no-validate`**: Run the merged config through Ruff before writing to disk. If Ruff rejects the config (e.g., due to an unknown key), the sync is aborted and the local file is left unchanged. Off by default. Use `--no-validate` to explicitly disable validation even if `validate = true` is set in your config.
+* **`--strict` / `--no-strict`**: Treat validation warnings (such as Python version mismatches or deprecated rules) as hard failures. Implies `--validate` — you do not need to pass both flags. Use `--no-strict` to explicitly disable strict mode even if `strict = true` is in config.
 * **`--output-format [text|json|github|gitlab|sarif]`**: Specify the output format for synchronization results.
     - `text` (default): Human-readable terminal output.
     - `json`: Machine-readable JSON output for tool integration.

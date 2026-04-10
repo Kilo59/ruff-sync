@@ -14,6 +14,9 @@
 | `semantic` | `bool` | `false` | Whether `check` should default to semantic matching. |
 | `diff` | `bool` | `true` | Whether `check` should show a diff by default. |
 | `pre-commit-version-sync` | `bool` | `false` | Sync the pre-commit Ruff hook version with the project's Ruff version. |
+| `validate` | `bool` | `false` | Run the merged config through Ruff before writing to disk. Aborts the sync if Ruff rejects the config. |
+| `strict` | `bool` | `false` | Treat validation warnings (version mismatches, deprecated rules) as hard failures. Implies `validate = true`. |
+
 
 ## Exclude Patterns
 
@@ -64,6 +67,22 @@ exclude = ["target-version"]
 
 > [!NOTE]
 > Excluding `target-version` also automatically skips the Python version consistency check otherwise performed during `--validate` or `--strict` runs.
+
+#### Enable validation by default
+
+If you always want the merged config validated before writing, enable it in your configuration:
+
+```toml
+[tool.ruff-sync]
+validate = true
+```
+
+For even stricter enforcement (treat warnings like Python version mismatches and deprecated rules as hard failures):
+
+```toml
+[tool.ruff-sync]
+strict = true  # implies validate = true
+```
 
 #### Sequential merging of multiple sources
 

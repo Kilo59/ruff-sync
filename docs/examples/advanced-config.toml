@@ -13,3 +13,6 @@ exclude = [
 ]
 # Synchronize your .pre-commit-config.yaml with the upstream Ruff version
 pre-commit-version-sync = true
+
+# Validate merged config before writing (catches bad upstream changes)
+validate = true

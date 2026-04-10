@@ -46,6 +46,37 @@ Use the `--exclude` flag to keep your local settings:
 ruff-sync --exclude lint.line-length
 ```
 
+### Validation failed: `ruff` not found
+
+**Warning**: `⚠️  \`ruff\` not found on PATH — skipping Ruff config validation.`
+
+**Solution**: This is a soft warning, not a failure. If you explicitly want validation, ensure `ruff` is installed and available on your PATH. If using `uv`, run `uv pip install ruff` or add it to your project's dependencies.
+
+### Python version mismatch
+
+**Warning**: `⚠️  Version mismatch: upstream [tool.ruff] target-version='py39'...`
+
+**Solution**:
+This means the upstream configuration targets a different Python version than your project's `requires-python`. You have three options:
+
+1. **Update upstream**: Coordinate with your team to update the upstream `target-version`.
+2. **Exclude the key**: Add `target-version` to your `exclude` list to manage it locally.
+3. **Ignore the warning**: In non-strict mode, this is informational only and does not block the sync.
+
+In `--strict` mode, this warning becomes a hard failure. See the [Usage Guide](usage.md#validating-before-writing) for details.
+
+### Deprecated rule detected
+
+**Warning**: `⚠️  Upstream config uses deprecated rule 'XXX'...`
+
+**Solution**:
+The upstream configuration references a Ruff rule that has been deprecated. This often happens when the upstream hasn't been updated after a Ruff version bump.
+
+1. **Update upstream**: Replace the deprecated rule with its successor in the upstream config.
+2. **Ignore the warning**: In non-strict mode, deprecated rules are informational warnings only.
+
+In `--strict` mode, deprecated rules cause a hard failure.
+
 ### Multi-upstream Fetch Failures
 
 **Error**: `❌ <N> upstream fetches failed`
@@ -83,3 +114,15 @@ Yes, if you use a Git SSH URL (e.g., `git@github.com:org/repo.git`), `ruff-sync`
 ### How do I automate this in CI?
 
 See the [CI Integration](ci-integration.md) guide for GitHub Actions and GitLab CI examples.
+
+### Does `--validate` require `ruff` to be installed?
+
+Yes, validation shells out to the `ruff` binary. If `ruff` is not on your `PATH`, validation is silently skipped with a warning. To use validation, ensure Ruff is installed (e.g., via `uv pip install ruff` or as a project dependency).
+
+### What does `--strict` check for?
+
+In addition to the basic config syntax validation from `--validate`, `--strict` upgrades the following warnings to hard failures:
+
+1. **Python version mismatch**: The upstream `target-version` doesn't align with your local `requires-python`.
+2. **Deprecated Ruff rules**: Any rule codes in `lint.select`, `lint.ignore`, `lint.extend-select`, `lint.extend-ignore`, or `lint.extend-fixable` that Ruff reports as deprecated.
+3. **Ruff stderr warnings**: Any warning messages Ruff emits to stderr when parsing the config.
