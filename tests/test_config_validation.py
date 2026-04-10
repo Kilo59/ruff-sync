@@ -31,6 +31,8 @@ from ruff_sync.validation import (
 if TYPE_CHECKING:
     from pyfakefs.fake_filesystem import FakeFilesystem
 
+    from tests.conftest import CLIRunner
+
 
 # ---------------------------------------------------------------------------
 # Fixture shared by the legacy get_config tests
@@ -149,6 +151,23 @@ output-format = "github"
     # The last one in the file wins if they map to the same key.
     assert config["pre_commit_version_sync"] is True
     assert config["output_format"] == "github"
+
+
+def test_get_config_includes_validation_flags(
+    tmp_path: pathlib.Path, clean_config_cache: None
+) -> None:
+    """Verify that validate and strict flags are correctly read from config."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """
+[tool.ruff-sync]
+validate = true
+strict = true
+"""
+    )
+    config = get_config(tmp_path)
+    assert config["validate"] is True
+    assert config["strict"] is True
 
 
 # ===========================================================================
@@ -725,6 +744,73 @@ def test_non_strict_mode_passes_on_deprecated_rules(caplog: pytest.LogCaptureFix
         result = check_deprecated_rules(doc, strict=False, _deprecated_codes=frozenset({"UP036"}))
     assert result is True
     assert "deprecated rule 'UP036'" in caplog.text
+
+
+def test_pull_uses_persisted_strict_mode(
+    fs: FakeFilesystem,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    cli_run: CLIRunner,
+) -> None:
+    """Pull must honor 'strict = true' defined in [tool.ruff-sync] even without CLI flags."""
+    fs.create_file(
+        "pyproject.toml",
+        contents=(
+            '[tool.ruff-sync]\nupstream = "https://example.com/pyproject.toml"\nstrict = true\n'
+        ),
+    )
+
+    # Simulate ruff rejecting the config with a warning
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout="", stderr="warning: config obsolete"
+        )
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content="[tool.ruff]\n"
+        )
+
+        with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
+            exit_code, _, _ = cli_run(["pull"])
+
+    # Should abort due to strict=True in config
+    assert exit_code == 1
+    assert "Ruff validation warning(s) detected in strict mode" in caplog.text
+
+
+def test_pull_save_persists_validation_flags(
+    fs: FakeFilesystem,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_run: CLIRunner,
+) -> None:
+    """Pull --save --strict must persist strict=true and validate=true to [tool.ruff-sync]."""
+    fs.create_file(
+        "pyproject.toml",
+        contents='[tool.ruff-sync]\nupstream = "https://example.com/pyproject.toml"\n',
+    )
+    source_path = pathlib.Path("pyproject.toml")
+
+    # Mock success validation
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content="[tool.ruff]\n"
+        )
+
+        # Run with --save --strict
+        exit_code, _, _ = cli_run(["pull", "--save", "--strict"])
+
+    assert exit_code == 0
+    content = source_path.read_text()
+    assert "strict = true" in content
+    assert "validate = true" in content
 
 
 if __name__ == "__main__":

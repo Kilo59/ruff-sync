@@ -133,6 +133,8 @@ class ResolvedArgs(NamedTuple):
     branch: str
     path: str | None
     output_format: OutputFormat
+    validate: bool
+    strict: bool
 
 
 class CLIArguments(Protocol):
@@ -500,6 +502,22 @@ def _resolve_to(args: CLIArguments, config: Config, initial_to: pathlib.Path) ->
     return initial_to
 
 
+def _resolve_validate(args: CLIArguments, config: Config) -> bool:
+    """Resolve validation setting from CLI or config."""
+    # CLI flag --strict or --validate always wins
+    if args.strict or args.validate:
+        return True
+    return bool(config.get("validate", False))
+
+
+def _resolve_strict(args: CLIArguments, config: Config) -> bool:
+    """Resolve strict setting from CLI or config."""
+    # CLI flag --strict always wins
+    if args.strict:
+        return True
+    return bool(config.get("strict", False))
+
+
 def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> ResolvedArgs:
     """Resolve upstream, to, exclude, branch, and path from CLI and config."""
     upstream = _resolve_upstream(args, config)
@@ -508,6 +526,8 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
     branch = _resolve_branch(args, config)
     path = _resolve_path(args, config)
     output_format = _resolve_output_format(args, config)
+    validate = _resolve_validate(args, config)
+    strict = _resolve_strict(args, config)
 
     # Normalize path "" -> None to match core expectation
     final_path: str | None = path or None
@@ -519,6 +539,8 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
         branch,
         final_path,
         output_format,
+        validate or strict,  # strict implies validate
+        strict,
     )
 
 
@@ -599,7 +621,9 @@ def main() -> int:
     initial_to = pathlib.Path(arg_to) if arg_to else pathlib.Path()
     config: Config = get_config(initial_to)
 
-    upstream, to_val, exclude, branch, path, output_format = _resolve_args(args, config, initial_to)
+    upstream, to_val, exclude, branch, path, output_format, validate, strict = _resolve_args(
+        args, config, initial_to
+    )
     pre_commit_val = _resolve_pre_commit(args, config)
 
     resolved_upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
@@ -618,9 +642,8 @@ def main() -> int:
         pre_commit=pre_commit_val,
         save=getattr(args, "save", None),
         output_format=output_format,
-        # --strict implies --validate
-        validate=getattr(args, "validate", False) or getattr(args, "strict", False),
-        strict=getattr(args, "strict", False),
+        validate=validate,
+        strict=strict,
     )
 
     # Warn if the specified output format doesn't match the current CI environment

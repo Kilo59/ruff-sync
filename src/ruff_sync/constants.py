@@ -81,6 +81,8 @@ class ConfKey(str, enum.Enum):
     INIT = "init"
     SAVE = "save"
     VERBOSE = "verbose"
+    VALIDATE = "validate"
+    STRICT = "strict"
 
     # Legacy / Alias Keys
     SOURCE = "source"  # Legacy for 'to'

@@ -123,6 +123,8 @@ class Config(TypedDict, total=False):
     init: bool
     pre_commit_version_sync: bool
     output_format: str
+    validate: bool
+    strict: bool
 
 
 def _resolve_upstream_target_path(path: str | None) -> str:
@@ -1096,8 +1098,14 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
     if args.path != DEFAULT_PATH and args.path is not None:
         ruff_sync_table[ConfKey.PATH] = args.path
 
-    if args.pre_commit:
-        ruff_sync_table[ConfKey.PRE_COMMIT_VERSION_SYNC] = args.pre_commit
+    # Simple boolean flags
+    for key, attr in [
+        (ConfKey.PRE_COMMIT_VERSION_SYNC, "pre_commit"),
+        (ConfKey.VALIDATE, "validate"),
+        (ConfKey.STRICT, "strict"),
+    ]:
+        if getattr(args, attr, False):
+            ruff_sync_table[key] = True
 
 
 async def pull(
