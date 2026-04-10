@@ -67,6 +67,12 @@ def check_python_version_consistency(doc: TOMLDocument, strict: bool = False) ->
         return True  # Don't crash on unexpected doc shapes
 
     if not target_version or not requires_python:
+        missing = []
+        if not target_version:
+            missing.append("[tool.ruff] target-version")
+        if not requires_python:
+            missing.append("[project] requires-python")
+        LOGGER.warning(f"Skipping Python version consistency check: missing {', '.join(missing)}.")
         return True  # Nothing to compare
 
     ruff_min = _ruff_target_to_tuple(str(target_version))

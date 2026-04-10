@@ -583,6 +583,38 @@ def test_version_consistency_skipped_for_ruff_toml(caplog: pytest.LogCaptureFixt
     assert "Version mismatch" not in caplog.text
 
 
+@pytest.mark.parametrize(
+    "toml_content, expected_suffix",
+    [
+        pytest.param(
+            "",
+            "missing [tool.ruff] target-version, [project] requires-python.",
+            id="missing-both",
+        ),
+        pytest.param(
+            '[project]\nrequires-python = ">=3.10"\n',
+            "missing [tool.ruff] target-version.",
+            id="missing-target",
+        ),
+        pytest.param(
+            '[tool.ruff]\ntarget-version = "py310"\n',
+            "missing [project] requires-python.",
+            id="missing-requires",
+        ),
+    ],
+)
+def test_version_consistency_logs_skip_decision(
+    caplog: pytest.LogCaptureFixture, toml_content: str, expected_suffix: str
+) -> None:
+    """It should log a warning message when skipping due to missing version keys."""
+    doc = tomlkit.parse(toml_content)
+    with caplog.at_level(logging.WARNING, logger="ruff_sync.validation"):
+        check_python_version_consistency(doc)
+
+    expected_msg = f"Skipping Python version consistency check: {expected_suffix}"
+    assert expected_msg in caplog.text
+
+
 def test_strict_mode_fails_on_version_mismatch(caplog: pytest.LogCaptureFixture) -> None:
     """In strict mode, a version mismatch should cause validation to fail."""
     doc = tomlkit.parse(
