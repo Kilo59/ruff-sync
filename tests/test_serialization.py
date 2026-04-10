@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+from typing import Any, cast
 
 import pytest
 import tomlkit
@@ -78,6 +79,96 @@ def test_serialize_validate_and_strict_missing():
     # When validate/strict are MISSING, they should not be persisted
     assert "validate" not in toml_str
     assert "strict" not in toml_str
+
+
+def test_serialize_validate_explicit_strict_missing():
+    """Validate is explicit, strict is MISSING -> only validate is serialized."""
+    # validate=True
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=True,
+        strict=MISSING,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["validate"] is True
+    assert "strict" not in ruff_sync
+
+    # validate=False
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=False,
+        strict=MISSING,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["validate"] is False
+    assert "strict" not in ruff_sync
+
+
+def test_serialize_strict_explicit_validate_missing():
+    """Strict is explicit, validate is MISSING -> only strict is serialized."""
+    # strict=True
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=MISSING,
+        strict=True,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["strict"] is True
+    assert "validate" not in ruff_sync
+
+    # strict=False
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=MISSING,
+        strict=False,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["strict"] is False
+    assert "validate" not in ruff_sync
 
 
 def test_serialize_validate_and_strict_explicit():

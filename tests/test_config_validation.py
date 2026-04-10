@@ -168,6 +168,7 @@ output-format = "github"
         pytest.param("validate = true\nstrict = true\n", True, True, id="both-true"),
         pytest.param("validate = true\n", True, False, id="validate-only"),
         pytest.param("strict = true\n", False, True, id="strict-only"),
+        pytest.param("", False, False, id="baseline-defaults"),
         pytest.param("", False, False, id="absent"),
     ],
 )
@@ -233,6 +234,16 @@ def test_get_config_includes_validation_flags(
             True,
             True,
             id="config-both-false-cli-both-true",
+        ),
+        # Bug regression: config `validate = false`, CLI `--strict` should force validate=True
+        # Previously this would silently set strict=False because apply_bool_precedence
+        # saw validate=False (from config) before noticing strict=True (from CLI).
+        pytest.param(
+            "validate = false\n",
+            ["--strict"],
+            True,
+            True,
+            id="config-validate-false-cli-strict",
         ),
     ],
 )

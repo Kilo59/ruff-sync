@@ -35,7 +35,6 @@ from ruff_sync.constants import (
     ConfKey,
     MissingType,
     OutputFormat,
-    apply_bool_precedence,
 )
 from ruff_sync.core import (
     Config,
@@ -551,10 +550,20 @@ def _resolve_to(args: CLIArguments, config: Config, initial_to: pathlib.Path) ->
 
 
 def _resolve_validate(args: CLIArguments, config: Config) -> bool | MissingType:
-    """Resolve validation setting from CLI or config."""
+    """Resolve validation setting from CLI or config.
+
+    If ``--strict`` was explicitly set at the CLI level, it implies ``--validate``.
+    This prevents ``validate = false`` in config from silently neutralising a
+    CLI ``--strict`` flag.
+    """
     # CLI --validate flag wins if explicitly provided
     if args.validate is not None:
         return args.validate
+
+    # If --strict was explicitly passed via CLI, it implies validate=True
+    # even when config sets `validate = false`.
+    if args.strict is True:
+        return True
 
     # Fallback to config
     validate_attr = ConfKey.to_attr(ConfKey.VALIDATE)
@@ -684,11 +693,11 @@ def main() -> int:
         resolve_raw_url(u, branch=resolved.branch, path=resolved.path) for u in resolved.upstream
     )
 
-    # Resolve validation flags with prioritized CLI vs Config rules,
-    # then apply bitdirectional implications (strict -> validate, !validate -> !strict)
+    # Resolve validation flags from CLI (with CLI --strict implying validate=True)
+    # and fall back to config. Bidirectional implications are handled by
+    # resolve_bool_flags() inside Arguments.resolve(), so we store raw sentinels here.
     raw_validate = _resolve_validate(args, config)
     raw_strict = _resolve_strict(args, config)
-    validate, strict = apply_bool_precedence(raw_validate, raw_strict)
 
     exec_args = Arguments(
         command=args.command,
@@ -704,8 +713,8 @@ def main() -> int:
         pre_commit=_resolve_pre_commit(args, config),
         save=getattr(args, "save", None),
         output_format=resolved.output_format,
-        validate=validate,
-        strict=strict,
+        validate=raw_validate,
+        strict=raw_strict,
     )
 
     # Warn if the specified output format doesn't match the current CI environment
