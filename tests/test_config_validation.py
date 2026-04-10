@@ -45,9 +45,18 @@ def clean_config_cache():
     # Ensure LOGGER can be captured by caplog
     original_propagate = LOGGER.propagate
     LOGGER.propagate = True
+
+    # Clear handlers from the root ruff_sync logger to avoid "Bad file descriptor"
+    # when running multiple CLI tests that capture stdout/stderr.
+    # main() adds handlers to the 'ruff_sync' logger.
+    root_logger = logging.getLogger("ruff_sync")
+    orig_handlers = root_logger.handlers[:]
+    root_logger.handlers.clear()
+
     get_config.cache_clear()
     yield
     get_config.cache_clear()
+    root_logger.handlers = orig_handlers
     LOGGER.propagate = original_propagate
 
 
@@ -876,6 +885,50 @@ def test_pull_save_persists_validation_flags(
         assert expected in content
     for unexpected in expected_not_in_toml:
         assert unexpected not in content
+
+
+def test_pull_save_clears_validation_flags(
+    fs: FakeFilesystem,
+    cli_run: CLIRunner,
+    clean_config_cache: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pull --no-strict --save must persist 'false' to [tool.ruff-sync]."""
+    fs.create_file(
+        "pyproject.toml",
+        contents=(
+            "[tool.ruff-sync]\n"
+            'upstream = "https://example.com/pyproject.toml"\n'
+            "strict = true\n"
+            "validate = true\n"
+        ),
+    )
+
+    # Mock validation logic to avoid pyfakefs/subprocess conflicts
+    monkeypatch.setattr(
+        "ruff_sync.validation.validate_ruff_accepts_config", lambda *args, **kwargs: True
+    )
+
+    with respx.mock(base_url="https://example.com") as respx_mock:
+        respx_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content="[tool.ruff]\n"
+        )
+
+        # Run with --no-strict --save
+        exit_code, _, _ = cli_run(["pull", "--no-strict", "--save"])
+        assert exit_code == 0
+
+        # Verify that 'strict = false' is now in the TOML
+        # Note: validate will still be true because it was in config and we only cleared strict
+        content = pathlib.Path("pyproject.toml").read_text()
+        assert "strict = false" in content
+        assert "validate = true" in content
+
+        # Now clear validate too
+        exit_code, _, _ = cli_run(["pull", "--no-validate", "--save"])
+        assert exit_code == 0
+        content = pathlib.Path("pyproject.toml").read_text()
+        assert "validate = false" in content
 
 
 if __name__ == "__main__":

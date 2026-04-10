@@ -31,7 +31,9 @@ from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
     DEFAULT_PATH,
+    MISSING,
     ConfKey,
+    MissingType,
     OutputFormat,
 )
 from ruff_sync.core import (
@@ -105,11 +107,11 @@ class Arguments(NamedTuple):
     semantic: bool = False
     diff: bool = True
     init: bool = False
-    pre_commit: bool = False
+    pre_commit: bool | MissingType = MISSING
     save: bool | None = None
     output_format: OutputFormat = OutputFormat.TEXT
-    validate: bool = False  # run --validate checks before writing
-    strict: bool = False  # treat warnings as errors (implies --validate)
+    validate: bool | MissingType = MISSING  # run --validate checks before writing
+    strict: bool | MissingType = MISSING  # treat warnings as errors (implies --validate)
 
     @property
     @deprecated("Use 'to' instead")
@@ -133,8 +135,9 @@ class ResolvedArgs(NamedTuple):
     branch: str
     path: str | None
     output_format: OutputFormat
-    validate: bool
-    strict: bool
+    validate: bool | MissingType
+    strict: bool | MissingType
+    pre_commit: bool | MissingType
 
 
 class CLIArguments(Protocol):
@@ -155,8 +158,8 @@ class CLIArguments(Protocol):
     save: bool | None
     semantic: bool
     diff: bool
-    validate: bool
-    strict: bool
+    validate: bool | None
+    strict: bool | None
 
 
 @lru_cache(maxsize=1)
@@ -298,8 +301,8 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--validate",
-        action="store_true",
-        default=False,
+        action=BooleanOptionalAction,
+        default=None,
         help=(
             "Validate the merged config with Ruff before writing to disk. "
             "Aborts if Ruff rejects the config. Off by default."
@@ -307,8 +310,8 @@ def _get_cli_parser() -> ArgumentParser:
     )
     common_parser.add_argument(
         "--strict",
-        action="store_true",
-        default=False,
+        action=BooleanOptionalAction,
+        default=None,
         help=(
             "Treat all validation warnings as hard failures. Implies --validate. "
             "Aborts if any version mismatch or deprecated rule is detected."
@@ -502,20 +505,41 @@ def _resolve_to(args: CLIArguments, config: Config, initial_to: pathlib.Path) ->
     return initial_to
 
 
-def _resolve_validate(args: CLIArguments, config: Config) -> bool:
+def _resolve_validate(args: CLIArguments, config: Config) -> bool | MissingType:
     """Resolve validation setting from CLI or config."""
-    # CLI flag --strict or --validate always wins
-    if args.strict or args.validate:
+    # CLI --validate flag wins if explicitly provided
+    if args.validate is not None:
+        return args.validate
+
+    # CLI --strict flag wins if it's explicitly True (implies validate=True)
+    if args.strict is True:
         return True
-    return bool(config.get("validate", False))
+
+    # Fallback to config
+    validate_attr = ConfKey.to_attr(ConfKey.VALIDATE)
+    if validate_attr in config:
+        return bool(config[validate_attr])  # type: ignore[literal-required]
+
+    # Special case: config 'strict = true' also implies 'validate = true'
+    strict_attr = ConfKey.to_attr(ConfKey.STRICT)
+    if strict_attr in config:
+        return bool(config[strict_attr])  # type: ignore[literal-required]
+
+    return MISSING
 
 
-def _resolve_strict(args: CLIArguments, config: Config) -> bool:
+def _resolve_strict(args: CLIArguments, config: Config) -> bool | MissingType:
     """Resolve strict setting from CLI or config."""
     # CLI flag --strict always wins
-    if args.strict:
-        return True
-    return bool(config.get("strict", False))
+    if args.strict is not None:
+        return args.strict
+
+    # Fallback to config
+    attr = ConfKey.to_attr(ConfKey.STRICT)
+    if attr in config:
+        return bool(config[attr])  # type: ignore[literal-required]
+
+    return MISSING
 
 
 def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) -> ResolvedArgs:
@@ -528,6 +552,7 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
     output_format = _resolve_output_format(args, config)
     validate = _resolve_validate(args, config)
     strict = _resolve_strict(args, config)
+    pre_commit = _resolve_pre_commit(args, config)
 
     # Normalize path "" -> None to match core expectation
     final_path: str | None = path or None
@@ -539,12 +564,13 @@ def _resolve_args(args: CLIArguments, config: Config, initial_to: pathlib.Path) 
         branch,
         final_path,
         output_format,
-        validate or strict,  # strict implies validate
+        validate,
         strict,
+        pre_commit,
     )
 
 
-def _resolve_pre_commit(args: CLIArguments, config: Config) -> bool:
+def _resolve_pre_commit(args: CLIArguments, config: Config) -> bool | MissingType:
     """Resolve pre-commit sync setting from CLI or config."""
     if args.pre_commit is not None:
         return args.pre_commit
@@ -553,7 +579,7 @@ def _resolve_pre_commit(args: CLIArguments, config: Config) -> bool:
     if pre_commit_attr in config:
         val = config.get(pre_commit_attr)
         return bool(val)
-    return False
+    return MISSING
 
 
 def _detect_ci_provider() -> CIProvider | None:
@@ -621,29 +647,29 @@ def main() -> int:
     initial_to = pathlib.Path(arg_to) if arg_to else pathlib.Path()
     config: Config = get_config(initial_to)
 
-    upstream, to_val, exclude, branch, path, output_format, validate, strict = _resolve_args(
-        args, config, initial_to
-    )
-    pre_commit_val = _resolve_pre_commit(args, config)
+    # Resolve all arguments (honoring CLI overrides over config values)
+    resolved = _resolve_args(args, config, initial_to)
 
-    resolved_upstream = tuple(resolve_raw_url(u, branch=branch, path=path) for u in upstream)
+    resolved_upstream = tuple(
+        resolve_raw_url(u, branch=resolved.branch, path=resolved.path) for u in resolved.upstream
+    )
 
     exec_args = Arguments(
         command=args.command,
         upstream=resolved_upstream,
-        to=to_val,
-        exclude=exclude,
+        to=resolved.to,
+        exclude=resolved.exclude,
         verbose=args.verbose,
-        branch=branch,
-        path=path,
+        branch=resolved.branch,
+        path=resolved.path,
         semantic=getattr(args, "semantic", False),
         diff=getattr(args, "diff", True),
         init=getattr(args, "init", False),
-        pre_commit=pre_commit_val,
+        pre_commit=resolved.pre_commit,
         save=getattr(args, "save", None),
-        output_format=output_format,
-        validate=validate,
-        strict=strict,
+        output_format=resolved.output_format,
+        validate=resolved.validate,
+        strict=resolved.strict,
     )
 
     # Warn if the specified output format doesn't match the current CI environment

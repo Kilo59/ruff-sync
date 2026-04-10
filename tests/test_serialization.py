@@ -8,7 +8,7 @@ import tomlkit
 from httpx import URL
 
 from ruff_sync.cli import Arguments
-from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE
+from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE, MISSING
 from ruff_sync.core import pull, serialize_ruff_sync_config
 
 
@@ -49,7 +49,7 @@ def test_serialize_ruff_sync_config_pre_commit_default_skipped():
         to=pathlib.Path(),
         exclude=DEFAULT_EXCLUDE,
         verbose=0,
-        pre_commit=False,
+        pre_commit=MISSING,
     )
     serialize_ruff_sync_config(doc, args)
 
@@ -168,7 +168,7 @@ def test_serialize_ruff_sync_config_omits_defaults():
         verbose=0,
         branch=DEFAULT_BRANCH,
         path=None,
-        pre_commit=False,
+        pre_commit=MISSING,
         save=True,
     )
     serialize_ruff_sync_config(doc, args)
@@ -265,18 +265,16 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
     "case",
     [
         # (init, save, pre_commit, expect_sync_pre_commit, expect_save)
-        # baseline: init+save with explicit pre_commit=True triggers sync
-        (True, None, True, True, True),
+        # MISSING now defaults to True for sync
+        (True, None, MISSING, True, True),
+        # explicit False disables sync
+        (True, None, False, False, True),
         # save without init still writes [tool.ruff-sync] but does not init hooks
-        (False, True, False, False, True),
-        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (True, None, False, False, True),
-        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (True, None, False, False, True),
+        (False, True, MISSING, True, True),
         # init with explicit --no-save should not serialize [tool.ruff-sync]
-        (True, False, False, False, False),
-        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (False, None, False, False, False),
+        (True, False, MISSING, True, False),
+        # neither init nor save is truthy: no [tool.ruff-sync] section written
+        (False, None, MISSING, True, False),
     ],
 )
 @pytest.mark.asyncio

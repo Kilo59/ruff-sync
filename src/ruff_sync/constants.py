@@ -129,9 +129,12 @@ class ConfKey(str, enum.Enum):
 
 def resolve_defaults(
     branch: str | MissingType,
-    path: str | MissingType,
+    path: str | None | MissingType,
     exclude: Iterable[str] | MissingType,
-) -> tuple[str, str | None, Iterable[str]]:
+    validate: bool | MissingType = MISSING,
+    strict: bool | MissingType = MISSING,
+    pre_commit: bool | MissingType = MISSING,
+) -> tuple[str, str | None, Iterable[str], bool, bool, bool]:
     """Resolve MISSING sentinel values to their effective defaults.
 
     This is the single source of truth for MISSING → default resolution across
@@ -141,9 +144,12 @@ def resolve_defaults(
         branch: The resolved branch value or ``MISSING``.
         path: The resolved path value or ``MISSING``.
         exclude: The resolved exclude iterable or ``MISSING``.
+        validate: The resolved validate flag or ``MISSING``.
+        strict: The resolved strict flag or ``MISSING``.
+        pre_commit: The resolved pre_commit flag or ``MISSING``.
 
     Returns:
-        A ``(branch, path, exclude)`` tuple with defaults applied.
+        A ``(branch, path, exclude, validate, strict, pre_commit)`` tuple with defaults applied.
         ``path`` is normalised to ``None`` (not ``""``) so callers can forward
         it directly to :func:`~ruff_sync.core.resolve_raw_url`.
     """
@@ -153,4 +159,10 @@ def resolve_defaults(
     # but explicit None is the canonical "root directory" sentinel.
     eff_path: str | None = raw_path or None
     eff_exclude = exclude if exclude is not MISSING else DEFAULT_EXCLUDE
-    return eff_branch, eff_path, eff_exclude
+
+    eff_strict = strict if strict is not MISSING else False
+    # strict mode implicitly enables validation
+    eff_validate = (validate if validate is not MISSING else False) or eff_strict
+    eff_pre_commit = pre_commit if pre_commit is not MISSING else True
+
+    return eff_branch, eff_path, eff_exclude, eff_validate, eff_strict, eff_pre_commit

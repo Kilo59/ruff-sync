@@ -34,7 +34,9 @@ from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
     DEFAULT_PATH,
+    MISSING,
     ConfKey,
+    resolve_defaults,
 )
 from ruff_sync.formatters import ResultFormatter, get_formatter
 from ruff_sync.pre_commit import sync_pre_commit
@@ -753,10 +755,15 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
-    branch, path, exclude = args.branch, args.path, args.exclude
+    # Resolve defaults for internal logic using the single source of truth
+    res_branch, res_path, res_exclude, _, _, _ = resolve_defaults(
+        args.branch,
+        args.path,
+        args.exclude,
+    )
 
     fetch_results = await fetch_upstreams_concurrently(
-        args.upstream, client, branch=branch, path=path
+        args.upstream, client, branch=res_branch, path=res_path
     )
 
     # Sequentially merge the results in the original order
@@ -769,7 +776,7 @@ async def _merge_multiple_upstreams(
             fetch_result.buffer.read(),
             is_ruff_toml=is_upstream_ruff_toml,
             create_if_missing=False,
-            exclude=exclude,
+            exclude=res_exclude,
         )
 
         target_doc = merge_ruff_toml(
@@ -806,14 +813,14 @@ def _print_diff(
     fmt.diff("".join(diff))
 
 
-def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
+def _check_pre_commit_sync(pre_commit: bool, fmt: ResultFormatter) -> int | None:
     """Return exit code 3 if pre-commit hook version is out of sync, otherwise None.
 
     Shared helper to avoid duplicating the pre-commit synchronization logic.
     Exit code 3 is reserved for pre-commit hook drift to avoid collision with
     argparse (2) and config drift (1).
     """
-    if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
+    if pre_commit and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
         repo_root = pathlib.Path.cwd()
         pre_commit_config = repo_root / ".pre-commit-config.yaml"
         file_path = pre_commit_config if pre_commit_config.exists() else repo_root
@@ -946,6 +953,23 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
+    # Resolve defaults for execution logic
+    (
+        _res_branch,
+        _res_path,
+        _res_exclude,
+        _res_validate,
+        _res_strict,
+        res_pre_commit,
+    ) = resolve_defaults(
+        args.branch,
+        args.path,
+        args.exclude,
+        args.validate,
+        args.strict,
+        args.pre_commit,
+    )
+
     output_format = args.output_format
     fmt: ResultFormatter = get_formatter(output_format)
     try:
@@ -993,13 +1017,13 @@ async def check(
 
             if source_val == merged_val:
                 fmt.success("✅ Ruff configuration is semantically in sync.")
-                exit_code = _check_pre_commit_sync(args, fmt)
+                exit_code = _check_pre_commit_sync(res_pre_commit, fmt)
                 if exit_code is not None:
                     return exit_code
                 return 0
         elif source_doc.as_string() == merged_doc.as_string():
             fmt.success("✅ Ruff configuration is in sync.")
-            exit_code = _check_pre_commit_sync(args, fmt)
+            exit_code = _check_pre_commit_sync(res_pre_commit, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
@@ -1104,8 +1128,9 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
         (ConfKey.VALIDATE, "validate"),
         (ConfKey.STRICT, "strict"),
     ]:
-        if getattr(args, attr, False):
-            ruff_sync_table[key] = True
+        val = getattr(args, attr, MISSING)
+        if val is not MISSING:
+            ruff_sync_table[key] = val
 
 
 async def pull(
@@ -1130,6 +1155,23 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
+    # Resolve defaults for execution logic
+    (
+        _res_branch,
+        _res_path,
+        res_exclude,
+        res_validate,
+        res_strict,
+        res_pre_commit,
+    ) = resolve_defaults(
+        args.branch,
+        args.path,
+        args.exclude,
+        args.validate,
+        args.strict,
+        args.pre_commit,
+    )
+
     output_format = args.output_format
     fmt = get_formatter(output_format)
     try:
@@ -1167,12 +1209,12 @@ async def pull(
             )
 
         # Validation is opt-in — only run if --validate (or --strict) was passed
-        if args.validate:
+        if res_validate:
             from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
 
             is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
             if not validate_merged_config(
-                source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict, exclude=args.exclude
+                source_doc, is_ruff_toml=is_ruff_toml, strict=res_strict, exclude=res_exclude
             ):
                 fmt.error(
                     "❌ Merged config failed validation. Local file left unchanged.",
@@ -1198,7 +1240,7 @@ async def pull(
             rel_path = _source_toml_path.resolve()
         fmt.success(f"✅ Updated {rel_path}")
 
-        if args.pre_commit:
+        if res_pre_commit:
             sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
         return 0
