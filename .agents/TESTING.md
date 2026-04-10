@@ -5,7 +5,7 @@ This document defines the mandatory testing standards and patterns for the `ruff
 ## 1. Core Principles
 
 - **Every Fix Needs a Test**: Any bug fix must include a reproduction test that fails without the fix and passes with it.
-- **No Side Effects**: Tests must be isolated and not touch the actual filesystem or make real network calls.
+- **No Side Effects**: Tests must be isolated and not touch the actual filesystem or make real network calls. Furthermore, tests must not pollute the CI environment (e.g., writing to `GITHUB_STEP_SUMMARY`). Always mock CI-specific environment variables using `monkeypatch.delenv` if the code under test interacts with them.
 - **Semantic + Structural Assertions**: When testing TOML merges, always verify **both**:
   1. **Structural/Whitespace**: The file "looks" correct (comments and spacing are preserved).
   2. **Semantic**: The actual data in the merged result matches the expected values. Use the [dirty-equals](skills/dirty-equals/SKILL.md) Agent Skill for declarative, concise assertions.

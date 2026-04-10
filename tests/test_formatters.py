@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 @pytest.fixture(
     params=[TextFormatter, GithubFormatter, JsonFormatter, GitlabFormatter, SarifFormatter]
 )
-def formatter(request: pytest.FixtureRequest) -> ResultFormatter:
+def formatter(request: pytest.FixtureRequest, isolate_ci_env: None) -> ResultFormatter:
     """Fixture providing instances of ALL available formatters."""
     formatter_cls: type[ResultFormatter] = request.param
     return formatter_cls()
@@ -164,7 +164,9 @@ class TestGithubFormatterSpecifics:
         captured = capsys.readouterr().out
         assert "::debug::debug msg" in captured
 
-    def test_error_and_warning_are_accumulated(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_error_and_warning_are_accumulated(
+        self, capsys: pytest.CaptureFixture[str], isolate_ci_env: None
+    ) -> None:
         """error() and warning() must not emit output until finalize() is called."""
         fmt = GithubFormatter()
         fmt.error("error msg")
@@ -179,7 +181,9 @@ class TestGithubFormatterSpecifics:
         assert "::error" in captured
         assert "::warning" in captured
 
-    def test_emoji_stripping(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_emoji_stripping(
+        self, capsys: pytest.CaptureFixture[str], isolate_ci_env: None
+    ) -> None:
         """Ensure leading status icons are stripped from GitHub-specific output."""
         fmt = GithubFormatter()
         fmt.error("❌ error msg")
@@ -190,7 +194,9 @@ class TestGithubFormatterSpecifics:
         assert "title=Ruff Sync Error::error msg" in captured
         assert "title=Ruff Sync Warning::warning msg" in captured
 
-    def test_single_issue_has_precision(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_single_issue_has_precision(
+        self, capsys: pytest.CaptureFixture[str], isolate_ci_env: None
+    ) -> None:
         """A single issue should still include line=1 and the raw message."""
         fmt = GithubFormatter()
         fmt.error("msg", file_path=pathlib.Path("src/foo.py"))
@@ -200,7 +206,9 @@ class TestGithubFormatterSpecifics:
         assert "::error" in captured
         assert "::msg" in captured
 
-    def test_multiple_issues_are_combined(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_multiple_issues_are_combined(
+        self, capsys: pytest.CaptureFixture[str], isolate_ci_env: None
+    ) -> None:
         """Multiple issues in the same file should be combined into one annotation."""
         fmt = GithubFormatter()
         path = pathlib.Path("pyproject.toml")
@@ -238,7 +246,7 @@ class TestGithubFormatterSpecifics:
         assert "| `target-version` | warn msg |" in content
 
     def test_step_summary_no_env(
-        self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+        self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str], isolate_ci_env: None
     ) -> None:
         """Finalize should work fine and output nothing to summary if env var is missing."""
         fmt = GithubFormatter()

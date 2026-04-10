@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from typing import Literal, Protocol, runtime_checkable
 
@@ -8,6 +9,8 @@ import pytest
 from typing_extensions import override
 
 import ruff_sync
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TestStreamHandler(logging.Handler):
@@ -65,6 +68,17 @@ def clear_ruff_sync_caches():
     ruff_sync.Arguments.fields.cache_clear()
 
 
+@pytest.fixture
+def isolate_ci_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure CI environment variables (like GITHUB_STEP_SUMMARY) are not set.
+
+    This prevents tests from polluting real CI reports when they invoke formatters.
+    """
+    if "GITHUB_STEP_SUMMARY" in os.environ:
+        LOGGER.warning("Clearing GITHUB_STEP_SUMMARY to prevent test pollution")
+        monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+
+
 @runtime_checkable
 class CLIRunner(Protocol):
     """Protocol for the cli_run fixture."""
@@ -79,7 +93,9 @@ class CLIRunner(Protocol):
 
 
 @pytest.fixture
-def cli_run(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> CLIRunner:
+def cli_run(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], isolate_ci_env: None
+) -> CLIRunner:
     """Fixture to run the ruff-sync CLI or entry points and capture output."""
 
     def _run(
