@@ -153,21 +153,28 @@ output-format = "github"
     assert config["output_format"] == "github"
 
 
+@pytest.mark.parametrize(
+    "config_toml, expected_validate, expected_strict",
+    [
+        pytest.param("validate = true\nstrict = true\n", True, True, id="both-true"),
+        pytest.param("validate = true\n", True, False, id="validate-only"),
+        pytest.param("strict = true\n", False, True, id="strict-only"),
+        pytest.param("", False, False, id="absent"),
+    ],
+)
 def test_get_config_includes_validation_flags(
-    tmp_path: pathlib.Path, clean_config_cache: None
+    tmp_path: pathlib.Path,
+    clean_config_cache: None,
+    config_toml: str,
+    expected_validate: bool,
+    expected_strict: bool,
 ) -> None:
     """Verify that validate and strict flags are correctly read from config."""
     pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text(
-        """
-[tool.ruff-sync]
-validate = true
-strict = true
-"""
-    )
+    pyproject.write_text(f"[tool.ruff-sync]\n{config_toml}")
     config = get_config(tmp_path)
-    assert config["validate"] is True
-    assert config["strict"] is True
+    assert config.get("validate", False) is expected_validate
+    assert config.get("strict", False) is expected_strict
 
 
 # ===========================================================================
@@ -746,24 +753,59 @@ def test_non_strict_mode_passes_on_deprecated_rules(caplog: pytest.LogCaptureFix
     assert "deprecated rule 'UP036'" in caplog.text
 
 
-def test_pull_uses_persisted_strict_mode(
+@pytest.mark.parametrize(
+    "config_toml, ruff_stderr, ruff_exit_code, expected_exit_code, expected_msg",
+    [
+        pytest.param(
+            "strict = true",
+            "warning: config obsolete",
+            0,
+            1,
+            "Ruff validation warning(s) detected in strict mode",
+            id="strict-fails-on-warning",
+        ),
+        pytest.param(
+            "validate = true",
+            "error: unknown field",
+            2,
+            1,
+            "Merged config failed validation",
+            id="validate-fails-on-error",
+        ),
+        pytest.param(
+            "",  # No validation in config
+            "warning: config obsolete",
+            0,
+            0,
+            None,
+            id="opt-in-by-default",
+        ),
+    ],
+)
+def test_pull_uses_persisted_validation_settings(
     fs: FakeFilesystem,
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     cli_run: CLIRunner,
+    clean_config_cache: None,
+    config_toml: str,
+    ruff_stderr: str,
+    ruff_exit_code: int,
+    expected_exit_code: int,
+    expected_msg: str | None,
 ) -> None:
-    """Pull must honor 'strict = true' defined in [tool.ruff-sync] even without CLI flags."""
+    """Pull must honor validation settings defined in [tool.ruff-sync]."""
     fs.create_file(
         "pyproject.toml",
         contents=(
-            '[tool.ruff-sync]\nupstream = "https://example.com/pyproject.toml"\nstrict = true\n'
+            f'[tool.ruff-sync]\nupstream = "https://example.com/pyproject.toml"\n{config_toml}\n'
         ),
     )
 
-    # Simulate ruff rejecting the config with a warning
+    # Simulate ruff behavior
     def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(
-            args=cmd, returncode=0, stdout="", stderr="warning: config obsolete"
+            args=cmd, returncode=ruff_exit_code, stdout="", stderr=ruff_stderr
         )
 
     monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
@@ -776,17 +818,38 @@ def test_pull_uses_persisted_strict_mode(
         with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
             exit_code, _, _ = cli_run(["pull"])
 
-    # Should abort due to strict=True in config
-    assert exit_code == 1
-    assert "Ruff validation warning(s) detected in strict mode" in caplog.text
+    assert exit_code == expected_exit_code
+    if expected_msg:
+        assert expected_msg in caplog.text
 
 
+@pytest.mark.parametrize(
+    "cli_flags, expected_in_toml, expected_not_in_toml",
+    [
+        pytest.param(
+            ["--strict"],
+            ["strict = true", "validate = true"],
+            [],
+            id="strict-persists-both",
+        ),
+        pytest.param(
+            ["--validate"],
+            ["validate = true"],
+            ["strict = true"],
+            id="validate-persists-only-validate",
+        ),
+    ],
+)
 def test_pull_save_persists_validation_flags(
     fs: FakeFilesystem,
     monkeypatch: pytest.MonkeyPatch,
     cli_run: CLIRunner,
+    clean_config_cache: None,
+    cli_flags: list[str],
+    expected_in_toml: list[str],
+    expected_not_in_toml: list[str],
 ) -> None:
-    """Pull --save --strict must persist strict=true and validate=true to [tool.ruff-sync]."""
+    """Pull --save with validation flags must persist them to [tool.ruff-sync]."""
     fs.create_file(
         "pyproject.toml",
         contents='[tool.ruff-sync]\nupstream = "https://example.com/pyproject.toml"\n',
@@ -804,13 +867,15 @@ def test_pull_save_persists_validation_flags(
             200, content_type="text/plain", content="[tool.ruff]\n"
         )
 
-        # Run with --save --strict
-        exit_code, _, _ = cli_run(["pull", "--save", "--strict"])
+        # Run with --save and the parametrized flags
+        exit_code, _, _ = cli_run(["pull", "--save", *cli_flags])
 
     assert exit_code == 0
     content = source_path.read_text()
-    assert "strict = true" in content
-    assert "validate = true" in content
+    for expected in expected_in_toml:
+        assert expected in content
+    for unexpected in expected_not_in_toml:
+        assert unexpected not in content
 
 
 if __name__ == "__main__":
