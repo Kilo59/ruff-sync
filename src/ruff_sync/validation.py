@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import re
 import subprocess
 import tempfile
 
@@ -17,6 +18,73 @@ __all__ = [
 ]
 
 LOGGER = logging.getLogger(__name__)
+
+_RUFF_TARGET_VERSION_PATTERN = re.compile(r"^py(\d)(\d+)$")
+
+
+def _ruff_target_to_tuple(target_version: str) -> tuple[int, int] | None:
+    """Parse a Ruff target-version string (e.g. 'py311') into a (major, minor) tuple."""
+    m = _RUFF_TARGET_VERSION_PATTERN.match(target_version)
+    if not m:
+        return None
+    return int(m.group(1)), int(m.group(2))
+
+
+def _requires_python_min_version(requires_python: str) -> tuple[int, int] | None:
+    """Extract the minimum Python version from a PEP 440 requires-python string.
+
+    Examples:
+        '>=3.10' -> (3, 10)
+        '^3.11'  -> (3, 11)
+        '~=3.9'  -> (3, 9)
+    """
+    # Match the first version specifier of the form X.Y
+    m = re.search(r"(\d+)\.(\d+)", requires_python)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    return None
+
+
+def check_python_version_consistency(doc: TOMLDocument, strict: bool = False) -> bool:
+    """Warn if the merged ruff target-version conflicts with requires-python.
+
+    Args:
+        doc: The merged TOML document (pyproject.toml format).
+        strict: If True, treat version mismatch as a failure.
+
+    Returns:
+        True if versions are consistent or if check is skipped.
+        False if strict=True and versions are inconsistent.
+    """
+    try:
+        ruff_section = doc.get("tool", {}).get("ruff", {})
+        target_version = ruff_section.get("target-version")
+        requires_python = doc.get("project", {}).get("requires-python")
+    except Exception:
+        return True  # Don't crash on unexpected doc shapes
+
+    if not target_version or not requires_python:
+        return True  # Nothing to compare
+
+    ruff_min = _ruff_target_to_tuple(str(target_version))
+    proj_min = _requires_python_min_version(str(requires_python))
+
+    if ruff_min is None or proj_min is None:
+        return True  # Couldn't parse one of the versions
+
+    if ruff_min < proj_min:
+        msg = (
+            f"Version mismatch: upstream [tool.ruff] target-version='{target_version}' "
+            f"targets Python {ruff_min[0]}.{ruff_min[1]}, but local [project] requires-python="
+            f"'{requires_python}' requires Python >= {proj_min[0]}.{proj_min[1]}. "
+            "Consider updating target-version in the upstream config."
+        )
+        if strict:
+            LOGGER.error(f"❌ {msg}")
+            return False
+        LOGGER.warning(f"⚠️  {msg}")
+
+    return True
 
 
 def validate_toml_syntax(doc: TOMLDocument) -> bool:
@@ -61,8 +129,8 @@ def validate_ruff_accepts_config(
         dummy_py.write_text("# ruff-sync config validation\n", encoding="utf-8")
 
         config_flag = f"--config={tmp_path}"
-        # Use --isolated to ensure validation is not influenced by local user/project config
-        cmd = ["ruff", "check", "--isolated", config_flag, str(dummy_py)]
+        # Using --config should be enough to isolate from project config
+        cmd = ["ruff", "check", config_flag, str(dummy_py)]
         LOGGER.debug(f"Running ruff config validation: {' '.join(cmd)}")
 
         try:
@@ -122,4 +190,8 @@ def validate_merged_config(
     """
     if not validate_toml_syntax(doc):
         return False
-    return validate_ruff_accepts_config(doc, is_ruff_toml=is_ruff_toml, strict=strict)
+    if not validate_ruff_accepts_config(doc, is_ruff_toml=is_ruff_toml, strict=strict):
+        return False
+    if not is_ruff_toml:
+        return check_python_version_consistency(doc, strict=strict)
+    return True

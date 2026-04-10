@@ -20,6 +20,7 @@ Specific workflows, libraries, and tools are documented in `.agents/skills/`. Be
 
 - **Python** ≥ 3.10 (target version `py310`)
 - **Package Manager**: [uv](https://docs.astral.sh/uv/) — Use `uv run <command>` for all executions to ensure the correct environment.
+    - **Note on PATH**: On macOS, `uv` is often installed in `~/.local/bin`. If `uv` is not found, add this to your `PATH`: `export PATH="$PATH:$HOME/.local/bin"`.
 - **Linter / Formatter**: [Ruff](https://docs.astral.sh/ruff/) (`>=0.15.0`)
 - **Type Checker**: [mypy](https://mypy-lang.org/) (strict mode)
 - **Test Framework**: [pytest](https://docs.pytest.org/) with `pytest-asyncio`, `respx`, `pyfakefs` (See [Testing Standards](.agents/TESTING.md))
