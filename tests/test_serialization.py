@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import logging
 import pathlib
+from typing import Any, cast
 
 import pytest
 import tomlkit
 from httpx import URL
 
 from ruff_sync.cli import Arguments
-from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE
+from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE, MISSING
 from ruff_sync.core import pull, serialize_ruff_sync_config
 
 
@@ -49,12 +50,148 @@ def test_serialize_ruff_sync_config_pre_commit_default_skipped():
         to=pathlib.Path(),
         exclude=DEFAULT_EXCLUDE,
         verbose=0,
-        pre_commit=False,
+        pre_commit=MISSING,
     )
     serialize_ruff_sync_config(doc, args)
 
     s = doc.as_string()
     assert "pre-commit-version-sync" not in s
+
+
+def test_serialize_validate_and_strict_missing():
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=MISSING,
+        strict=MISSING,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+    toml_str = tomlkit.dumps(doc)
+
+    # When validate/strict are MISSING, they should not be persisted
+    assert "validate" not in toml_str
+    assert "strict" not in toml_str
+
+
+def test_serialize_validate_explicit_strict_missing():
+    """Validate is explicit, strict is MISSING -> only validate is serialized."""
+    # validate=True
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=True,
+        strict=MISSING,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["validate"] is True
+    assert "strict" not in ruff_sync
+
+    # validate=False
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=False,
+        strict=MISSING,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["validate"] is False
+    assert "strict" not in ruff_sync
+
+
+def test_serialize_strict_explicit_validate_missing():
+    """Strict is explicit, validate is MISSING -> only strict is serialized."""
+    # strict=True
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=MISSING,
+        strict=True,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["strict"] is True
+    assert "validate" not in ruff_sync
+
+    # strict=False
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=MISSING,
+        strict=False,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+
+    ruff_sync = cast("Any", doc)["tool"]["ruff-sync"]
+    assert ruff_sync["strict"] is False
+    assert "validate" not in ruff_sync
+
+
+def test_serialize_validate_and_strict_explicit():
+    doc = tomlkit.document()
+    doc["tool"] = {"ruff-sync": {}}
+
+    args = Arguments(
+        command="pull",
+        upstream=(URL("https://example.com/repo/pyproject.toml"),),
+        to=pathlib.Path(),
+        exclude=DEFAULT_EXCLUDE,
+        verbose=0,
+        pre_commit=MISSING,
+        validate=True,
+        strict=False,
+    )
+
+    serialize_ruff_sync_config(doc, args)
+    toml_str = tomlkit.dumps(doc)
+
+    # When validate/strict are explicitly provided, they should be persisted
+    assert "validate = true" in toml_str
+    assert "strict = false" in toml_str
 
 
 def test_serialize_ruff_sync_config_exclude_deduplication():
@@ -168,7 +305,7 @@ def test_serialize_ruff_sync_config_omits_defaults():
         verbose=0,
         branch=DEFAULT_BRANCH,
         path=None,
-        pre_commit=False,
+        pre_commit=MISSING,
         save=True,
     )
     serialize_ruff_sync_config(doc, args)
@@ -265,18 +402,16 @@ def test_serialize_ruff_sync_config_multiple_upstreams():
     "case",
     [
         # (init, save, pre_commit, expect_sync_pre_commit, expect_save)
-        # baseline: init+save with explicit pre_commit=True triggers sync
-        (True, None, True, True, True),
+        # MISSING now defaults to False for sync (preserving historical behavior)
+        (True, None, MISSING, False, True),
+        # explicit False disables sync
+        (True, None, False, False, True),
         # save without init still writes [tool.ruff-sync] but does not init hooks
-        (False, True, False, False, True),
-        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (True, None, False, False, True),
-        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (True, None, False, False, True),
+        (False, True, MISSING, False, True),
         # init with explicit --no-save should not serialize [tool.ruff-sync]
-        (True, False, False, False, False),
-        # neither init nor save is truthy: no [tool.ruff-sync] section should appear
-        (False, None, False, False, False),
+        (True, False, MISSING, False, False),
+        # neither init nor save is truthy: no [tool.ruff-sync] section written
+        (False, None, MISSING, False, False),
     ],
 )
 @pytest.mark.asyncio

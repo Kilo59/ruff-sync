@@ -14,6 +14,17 @@ Add this step to any existing workflow (e.g., `.github/workflows/ci.yaml`):
 `--semantic` ignores cosmetic differences (comments, whitespace) — only real value or rule changes cause failure.
 `--output-format github` creates inline PR annotations and a structured Job Summary report.
 
+### With Strict Validation
+
+To also catch deprecated rules and Python version mismatches in CI:
+
+```yaml
+- name: Check Ruff config (with validation)
+  run: ruff-sync check --semantic --strict --output-format github
+```
+
+`--strict` implies `--validate`. Deprecated rules and version mismatches are upgraded to failures.
+
 > [!TIP]
 > `ruff-sync` automatically groups multiple drifts in the same file into a single annotation to reduce PR noise.
 
@@ -162,7 +173,7 @@ Run `ruff-sync check` as a pre-commit hook to catch drift before every commit:
 ```yaml
 # .pre-commit-config.yaml
 - repo: https://github.com/Kilo59/ruff-sync
-  rev: v0.1.3   # pin to a release tag
+  rev: v0.1.6   # pin to a release tag
   hooks:
     - id: ruff-sync-check
 ```
@@ -214,7 +225,7 @@ No URL argument needed — it reads `upstream` from `[tool.ruff-sync]`.
 | Code | Meaning |
 |------|----------|
 | **0** | In sync — no drift detected |
-| **1** | Config drift — `[tool.ruff]` values differ from upstream |
+| **1** | Config drift (`check`), validation failure (`pull --validate`), or sync error |
 | **2** | CLI usage error — invalid arguments (reserved by argparse) |
 | **3** | Pre-commit hook drift — use `--pre-commit` flag to enable this check |
 | **4** | Upstream unreachable — HTTP error or network failure |

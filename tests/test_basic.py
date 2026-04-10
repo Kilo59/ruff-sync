@@ -692,7 +692,7 @@ async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.Router
     )
 
     async with httpx.AsyncClient() as client:
-        result_doc = await _merge_multiple_upstreams(target_doc, False, args, client)
+        result_doc = await _merge_multiple_upstreams(target_doc, False, args.resolve(), client)
 
         # Verify both URLs were fetched
         assert respx_mock.get("http://one.toml").called
@@ -778,7 +778,7 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router)
 
     async with httpx.AsyncClient() as client:
         with pytest.raises(UpstreamError) as excinfo:
-            await _merge_multiple_upstreams(target_doc, False, args, client)
+            await _merge_multiple_upstreams(target_doc, False, args.resolve(), client)
 
         assert len(excinfo.value.errors) == 1
         url, err = excinfo.value.errors[0]

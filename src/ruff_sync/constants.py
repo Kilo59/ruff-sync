@@ -81,6 +81,8 @@ class ConfKey(str, enum.Enum):
     INIT = "init"
     SAVE = "save"
     VERBOSE = "verbose"
+    VALIDATE = "validate"
+    STRICT = "strict"
 
     # Legacy / Alias Keys
     SOURCE = "source"  # Legacy for 'to'
@@ -127,13 +129,13 @@ class ConfKey(str, enum.Enum):
 
 def resolve_defaults(
     branch: str | MissingType,
-    path: str | MissingType,
+    path: str | None | MissingType,
     exclude: Iterable[str] | MissingType,
 ) -> tuple[str, str | None, Iterable[str]]:
     """Resolve MISSING sentinel values to their effective defaults.
 
-    This is the single source of truth for MISSING → default resolution across
-    the CLI and internal logic, keeping the layers in sync.
+    This is the single source of truth for MISSING → default resolution for
+    URL-related parameters (branch, path, exclude).
 
     Args:
         branch: The resolved branch value or ``MISSING``.
@@ -151,4 +153,40 @@ def resolve_defaults(
     # but explicit None is the canonical "root directory" sentinel.
     eff_path: str | None = raw_path or None
     eff_exclude = exclude if exclude is not MISSING else DEFAULT_EXCLUDE
+
     return eff_branch, eff_path, eff_exclude
+
+
+def apply_bool_precedence(
+    validate: bool | MissingType, strict: bool | MissingType
+) -> tuple[bool | MissingType, bool | MissingType]:
+    """Apply precedence rules for validate and strict flags.
+
+    1. Disabling validation implicitly disables strict mode.
+    2. Strict mode implicitly enables validation.
+    """
+    if validate is False:
+        strict = False
+    elif strict is True:
+        validate = True
+    return validate, strict
+
+
+def resolve_bool_flags(
+    validate: bool | MissingType = MISSING,
+    strict: bool | MissingType = MISSING,
+    pre_commit: bool | MissingType = MISSING,
+) -> tuple[bool, bool, bool]:
+    """Resolve MISSING sentinel values for boolean execution flags.
+
+    Returns:
+        A ``(validate, strict, pre_commit)`` tuple with defaults applied.
+        ``strict=True`` implicitly enables ``validate``.
+    """
+    validate, strict = apply_bool_precedence(validate, strict)
+
+    eff_validate = validate if validate is not MISSING else False
+    eff_strict = strict if strict is not MISSING else False
+    eff_pre_commit = pre_commit if pre_commit is not MISSING else False
+
+    return eff_validate, eff_strict, eff_pre_commit

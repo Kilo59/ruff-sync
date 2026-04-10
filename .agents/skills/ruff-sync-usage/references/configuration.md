@@ -102,6 +102,29 @@ Requires a `- repo: https://github.com/astral-sh/ruff-pre-commit` entry in `.pre
 
 ---
 
+### `validate` *(default: `false`)*
+
+When `true`, `ruff-sync` validates the merged configuration by running it through Ruff before writing to disk. If Ruff rejects the config (e.g., due to an unknown key), the sync is aborted and the local file is left unchanged.
+
+```toml
+validate = true
+```
+
+> [!NOTE]
+> Validation requires `ruff` to be available on PATH. If `ruff` is not found, validation is skipped with a warning.
+
+---
+
+### `strict` *(default: `false`)*
+
+When `true`, all validation warnings (Python version mismatches, deprecated rules) are treated as hard failures. Implies `validate = true`.
+
+```toml
+strict = true
+```
+
+---
+
 ## Full Example
 
 ```toml
@@ -120,6 +143,7 @@ branch = "main"
 path = "ruff"
 to = "."
 pre-commit-version-sync = true
+validate = true
 ```
 
 ## CLI Overrides

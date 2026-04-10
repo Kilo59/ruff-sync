@@ -20,6 +20,7 @@
 * **📥 Efficient Git Support**: Shallow clones and sparse checkouts for fast extraction.
 * **🚀 Zero-Config Bootstrapping**: Use `--init` to scaffold a new project in one command.
 * **✅ CI Ready**: Built-in `check` command with semantic comparison logic.
+* **✅ Config Validation**: Optionally validate merged configs with Ruff before writing. Strict mode catches deprecated rules and Python version mismatches.
 * **🔗 Pre-commit Sync**: Automatically keep your `.pre-commit-config.yaml` Ruff hook version matched with your project's Ruff version.
 * **🦾 Agent Skill**: Includes a built-in AI skill to configure and troubleshoot your `ruff-sync` setup.
 

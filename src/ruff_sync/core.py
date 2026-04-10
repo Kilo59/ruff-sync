@@ -34,6 +34,7 @@ from ruff_sync.constants import (
     DEFAULT_BRANCH,
     DEFAULT_EXCLUDE,
     DEFAULT_PATH,
+    MISSING,
     ConfKey,
 )
 from ruff_sync.formatters import ResultFormatter, get_formatter
@@ -42,7 +43,7 @@ from ruff_sync.pre_commit import sync_pre_commit
 if TYPE_CHECKING:
     from tomlkit.container import Container
 
-    from ruff_sync.cli import Arguments
+    from ruff_sync.cli import Arguments, ExecutionArgs
 
 __all__: Final[list[str]] = [
     "Config",
@@ -123,6 +124,8 @@ class Config(TypedDict, total=False):
     init: bool
     pre_commit_version_sync: bool
     output_format: str
+    validate: bool
+    strict: bool
 
 
 def _resolve_upstream_target_path(path: str | None) -> str:
@@ -743,7 +746,7 @@ async def fetch_upstreams_concurrently(
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
-    args: Arguments,
+    args: ExecutionArgs,
     client: httpx.AsyncClient,
 ) -> TOMLDocument:
     """Fetch and merge all upstreams into the target document.
@@ -751,10 +754,8 @@ async def _merge_multiple_upstreams(
     Downloads are performed concurrently via fetch_upstreams_concurrently,
     while merging remains sequential to preserve layering order.
     """
-    branch, path, exclude = args.branch, args.path, args.exclude
-
     fetch_results = await fetch_upstreams_concurrently(
-        args.upstream, client, branch=branch, path=path
+        args.upstream, client, branch=args.branch, path=args.path
     )
 
     # Sequentially merge the results in the original order
@@ -767,7 +768,7 @@ async def _merge_multiple_upstreams(
             fetch_result.buffer.read(),
             is_ruff_toml=is_upstream_ruff_toml,
             create_if_missing=False,
-            exclude=exclude,
+            exclude=args.exclude,
         )
 
         target_doc = merge_ruff_toml(
@@ -804,14 +805,14 @@ def _print_diff(
     fmt.diff("".join(diff))
 
 
-def _check_pre_commit_sync(args: Arguments, fmt: ResultFormatter) -> int | None:
+def _check_pre_commit_sync(pre_commit: bool, fmt: ResultFormatter) -> int | None:
     """Return exit code 3 if pre-commit hook version is out of sync, otherwise None.
 
     Shared helper to avoid duplicating the pre-commit synchronization logic.
     Exit code 3 is reserved for pre-commit hook drift to avoid collision with
     argparse (2) and config drift (1).
     """
-    if getattr(args, "pre_commit", False) and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
+    if pre_commit and not sync_pre_commit(pathlib.Path.cwd(), dry_run=True):
         repo_root = pathlib.Path.cwd()
         pre_commit_config = repo_root / ".pre-commit-config.yaml"
         file_path = pre_commit_config if pre_commit_config.exists() else repo_root
@@ -944,6 +945,9 @@ async def check(
         ... )
         >>> # asyncio.run(check(args))
     """
+    # Resolve defaults for execution logic
+    exec_args = args.resolve()
+
     output_format = args.output_format
     fmt: ResultFormatter = get_formatter(output_format)
     try:
@@ -970,7 +974,7 @@ async def check(
             merged_doc = await _merge_multiple_upstreams(
                 merged_doc,
                 is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-                args=args,
+                args=exec_args,
                 client=client,
             )
 
@@ -991,13 +995,13 @@ async def check(
 
             if source_val == merged_val:
                 fmt.success("✅ Ruff configuration is semantically in sync.")
-                exit_code = _check_pre_commit_sync(args, fmt)
+                exit_code = _check_pre_commit_sync(exec_args.pre_commit, fmt)
                 if exit_code is not None:
                     return exit_code
                 return 0
         elif source_doc.as_string() == merged_doc.as_string():
             fmt.success("✅ Ruff configuration is in sync.")
-            exit_code = _check_pre_commit_sync(args, fmt)
+            exit_code = _check_pre_commit_sync(exec_args.pre_commit, fmt)
             if exit_code is not None:
                 return exit_code
             return 0
@@ -1096,8 +1100,15 @@ def serialize_ruff_sync_config(doc: TOMLDocument, args: Arguments) -> None:
     if args.path != DEFAULT_PATH and args.path is not None:
         ruff_sync_table[ConfKey.PATH] = args.path
 
-    if args.pre_commit:
-        ruff_sync_table[ConfKey.PRE_COMMIT_VERSION_SYNC] = args.pre_commit
+    # Simple boolean flags
+    for key, attr in [
+        (ConfKey.PRE_COMMIT_VERSION_SYNC, "pre_commit"),
+        (ConfKey.VALIDATE, "validate"),
+        (ConfKey.STRICT, "strict"),
+    ]:
+        val = getattr(args, attr, MISSING)
+        if val is not MISSING:
+            ruff_sync_table[key] = val
 
 
 async def pull(
@@ -1122,6 +1133,9 @@ async def pull(
         ... )
         >>> # asyncio.run(pull(args))
     """
+    # Resolve defaults for execution logic
+    exec_args = args.resolve()
+
     output_format = args.output_format
     fmt = get_formatter(output_format)
     try:
@@ -1154,17 +1168,20 @@ async def pull(
             source_doc = await _merge_multiple_upstreams(
                 source_doc,
                 is_target_ruff_toml=is_ruff_toml_file(_source_toml_path.name),
-                args=args,
+                args=exec_args,
                 client=client,
             )
 
         # Validation is opt-in — only run if --validate (or --strict) was passed
-        if args.validate:
+        if exec_args.validate:
             from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
 
             is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
             if not validate_merged_config(
-                source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict, exclude=args.exclude
+                source_doc,
+                is_ruff_toml=is_ruff_toml,
+                strict=exec_args.strict,
+                exclude=exec_args.exclude,
             ):
                 fmt.error(
                     "❌ Merged config failed validation. Local file left unchanged.",
@@ -1190,7 +1207,7 @@ async def pull(
             rel_path = _source_toml_path.resolve()
         fmt.success(f"✅ Updated {rel_path}")
 
-        if args.pre_commit:
+        if exec_args.pre_commit:
             sync_pre_commit(pathlib.Path.cwd(), dry_run=False)
 
         return 0
