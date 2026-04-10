@@ -2158,6 +2158,10 @@ See <a href="../best-practices/#use-strategic-exclusions">Strategic Exclusions</
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[tool.ruff-sync]</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;target-version&quot;</span><span class="p">]</span>
 </span></code></pre></div>
+<blockquote>
+<p>[!NOTE]
+Excluding <code>target-version</code> also automatically skips the Python version consistency check otherwise performed during <code>--validate</code> or <code>--strict</code> runs.</p>
+</blockquote>
 <h4 id="sequential-merging-of-multiple-sources">Sequential merging of multiple sources<a class="headerlink" href="#sequential-merging-of-multiple-sources" title="Permanent link">&para;</a></h4>
 <p>You can specify multiple upstream sources as a list. They will be merged in order—from top to bottom—with later sources overriding or extending earlier ones.</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[tool.ruff-sync]</span>

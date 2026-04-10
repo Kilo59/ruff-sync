@@ -2264,10 +2264,12 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ruff-sync<span class="w"> </span>--validate
 </span></code></pre></div>
 <p>If Ruff rejects the merged config (e.g., because the upstream introduced an unknown key), the sync is aborted and your local file is left untouched.</p>
-<p>For stricter enforcement, use <code>--strict</code>. This upgrades any validation <em>warnings</em> — such as a Python version mismatch between <code>[tool.ruff] target-version</code> and <code>[project] requires-python</code> — into hard failures:</p>
+<p>For stricter enforcement, use <code>--strict</code>. This upgrades any validation <em>warnings</em> into hard failures. This includes a <strong>Python version consistency check</strong> that compares the upstream <code>[tool.ruff] target-version</code> against your local <code>[project] requires-python</code>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ruff-sync<span class="w"> </span>--strict
 </span></code></pre></div>
 <blockquote>
+<p>[!TIP]
+If you intentionally manage your Python version locally and it differs from the upstream, you can add <code>target-version</code> to your <code>exclude</code> list. <code>ruff-sync</code> will then skip the consistency check and log a warning explaining why.</p>
 <p>[!NOTE]
 <code>--strict</code> implies <code>--validate</code>. You do not need to pass both flags.</p>
 <p>Validation is <strong>opt-in</strong> and off by default. It requires <code>ruff</code> to be available on <code>PATH</code>. If <code>ruff</code> is not found, validation is skipped with a warning rather than blocking the sync.</p>
