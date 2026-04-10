@@ -296,6 +296,24 @@ def _get_cli_parser() -> ArgumentParser:
         default=None,
         help="Format for output. Default: text (auto-detected in CI).",
     )
+    common_parser.add_argument(
+        "--validate",
+        action="store_true",
+        default=False,
+        help=(
+            "Validate the merged config with Ruff before writing to disk. "
+            "Aborts if Ruff rejects the config. Off by default."
+        ),
+    )
+    common_parser.add_argument(
+        "--strict",
+        action="store_true",
+        default=False,
+        help=(
+            "Treat all validation warnings as hard failures. Implies --validate. "
+            "Aborts if any version mismatch or deprecated rule is detected."
+        ),
+    )
 
     # Pull subcommand (the default action)
     pull_parser = subparsers.add_parser(
@@ -313,24 +331,6 @@ def _get_cli_parser() -> ArgumentParser:
         action=BooleanOptionalAction,
         default=None,
         help="Save CLI arguments to [tool.ruff-sync] in pyproject.toml.",
-    )
-    pull_parser.add_argument(
-        "--validate",
-        action="store_true",
-        default=False,
-        help=(
-            "Validate the merged config with Ruff before writing to disk. "
-            "Aborts if Ruff rejects the config. Off by default."
-        ),
-    )
-    pull_parser.add_argument(
-        "--strict",
-        action="store_true",
-        default=False,
-        help=(
-            "Treat all validation warnings as hard failures. Implies --validate. "
-            "Aborts if any version mismatch or deprecated rule is detected."
-        ),
     )
 
     # Check subcommand
