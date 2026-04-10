@@ -38,10 +38,13 @@ def _requires_python_min_version(requires_python: str) -> tuple[int, int] | None
         '^3.11'  -> (3, 11)
         '~=3.9'  -> (3, 9)
     """
-    # Match the first version specifier of the form X.Y
-    m = re.search(r"(\d+)\.(\d+)", requires_python)
-    if m:
-        return int(m.group(1)), int(m.group(2))
+    # TODO: Consider using packaging.specifiers.SpecifierSet optionally if available
+    # Match all version specifiers of the form X.Y
+    matches = re.findall(r"(\d+)\.(\d+)", requires_python)
+    if matches:
+        # Convert to list of (int, int) and return the minimum semantic version
+        versions = [(int(major), int(minor)) for major, minor in matches]
+        return min(versions)
     return None
 
 
@@ -60,7 +63,7 @@ def check_python_version_consistency(doc: TOMLDocument, strict: bool = False) ->
         ruff_section = doc.get("tool", {}).get("ruff", {})
         target_version = ruff_section.get("target-version")
         requires_python = doc.get("project", {}).get("requires-python")
-    except Exception:
+    except (AttributeError, TypeError):
         return True  # Don't crash on unexpected doc shapes
 
     if not target_version or not requires_python:
