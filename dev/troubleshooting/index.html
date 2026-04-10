@@ -882,6 +882,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#validation-failed-ruff-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation failed: ruff not found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-version-mismatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python version mismatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-rule-detected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated rule detected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multi-upstream-fetch-failures" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -947,6 +980,28 @@
     <span class="md-ellipsis">
       
         How do I automate this in CI?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-validate-require-ruff-to-be-installed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does --validate require ruff to be installed?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-does-strict-check-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does --strict check for?
       
     </span>
   </a>
@@ -1858,6 +1913,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#validation-failed-ruff-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation failed: ruff not found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-version-mismatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python version mismatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-rule-detected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated rule detected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#multi-upstream-fetch-failures" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1923,6 +2011,28 @@
     <span class="md-ellipsis">
       
         How do I automate this in CI?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-validate-require-ruff-to-be-installed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does --validate require ruff to be installed?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-does-strict-check-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does --strict check for?
       
     </span>
   </a>
@@ -2020,6 +2130,28 @@ The <code>check</code> command expects a local <code>pyproject.toml</code>, <cod
 Use the <code>--exclude</code> flag to keep your local settings:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ruff-sync<span class="w"> </span>--exclude<span class="w"> </span>lint.line-length
 </span></code></pre></div>
+<h3 id="validation-failed-ruff-not-found">Validation failed: <code>ruff</code> not found<a class="headerlink" href="#validation-failed-ruff-not-found" title="Permanent link">&para;</a></h3>
+<p><strong>Warning</strong>: <code>⚠️  \</code>ruff` not found on PATH — skipping Ruff config validation.`</p>
+<p><strong>Solution</strong>: This is a soft warning, not a failure. If you explicitly want validation, ensure <code>ruff</code> is installed and available on your PATH. If using <code>uv</code>, run <code>uv pip install ruff</code> or add it to your project's dependencies.</p>
+<h3 id="python-version-mismatch">Python version mismatch<a class="headerlink" href="#python-version-mismatch" title="Permanent link">&para;</a></h3>
+<p><strong>Warning</strong>: <code>⚠️  Version mismatch: upstream [tool.ruff] target-version='py39'...</code></p>
+<p><strong>Solution</strong>:
+This means the upstream configuration targets a different Python version than your project's <code>requires-python</code>. You have three options:</p>
+<ol>
+<li><strong>Update upstream</strong>: Coordinate with your team to update the upstream <code>target-version</code>.</li>
+<li><strong>Exclude the key</strong>: Add <code>target-version</code> to your <code>exclude</code> list to manage it locally.</li>
+<li><strong>Ignore the warning</strong>: In non-strict mode, this is informational only and does not block the sync.</li>
+</ol>
+<p>In <code>--strict</code> mode, this warning becomes a hard failure. See the <a href="../usage/#validating-before-writing">Usage Guide</a> for details.</p>
+<h3 id="deprecated-rule-detected">Deprecated rule detected<a class="headerlink" href="#deprecated-rule-detected" title="Permanent link">&para;</a></h3>
+<p><strong>Warning</strong>: <code>⚠️  Upstream config uses deprecated rule 'XXX'...</code></p>
+<p><strong>Solution</strong>:
+The upstream configuration references a Ruff rule that has been deprecated. This often happens when the upstream hasn't been updated after a Ruff version bump.</p>
+<ol>
+<li><strong>Update upstream</strong>: Replace the deprecated rule with its successor in the upstream config.</li>
+<li><strong>Ignore the warning</strong>: In non-strict mode, deprecated rules are informational warnings only.</li>
+</ol>
+<p>In <code>--strict</code> mode, deprecated rules cause a hard failure.</p>
 <h3 id="multi-upstream-fetch-failures">Multi-upstream Fetch Failures<a class="headerlink" href="#multi-upstream-fetch-failures" title="Permanent link">&para;</a></h3>
 <p><strong>Error</strong>: <code>❌ &lt;N&gt; upstream fetches failed</code></p>
 <p>This happens when one or more of the specified upstream URLs cannot be reached, do not exist, or return an error (e.g., 404 or 403). <code>ruff-sync</code> fetches all upstreams concurrently for speed, but requires ALL of them to succeed before it will attempt to merge.</p>
@@ -2041,6 +2173,15 @@ Use the git-clone alternative suggested in the error message:</p>
 <p>Yes, if you use a Git SSH URL (e.g., <code>git@github.com:org/repo.git</code>), <code>ruff-sync</code> will use your local SSH credentials to clone and extract the configuration.</p>
 <h3 id="how-do-i-automate-this-in-ci">How do I automate this in CI?<a class="headerlink" href="#how-do-i-automate-this-in-ci" title="Permanent link">&para;</a></h3>
 <p>See the <a href="../ci-integration/">CI Integration</a> guide for GitHub Actions and GitLab CI examples.</p>
+<h3 id="does-validate-require-ruff-to-be-installed">Does <code>--validate</code> require <code>ruff</code> to be installed?<a class="headerlink" href="#does-validate-require-ruff-to-be-installed" title="Permanent link">&para;</a></h3>
+<p>Yes, validation shells out to the <code>ruff</code> binary. If <code>ruff</code> is not on your <code>PATH</code>, validation is silently skipped with a warning. To use validation, ensure Ruff is installed (e.g., via <code>uv pip install ruff</code> or as a project dependency).</p>
+<h3 id="what-does-strict-check-for">What does <code>--strict</code> check for?<a class="headerlink" href="#what-does-strict-check-for" title="Permanent link">&para;</a></h3>
+<p>In addition to the basic config syntax validation from <code>--validate</code>, <code>--strict</code> upgrades the following warnings to hard failures:</p>
+<ol>
+<li><strong>Python version mismatch</strong>: The upstream <code>target-version</code> doesn't align with your local <code>requires-python</code>.</li>
+<li><strong>Deprecated Ruff rules</strong>: Any rule codes in <code>lint.select</code>, <code>lint.ignore</code>, <code>lint.extend-select</code>, <code>lint.extend-ignore</code>, or <code>lint.extend-fixable</code> that Ruff reports as deprecated.</li>
+<li><strong>Ruff stderr warnings</strong>: Any warning messages Ruff emits to stderr when parsing the config.</li>
+</ol>
 
 
 
