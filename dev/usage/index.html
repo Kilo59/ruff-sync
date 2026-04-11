@@ -2199,6 +2199,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <hr />
 <h2 id="common-workflows">🌟 Common Workflows<a class="headerlink" href="#common-workflows" title="Permanent link">&para;</a></h2>
 <h3 id="the-basic-sync">The Basic Sync<a class="headerlink" href="#the-basic-sync" title="Permanent link">&para;</a></h3>
+<p><img alt="Basic ruff-sync pull" src="../assets/recordings/pull_basic.gif" /></p>
 <p>If you want to pull rules from a central repository into your current project, run:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards
 </span></code></pre></div>
@@ -2223,6 +2224,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">]</span>
 </span></code></pre></div>
 <h3 id="initializing-a-new-project">Initializing a New Project<a class="headerlink" href="#initializing-a-new-project" title="Permanent link">&para;</a></h3>
+<p><img alt="Bootstrapping a new project with --init" src="../assets/recordings/init_project.gif" /></p>
 <p>If your local directory doesn't have a <code>pyproject.toml</code> yet, you can scaffold one:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ruff-sync<span class="w"> </span>https://github.com/my-org/standards<span class="w"> </span>--init
 </span></code></pre></div>
@@ -2267,6 +2269,7 @@ Looking for organization-wide setup advice? Check out our <a href="../best-pract
 <p>For stricter enforcement, use <code>--strict</code>. This upgrades any validation <em>warnings</em> into hard failures. This includes a <strong>Python version consistency check</strong> that compares the upstream <code>[tool.ruff] target-version</code> against your local <code>[project] requires-python</code>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ruff-sync<span class="w"> </span>--strict
 </span></code></pre></div>
+<p><img alt="Validating with --strict" src="../assets/recordings/validate_strict.gif" /></p>
 <blockquote>
 <p>[!TIP]
 If you intentionally manage your Python version locally and it differs from the upstream, you can add <code>target-version</code> to your <code>exclude</code> list. <code>ruff-sync</code> will then skip the consistency check and log a warning explaining why.</p>
@@ -2276,6 +2279,7 @@ If you intentionally manage your Python version locally and it differs from the 
 </blockquote>
 <hr />
 <h2 id="checking-for-drift">🔍 Checking for Drift<a class="headerlink" href="#checking-for-drift" title="Permanent link">&para;</a></h2>
+<p><img alt="Config drift detected" src="../assets/recordings/check_drift.gif" /></p>
 <p>To ensure your repository hasn't drifted from your organization's unified standards, use the <code>check</code> command. It compares your local config to the upstream and warns you of any divergence.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>https://github.com/my-org/standards
 </span></code></pre></div>

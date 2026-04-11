@@ -806,6 +806,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#config-in-sync-exit-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config in Sync (Exit 0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-drift-detected-exit-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Drift Detected (Exit 1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#github-actions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1873,6 +1895,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#config-in-sync-exit-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config in Sync (Exit 0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-drift-detected-exit-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Drift Detected (Exit 1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#github-actions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2149,6 +2193,10 @@
 <p><code>ruff-sync</code> is designed to be run in CI pipelines to ensure that all repositories in an organization stay in sync with the central standards.</p>
 <h2 id="usage-in-ci">Usage in CI<a class="headerlink" href="#usage-in-ci" title="Permanent link">&para;</a></h2>
 <p>The best way to use <code>ruff-sync</code> in CI is with the <code>check</code> command. If the configuration has drifted, <code>ruff-sync check</code> will exit with a non-zero code, failing the build.</p>
+<h3 id="config-in-sync-exit-0">Config in Sync (Exit 0)<a class="headerlink" href="#config-in-sync-exit-0" title="Permanent link">&para;</a></h3>
+<p><img alt="Config in sync" src="../assets/recordings/check_in_sync.gif" /></p>
+<h3 id="config-drift-detected-exit-1">Config Drift Detected (Exit 1)<a class="headerlink" href="#config-drift-detected-exit-1" title="Permanent link">&para;</a></h3>
+<p><img alt="Config drift detected" src="../assets/recordings/check_drift.gif" /></p>
 <h3 id="github-actions">GitHub Actions<a class="headerlink" href="#github-actions" title="Permanent link">&para;</a></h3>
 <p>We recommend using <code>uv</code> to run <code>ruff-sync</code> in GitHub Actions.</p>
 <h4 id="basic-check">Basic Check<a class="headerlink" href="#basic-check" title="Permanent link">&para;</a></h4>
