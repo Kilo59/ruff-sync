@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
+import sys
 from typing import TYPE_CHECKING
 
 import pytest
 import tomlkit
 from httpx import URL
+from pytest_codspeed import BenchmarkFixture
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
@@ -317,3 +320,29 @@ def test_bench_toml_parse_and_serialize(benchmark: BenchmarkFixture):
         return doc.as_string()
 
     benchmark(roundtrip)
+
+
+@pytest.mark.benchmark
+def test_cli_help_responsiveness(benchmark: BenchmarkFixture) -> None:
+    """
+    Measures the instruction count of the --help command, including module imports.
+    Should be as close to the base Python interpreter cost as possible.
+    """
+    sys.argv = ["ruff-sync", "--help"]
+
+    def run_cli() -> None:
+        # Clear module from cache to simulate cold start
+        for key in list(sys.modules.keys()):
+            if key == "ruff_sync" or key.startswith("ruff_sync."):
+                del sys.modules[key]
+
+        import ruff_sync.cli
+
+        with contextlib.suppress(SystemExit):
+            ruff_sync.cli.main()
+
+    benchmark(run_cli)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-vv"])
