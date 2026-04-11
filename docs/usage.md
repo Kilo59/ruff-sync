@@ -13,6 +13,8 @@ This guide covers common daily workflows, explains how `ruff-sync` merges config
 
 ### The Basic Sync
 
+![Basic ruff-sync pull](assets/recordings/pull_basic.gif)
+
 If you want to pull rules from a central repository into your current project, run:
 
 ```bash
@@ -55,6 +57,8 @@ upstream = [
 ```
 
 ### Initializing a New Project
+
+![Bootstrapping a new project with --init](assets/recordings/init_project.gif)
 
 If your local directory doesn't have a `pyproject.toml` yet, you can scaffold one:
 
@@ -128,6 +132,8 @@ For stricter enforcement, use `--strict`. This upgrades any validation *warnings
 ruff-sync --strict
 ```
 
+![Validating with --strict](assets/recordings/validate_strict.gif)
+
 > [!TIP]
 > If you intentionally manage your Python version locally and it differs from the upstream, you can add `target-version` to your `exclude` list. `ruff-sync` will then skip the consistency check and log a warning explaining why.
 
@@ -139,6 +145,8 @@ ruff-sync --strict
 ---
 
 ## 🔍 Checking for Drift
+
+![Config drift detected](assets/recordings/check_drift.gif)
 
 To ensure your repository hasn't drifted from your organization's unified standards, use the `check` command. It compares your local config to the upstream and warns you of any divergence.
 

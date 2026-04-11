@@ -10,6 +10,7 @@ https://docs.pyinvoke.org/en/stable/
 from __future__ import annotations
 
 import logging
+import os
 import pathlib
 from typing import TYPE_CHECKING, Final, Literal
 
@@ -242,3 +243,57 @@ def screenshots(ctx: Context) -> None:
     # Run the official generation script
     ctx.run("uv run python scripts/generate_tui_screenshots.py", echo=True, pty=True)
     print("✨ Documentation screenshots updated in docs/assets/screenshots/")
+
+
+@task(
+    help={
+        "tape": "Specific tape file to record (e.g. 'pull_basic'). Default: all tapes.",
+    },
+)
+def recordings(ctx: Context, tape: str | None = None) -> None:
+    """Regenerate CLI animation GIFs from VHS tape files."""
+    tapes_dir = pathlib.Path("tapes")
+    if not tapes_dir.exists():
+        print("❌ tapes/ directory not found. Run from the project root.")
+        raise Exit(code=1)
+
+    # Check VHS is installed
+    vhs_cmd = "vhs"
+    result = ctx.run("which vhs", hide=True, warn=True, pty=False, in_stream=False)
+    if not result.ok:
+        # Try common Homebrew paths
+        for p in ["/opt/homebrew/bin/vhs", "/usr/local/bin/vhs"]:
+            if pathlib.Path(p).exists():
+                vhs_cmd = p
+                break
+        else:
+            print("❌ VHS is not installed. Install with: brew install vhs")
+            raise Exit(code=1)
+
+    if tape:
+        tape_file = tapes_dir / f"{tape}.tape"
+        if not tape_file.exists():
+            print(f"❌ Tape file not found: {tape_file}")
+            raise Exit(code=1)
+        tape_files = [tape_file]
+    else:
+        # Process all tape files except _common.tape
+        tape_files = sorted(f for f in tapes_dir.glob("*.tape") if not f.name.startswith("_"))
+
+    if not tape_files:
+        print("⚠️ No tape files found in tapes/")
+        return
+
+    print(f"🎬 Recording {len(tape_files)} tape(s)...")
+    env = os.environ.copy()
+    homebrew_bin = "/opt/homebrew/bin:/usr/local/bin"
+    # Include .venv/bin to ensure ruff-sync is found
+    venv_bin = str(PROJECT_ROOT / ".venv" / "bin")
+    env["PATH"] = f"{venv_bin}:{homebrew_bin}:{env.get('PATH', '')}"
+
+    for tf in tape_files:
+        print(f"  📼 {tf.name}")
+        ctx.run(f"{vhs_cmd} {tf}", in_stream=False, env=env)
+
+    print("\n🎉 All recordings complete!")
+    print("   Output: docs/assets/recordings/")

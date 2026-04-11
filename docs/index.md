@@ -1,5 +1,7 @@
 ![ruff-sync banner](assets/ruff_sync_banner.png)
 
+![ruff-sync pull demo](assets/recordings/pull_basic.gif)
+
 # ruff-sync
 
 <div class="badges" style="display: flex; gap: 5px; margin-bottom: 20px;">
@@ -44,6 +46,8 @@ Internal "base" configurations or shared presets often fall out of sync, or requ
 ## 🏁 Quick Start
 
 ### 1. Initialize a new project (Optional)
+
+![Bootstrapping a new project with --init](assets/recordings/init_project.gif)
 
 If your local directory doesn't have a configuration file yet, you can fetch a standard and create one instantly using [uvx](https://docs.astral.sh/uv/guides/tools/#running-tools) (which installs and runs `ruff-sync` in one command):
 
