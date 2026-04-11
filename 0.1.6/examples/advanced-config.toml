@@ -1,0 +1,18 @@
+[tool.ruff-sync]
+# Merge multiple upstreams sequentially (last one wins)
+# Supports GitHub/GitLab web URLs, raw file URLs, and git:// or git+https:// URLs
+upstream = [
+    "https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink", # Base configuration profile
+    "https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi",      # Overrides with asyncio/web focus
+]
+# Keys that you want to manage strictly locally
+exclude = [
+    "lint.per-file-ignores", # Keep your local file-specific ignore lists
+    "lint.pydocstyle",       # Manage your own docstring conventions
+    "target-version",        # Do not override the local python target version
+]
+# Synchronize your .pre-commit-config.yaml with the upstream Ruff version
+pre-commit-version-sync = true
+
+# Validate merged config before writing (catches bad upstream changes)
+validate = true
