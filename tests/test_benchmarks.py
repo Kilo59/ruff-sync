@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import sys
-from typing import TYPE_CHECKING
-
 import pytest
 import tomlkit
 from httpx import URL
@@ -20,9 +18,6 @@ from ruff_sync.core import (
     merge_ruff_toml,
     resolve_raw_url,
 )
-
-if TYPE_CHECKING:
-    from pytest_codspeed import BenchmarkFixture
 
 pytestmark = pytest.mark.benchmark
 
@@ -322,7 +317,6 @@ def test_bench_toml_parse_and_serialize(benchmark: BenchmarkFixture):
     benchmark(roundtrip)
 
 
-@pytest.mark.benchmark
 def test_cli_help_responsiveness(benchmark: BenchmarkFixture) -> None:
     """
     Measures the instruction count of the --help command, including module imports.
