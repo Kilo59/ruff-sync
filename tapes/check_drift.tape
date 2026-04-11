@@ -13,11 +13,7 @@ Type "cp pyproject.toml pyproject.toml.bak"
 Enter
 Sleep 300ms
 # Remove a rule to simulate drift
-Type `python3 -c "
-t = open('pyproject.toml').read()
-t = t.replace('\"PERF\",\n', '')
-open('pyproject.toml', 'w').write(t)
-"`
+Type 'python3 -c "import pathlib; p = pathlib.Path(\"pyproject.toml\"); p.write_text(p.read_text().replace(\"    \\\"PERF\\\", # perflint - performance related rules\\n\", \"\"))"'
 Enter
 Sleep 500ms
 Show
@@ -28,7 +24,7 @@ Enter
 Sleep 4s
 
 # Show the exit code
-Type "echo \"Exit code: $?\""
+Type 'echo "Exit code: $?"'
 Enter
 Sleep 2s
 

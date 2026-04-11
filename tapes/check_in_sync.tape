@@ -13,7 +13,7 @@ Enter
 Sleep 4s
 
 # Confirm exit code
-Type "echo \"Exit code: $?\""
+Type 'echo "Exit code: $?"'
 Enter
 Sleep 2s
 
