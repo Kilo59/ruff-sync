@@ -21,6 +21,8 @@ from ruff_sync.core import (
 if TYPE_CHECKING:
     from pytest_codspeed import BenchmarkFixture
 
+pytestmark = pytest.mark.benchmark
+
 # ---------------------------------------------------------------------------
 # Fixtures: realistic TOML documents used across benchmarks
 # ---------------------------------------------------------------------------
@@ -168,28 +170,24 @@ docstring-code-line-length = 80
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.benchmark
 def test_bench_resolve_raw_url_github_repo(benchmark: BenchmarkFixture):
     """Benchmark resolving a GitHub repository URL to raw content."""
     url = URL("https://github.com/Kilo59/ruff-sync")
     benchmark(resolve_raw_url, url, branch="main", path=None)
 
 
-@pytest.mark.benchmark
 def test_bench_resolve_raw_url_github_blob(benchmark: BenchmarkFixture):
     """Benchmark resolving a GitHub blob URL."""
     url = URL("https://github.com/Kilo59/ruff-sync/blob/main/pyproject.toml")
     benchmark(resolve_raw_url, url, branch="main", path=None)
 
 
-@pytest.mark.benchmark
 def test_bench_resolve_raw_url_github_tree(benchmark: BenchmarkFixture):
     """Benchmark resolving a GitHub tree URL."""
     url = URL("https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink")
     benchmark(resolve_raw_url, url, branch="main", path=None)
 
 
-@pytest.mark.benchmark
 def test_bench_resolve_raw_url_gitlab(benchmark: BenchmarkFixture):
     """Benchmark resolving a GitLab URL."""
     url = URL("https://gitlab.com/my-org/my-repo")
@@ -201,19 +199,16 @@ def test_bench_resolve_raw_url_gitlab(benchmark: BenchmarkFixture):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.benchmark
 def test_bench_get_ruff_config_small(benchmark: BenchmarkFixture):
     """Benchmark extracting ruff config from a small pyproject.toml."""
     benchmark(get_ruff_config, SMALL_PYPROJECT, is_ruff_toml=False, exclude=())
 
 
-@pytest.mark.benchmark
 def test_bench_get_ruff_config_large(benchmark: BenchmarkFixture):
     """Benchmark extracting ruff config from a large pyproject.toml."""
     benchmark(get_ruff_config, LARGE_PYPROJECT, is_ruff_toml=False, exclude=())
 
 
-@pytest.mark.benchmark
 def test_bench_get_ruff_config_with_exclusions(benchmark: BenchmarkFixture):
     """Benchmark extracting ruff config with multiple exclusions."""
     exclusions = [
@@ -231,7 +226,6 @@ def test_bench_get_ruff_config_with_exclusions(benchmark: BenchmarkFixture):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.benchmark
 def test_bench_merge_ruff_toml_small(benchmark: BenchmarkFixture):
     """Benchmark merging a small config with upstream changes."""
     source = tomlkit.parse(SMALL_PYPROJECT)
@@ -239,7 +233,6 @@ def test_bench_merge_ruff_toml_small(benchmark: BenchmarkFixture):
     benchmark(merge_ruff_toml, source, upstream_ruff)
 
 
-@pytest.mark.benchmark
 def test_bench_merge_ruff_toml_large(benchmark: BenchmarkFixture):
     """Benchmark merging a large config with upstream changes."""
     source = tomlkit.parse(LARGE_PYPROJECT)
@@ -247,7 +240,6 @@ def test_bench_merge_ruff_toml_large(benchmark: BenchmarkFixture):
     benchmark(merge_ruff_toml, source, upstream_ruff)
 
 
-@pytest.mark.benchmark
 def test_bench_merge_with_exclusions(benchmark: BenchmarkFixture):
     """Benchmark merging with exclusions applied."""
     exclusions = ["target-version", "lint.per-file-ignores", "lint.ignore"]
@@ -261,7 +253,6 @@ def test_bench_merge_with_exclusions(benchmark: BenchmarkFixture):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.benchmark
 def test_bench_recursive_update(benchmark: BenchmarkFixture):
     """Benchmark the recursive update of nested TOML tables."""
     source = tomlkit.parse(LARGE_PYPROJECT)
@@ -283,7 +274,6 @@ def test_bench_recursive_update(benchmark: BenchmarkFixture):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.benchmark
 def test_bench_find_changed_keys_no_changes(benchmark: BenchmarkFixture):
     """Benchmark finding changed keys when configs are identical."""
     doc = tomlkit.parse(LARGE_PYPROJECT)
@@ -294,7 +284,6 @@ def test_bench_find_changed_keys_no_changes(benchmark: BenchmarkFixture):
     benchmark(_find_changed_keys, unwrapped, unwrapped)
 
 
-@pytest.mark.benchmark
 def test_bench_find_changed_keys_with_changes(benchmark: BenchmarkFixture):
     """Benchmark finding changed keys between differing configs."""
     source_doc = tomlkit.parse(LARGE_PYPROJECT)
@@ -320,7 +309,6 @@ def test_bench_find_changed_keys_with_changes(benchmark: BenchmarkFixture):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.benchmark
 def test_bench_toml_parse_and_serialize(benchmark: BenchmarkFixture):
     """Benchmark parsing and re-serializing a large TOML document."""
 
