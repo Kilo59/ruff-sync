@@ -251,3 +251,6 @@ include = ["src/ruff_sync/*.py"]
 
 [tool.pytest]
 log_level = "INFO"
+markers = [
+    "benchmark: marks performance benchmarks (run separately for CodSpeed)",
+]

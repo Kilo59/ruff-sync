@@ -3,7 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 import pytest
 from typing_extensions import override
@@ -38,7 +41,7 @@ class TestStreamHandler(logging.Handler):
 
 
 @pytest.fixture
-def configure_logging():
+def configure_logging() -> Generator[logging.Logger, None, None]:
     """Configure ruff_sync logger for tests to ensure capsys can capture log output."""
     logger = logging.getLogger("ruff_sync")
     old_handlers = logger.handlers[:]
@@ -62,7 +65,7 @@ def configure_logging():
 
 
 @pytest.fixture
-def clear_ruff_sync_caches():
+def clear_ruff_sync_caches() -> None:
     """Clear all lru_caches in ruff_sync."""
     ruff_sync.get_config.cache_clear()
     ruff_sync.Arguments.fields.cache_clear()
