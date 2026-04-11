@@ -1,6 +1,8 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/Kilo59/ruff-sync/main/docs/assets/ruff_sync_banner.png" alt="ruff-sync banner" style="max-width: 600px; width: 100%; height: auto; margin-bottom: 1rem;">
   <br>
+  <img src="https://raw.githubusercontent.com/Kilo59/ruff-sync/main/docs/assets/recordings/pull_basic.gif" alt="ruff-sync pull demo" style="max-width: 600px; width: 100%; height: auto;">
+  <br>
   <a href="https://kilo59.github.io/ruff-sync/"><img src="https://img.shields.io/badge/docs-MkDocs-blue.svg" alt="Documentation"></a>
   <a href="https://pypi.org/project/ruff-sync/"><img src="https://img.shields.io/pypi/v/ruff-sync" alt="PyPI version"></a>
   <a href="https://codecov.io/gh/Kilo59/ruff-sync"><img src="https://codecov.io/gh/Kilo59/ruff-sync/graph/badge.svg?token=kMZw0XtoFW" alt="codecov"></a>
@@ -281,6 +283,8 @@ Ensure your configuration is always in sync before every commit. Add this to you
 See the [Pre-commit Guide](https://kilo59.github.io/ruff-sync/stable/pre-commit/) for more details.
 
 ## CI Integration
+
+![ruff-sync check detecting drift](docs/assets/recordings/check_drift.gif)
 
 The `check` command is designed for use in CI pipelines. Add it as a step to catch config drift before it merges. See the [CI Integration Guide](https://kilo59.github.io/ruff-sync/stable/ci-integration/) for more details.
 

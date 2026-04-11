@@ -6,6 +6,12 @@
 
 The best way to use `ruff-sync` in CI is with the `check` command. If the configuration has drifted, `ruff-sync check` will exit with a non-zero code, failing the build.
 
+### Config in Sync (Exit 0)
+![Config in sync](assets/recordings/check_in_sync.gif)
+
+### Config Drift Detected (Exit 1)
+![Config drift detected](assets/recordings/check_drift.gif)
+
 ### GitHub Actions
 
 We recommend using `uv` to run `ruff-sync` in GitHub Actions.

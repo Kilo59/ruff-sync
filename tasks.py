@@ -252,8 +252,6 @@ def screenshots(ctx: Context) -> None:
 )
 def recordings(ctx: Context, tape: str | None = None) -> None:
     """Regenerate CLI animation GIFs from VHS tape files."""
-    import pathlib
-
     tapes_dir = pathlib.Path("tapes")
     if not tapes_dir.exists():
         print("❌ tapes/ directory not found. Run from the project root.")
@@ -289,7 +287,9 @@ def recordings(ctx: Context, tape: str | None = None) -> None:
     print(f"🎬 Recording {len(tape_files)} tape(s)...")
     env = os.environ.copy()
     homebrew_bin = "/opt/homebrew/bin:/usr/local/bin"
-    env["PATH"] = f"{homebrew_bin}:{env.get('PATH', '')}"
+    # Include .venv/bin to ensure ruff-sync is found
+    venv_bin = str(PROJECT_ROOT / ".venv" / "bin")
+    env["PATH"] = f"{venv_bin}:{homebrew_bin}:{env.get('PATH', '')}"
 
     for tf in tape_files:
         print(f"  📼 {tf.name}")
