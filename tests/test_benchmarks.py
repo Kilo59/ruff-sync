@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import contextlib
+import subprocess
 import sys
+
 import pytest
 import tomlkit
 from httpx import URL
@@ -264,7 +265,7 @@ def test_bench_recursive_update(benchmark: BenchmarkFixture):
     source_ruff = source_tool["ruff"]
     upstream_ruff = upstream_tool["ruff"]
 
-    benchmark(_recursive_update, source_ruff, upstream_ruff)
+    benchmark(_recursive_update, source_ruff, upstream_ruff)  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------------------
@@ -319,21 +320,16 @@ def test_bench_toml_parse_and_serialize(benchmark: BenchmarkFixture):
 
 def test_cli_help_responsiveness(benchmark: BenchmarkFixture) -> None:
     """
-    Measures the instruction count of the --help command, including module imports.
-    Should be as close to the base Python interpreter cost as possible.
+    Measures the instruction count/performance of the --help command via subprocess.
+    Using a subprocess ensures a clean environment and avoids polluting sys.modules.
     """
-    sys.argv = ["ruff-sync", "--help"]
 
     def run_cli() -> None:
-        # Clear module from cache to simulate cold start
-        for key in list(sys.modules.keys()):
-            if key == "ruff_sync" or key.startswith("ruff_sync."):
-                del sys.modules[key]
-
-        import ruff_sync.cli
-
-        with contextlib.suppress(SystemExit):
-            ruff_sync.cli.main()
+        subprocess.run(
+            [sys.executable, "-m", "ruff_sync", "--help"],
+            capture_output=True,
+            check=True,
+        )
 
     benchmark(run_cli)
 
