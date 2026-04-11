@@ -5,13 +5,13 @@
 
 # ── Terminal appearance ──────────────────────────────────────────
 Set Shell "bash"
-Set FontFamily "JetBrains Mono"
-Set FontSize 16
+Set FontFamily "Menlo"
+Set FontSize 22
 Set Width 1200
-Set Height 600
-Set LetterSpacing 1
-Set LineHeight 1.2
-Set Padding 20
+Set Height 750
+Set LetterSpacing 0
+Set LineHeight 1.1
+Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # ── Typing behavior ─────────────────────────────────────────────
