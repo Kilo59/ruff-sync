@@ -39,6 +39,16 @@ By rewriting `"tests/**/*.py"` into `"**/*.py"`, the rules maintain their exact 
 
 ## Task Breakdown
 
+### Task 0: Support Local File Upstreams (Complexity: 2/5 - Low)
+*Prerequisite for the iterative DX workflow.*
+
+**File to modify:** `src/ruff_sync/core.py`
+**Goal:** Allow `ruff-sync` to fetch from a local `pyproject.toml` instead of requiring a network URL. This allows users to iteratively tweak their local root config and sync it down to standalone sub-configs without re-fetching from a remote source.
+**Implementation details:**
+1. In `fetch_upstream_config`, check if `url.scheme` is empty or `"file"`.
+2. If it is a local path, read the file directly using `pathlib.Path(url.path).read_text()` and return it as a `FetchResult` with a `StringIO` buffer.
+3. Handle `FileNotFoundError` gracefully.
+
 ### Task 1: Add `--standalone` Config and CLI Flag (Complexity: 2/5 - Low)
 *Basic CLI and type definitions update.*
 
