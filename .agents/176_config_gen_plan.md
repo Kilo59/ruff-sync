@@ -1,11 +1,24 @@
-# Implementation Guide: Subdirectory Config Generation (Issue #176)
+# Implementation Guide: Standalone Subdirectory Generation (Issue #176)
 
-This document is designed to guide an AI agent through implementing "Option B: Standalone Subdirectory Config Generation". It breaks the feature down into isolated, sequential tasks, each assigned a complexity score so you can decide which agent model to deploy for which step.
+This document guides an AI agent through implementing the Standalone Subdirectory Config Generation feature in `ruff-sync`. It outlines the core user story, the technical problem, and breaks the implementation down into isolated, sequential tasks with complexity scores.
 
-## Feature Overview & DX (Opt-in)
-Generating a standalone config involves "magic" (rewriting glob paths and stripping `extend`). To ensure a predictable Developer Experience (DX) and avoid surprising users, this feature must be strictly **opt-in**.
+---
 
-Users must explicitly pass a `--standalone` flag (or `standalone = true` in config) when syncing to a subdirectory to trigger the path-rewriting and isolation logic. Without this flag, `ruff-sync` should behave exactly as it does today (syncing the upstream configuration verbatim).
+## The User Story
+
+**As a maintainer of a multi-package repository or an organization standardizing linting,**
+**I want** to use `ruff-sync` to automatically generate self-contained, standalone `ruff.toml` configurations for specific subdirectories (like `tests/` or `backend/`) from a single central upstream config,
+**So that** I can isolate configurations, override global ignores, and provide developers with a single explicit source of truth that works flawlessly in their IDEs, without wrestling with complex `extend` inheritance chains.
+
+### The Problem Context
+When subdirectories need different linting rules (e.g., relaxing `max-args` in `tests/`), users currently have two bad options:
+1. **Use Ruff's native `extend`**: This inherits from the root `pyproject.toml`. However, `extend` cannot "un-ignore" rules defined by a parent, plugin configurations can leak into directories where they don't belong, and IDEs often fail to resolve parent configs if a developer opens the subdirectory as their workspace root.
+2. **Generate a manual sub-config**: If a user tries to create a standalone config by explicitly copying their root configuration into `tests/ruff.toml`, the `per-file-ignores` paths break. Ruff evaluates paths relative to the config file they are defined in. If the root config had `"tests/**/*.py" = ["S101"]`, copying that verbatim into `tests/ruff.toml` causes Ruff to look for `tests/tests/**/*.py`, matching nothing.
+
+### The Solution: The `--standalone` Flag
+We are introducing the `--standalone` flag. When a user runs `ruff-sync --to tests/ruff.toml --standalone`, the tool acts as a **configuration compiler**. It takes the upstream config, explicitly strips out any `extend` keys to guarantee isolation, and intelligently rewrites glob patterns (e.g., transforming `"tests/**/*.py"` to `"**/*.py"`) so the resulting config works perfectly on its own.
+
+*Because this path-rewriting behavior is "magic" and alters the literal text of the upstream config, it is strictly opt-in via the flag to maintain predictable default behavior.*
 
 ---
 
@@ -95,10 +108,3 @@ Users must explicitly pass a `--standalone` flag (or `standalone = true` in conf
 
 - **Use a basic/faster model** for **Task 1**, **Task 3**, **Task 5**, and **Task 6**. These require straightforward syntax implementation, basic assertions, and scaffolding based on existing patterns.
 - **Use an advanced reasoning model** for **Task 2** and **Task 4**. Modifying `tomlkit` proxy tables safely without breaking formatting, and correctly hooking into the recursive merge pipeline without causing regressions, requires deep contextual awareness.
-
-## User Review Required
-
-> [!IMPORTANT]
-> The `--standalone` flag allows users to opt-in to this feature explicitly. Does this approach satisfy your requirements for maintaining a predictable DX?
-
-Please review and approve this updated plan to finalize the handover documentation!
