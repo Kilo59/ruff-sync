@@ -10,15 +10,29 @@ This document guides an AI agent through implementing the Standalone Subdirector
 **I want** to use `ruff-sync` to automatically generate self-contained, standalone `ruff.toml` configurations for specific subdirectories (like `tests/` or `backend/`) from a single central upstream config,
 **So that** I can isolate configurations, override global ignores, and provide developers with a single explicit source of truth that works flawlessly in their IDEs, without wrestling with complex `extend` inheritance chains.
 
-### The Problem Context
-When subdirectories need different linting rules (e.g., relaxing `max-args` in `tests/`), users currently have two bad options:
-1. **Use Ruff's native `extend`**: This inherits from the root `pyproject.toml`. However, `extend` cannot "un-ignore" rules defined by a parent, plugin configurations can leak into directories where they don't belong, and IDEs often fail to resolve parent configs if a developer opens the subdirectory as their workspace root.
-2. **Generate a manual sub-config**: If a user tries to create a standalone config by explicitly copying their root configuration into `tests/ruff.toml`, the `per-file-ignores` paths break. Ruff evaluates paths relative to the config file they are defined in. If the root config had `"tests/**/*.py" = ["S101"]`, copying that verbatim into `tests/ruff.toml` causes Ruff to look for `tests/tests/**/*.py`, matching nothing.
+### What The Feature Actually Does (Before & After)
 
-### The Solution: The `--standalone` Flag
-We are introducing the `--standalone` flag. When a user runs `ruff-sync --to tests/ruff.toml --standalone`, the tool acts as a **configuration compiler**. It takes the upstream config, explicitly strips out any `extend` keys to guarantee isolation, and intelligently rewrites glob patterns (e.g., transforming `"tests/**/*.py"` to `"**/*.py"`) so the resulting config works perfectly on its own.
+When the `--standalone` flag is passed (e.g., `ruff-sync --to tests/ruff.toml --standalone`), the tool acts as a **configuration compiler**. It takes the upstream config and "projects" it for the target subdirectory by filtering out irrelevant rules, rewriting glob paths so they remain valid, and stripping `extend` inheritance.
 
-*Because this path-rewriting behavior is "magic" and alters the literal text of the upstream config, it is strictly opt-in via the flag to maintain predictable default behavior.*
+**The Upstream Config (`https://.../pyproject.toml`):**
+```toml
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["T201", "S101"]
+"scripts/**/*.py" = ["T201"]
+"**/*.py" = ["D100"]
+```
+
+**The Generated Standalone Config (`tests/ruff.toml`):**
+```toml
+[lint.per-file-ignores]
+"**/*.py" = ["T201", "S101"]  # Note: The "tests/" prefix was intelligently stripped
+"**/*.py" = ["D100"]          # Global rules are kept as-is
+
+# Note: The "scripts/**/*.py" rules were completely discarded because they don't apply here.
+# Note: No `extend = "../pyproject.toml"` exists here. It is fully self-contained.
+```
+
+By rewriting `"tests/**/*.py"` into `"**/*.py"`, the rules maintain their exact semantic meaning within the context of the `tests/` directory, preventing the `"tests/tests/**/*.py"` path resolution bug from ever occurring.
 
 ---
 
@@ -39,7 +53,7 @@ We are introducing the `--standalone` flag. When a user runs `ruff-sync --to tes
 *Requires careful handling of `tomlkit` proxy objects and string manipulation.*
 
 **File to modify:** `src/ruff_sync/core.py`
-**Goal:** Create a pure, isolated function to handle the logic of glob rewriting.
+**Goal:** Create a pure, isolated function to handle the logic of glob rewriting shown in the "Before & After" example.
 **Implementation details:**
 1. Define a function: `def _rewrite_per_file_ignores(per_file_ignores: tomlkit.items.Table, rel_dir: str) -> tomlkit.items.Table:`
 2. Create a fresh `tomlkit.table()` to hold the updated rules.
@@ -56,15 +70,9 @@ We are introducing the `--standalone` flag. When a user runs `ruff-sync --to tes
 **File to modify:** `tests/test_toml_operations.py` (or create a new test file)
 **Goal:** Validate the pure function from Task 2.
 **Implementation details:**
-1. Create a mock `tomlkit.table()` with the following keys:
-   - `"tests/**/*.py" = ["T201"]`
-   - `"**/*.py" = ["D100"]`
-   - `"scripts/utils.py" = ["S101"]`
+1. Create a mock `tomlkit.table()` mimicking the "Before" example above.
 2. Pass it to `_rewrite_per_file_ignores` with `rel_dir="tests"`.
-3. Assert that the resulting table contains:
-   - `"**/*.py" = ["T201"]` (Prefix stripped)
-   - `"**/*.py" = ["D100"]` (Global kept)
-   - The `"scripts/utils.py"` key is completely absent.
+3. Assert that the resulting table matches the "After" example exactly.
 
 ### Task 4: Intercept and Rewrite During Sync (Complexity: 4/5 - High)
 *Requires understanding the flow of the `sync_config` / `_merge_multiple_upstreams` pipeline.*
