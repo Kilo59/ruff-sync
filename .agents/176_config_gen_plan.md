@@ -10,9 +10,10 @@ This document guides an AI agent through implementing the Standalone Subdirector
 **I want** to use `ruff-sync` to automatically generate self-contained, standalone `ruff.toml` configurations for specific subdirectories (like `tests/` or `backend/`) from a single central upstream config,
 **So that** I can isolate configurations, override global ignores, and provide developers with a single explicit source of truth that works flawlessly in their IDEs, without wrestling with complex `extend` inheritance chains.
 
-### What The Feature Actually Does (Before & After)
+### The Solution: The `--standalone` Flag
+We are introducing the `--standalone` flag. When a user runs `ruff-sync --to tests/ruff.toml --standalone`, the tool acts as a **configuration compiler**. It takes the upstream config and "projects" it for the target subdirectory by filtering out irrelevant rules, rewriting glob paths so they remain valid, and stripping `extend` inheritance.
 
-When the `--standalone` flag is passed (e.g., `ruff-sync --to tests/ruff.toml --standalone`), the tool acts as a **configuration compiler**. It takes the upstream config and "projects" it for the target subdirectory by filtering out irrelevant rules, rewriting glob paths so they remain valid, and stripping `extend` inheritance.
+**Crucially, this is a fully self-contained duplication, not just an overrides file.** `ruff-sync`'s primary job is to sync the *entire* `[tool.ruff]` configuration (`select`, `ignore`, `line-length`, plugins, etc.) from the upstream source. When it generates `tests/ruff.toml`, it writes all of those global settings directly into the file. Because the new file physically contains the full rule selection, it does not *need* to inherit from `pyproject.toml` at runtime. Stripping `extend` is completely safe and desirable because the generated config is already a complete, hermetic replica.
 
 **The Upstream Config (`https://.../pyproject.toml`):**
 ```toml
