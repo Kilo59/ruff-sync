@@ -1,17 +1,28 @@
 # Implementation Guide: Subdirectory Config Generation (Issue #176)
 
-This document is designed to guide an AI agent through implementing "Option B: Subdirectory Config Generation". It breaks the feature down into isolated, sequential tasks, each assigned a complexity score so you can decide which agent model to deploy for which step.
+This document is designed to guide an AI agent through implementing "Option B: Standalone Subdirectory Config Generation". It breaks the feature down into isolated, sequential tasks, each assigned a complexity score so you can decide which agent model to deploy for which step.
 
-## Feature Overview
-When `ruff-sync` runs with `--to <subdirectory>/ruff.toml` (e.g., `tests/ruff.toml`), it must generate a **standalone, self-contained configuration** rather than relying on `extend = "../pyproject.toml"`. 
+## Feature Overview & DX (Opt-in)
+Generating a standalone config involves "magic" (rewriting glob paths and stripping `extend`). To ensure a predictable Developer Experience (DX) and avoid surprising users, this feature must be strictly **opt-in**.
 
-To do this successfully without breaking existing ignore rules, the agent must intercept the upstream configuration before merging, and rewrite the `per-file-ignores` glob patterns so they are relative to the new target directory. It must also strip out any `extend` keys to enforce isolation.
+Users must explicitly pass a `--standalone` flag (or `standalone = true` in config) when syncing to a subdirectory to trigger the path-rewriting and isolation logic. Without this flag, `ruff-sync` should behave exactly as it does today (syncing the upstream configuration verbatim).
 
 ---
 
 ## Task Breakdown
 
-### Task 1: Create the Path Rewriting Utility (Complexity: 4/5 - High)
+### Task 1: Add `--standalone` Config and CLI Flag (Complexity: 2/5 - Low)
+*Basic CLI and type definitions update.*
+
+**Files to modify:** `src/ruff_sync/cli.py`, `src/ruff_sync/constants.py`, `src/ruff_sync/core.py`
+**Goal:** Expose the `standalone` option to the user.
+**Implementation details:**
+1. Update `Config` TypedDict in `core.py` to include `standalone: bool`.
+2. Update `ExecutionArgs` and `Arguments` classes in `cli.py` to include `standalone: bool`.
+3. Add a `--standalone` boolean flag to the argparse configuration in `cli.py`.
+4. Ensure the flag value is correctly parsed and merged into the `ExecutionArgs` passed down to the core logic.
+
+### Task 2: Create the Path Rewriting Utility (Complexity: 4/5 - High)
 *Requires careful handling of `tomlkit` proxy objects and string manipulation.*
 
 **File to modify:** `src/ruff_sync/core.py`
@@ -26,11 +37,11 @@ To do this successfully without breaking existing ignore rules, the agent must i
    - **Irrelevant Match:** If the key starts with a *different* directory prefix (e.g., `"scripts/**/*.py"` when `rel_dir="tests"`), **discard it**. Do not add it to the new table.
 5. Return the newly constructed table.
 
-### Task 2: Unit Test the Rewriting Utility (Complexity: 2/5 - Low)
+### Task 3: Unit Test the Rewriting Utility (Complexity: 2/5 - Low)
 *Great task for a basic coding agent.*
 
 **File to modify:** `tests/test_toml_operations.py` (or create a new test file)
-**Goal:** Validate the pure function from Task 1.
+**Goal:** Validate the pure function from Task 2.
 **Implementation details:**
 1. Create a mock `tomlkit.table()` with the following keys:
    - `"tests/**/*.py" = ["T201"]`
@@ -42,46 +53,52 @@ To do this successfully without breaking existing ignore rules, the agent must i
    - `"**/*.py" = ["D100"]` (Global kept)
    - The `"scripts/utils.py"` key is completely absent.
 
-### Task 3: Intercept and Rewrite During Sync (Complexity: 4/5 - High)
+### Task 4: Intercept and Rewrite During Sync (Complexity: 4/5 - High)
 *Requires understanding the flow of the `sync_config` / `_merge_multiple_upstreams` pipeline.*
 
 **File to modify:** `src/ruff_sync/core.py`
-**Goal:** Apply the rewriting logic during the actual synchronization process.
+**Goal:** Apply the rewriting logic during synchronization ONLY if `--standalone` is True.
 **Implementation details:**
-1. Inside the merge pipeline (likely in `_merge_multiple_upstreams` or wherever the upstream config is parsed), calculate `rel_dir`. 
-   - If the user specified `--to tests/ruff.toml`, `rel_dir` should be `"tests"`. 
-   - If `--to pyproject.toml`, `rel_dir` is `"."` or empty.
-2. If `rel_dir` indicates a subdirectory:
+1. Inside the merge pipeline (`_merge_multiple_upstreams`), check if `args.standalone` is True.
+2. If True, calculate `rel_dir` based on the `--to` flag's directory relative to the project root. (e.g., if targeting `tests/ruff.toml`, `rel_dir` is `"tests"`).
+3. If `rel_dir` indicates a subdirectory:
    - Locate the `[tool.ruff.lint.per-file-ignores]` or `[lint.per-file-ignores]` table in the **parsed upstream config**.
    - Pass this table through `_rewrite_per_file_ignores`.
    - Replace the original table in the upstream config with the rewritten one.
-3. Allow the existing `_recursive_update(target_config, upstream_config)` to proceed normally.
+4. Allow the existing `_recursive_update(target_config, upstream_config)` to proceed normally.
 
-### Task 4: Enforce Standalone Configuration (Complexity: 1/5 - Very Low)
+### Task 5: Enforce Standalone Configuration (Complexity: 1/5 - Very Low)
 *Extremely simple dictionary manipulation.*
 
 **File to modify:** `src/ruff_sync/core.py`
-**Goal:** Ensure subdirectory configs don't leak settings from parents.
+**Goal:** Ensure standalone configs don't leak settings from parents.
 **Implementation details:**
-1. After the merge is complete, check if we are targeting a subdirectory (`rel_dir != "."`).
-2. If so, check if the key `"extend"` exists at the root level of the final `target_config`.
+1. After the merge is complete, check if `args.standalone` is True and `rel_dir != "."`.
+2. Check if the key `"extend"` exists at the root level of the final `target_config`.
 3. If it exists, delete it (`del target_config["extend"]`).
 
-### Task 5: End-to-End Integration Test (Complexity: 3/5 - Medium)
+### Task 6: End-to-End Integration Test (Complexity: 3/5 - Medium)
 *Requires knowledge of the project's fixture scaffolding workflow.*
 
 **File to modify:** `tests/test_e2e.py` & `tests/lifecycle_tomls/`
-**Goal:** Prove the CLI correctly handles subdirectory generation.
+**Goal:** Prove the CLI correctly handles `--standalone` generation.
 **Implementation details:**
-1. Use the project's `invoke new-case` task to scaffold a new test case (e.g., `subdirectory_config`).
+1. Use the project's `invoke new-case` task to scaffold a new test case (e.g., `subdirectory_standalone`).
 2. Set up the `upstream.toml` with a mix of global and subdirectory-specific `per-file-ignores`.
 3. Set up the `initial.toml` as an empty file representing `tests/ruff.toml`.
-4. Set up the `final.toml` with the expected rewritten ignores and no `extend` key.
-5. Ensure the new case is covered by the E2E test runner.
+4. Ensure the test runner invokes `ruff-sync` with `--standalone` for this case.
+5. Set up the `final.toml` with the expected rewritten ignores and no `extend` key.
 
 ---
 
 ## Agent Handoff Recommendations
 
-- **Use a basic/faster model** for **Task 2**, **Task 4**, and **Task 5**. These require straightforward syntax implementation, basic assertions, and scaffolding based on existing patterns.
-- **Use an advanced reasoning model** for **Task 1** and **Task 3**. Modifying `tomlkit` proxy tables safely without breaking formatting, and correctly hooking into the merge pipeline without causing regressions, requires deep contextual awareness.
+- **Use a basic/faster model** for **Task 1**, **Task 3**, **Task 5**, and **Task 6**. These require straightforward syntax implementation, basic assertions, and scaffolding based on existing patterns.
+- **Use an advanced reasoning model** for **Task 2** and **Task 4**. Modifying `tomlkit` proxy tables safely without breaking formatting, and correctly hooking into the recursive merge pipeline without causing regressions, requires deep contextual awareness.
+
+## User Review Required
+
+> [!IMPORTANT]
+> The `--standalone` flag allows users to opt-in to this feature explicitly. Does this approach satisfy your requirements for maintaining a predictable DX?
+
+Please review and approve this updated plan to finalize the handover documentation!
