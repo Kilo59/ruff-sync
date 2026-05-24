@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.7.dev1"
+version = "0.1.7.dev2"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "httpx>=0.27.0,<1.0.0",
+    "httpx2>=2.2.0",
     "tomlkit>=0.12.3,<2.0.0",
     "typing-extensions>=4.5.0",
 ]
