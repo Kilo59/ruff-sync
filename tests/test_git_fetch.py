@@ -4,7 +4,7 @@ import pathlib
 import subprocess
 
 import pytest
-from httpx import URL, AsyncClient
+from httpx2 import URL, AsyncClient
 
 from ruff_sync import fetch_upstream_config, resolve_raw_url
 

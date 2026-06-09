@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import pytest
 import tomlkit
-from httpx import URL
+from httpx2 import URL
 
 from ruff_sync.cli import Arguments
 from ruff_sync.constants import DEFAULT_BRANCH, DEFAULT_EXCLUDE, MISSING

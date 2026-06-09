@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.7.dev1"
+version = "0.1.7.dev2"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "httpx>=0.27.0,<1.0.0",
+    "httpx2>=2.3.0",
     "tomlkit>=0.12.3,<2.0.0",
     "typing-extensions>=4.5.0",
 ]
@@ -57,7 +57,7 @@ dev = [
     "pytest-codspeed>=4.3.0",
     "pytest-icdiff>=0.9",
     "pytest-textual-snapshot>=1.0.0",
-    "respx>=0.21.1",
+    "pytest-httpx2",
     "ruamel-yaml>=0.18.6",
     "ruff>=0.15.0",
     "textual>=8.2.2",
@@ -99,6 +99,10 @@ exclude = 'site/.*'
 [[tool.mypy.overrides]]
 module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
+
+[[tool.mypy.overrides]]
+module = "ruff_sync.core"
+disable_error_code = ["union-attr", "unused-ignore"]
 
 [tool.ruff-sync]
 upstream = "https://github.com/Kilo59/ruff-sync/"
@@ -232,6 +236,7 @@ docstring-code-line-length = "dynamic"
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "unittest.mock".msg = "Prefer dedicated libraries to mock at external dependencies, such as `httpx` or `pyfakefs`."
 "typing.cast".msg = "Please fix the underlying type issues instead of using typing.cast."
+"httpx".msg = "Use httpx2 instead."
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
@@ -242,6 +247,7 @@ banned-from = ["pathlib", "datetime"]
 datetime = "dt"
 "pprint.pprint" = "pp"
 "pprint.pformat" = "pf"
+httpx2 = "httpx"
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
@@ -250,7 +256,9 @@ required-imports = ["from __future__ import annotations"]
 include = ["src/ruff_sync/*.py"]
 
 [tool.pytest]
+addopts = ["-p pytest_httpx2"]
 log_level = "INFO"
 markers = [
     "benchmark: marks performance benchmarks (run separately for CodSpeed)",
+    "httpx2: configure the httpx2_mock fixture",
 ]

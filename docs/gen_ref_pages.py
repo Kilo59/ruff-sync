@@ -7,7 +7,7 @@ import pathlib
 import mkdocs_gen_files
 from mkdocs_gen_files.nav import Nav
 
-nav = Nav()  # type: ignore[no-untyped-call]
+nav = Nav()
 
 for path in sorted(pathlib.Path("src").rglob("*.py")):
     module_path = path.relative_to("src").with_suffix("")

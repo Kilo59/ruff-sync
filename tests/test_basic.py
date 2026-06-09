@@ -11,12 +11,13 @@ import sys
 from pprint import pformat as pf
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, cast
 
-import httpx
+import httpx as original_httpx
+import httpx2 as httpx
 import pytest
 import respx
 import tomlkit
 from dirty_equals import IsPartialDict
-from httpx import URL
+from httpx2 import URL
 from pytest import param
 from tomlkit import TOMLDocument, document
 from tomlkit.items import Table
@@ -279,14 +280,14 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
 
 
 @pytest.fixture
-def mock_http(toml_s: str) -> Generator[respx.MockRouter, None, None]:
-    with respx.mock(base_url="https://example.com/") as respx_mock:
-        respx_mock.get("/pyproject.toml").respond(
+def mock_http(toml_s: str, respx_mock: respx.MockRouter) -> Generator[respx.MockRouter, None, None]:
+    with respx_mock(base_url="https://example.com/") as mock:
+        mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=toml_s,
         )
-        yield respx_mock
+        yield mock
 
 
 @pytest.fixture
@@ -596,7 +597,7 @@ def test_verbosity_log_level(
 
 
 @pytest.mark.asyncio
-async def test_sync_default_exclude(fs: FakeFilesystem):
+async def test_sync_default_exclude(fs: FakeFilesystem, respx_mock: respx.MockRouter):
     """Integration style test for default exclude functionality."""
     source_toml = """[tool.ruff]
 target-version = "py310"
@@ -609,8 +610,8 @@ target-version = "py311"
     ff = fs.create_file("pyproject.toml", contents=source_toml)
     ff_path = pathlib.Path(ff.path)  # type: ignore[arg-type]
 
-    with respx.mock(base_url="https://example.com/") as respx_mock:
-        respx_mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com/") as mock:
+        mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_toml,
@@ -684,12 +685,8 @@ async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.Router
     )
 
     # Mock HTTP responses using respx
-    respx_mock.get("http://one.toml").return_value = httpx.Response(
-        200, text="[tool.ruff]\nline-length = 80"
-    )
-    respx_mock.get("http://two.toml").return_value = httpx.Response(
-        200, text="[tool.ruff]\nline-length = 100"
-    )
+    respx_mock.get("http://one.toml").respond(200, text="[tool.ruff]\nline-length = 80")
+    respx_mock.get("http://two.toml").respond(200, text="[tool.ruff]\nline-length = 100")
 
     async with httpx.AsyncClient() as client:
         result_doc = await _merge_multiple_upstreams(target_doc, False, args.resolve(), client)
@@ -708,17 +705,17 @@ async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.Router):
     """Verify that fetch_upstreams_concurrently actually runs tasks in parallel."""
     events = []
 
-    async def side_effect_one(request: httpx.Request) -> httpx.Response:
+    async def side_effect_one(request: original_httpx.Request) -> original_httpx.Response:
         events.append("start_one")
         await asyncio.sleep(0.05)
         events.append("end_one")
-        return httpx.Response(200, text="[tool.ruff]\n")
+        return original_httpx.Response(200, text="[tool.ruff]\n")
 
-    async def side_effect_two(request: httpx.Request) -> httpx.Response:
+    async def side_effect_two(request: original_httpx.Request) -> original_httpx.Response:
         events.append("start_two")
         await asyncio.sleep(0.05)
         events.append("end_two")
-        return httpx.Response(200, text="[tool.ruff]\n")
+        return original_httpx.Response(200, text="[tool.ruff]\n")
 
     respx_mock.get("http://one.toml").mock(side_effect=side_effect_one)
     respx_mock.get("http://two.toml").mock(side_effect=side_effect_two)
@@ -771,10 +768,8 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router)
     )
 
     # Mock HTTP responses using respx
-    respx_mock.get("http://ok.toml").return_value = httpx.Response(
-        200, text="[tool.ruff]\nline-length = 80"
-    )
-    respx_mock.get("http://fail.toml").return_value = httpx.Response(404)
+    respx_mock.get("http://ok.toml").respond(200, text="[tool.ruff]\nline-length = 80")
+    respx_mock.get("http://fail.toml").respond(404)
 
     async with httpx.AsyncClient() as client:
         with pytest.raises(UpstreamError) as excinfo:

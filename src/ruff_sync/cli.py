@@ -24,7 +24,7 @@ from typing import (
 )
 
 import tomlkit
-from httpx import URL
+from httpx2 import URL
 from typing_extensions import deprecated, override
 
 from ruff_sync.constants import (

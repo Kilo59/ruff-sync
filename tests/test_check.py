@@ -4,8 +4,7 @@ import pathlib
 from typing import TYPE_CHECKING
 
 import pytest
-import respx
-from httpx import URL
+from httpx2 import URL
 
 import ruff_sync
 
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.asyncio
-async def test_check_in_sync(fs: FakeFilesystem):
+async def test_check_in_sync(fs: FakeFilesystem, httpx2_mock):
     # Setup
     pyproject_content = """
 [tool.ruff]
@@ -26,7 +25,7 @@ target-version = "py310"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -48,7 +47,7 @@ target-version = "py310"
 
 
 @pytest.mark.asyncio
-async def test_check_out_of_sync(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_out_of_sync(fs: FakeFilesystem, capsys, configure_logging, httpx2_mock):
     # Setup
     local_content = """
 [tool.ruff]
@@ -63,7 +62,7 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -90,7 +89,7 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_pre_commit_out_of_sync(fs: FakeFilesystem, caplog):
+async def test_check_pre_commit_out_of_sync(fs: FakeFilesystem, caplog, httpx2_mock):
     # Setup
     local_content = """
 [tool.ruff]
@@ -111,7 +110,7 @@ target-version = "py310"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -137,7 +136,7 @@ target-version = "py310"
 
 
 @pytest.mark.asyncio
-async def test_check_semantic_sync(fs: FakeFilesystem):
+async def test_check_semantic_sync(fs: FakeFilesystem, httpx2_mock):
     # A local comment does NOT make you out of sync — ruff-sync only adds/updates
     # keys, it never strips local-only additions like comments.
     local_content = """
@@ -156,7 +155,7 @@ line-length = 90
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -189,7 +188,7 @@ line-length = 90
 
 
 @pytest.mark.asyncio
-async def test_check_semantic_out_of_sync(fs: FakeFilesystem):
+async def test_check_semantic_out_of_sync(fs: FakeFilesystem, httpx2_mock):
     # Setup - actual values differ
     local_content = """
 [tool.ruff]
@@ -204,7 +203,7 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -224,7 +223,9 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_semantic_diff_output(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_semantic_diff_output(
+    fs: FakeFilesystem, capsys, configure_logging, httpx2_mock
+):
     # Setup - actual values differ
     local_content = """
 [tool.ruff]
@@ -239,7 +240,7 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -267,7 +268,7 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_multi_upstream(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_multi_upstream(fs: FakeFilesystem, capsys, configure_logging, httpx2_mock):
     """Check supports multiple upstreams and bases status on the fully merged result."""
     # Setup
     local_content = """
@@ -297,7 +298,7 @@ select = ["E", "F"]
     u1_url = URL("https://example.com/u1/pyproject.toml")
     u2_url = URL("https://example.com/u2/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/u1/pyproject.toml").respond(200, content=upstream1_content)
         respx_mock.get("/u2/pyproject.toml").respond(200, content=upstream2_content)
 
@@ -327,7 +328,7 @@ select = ["E", "F"]
 
 @pytest.mark.asyncio
 async def test_check_both_out_of_sync_prioritizes_config_drift(
-    fs: FakeFilesystem, capsys, configure_logging
+    fs: FakeFilesystem, capsys, configure_logging, httpx2_mock
 ):
     """Verify that Exit 1 is returned when both ruff config AND pre-commit are out of sync."""
     # Setup - ruff config drift
@@ -346,7 +347,7 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(200, content=upstream_content)
 
         args = ruff_sync.Arguments(
@@ -373,7 +374,9 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(
 
 
 @pytest.mark.asyncio
-async def test_check_out_of_sync_json_format(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_out_of_sync_json_format(
+    fs: FakeFilesystem, capsys, configure_logging, httpx2_mock
+):
     # Setup mirrors the default-format test but uses JSON output_format
     local_content = """
 [tool.ruff]
@@ -388,7 +391,7 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -436,7 +439,9 @@ target-version = "py311"
 
 
 @pytest.mark.asyncio
-async def test_check_out_of_sync_github_format(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_out_of_sync_github_format(
+    fs: FakeFilesystem, capsys, configure_logging, httpx2_mock
+):
     # Setup mirrors the default-format test but uses GITHUB output_format
     local_content = """
 [tool.ruff]
@@ -451,7 +456,7 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -493,6 +498,7 @@ async def test_check_in_sync_json_format(
     fs: FakeFilesystem,
     capsys,
     configure_logging,
+    httpx2_mock,
 ):
     """Ensure JSON formatter reports success and no errors when configs are in sync."""
     local_content = """
@@ -504,7 +510,7 @@ line-length = 88
     source_path = pathlib.Path("pyproject.toml")
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -549,6 +555,7 @@ async def test_check_in_sync_github_format(
     fs: FakeFilesystem,
     capsys,
     configure_logging,
+    httpx2_mock,
 ):
     """Ensure GitHub formatter does not emit ::error lines when configs are in sync."""
     local_content = """
@@ -560,7 +567,7 @@ line-length = 88
     source_path = pathlib.Path("pyproject.toml")
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -593,7 +600,7 @@ line-length = 88
 
 
 @pytest.mark.asyncio
-async def test_check_upstream_error_returns_4(fs: FakeFilesystem, capsys):
+async def test_check_upstream_error_returns_4(fs: FakeFilesystem, capsys, httpx2_mock):
     """Verify that an unreachable upstream URL causes check() to raise UpstreamError.
 
     The CLI catches UpstreamError and returns exit code 4.  Here we test check()
@@ -607,7 +614,7 @@ async def test_check_upstream_error_returns_4(fs: FakeFilesystem, capsys):
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(404)
 
         args = ruff_sync.Arguments(
@@ -625,7 +632,7 @@ async def test_check_upstream_error_returns_4(fs: FakeFilesystem, capsys):
 
 
 @pytest.mark.asyncio
-async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging, httpx2_mock):
     """Verify --output-format sarif produces a valid SARIF v2.1.0 document."""
     import json
 
@@ -636,7 +643,7 @@ async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging)
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -706,7 +713,9 @@ async def test_check_sarif_format(fs: FakeFilesystem, capsys, configure_logging)
 
 
 @pytest.mark.asyncio
-async def test_check_sarif_format_in_sync(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_sarif_format_in_sync(
+    fs: FakeFilesystem, capsys, configure_logging, httpx2_mock
+):
     """Verify SARIF formatter emits zero results when configs are in sync."""
     import json
 
@@ -716,7 +725,7 @@ async def test_check_sarif_format_in_sync(fs: FakeFilesystem, capsys, configure_
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
@@ -746,7 +755,9 @@ async def test_check_sarif_format_in_sync(fs: FakeFilesystem, capsys, configure_
 
 
 @pytest.mark.asyncio
-async def test_check_sarif_multiple_drifts(fs: FakeFilesystem, capsys, configure_logging):
+async def test_check_sarif_multiple_drifts(
+    fs: FakeFilesystem, capsys, configure_logging, httpx2_mock
+):
     """Verify SARIF output includes multiple results for multiple drifted keys."""
     import json
 
@@ -757,7 +768,7 @@ async def test_check_sarif_multiple_drifts(fs: FakeFilesystem, capsys, configure
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",

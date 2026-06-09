@@ -7,7 +7,7 @@ import sys
 
 import pytest
 import tomlkit
-from httpx import URL
+from httpx2 import URL
 from pytest_codspeed import BenchmarkFixture
 from tomlkit import TOMLDocument
 from tomlkit.items import Table

@@ -14,7 +14,7 @@ import os
 import pathlib
 from typing import TYPE_CHECKING, Final, Literal
 
-import httpx
+import httpx2 as httpx
 from invoke.exceptions import Exit
 from invoke.tasks import task
 from packaging.version import Version
