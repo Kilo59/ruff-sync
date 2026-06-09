@@ -683,7 +683,7 @@ class TestCLILifecycle:
 
         monkeypatch.setattr("ruff_sync.core._merge_multiple_upstreams", _mock_merge)
 
-        from httpx import URL
+        from httpx2 import URL
 
         from ruff_sync.cli import Arguments
 
@@ -710,7 +710,7 @@ class TestCLILifecycle:
         # Force an early return/error by making the file not exist
         monkeypatch.setattr(pathlib.Path, "exists", lambda _: False)
 
-        from httpx import URL
+        from httpx2 import URL
 
         from ruff_sync.cli import Arguments
 

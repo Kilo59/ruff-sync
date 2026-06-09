@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import httpx
+import httpx2 as httpx
 import pytest
-from httpx import URL, AsyncClient
+from httpx2 import URL, AsyncClient
 
 from ruff_sync import fetch_upstream_config, is_ruff_toml_file, resolve_raw_url, to_git_url
 

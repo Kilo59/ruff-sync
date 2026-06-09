@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 import respx
 import tomlkit
-from httpx import URL
+from httpx2 import URL
 
 import ruff_sync
 from ruff_sync import get_config

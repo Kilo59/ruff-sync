@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 import respx
-from httpx import URL
+from httpx2 import URL
 
 import ruff_sync
 

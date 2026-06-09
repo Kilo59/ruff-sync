@@ -11,12 +11,12 @@ import sys
 from pprint import pformat as pf
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, cast
 
-import httpx
+import httpx2 as httpx
 import pytest
 import respx
 import tomlkit
 from dirty_equals import IsPartialDict
-from httpx import URL
+from httpx2 import URL
 from pytest import param
 from tomlkit import TOMLDocument, document
 from tomlkit.items import Table
