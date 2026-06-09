@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "httpx2>=2.2.0",
+    "httpx2>=2.3.0",
     "tomlkit>=0.12.3,<2.0.0",
     "typing-extensions>=4.5.0",
 ]
