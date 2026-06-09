@@ -57,6 +57,7 @@ dev = [
     "pytest-codspeed>=4.3.0",
     "pytest-icdiff>=0.9",
     "pytest-textual-snapshot>=1.0.0",
+    "pytest-httpx2",
     "respx>=0.21.1",
     "ruamel-yaml>=0.18.6",
     "ruff>=0.15.0",
@@ -250,6 +251,7 @@ required-imports = ["from __future__ import annotations"]
 include = ["src/ruff_sync/*.py"]
 
 [tool.pytest]
+addopts = ["-p pytest_httpx2"]
 log_level = "INFO"
 markers = [
     "benchmark: marks performance benchmarks (run separately for CodSpeed)",

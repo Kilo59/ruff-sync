@@ -22,9 +22,9 @@ from typing import (
     overload,
 )
 
-import httpx
+import httpx2 as httpx
 import tomlkit
-from httpx import URL
+from httpx2 import URL
 from tomlkit import TOMLDocument, table
 from tomlkit.items import Item, Table
 from tomlkit.toml_file import TOMLFile
@@ -330,12 +330,13 @@ def _get_discovery_candidates(base: pathlib.Path) -> list[pathlib.Path]: ...
 def _get_discovery_candidates(base: URL | pathlib.Path) -> list[URL] | list[pathlib.Path]:
     """Return a list of candidate configuration files, prioritizing the requested one."""
     # If it's a URL, use PurePosixPath. If it's a Path, use it directly.
-    name = base.path if isinstance(base, URL) else base.name
+    is_url = not isinstance(base, pathlib.Path)
+    name = base.path if is_url else base.name
     if pathlib.PurePosixPath(name).name != RuffConfigFileName.PYPROJECT_TOML:
         return [base]  # type: ignore[return-value]
 
     # Try pyproject.toml first, then fall back to ruff.toml variants.
-    if isinstance(base, URL):
+    if is_url:
         base_url = base.join(".")
         return [base] + [
             base_url.join(str(f))
@@ -935,7 +936,7 @@ async def check(
     Examples:
         >>> import asyncio
         >>> from ruff_sync.cli import Arguments
-        >>> from httpx import URL
+        >>> from httpx2 import URL
         >>> import pathlib
         >>> args = Arguments(
         ...     command="check",
@@ -1122,7 +1123,7 @@ async def pull(
     Examples:
         >>> import asyncio
         >>> from ruff_sync.cli import Arguments
-        >>> from httpx import URL
+        >>> from httpx2 import URL
         >>> import pathlib
         >>> args = Arguments(
         ...     command="pull",

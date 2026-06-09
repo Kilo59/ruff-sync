@@ -140,3 +140,9 @@ def cli_run(
         return exit_code, captured.out, captured.err
 
     return _run
+
+
+@pytest.fixture
+def respx_mock(httpx2_mock):
+    """Fixture that maps respx_mock to httpx2_mock for httpx2 compatibility."""
+    return httpx2_mock

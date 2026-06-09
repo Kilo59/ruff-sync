@@ -13,7 +13,7 @@ from tomlkit.items import Table
 from typing_extensions import override
 
 if TYPE_CHECKING:
-    from httpx import URL
+    from httpx2 import URL
 
 
 @enum.unique
