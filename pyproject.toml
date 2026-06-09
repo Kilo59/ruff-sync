@@ -100,6 +100,10 @@ exclude = 'site/.*'
 module = "tests.*"
 disable_error_code = ['type-arg', 'no-untyped-def']
 
+[[tool.mypy.overrides]]
+module = "ruff_sync.core"
+disable_error_code = ["union-attr", "unused-ignore"]
+
 [tool.ruff-sync]
 upstream = "https://github.com/Kilo59/ruff-sync/"
 to = "pyproject.toml"
@@ -256,4 +260,5 @@ addopts = ["-p pytest_httpx2"]
 log_level = "INFO"
 markers = [
     "benchmark: marks performance benchmarks (run separately for CodSpeed)",
+    "httpx2: configure the httpx2_mock fixture",
 ]

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 TEST_ROOT: Final = pathlib.Path(__file__).parent
 
 
-def test_manpage():
+def test_manpage(httpx2_mock):
     """Test that the manpage can be generated with ruff-sync --help with no errors."""
     completed = subprocess.run(
         [sys.executable, "-m", "ruff_sync", "--help"],
@@ -63,7 +63,11 @@ class _PrepEnv(NamedTuple):
 
 
 @pytest.fixture(params=LIFECYCLE_GROUPS)
-def prep_env(fs: FakeFilesystem, request: FixtureRequest) -> Generator[_PrepEnv, None, None]:
+def prep_env(
+    fs: FakeFilesystem,
+    request: FixtureRequest,
+    httpx2_mock,
+) -> Generator[_PrepEnv, None, None]:
     group_name: str = request.param
     fs.add_real_directory(LIFECYCLE_TOML_DIR)
 
@@ -76,7 +80,7 @@ def prep_env(fs: FakeFilesystem, request: FixtureRequest) -> Generator[_PrepEnv,
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx.mock(base_url=base_url, assert_all_called=False) as respx_mock:
+    with httpx2_mock(base_url=base_url, assert_all_called=False) as respx_mock:
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
@@ -109,7 +113,7 @@ async def test_ruff_sync(prep_env):
 
 
 @pytest.mark.asyncio
-async def test_ruff_check(prep_env):
+async def test_ruff_check(prep_env, httpx2_mock):
     # 1. Initially it should be out of sync
     exit_code = await ruff_sync.check(
         ruff_sync.Arguments(
@@ -174,6 +178,7 @@ async def test_ruff_check(prep_env):
 @pytest.fixture
 def readme_excludes_env(
     fs: FakeFilesystem,
+    httpx2_mock,
 ) -> Generator[_PrepEnv, None, None]:
     group_name = "readme_excludes"
     fs.add_real_directory(LIFECYCLE_TOML_DIR)
@@ -187,7 +192,7 @@ def readme_excludes_env(
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx.mock(base_url=base_url, assert_all_called=False) as respx_mock:
+    with httpx2_mock(base_url=base_url, assert_all_called=False) as respx_mock:
         respx_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
@@ -227,7 +232,7 @@ async def test_readme_exclude_examples(readme_excludes_env):
 
 
 @pytest.mark.asyncio
-async def test_ruff_sync_multi_upstream(fs: FakeFilesystem):
+async def test_ruff_sync_multi_upstream(fs: FakeFilesystem, httpx2_mock):
     """Test merging of multiple upstreams sequentially."""
     fs.add_real_directory(LIFECYCLE_TOML_DIR)
 
@@ -241,7 +246,7 @@ async def test_ruff_sync_multi_upstream(fs: FakeFilesystem):
     u2_url = URL("https://example.com/up2.toml")
     expected_toml = LIFECYCLE_TOML_DIR.joinpath("multi_upstream_final.toml").read_text()
 
-    with respx.mock(base_url="https://example.com") as respx_mock:
+    with httpx2_mock(base_url="https://example.com") as respx_mock:
         respx_mock.get("/up1.toml").respond(
             200,
             content_type="text/plain",

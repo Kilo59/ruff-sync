@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def mock_http(toml_s: str) -> Generator[respx.MockRouter, None, None]:
-    with respx.mock(base_url="https://example.com/", assert_all_called=False) as respx_mock:
+def mock_http(toml_s: str, httpx2_mock) -> Generator[respx.MockRouter, None, None]:
+    with httpx2_mock(base_url="https://example.com/", assert_all_called=False) as respx_mock:
         respx_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
