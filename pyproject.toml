@@ -58,7 +58,6 @@ dev = [
     "pytest-icdiff>=0.9",
     "pytest-textual-snapshot>=1.0.0",
     "pytest-httpx2",
-    "respx>=0.21.1",
     "ruamel-yaml>=0.18.6",
     "ruff>=0.15.0",
     "textual>=8.2.2",
@@ -233,6 +232,7 @@ docstring-code-line-length = "dynamic"
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "unittest.mock".msg = "Prefer dedicated libraries to mock at external dependencies, such as `httpx` or `pyfakefs`."
 "typing.cast".msg = "Please fix the underlying type issues instead of using typing.cast."
+"httpx".msg = "Use httpx2 instead."
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
@@ -243,6 +243,7 @@ banned-from = ["pathlib", "datetime"]
 datetime = "dt"
 "pprint.pprint" = "pp"
 "pprint.pformat" = "pf"
+httpx2 = "httpx"
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
