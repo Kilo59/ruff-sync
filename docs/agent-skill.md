@@ -8,7 +8,7 @@ The [Agent Skills specification](https://agentskills.io/specification) is an ope
 
 ## What the ruff-sync Skill Covers
 
-The skill lives at [`.agents/skills/ruff-sync-usage/`](https://github.com/Kilo59/ruff-sync/tree/main/.agents/skills/ruff-sync-usage/) and teaches agents:
+The skill lives at [`.agents/skills/ruff-sync/`](https://github.com/Kilo59/ruff-sync/tree/main/src/ruff_sync/.agents/skills/ruff-sync/) and teaches agents:
 
 | File | Contents |
 |---|---|
@@ -21,15 +21,19 @@ The skill uses [progressive disclosure](https://agentskills.io/specification#pro
 
 ## Using the Skill in Your Project
 
-The skill is bundled in the `ruff-sync` repository itself. If you install `ruff-sync` from source or clone the repo, the skill is already present.
-
-For agents that scan a configurable skill directory (e.g. `.agents/skills/`), copy the skill folder into your own project:
+`ruff-sync` supports the [Library Skills](https://library-skills.io/) specification. You can automatically install the agent skill using `uvx` (or `npx` if in a Node.js project):
 
 ```bash
-cp -r path/to/ruff-sync/.agents/skills/ruff-sync-usage .agents/skills/
+uvx library-skills
 ```
 
-Or reference the upstream directly if your agent supports remote skills.
+This scans your environment, detects `ruff-sync` from your project's dependencies, and sets up a symlink at `.agents/skills/ruff-sync` pointing to the skill files bundled inside the installed package.
+
+For Claude Code (which uses `.claude/skills` instead of `.agents/skills`), you can specify the targets or run:
+
+```bash
+uvx library-skills --claude
+```
 
 ## Activation
 

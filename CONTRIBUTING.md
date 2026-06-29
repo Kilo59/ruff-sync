@@ -131,7 +131,7 @@ This creates three files in `tests/lifecycle_tomls/`: `<case>_initial.toml`, `<c
 1. Push your branch and open a PR against `main`.
 2. Fill in the PR description: what changed, why, and how to test it.
 3. Ensure all CI checks pass.
-4. If your change affects CLI behaviour (new flags, changed exit codes, new config keys, URL handling), **update the agent skill** at [`.agents/skills/ruff-sync-usage/`](.agents/skills/ruff-sync-usage/):
+4. If your change affects CLI behaviour (new flags, changed exit codes, new config keys, URL handling), **update the agent skill** at [`.agents/skills/ruff-sync/`](.agents/skills/ruff-sync/) (which is a symlink pointing to the physical files at `src/ruff_sync/.agents/skills/ruff-sync/`):
    - `SKILL.md` — quick start, workflows, exit codes, gotchas
    - `references/configuration.md` — config key reference
    - `references/troubleshooting.md` — error scenarios

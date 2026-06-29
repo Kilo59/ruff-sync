@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.7"
+version = "0.1.8"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -78,6 +78,9 @@ default-groups = ["dev"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist.force-include]
+"src/ruff_sync/.agents" = "src/ruff_sync/.agents"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ruff_sync"]
