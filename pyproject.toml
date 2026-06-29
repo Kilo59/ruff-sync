@@ -79,6 +79,9 @@ default-groups = ["dev"]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.sdist.force-include]
+"src/ruff_sync/.agents" = "src/ruff_sync/.agents"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/ruff_sync"]
 

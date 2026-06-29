@@ -1,5 +1,5 @@
 ---
-name: ruff-sync-usage
+name: ruff-sync
 description: >-
   Configure and operate ruff-sync to synchronize Ruff linter settings across Python projects.
   Use when the user wants to set up ruff-sync, sync Ruff config from an upstream source,
