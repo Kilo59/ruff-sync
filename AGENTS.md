@@ -38,13 +38,14 @@ Specific workflows, libraries, and tools are documented in `.agents/skills/`. Be
   decisions/           # Internal Architectural Decision Records (ADRs)
     README.md          # Index of all architectural decisions
   skills/
-    ruff-sync/         # Agent Skill for users adopting ruff-sync (keep current!)
+    ruff-sync/         # Symlink to src/ruff_sync/.agents/skills/ruff-sync (for local workspace agent loading)
       SKILL.md
       references/
         configuration.md
         troubleshooting.md
         ci-integration.md
 src/ruff_sync/         # The application source
+  .agents/skills/ruff-sync/ # [NEW] Canonical physical skill source directory (packaged into wheels)
   __init__.py          # Public API
   __main__.py          # CLI entry point (`python -m ruff_sync`)
   cli.py               # CLI argparse definition and orchestration
@@ -218,7 +219,7 @@ CI is defined in `.github/workflows/ci.yaml`:
 1. **tomlkit proxy objects**: When adding new keys to a proxy table (from dotted keys), the proxy must be converted to a real table first. The `_recursive_update` function handles this. Don't bypass it.
 2. **`cast(Any, ...)` in tests**: Use `cast(Any, tomlkit.parse(...))["tool"]["ruff"]` pattern in tests to avoid mypy complaints about `tomlkit`'s `Item | Container` return types.
 3. **Pre-commit ruff version**: The ruff version in `.pre-commit-config.yaml` must stay in sync with the version in `pyproject.toml`. The test `test_pre_commit_versions_are_in_sync` enforces this.
-4. **Keep `ruff-sync` current**: Update `.agents/skills/ruff-sync/` after any CLI behavior changes (flags, config keys, exits) to ensure the documentation stays accurate. Keep details inside the skill directory.
+4. **Keep `ruff-sync` current**: Update `.agents/skills/ruff-sync/` (which is a symlink pointing to the physical files at `src/ruff_sync/.agents/skills/ruff-sync/`) after any CLI behavior changes (flags, config keys, exits) to ensure the documentation stays accurate. Keep details inside the skill directory.
 5. **No `autouse=True` fixtures**: NEVER use `autouse=True` for pytest fixtures. All fixtures must be explicitly requested by the test functions that require them. This ensures dependencies are explicit and avoids hidden side effects.
 
 ## Browser Tool Usage
