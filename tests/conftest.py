@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 import contextlib
 
+import httpx2 as httpx
 import pytest
 import respx
 import truststore
@@ -17,11 +18,19 @@ from respx.router import DEFAULT as RESPX_DEFAULT
 from respx.router import MockRouter
 from typing_extensions import override
 
+import ruff_sync
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Configure pytest session and set up httpx2 aliasing."""
+    alias_func = getattr(httpx, "alias_httpx", None)
+    if callable(alias_func):
+        alias_func()
+
+
 with contextlib.suppress(Exception):
     truststore.SSLContext()
 
-
-import ruff_sync
 
 LOGGER = logging.getLogger(__name__)
 
