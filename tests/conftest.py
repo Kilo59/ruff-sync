@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    import respx
+
 import pytest
-import respx
 import truststore
 from typing_extensions import override
 
@@ -18,6 +19,9 @@ import ruff_sync
 
 with contextlib.suppress(Exception):
     truststore.SSLContext()
+
+
+pytest_plugins = ["respx"]
 
 
 LOGGER = logging.getLogger(__name__)

@@ -453,6 +453,24 @@ flowchart TD
     style SemanticNode fill:#4b5563,color:#fff,stroke:#374151
 ```
 
+## Development
+
+For local development and testing:
+
+```console
+# Run test suite
+uv run pytest -vv
+
+# Run linter and formatter
+uv run ruff check . --fix
+uv run ruff format .
+
+# Run type checker
+uv run mypy .
+```
+
+> **Note on Test Environment**: Test mocking uses `respx` with `httpx2`. To ensure `respx` intercepts `httpx2` network calls during `pytest` runs before plugin entrypoints load, a guarded `src/sitecustomize.py` script is used in development. This script is strictly excluded from production wheel builds (`packages = ["src/ruff_sync"]`) and is never shipped to end users.
+
 ## Dogfooding
 
 To see `ruff-sync` in action, this project automatically "dogfoods" its own configuration. Every pull request runs a `ruff-sync check` against the repository's own `pyproject.toml` using the `--output-format github` flag, providing real-time feedback and inline annotations whenever configuration drift is detected.
