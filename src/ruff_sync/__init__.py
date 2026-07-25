@@ -5,6 +5,15 @@ This package provides tools to synchronize ruff configuration across projects.
 
 from __future__ import annotations
 
+import contextlib
+
+import httpx2 as httpx
+
+with contextlib.suppress(RuntimeError):
+    alias_func = getattr(httpx, "alias_httpx", None)
+    if callable(alias_func):
+        alias_func()
+
 from .cli import (
     Arguments,
     __version__,

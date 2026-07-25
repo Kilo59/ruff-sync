@@ -207,9 +207,8 @@ def test_to_git_url(input_url: str, expected_git_url: str | None):
         assert str(result) == expected_git_url
 
 
-@pytest.mark.httpx2(assert_all_called=False)
 @pytest.mark.asyncio
-async def test_fetch_upstream_config_with_ruff_toml_fallback(httpx2_mock):
+async def test_fetch_upstream_config_with_ruff_toml_fallback(respx_mock):
     # Given a directory guess result that would normally point to pyproject.toml
     # If pyproject.toml does not exist but ruff.toml does, it should find ruff.toml
     base_url = "https://raw.githubusercontent.com/org/repo/main/configs"
@@ -217,9 +216,9 @@ async def test_fetch_upstream_config_with_ruff_toml_fallback(httpx2_mock):
     ruff_url = f"{base_url}/ruff.toml"
 
     # Mock: ruff.toml exists, others don't
-    httpx2_mock.get(ruff_url).respond(200, text="line-length = 100")
-    httpx2_mock.get(f"{base_url}/.ruff.toml").respond(404)
-    httpx2_mock.get(pyproject_url).respond(404)
+    respx_mock.get(ruff_url).respond(200, text="line-length = 100")
+    respx_mock.get(f"{base_url}/.ruff.toml").respond(404)
+    respx_mock.get(pyproject_url).respond(404)
 
     async with AsyncClient() as client:
         # The URL passed to fetch_upstream_config is usually the one resolved by resolve_raw_url

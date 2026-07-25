@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import sys
@@ -8,31 +9,24 @@ from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-import contextlib
-
-import httpx2 as httpx
 import pytest
 import respx
 import truststore
-from respx.router import DEFAULT as RESPX_DEFAULT
-from respx.router import MockRouter
 from typing_extensions import override
 
 import ruff_sync
-
-
-def pytest_configure(config: pytest.Config) -> None:
-    """Configure pytest session and set up httpx2 aliasing."""
-    alias_func = getattr(httpx, "alias_httpx", None)
-    if callable(alias_func):
-        alias_func()
-
 
 with contextlib.suppress(Exception):
     truststore.SSLContext()
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+@pytest.fixture
+def httpx2_mock(respx_mock: respx.MockRouter) -> respx.MockRouter:
+    """Alias for respx_mock to support existing tests."""
+    return respx_mock
 
 
 class TestStreamHandler(logging.Handler):
@@ -159,43 +153,3 @@ def cli_run(
         return exit_code, captured.out, captured.err
 
     return _run
-
-
-class HTTPX2MockRouter(MockRouter):
-    @override
-    def __call__(
-        self,
-        func=None,
-        *,
-        assert_all_called=None,
-        assert_all_mocked=None,
-        base_url=None,
-        using=RESPX_DEFAULT,
-    ):
-        """Override __call__ to set using='httpcore2' by default for nested mocks."""
-        if using is RESPX_DEFAULT:
-            using = "httpcore2"
-        return super().__call__(
-            func=func,
-            assert_all_called=assert_all_called,
-            assert_all_mocked=assert_all_mocked,
-            base_url=base_url,
-            using=using,
-        )
-
-
-@pytest.fixture
-def httpx2_mock(request: pytest.FixtureRequest) -> Generator[respx.Router, None, None]:
-    options = {}
-    if (marker := request.node.get_closest_marker("httpx2")) is not None:
-        options.update(marker.kwargs)
-    options.setdefault("using", "httpcore2")
-    router = HTTPX2MockRouter(**options)
-    with router:
-        yield router
-
-
-@pytest.fixture
-def respx_mock(httpx2_mock):
-    """Fixture that maps respx_mock to httpx2_mock for httpx2 compatibility."""
-    return httpx2_mock
