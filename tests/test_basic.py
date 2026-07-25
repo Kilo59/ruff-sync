@@ -281,13 +281,13 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
 
 @pytest.fixture
 def mock_http(toml_s: str, respx_mock: respx.MockRouter) -> Generator[respx.MockRouter, None, None]:
-    with respx_mock(base_url="https://example.com/") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com/") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=toml_s,
         )
-        yield mock
+        yield http_mock
 
 
 @pytest.fixture
@@ -610,8 +610,8 @@ target-version = "py311"
     ff = fs.create_file("pyproject.toml", contents=source_toml)
     ff_path = pathlib.Path(ff.path)  # type: ignore[arg-type]
 
-    with respx_mock(base_url="https://example.com/") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com/") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_toml,

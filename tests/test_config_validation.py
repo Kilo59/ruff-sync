@@ -538,8 +538,8 @@ async def test_pull_aborts_on_invalid_config_when_validate_is_true(
 
     monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200, content_type="text/plain", content=_INVALID_UPSTREAM
         )
 
@@ -582,8 +582,10 @@ async def test_pull_skips_validation_by_default(
     fs.create_file("pyproject.toml", contents=_LOCAL_PYPROJECT)
     source_path = pathlib.Path("pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, content_type="text/plain", content=_VALID_UPSTREAM)
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content=_VALID_UPSTREAM
+        )
 
         args = ruff_sync.Arguments(
             command="pull",
@@ -617,8 +619,10 @@ async def test_pull_succeeds_when_validate_passes(
 
     monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, content_type="text/plain", content=_VALID_UPSTREAM)
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content=_VALID_UPSTREAM
+        )
 
         args = ruff_sync.Arguments(
             command="pull",
@@ -930,8 +934,10 @@ def test_pull_uses_persisted_validation_settings(
 
     monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, content_type="text/plain", content="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content="[tool.ruff]\n"
+        )
 
         with caplog.at_level(logging.ERROR, logger="ruff_sync.validation"):
             exit_code, _, _ = cli_run(["pull"])
@@ -981,8 +987,10 @@ def test_pull_save_persists_validation_flags(
 
     monkeypatch.setattr("ruff_sync.validation.subprocess.run", fake_run)
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, content_type="text/plain", content="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content="[tool.ruff]\n"
+        )
 
         # Run with --save and the parametrized flags
         exit_code, _, _ = cli_run(["pull", "--save", *cli_flags])
@@ -1018,8 +1026,10 @@ def test_pull_save_clears_validation_flags(
         "ruff_sync.validation.validate_ruff_accepts_config", lambda *args, **kwargs: True
     )
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, content_type="text/plain", content="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
+            200, content_type="text/plain", content="[tool.ruff]\n"
+        )
 
         # Run with --no-strict --save
         exit_code, _, _ = cli_run(["pull", "--no-strict", "--save"])

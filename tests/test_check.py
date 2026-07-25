@@ -26,8 +26,8 @@ target-version = "py310"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=pyproject_content,
@@ -65,8 +65,8 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -115,8 +115,8 @@ target-version = "py310"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=local_content,
@@ -160,8 +160,8 @@ line-length = 90
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -208,8 +208,8 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -245,8 +245,8 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -305,9 +305,9 @@ select = ["E", "F"]
     u1_url = URL("https://example.com/u1/pyproject.toml")
     u2_url = URL("https://example.com/u2/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/u1/pyproject.toml").respond(200, content=upstream1_content)
-        mock.get("/u2/pyproject.toml").respond(200, content=upstream2_content)
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/u1/pyproject.toml").respond(200, content=upstream1_content)
+        http_mock.get("/u2/pyproject.toml").respond(200, content=upstream2_content)
 
         args = ruff_sync.Arguments(
             command="check",
@@ -354,8 +354,8 @@ async def test_check_both_out_of_sync_prioritizes_config_drift(
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, content=upstream_content)
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(200, content=upstream_content)
 
         args = ruff_sync.Arguments(
             command="check",
@@ -398,8 +398,8 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -463,8 +463,8 @@ target-version = "py311"
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -517,8 +517,8 @@ line-length = 88
     source_path = pathlib.Path("pyproject.toml")
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=local_content,
@@ -574,8 +574,8 @@ line-length = 88
     source_path = pathlib.Path("pyproject.toml")
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=local_content,
@@ -623,8 +623,8 @@ async def test_check_upstream_error_returns_4(
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(404)
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(404)
 
         args = ruff_sync.Arguments(
             command="check",
@@ -654,8 +654,8 @@ async def test_check_sarif_format(
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,
@@ -736,8 +736,8 @@ async def test_check_sarif_format_in_sync(
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=local_content,
@@ -779,8 +779,8 @@ async def test_check_sarif_multiple_drifts(
 
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_content,

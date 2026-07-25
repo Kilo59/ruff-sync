@@ -80,8 +80,8 @@ def prep_env(
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx_mock(base_url=base_url, assert_all_called=False) as mock:
-        mock.get(upstream_url.path).respond(
+    with respx_mock(base_url=base_url, assert_all_called=False) as http_mock:
+        http_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
             content=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_upstream.toml").read_text(),
@@ -192,8 +192,8 @@ def readme_excludes_env(
     base_url = "https://example.com"
     upstream_url = URL(f"{base_url}/pyproject.toml")
 
-    with respx_mock(base_url=base_url, assert_all_called=False) as mock:
-        mock.get(upstream_url.path).respond(
+    with respx_mock(base_url=base_url, assert_all_called=False) as http_mock:
+        http_mock.get(upstream_url.path).respond(
             200,
             content_type="text/plain",
             content=LIFECYCLE_TOML_DIR.joinpath(f"{group_name}_upstream.toml").read_text(),
@@ -246,8 +246,8 @@ async def test_ruff_sync_multi_upstream(fs: FakeFilesystem, respx_mock: respx.Mo
     u2_url = URL("https://example.com/up2.toml")
     expected_toml = LIFECYCLE_TOML_DIR.joinpath("multi_upstream_final.toml").read_text()
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/up1.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/up1.toml").respond(
             200,
             content_type="text/plain",
             content=LIFECYCLE_TOML_DIR.joinpath("multi_upstream_up1.toml").read_text(),

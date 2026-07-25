@@ -33,8 +33,10 @@ def test_source_cli_deprecation(
     source_path = test_dir / "pyproject.toml"
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\ntarget-version = 'py310'\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
+            200, text="[tool.ruff]\ntarget-version = 'py310'\n"
+        )
 
         monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull", str(upstream_url), "--source", "."])
         with caplog.at_level(logging.WARNING, logger="ruff_sync"):
@@ -111,8 +113,8 @@ to = "sub-project"
     )
 
     # Mock the upstream request
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
 
         # No --to or --source on CLI, but use --init to allow creating the sub-project file
         monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull", "--init"])
@@ -140,8 +142,8 @@ to = "."
     ruff_sync.get_config.cache_clear()
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull"])
 
-    with respx_mock(base_url="https://example.com") as mock:
-        mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
         exit_code = ruff_sync.main()
         assert exit_code == 0
 
