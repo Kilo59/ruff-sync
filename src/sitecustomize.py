@@ -1,4 +1,4 @@
-"""Process startup script to alias httpx to httpx2."""
+"""Process startup script to alias httpx to httpx2 before pytest plugins load."""
 
 from __future__ import annotations
 
