@@ -6,11 +6,16 @@ date: 2026-07-25
 decider: Kilo59 / Agent
 ---
 
-## Context
+## Context & Motivation for Switching to `httpx2`
 
-`ruff-sync` relies on `httpx2` (`>=2.9.1`) for asynchronous HTTP operations when pulling upstream Ruff configurations. Previously, HTTP test mocking relied on the third-party `pytest-httpx2` plugin.
+`ruff-sync` relies on an asynchronous HTTP client to pull upstream Ruff linter configurations from GitHub and GitLab repositories.
 
-We needed to clean up our HTTP dependencies, eliminate `pytest-httpx2`, and migrate to standard `respx` (`>=0.23.1`) while ensuring zero side-effects on production execution.
+We migrated from `httpx` to **`httpx2`** based on the official rationale provided by **Pydantic Services**:
+- **Active Stewardship & Security Maintenance**: Due to a significant period of reduced maintenance activity and inactivity on the original `httpx` package, Pydantic Services created `httpx2` as an actively maintained successor to guarantee timely security updates, bug fixes, and continuous maintenance for a critical core library in the Python ecosystem.
+- **Ecosystem Continuity**: The "2" in `httpx2` functions as a versioning marker for this new era of Pydantic Services maintenance rather than a breaking paradigm rewrite, preserving full compatibility while delivering active upstream support.
+- **Strict Typing**: `httpx2` provides first-class typing out of the box, integrating cleanly with our `mypy` strict mode requirements.
+
+Previously, HTTP test mocking relied on the third-party `pytest-httpx2` plugin. We needed to clean up our HTTP dependencies, eliminate `pytest-httpx2`, and migrate to standard `respx` (`>=0.23.1`) while ensuring zero side-effects on production execution.
 
 ## Decision
 
