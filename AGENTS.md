@@ -191,6 +191,7 @@ uv run coverage run -m pytest -vv
 - Whitespace/formatting preservation tests go in `tests/test_whitespace.py`.
 - End-to-end lifecycle tests use fixture triples in `tests/lifecycle_tomls/` (`*_initial.toml`, `*_upstream.toml`, `*_final.toml`). Use the `invoke new-case` task to scaffold them.
 - Tests should include **both** structural/whitespace assertions and **semantic** assertions (verifying the merged config values are correct).
+- **HTTP Mocking & `sitecustomize.py`**: `ruff-sync` uses `httpx2` for HTTP fetching and `respx` for test mocking. `src/sitecustomize.py` contains a test execution guard (`if any("pytest" in arg for arg in sys.argv) or "PYTEST_CURRENT_TEST" in os.environ:`) that calls `httpx2.alias_httpx()` at interpreter launch during pytest runs. `src/sitecustomize.py` lives outside `src/ruff_sync/` and is strictly excluded from wheel packages by Hatchling (`packages = ["src/ruff_sync"]`), so end users never receive it.
 
 ## Invoke Tasks
 

@@ -281,13 +281,13 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
 
 @pytest.fixture
 def mock_http(toml_s: str, respx_mock: respx.MockRouter) -> Generator[respx.MockRouter, None, None]:
-    with respx_mock(base_url="https://example.com/") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com/") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=toml_s,
         )
-        yield mock
+        yield http_mock
 
 
 @pytest.fixture
@@ -610,8 +610,8 @@ target-version = "py311"
     ff = fs.create_file("pyproject.toml", contents=source_toml)
     ff_path = pathlib.Path(ff.path)  # type: ignore[arg-type]
 
-    with respx_mock(base_url="https://example.com/") as mock:
-        mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com/") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200,
             content_type="text/plain",
             content=upstream_toml,
@@ -669,7 +669,7 @@ def test_ruff_config_file_name_equality() -> None:
 
 
 @pytest.mark.asyncio
-async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.Router):
+async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.MockRouter):
     """Verify that multiple upstreams are merged in the given order."""
     # Setup mock data
     target_doc = document()
@@ -701,7 +701,7 @@ async def test_merge_multiple_upstreams_preserves_order(respx_mock: respx.Router
 
 
 @pytest.mark.asyncio
-async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.Router):
+async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.MockRouter):
     """Verify that fetch_upstreams_concurrently actually runs tasks in parallel."""
     events = []
 
@@ -754,7 +754,7 @@ async def test_fetch_upstreams_concurrently_verified(respx_mock: respx.Router):
 
 
 @pytest.mark.asyncio
-async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router):
+async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.MockRouter):
     target_doc = document()
 
     args = ruff_sync.Arguments(
@@ -783,7 +783,7 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.Router)
 
 def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     monkeypatch: pytest.MonkeyPatch,
-    respx_mock: respx.Router,
+    respx_mock: respx.MockRouter,
     capsys: pytest.CaptureFixture[str],
     configure_logging: logging.Logger,
 ) -> None:
@@ -828,7 +828,7 @@ def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
 
 def test_cli_output_format_github(
     monkeypatch: pytest.MonkeyPatch,
-    respx_mock: respx.Router,
+    respx_mock: respx.MockRouter,
     capsys: pytest.CaptureFixture[str],
     configure_logging: logging.Logger,
 ) -> None:
@@ -870,7 +870,7 @@ def test_cli_output_format_github(
 
 def test_cli_output_format_json(
     monkeypatch: pytest.MonkeyPatch,
-    respx_mock: respx.Router,
+    respx_mock: respx.MockRouter,
     capsys: pytest.CaptureFixture[str],
     configure_logging: logging.Logger,
 ) -> None:
@@ -930,7 +930,7 @@ def test_cli_output_format_json(
 
 def test_cli_output_format_json_success(
     monkeypatch: pytest.MonkeyPatch,
-    respx_mock: respx.Router,
+    respx_mock: respx.MockRouter,
     capsys: pytest.CaptureFixture[str],
     configure_logging: logging.Logger,
     fs: FakeFilesystem,

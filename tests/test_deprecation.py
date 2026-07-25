@@ -12,6 +12,7 @@ import ruff_sync
 import ruff_sync.cli
 
 if TYPE_CHECKING:
+    import respx
     from pyfakefs.fake_filesystem import FakeFilesystem
 
 
@@ -20,7 +21,7 @@ def test_source_cli_deprecation(
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
     clear_ruff_sync_caches,
-    httpx2_mock,
+    respx_mock: respx.MockRouter,
 ):
     """Test that --source CLI argument emits a deprecation warning and works as --to."""
     # Ensure we are in a clean directory
@@ -32,8 +33,8 @@ def test_source_cli_deprecation(
     source_path = test_dir / "pyproject.toml"
     upstream_url = URL("https://example.com/pyproject.toml")
 
-    with httpx2_mock(base_url="https://example.com") as respx_mock:
-        respx_mock.get("/pyproject.toml").respond(
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(
             200, text="[tool.ruff]\ntarget-version = 'py310'\n"
         )
 
@@ -51,7 +52,7 @@ def test_source_config_deprecation(
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
     clear_ruff_sync_caches,
-    httpx2_mock,
+    respx_mock: respx.MockRouter,
 ):
     """Test that source in [tool.ruff-sync] emits a deprecation warning
     and that `to` takes precedence.
@@ -112,8 +113,8 @@ to = "sub-project"
     )
 
     # Mock the upstream request
-    with httpx2_mock(base_url="https://example.com") as respx_mock:
-        respx_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
 
         # No --to or --source on CLI, but use --init to allow creating the sub-project file
         monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull", "--init"])
@@ -141,8 +142,8 @@ to = "."
     ruff_sync.get_config.cache_clear()
     monkeypatch.setattr(sys, "argv", ["ruff-sync", "pull"])
 
-    with httpx2_mock(base_url="https://example.com") as respx_mock:
-        respx_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
+    with respx_mock(base_url="https://example.com") as http_mock:
+        http_mock.get("/pyproject.toml").respond(200, text="[tool.ruff]\n")
         exit_code = ruff_sync.main()
         assert exit_code == 0
 
