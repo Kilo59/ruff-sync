@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    import respx
 
 import pytest
 import truststore
@@ -25,12 +24,6 @@ pytest_plugins = ["respx"]
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-@pytest.fixture
-def httpx2_mock(respx_mock: respx.MockRouter) -> respx.MockRouter:
-    """Alias for respx_mock to support existing tests."""
-    return respx_mock
 
 
 class TestStreamHandler(logging.Handler):
