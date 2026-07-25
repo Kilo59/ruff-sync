@@ -5,13 +5,6 @@ This package provides tools to synchronize ruff configuration across projects.
 
 from __future__ import annotations
 
-import sys
-
-import httpx2 as httpx
-
-if "httpx" not in sys.modules:
-    httpx.alias_httpx()
-
 from .cli import (
     Arguments,
     __version__,
