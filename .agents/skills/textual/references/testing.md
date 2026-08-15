@@ -10,6 +10,7 @@ Use the `pilot` object to interact with your app in a headless state.
 import pytest
 from my_app import SimpleApp
 
+
 @pytest.mark.asyncio
 async def test_button_click():
     app = SimpleApp()

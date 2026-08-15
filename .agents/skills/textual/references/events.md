@@ -33,6 +33,7 @@ Define `reactive` attributes to automatically trigger updates. Use `watch_<attri
 ```python
 from textual.reactive import reactive
 
+
 class Counter(Static):
     # Reactive state: UI updates whenever 'count' is modified
     count: reactive[int] = reactive(0)
@@ -52,6 +53,8 @@ Widgets can communicate with parents via custom messages:
 1. **Define a Message**:
    ```python
    from textual.message import Message
+
+
    class DataLoaded(Message):
        def __init__(self, data: list[str]) -> None:
            self.data = data

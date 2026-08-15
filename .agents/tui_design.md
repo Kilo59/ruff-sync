@@ -39,16 +39,18 @@ Right now, discovering and extracting the local `pyproject.toml` is slightly cou
   inspect_parser = subparsers.add_parser(
       "inspect",
       parents=[common_parser],
-      help="Open a Terminal UI to explore and interrogate your local ruff configuration."
+      help="Open a Terminal UI to explore and interrogate your local ruff configuration.",
   )
   ```
 - In `main()`, route the `inspect` command to a lazy-loaded wrapper:
   ```python
   if exec_args.command == "inspect":
       from ruff_sync.dependencies import require_dependency
+
       require_dependency("textual", extra_name="tui")
 
       from ruff_sync.tui.app import RuffSyncApp
+
       return RuffSyncApp(exec_args).run()
   ```
 

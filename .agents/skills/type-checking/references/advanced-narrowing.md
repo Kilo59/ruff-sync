@@ -19,8 +19,10 @@ Use `TypeIs` when you want to definitively split a Union.
 from typing import Union
 from typing_extensions import TypeIs
 
+
 def is_str(val: Union[str, int]) -> TypeIs[str]:
     return isinstance(val, str)
+
 
 def process(val: Union[str, int]) -> None:
     if is_str(val):
@@ -39,9 +41,11 @@ Use `@runtime_checkable Protocol` with `TypeIs` for structural subtyping.
 from typing import Protocol, runtime_checkable
 from typing_extensions import TypeIs
 
+
 @runtime_checkable
 class Reader(Protocol):
     def read(self) -> str: ...
+
 
 def is_reader(val: object) -> TypeIs[Reader]:
     return isinstance(val, Reader)

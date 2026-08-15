@@ -15,6 +15,7 @@ T = TypeVar("T")
 KT = TypeVar("KT")
 VT = TypeVar("VT")
 
+
 def get_keys(data: Mapping[KT, VT]) -> list[KT]:
     return list(data.keys())
 ```
@@ -27,6 +28,7 @@ Follow the standard Python conventions for protocols:
 
 ```python
 from typing import Protocol
+
 
 class SupportsMerge(Protocol):
     def merge(self, other: object) -> object: ...

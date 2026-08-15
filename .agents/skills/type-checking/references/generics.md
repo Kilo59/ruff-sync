@@ -21,6 +21,7 @@ from typing import TypeVar, Protocol, Generic, Sequence
 
 T = TypeVar("T_co", covariant=True)
 
+
 class Producer(Generic[T]):
     def __init__(self, items: Sequence[T]) -> None:
         self._items = items
@@ -39,16 +40,19 @@ from typing import TypeVar, Union
 # T must be a subclass of int (including int itself)
 T = TypeVar("T", bound=int)
 
+
 def increment(val: T) -> T:
-    return val + 1 # Error: + 1 returns int, but we must return T
+    return val + 1  # Error: + 1 returns int, but we must return T
 ```
 - **Pro Tip**: Use a `Protocol` as a bound to restrict a `TypeVar` to objects with specific methods.
 
 ```python
 from typing import Protocol, TypeVar
 
+
 class SupportsRead(Protocol):
     def read(self) -> str: ...
+
 
 T = TypeVar("T", bound=SupportsRead)
 ```

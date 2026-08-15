@@ -88,6 +88,7 @@ def validate_toml_syntax(doc: TOMLDocument) -> bool:
     """
     try:
         import tomlkit  # already a dep
+
         tomlkit.parse(doc.as_string())
         return True
     except Exception:  # noqa: BLE001
@@ -146,9 +147,7 @@ def validate_ruff_accepts_config(doc: TOMLDocument, is_ruff_toml: bool = False) 
             )
             return False
         except FileNotFoundError:
-            LOGGER.warning(
-                "⚠️  `ruff` not found on PATH — skipping Ruff config validation."
-            )
+            LOGGER.warning("⚠️  `ruff` not found on PATH — skipping Ruff config validation.")
             return True  # Soft fail: don't block if ruff isn't installed
         except subprocess.TimeoutExpired:
             LOGGER.warning("⚠️  Ruff config validation timed out — skipping.")
@@ -184,7 +183,7 @@ Validation is **opt-in**. Before touching `core.py`, wire up the CLI flag.
 class Arguments(NamedTuple):
     ...
     validate: bool = False  # run --validate checks before writing
-    strict: bool = False    # treat warnings as errors (implies validate)
+    strict: bool = False  # treat warnings as errors (implies validate)
 ```
 
 **In `common_parser`** (around line 236), add:
@@ -230,18 +229,17 @@ Open `core.py`. Find the `pull()` function (around line 1103). Look for this blo
 **After** this block (and **before** `should_save = args.save ...`), insert:
 
 ```python
-        # Validation is opt-in — only run if --validate (or --strict) was passed
-        if args.validate:
-            is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
-            from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
-            if not validate_merged_config(
-                source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict
-            ):
-                fmt.error(
-                    "❌ Merged config failed validation. Local file left unchanged.",
-                    logger=LOGGER,
-                )
-                return 1
+# Validation is opt-in — only run if --validate (or --strict) was passed
+if args.validate:
+    is_ruff_toml = is_ruff_toml_file(_source_toml_path.name)
+    from ruff_sync.validation import validate_merged_config  # noqa: PLC0415
+
+    if not validate_merged_config(source_doc, is_ruff_toml=is_ruff_toml, strict=args.strict):
+        fmt.error(
+            "❌ Merged config failed validation. Local file left unchanged.",
+            logger=LOGGER,
+        )
+        return 1
 ```
 
 > **Note**: The inline import avoids a circular import issue if `validation.py` ever needs to
@@ -437,6 +435,7 @@ Add to `tests/test_config_validation.py`:
 ```python
 def test_version_consistency_warn_on_mismatch(caplog: pytest.LogCaptureFixture) -> None:
     import logging
+
     doc = tomlkit.parse(
         '[project]\nrequires-python = ">=3.10"\n\n[tool.ruff]\ntarget-version = "py39"\n'
     )
@@ -492,9 +491,7 @@ def _get_deprecated_rule_codes() -> frozenset[str]:
         if result.returncode != 0:
             return frozenset()
         rules = json.loads(result.stdout)
-        return frozenset(
-            r["code"] for r in rules if r.get("deprecated") is True
-        )
+        return frozenset(r["code"] for r in rules if r.get("deprecated") is True)
     except (FileNotFoundError, subprocess.TimeoutExpired, json.JSONDecodeError, KeyError):
         return frozenset()
 ```
@@ -573,7 +570,9 @@ def check_deprecated_rules(
     is_ruff_toml: bool = False,
     _deprecated_codes: frozenset[str] | None = None,
 ) -> None:
-    deprecated_codes = _deprecated_codes if _deprecated_codes is not None else _get_deprecated_rule_codes()
+    deprecated_codes = (
+        _deprecated_codes if _deprecated_codes is not None else _get_deprecated_rule_codes()
+    )
     ...
 ```
 

@@ -15,6 +15,8 @@ lint.extend-ignore = [
     # https://beta.ruff.rs/docs/rules/#flake8-bugbear-b
     "B011", # assert-false - common pattern in pytest
     # https://beta.ruff.rs/docs/rules/#flake8-datetimez-dtz
+    "PLR0913", # too many arguments in test functions
+    "PLR0917", # too many positional arguments in test functions
     "PLR2004", # magic value comparison is common test pattern
     "RUF015", # element index slice is common test pattern
     # we don't need to enforce these security rules for tests

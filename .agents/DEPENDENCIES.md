@@ -29,10 +29,12 @@ Never import optional dependencies at the top level of a module. All imports mus
 def run_tui_feature():
     # 1. First, check availability (fast, lightweight)
     from ruff_sync.dependencies import require_dependency
+
     require_dependency("textual", extra_name="tui")
 
     # 2. Then, perform local import (delayed expensive cycle)
     from textual.app import App
+
     ...
 ```
 

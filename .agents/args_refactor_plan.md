@@ -96,11 +96,11 @@ class ExecutionArgs(NamedTuple):
     semantic: bool
     diff: bool
     init: bool
-    pre_commit: bool      # plain bool — MISSING resolved to default
+    pre_commit: bool  # plain bool — MISSING resolved to default
     save: bool | None
     output_format: OutputFormat
-    validate: bool        # plain bool — MISSING resolved to default
-    strict: bool          # plain bool — MISSING resolved to default
+    validate: bool  # plain bool — MISSING resolved to default
+    strict: bool  # plain bool — MISSING resolved to default
 ```
 
 > [!NOTE]
@@ -120,9 +120,9 @@ class Arguments(NamedTuple):
     def resolve(self) -> ExecutionArgs:
         """Resolve all MISSING sentinels to their effective defaults for execution."""
         _, _, _, eff_validate, eff_strict, eff_pre_commit = resolve_defaults(
-            MISSING,   # branch — already resolved, pass MISSING to skip
-            MISSING,   # path — already resolved, pass MISSING to skip
-            MISSING,   # exclude — already resolved, pass MISSING to skip
+            MISSING,  # branch — already resolved, pass MISSING to skip
+            MISSING,  # path — already resolved, pass MISSING to skip
+            MISSING,  # exclude — already resolved, pass MISSING to skip
             self.validate,
             self.strict,
             self.pre_commit,
@@ -205,11 +205,14 @@ Replace the `resolve_defaults()` call in `Arguments.resolve()` with `resolve_boo
 ```python
 from ruff_sync.constants import resolve_bool_flags
 
+
 class Arguments(NamedTuple):
     # ...
     def resolve(self) -> ExecutionArgs:
         eff_validate, eff_strict, eff_pre_commit = resolve_bool_flags(
-            self.validate, self.strict, self.pre_commit,
+            self.validate,
+            self.strict,
+            self.pre_commit,
         )
         return ExecutionArgs(
             command=self.command,
@@ -291,7 +294,7 @@ call is actually redundant. However, if the function is also used by code that p
 async def _merge_multiple_upstreams(
     target_doc: TOMLDocument,
     is_target_ruff_toml: bool,
-    args: ExecutionArgs,     # ← changed from Arguments
+    args: ExecutionArgs,  # ← changed from Arguments
     client: httpx.AsyncClient,
 ) -> TOMLDocument:
     # No resolve_defaults() needed — args already has plain values
@@ -363,16 +366,19 @@ Add **new** tests for `resolve_bool_flags()`:
 ```python
 from ruff_sync.constants import resolve_bool_flags
 
+
 def test_resolve_bool_flags_all_missing():
     validate, strict, pre_commit = resolve_bool_flags(MISSING, MISSING, MISSING)
     assert validate is False
     assert strict is False
     assert pre_commit is True
 
+
 def test_resolve_bool_flags_strict_implies_validate():
     validate, strict, pre_commit = resolve_bool_flags(MISSING, True, MISSING)
     assert validate is True
     assert strict is True
+
 
 def test_resolve_bool_flags_explicit_false():
     validate, strict, pre_commit = resolve_bool_flags(False, False, False)

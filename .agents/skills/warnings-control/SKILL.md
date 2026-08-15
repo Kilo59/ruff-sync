@@ -22,10 +22,13 @@ When working on a library or a CLI tool, you should almost always define a custo
 # src/my_project/exceptions.py
 class ProjectWarning(UserWarning):
     """Base category for warnings related to this project."""
+
     pass
+
 
 class ConfigWarning(ProjectWarning):
     """Category for configuration-related warnings."""
+
     pass
 ```
 
@@ -53,6 +56,7 @@ When implementing a `--strict` mode, use `warnings.filterwarnings` to target *on
 ```python
 import warnings
 from my_project.exceptions import ProjectWarning
+
 
 def enable_strict_mode():
     """Convert only this project's warnings into exceptions."""
@@ -87,6 +91,7 @@ When testing code that raises warnings, wrap the operation in `warnings.catch_wa
 
 ```python
 import warnings
+
 
 def test_deprecated_feature():
     with warnings.catch_warnings(record=True) as w:

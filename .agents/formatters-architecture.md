@@ -58,8 +58,8 @@ def error(
     message: str,
     file_path: pathlib.Path | None = None,
     logger: logging.Logger | None = None,
-    check_name: str = "ruff-sync/config-drift",   # machine-readable rule ID
-    drift_key: str | None = None,                  # e.g. "lint.select"
+    check_name: str = "ruff-sync/config-drift",  # machine-readable rule ID
+    drift_key: str | None = None,  # e.g. "lint.select"
 ) -> None: ...
 ```
 
@@ -107,11 +107,11 @@ this even when `UpstreamError` or another exception occurs.
 1. **Add the format value** to `OutputFormat` in `src/ruff_sync/constants.py`:
    ```python
    class OutputFormat(str, enum.Enum):
-       TEXT   = "text"
-       JSON   = "json"
+       TEXT = "text"
+       JSON = "json"
        GITHUB = "github"
        GITLAB = "gitlab"
-       SARIF  = "sarif"   # new
+       SARIF = "sarif"  # new
    ```
 
 2. **Implement the class** in `src/ruff_sync/formatters.py`.  For a
@@ -151,7 +151,7 @@ fmt = get_formatter(args.output_format)
 try:
     ...
 finally:
-    fmt.finalize()   # no-op for streaming; flushes JSON for accumulating
+    fmt.finalize()  # no-op for streaming; flushes JSON for accumulating
 ```
 
 `finalize()` is always called unconditionally — **do not** guard it with
@@ -167,6 +167,7 @@ is newly introduced or already resolved between branches.
 
 ```python
 import hashlib
+
 
 def _make_fingerprint(upstream_url: str, local_file: str, drift_key: str | None) -> str:
     if drift_key:

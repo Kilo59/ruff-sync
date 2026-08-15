@@ -9,10 +9,12 @@ Instead of checking `isinstance(obj, pathlib.Path)`, check if it "works like a p
 ```python
 from typing import Protocol, runtime_checkable
 
+
 @runtime_checkable
 class PathLike(Protocol):
     def exists(self) -> bool: ...
     def read_text(self) -> str: ...
+
 
 def process(path: PathLike) -> str:
     if path.exists():
@@ -27,9 +29,11 @@ When a library returns `Any`, use a `Protocol` to "tame" it without using `cast`
 ```python
 from typing import Protocol, Any
 
+
 class ConfigContainer(Protocol):
     def get(self, key: str) -> Any: ...
     def keys(self) -> list[str]: ...
+
 
 def load_config(raw: Any) -> ConfigContainer:
     # No cast needed if the argument is structural
@@ -43,9 +47,10 @@ For recursive structures (like nested dicts or file trees), use a `Protocol` tha
 ```python
 from typing import Protocol, Union, Optional
 
+
 class NestedDict(Protocol):
-    def __getitem__(self, key: str) -> Union[str, 'NestedDict']: ...
-    def get(self, key: str) -> Optional[Union[str, 'NestedDict']]: ...
+    def __getitem__(self, key: str) -> Union[str, "NestedDict"]: ...
+    def get(self, key: str) -> Optional[Union[str, "NestedDict"]]: ...
 ```
 
 ## Best Practices
