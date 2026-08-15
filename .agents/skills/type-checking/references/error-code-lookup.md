@@ -17,8 +17,8 @@ Match the Mypy error code from your terminal to the project-safe resolution patt
 
 **Bad (Cast)**:
 ```python
-val = get_union() # str | None
-val.upper()       # [union-attr] "None" has no attribute "upper"
+val = get_union()  # str | None
+val.upper()  # [union-attr] "None" has no attribute "upper"
 # NO: val = cast(str, val)
 ```
 
@@ -26,7 +26,7 @@ val.upper()       # [union-attr] "None" has no attribute "upper"
 ```python
 val = get_union()
 if val is not None:
-    val.upper() # FIXED
+    val.upper()  # FIXED
 ```
 
 ### Fixing `[assignment]` (Dealing with `tomlkit` or `Any`)
@@ -34,7 +34,7 @@ if val is not None:
 **Bad (Cast)**:
 ```python
 doc = tomlkit.parse(...)
-tool: Table = doc["tool"] # [assignment] Incompatible types (Item vs Table)
+tool: Table = doc["tool"]  # [assignment] Incompatible types (Item vs Table)
 # NO: tool = cast(Table, doc["tool"])
 ```
 
@@ -52,8 +52,10 @@ if not isinstance(tool, Table):
 **Bad (Cast)**:
 ```python
 def process_str(s: str): ...
+
+
 data: Union[str, int] = ...
-process_str(data) # [arg-type] Argument 1 has incompatible type
+process_str(data)  # [arg-type] Argument 1 has incompatible type
 # NO: process_str(cast(str, data))
 ```
 
@@ -61,9 +63,11 @@ process_str(data) # [arg-type] Argument 1 has incompatible type
 ```python
 from typing_extensions import TypeIs
 
+
 def is_str(v: object) -> TypeIs[str]:
     return isinstance(v, str)
 
+
 if is_str(data):
-    process_str(data) # FIXED
+    process_str(data)  # FIXED
 ```

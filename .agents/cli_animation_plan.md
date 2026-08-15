@@ -441,9 +441,7 @@ def recordings(ctx, tape=None):
         tape_files = [tape_file]
     else:
         # Process all tape files except _common.tape
-        tape_files = sorted(
-            f for f in tapes_dir.glob("*.tape") if not f.name.startswith("_")
-        )
+        tape_files = sorted(f for f in tapes_dir.glob("*.tape") if not f.name.startswith("_"))
 
     if not tape_files:
         print("⚠️ No tape files found in tapes/")

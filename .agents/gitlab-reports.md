@@ -145,6 +145,7 @@ For a "config drift" issue per key (e.g., `lint.select`), a good stable fingerpr
 ```python
 import hashlib
 
+
 def make_fingerprint(upstream_url: str, local_file: str, drift_key: str) -> str:
     """Stable fingerprint for a config drift issue."""
     raw = f"ruff-sync:drift:{upstream_url}:{local_file}:{drift_key}"
@@ -281,13 +282,15 @@ class GitlabFormatter:
         fingerprint: str | None = None,
     ) -> None:
         (logger or LOGGER).error(message)
-        self._issues.append(self._make_issue(
-            description=message,
-            check_name=check_name,
-            severity="major",
-            file_path=file_path,
-            fingerprint=fingerprint,
-        ))
+        self._issues.append(
+            self._make_issue(
+                description=message,
+                check_name=check_name,
+                severity="major",
+                file_path=file_path,
+                fingerprint=fingerprint,
+            )
+        )
 
     def warning(
         self,
@@ -298,13 +301,15 @@ class GitlabFormatter:
         fingerprint: str | None = None,
     ) -> None:
         (logger or LOGGER).warning(message)
-        self._issues.append(self._make_issue(
-            description=message,
-            check_name=check_name,
-            severity="minor",
-            file_path=file_path,
-            fingerprint=fingerprint,
-        ))
+        self._issues.append(
+            self._make_issue(
+                description=message,
+                check_name=check_name,
+                severity="minor",
+                file_path=file_path,
+                fingerprint=fingerprint,
+            )
+        )
 
     def _make_issue(
         self,
@@ -327,6 +332,7 @@ class GitlabFormatter:
     @staticmethod
     def _auto_fingerprint(description: str, path: str) -> str:
         import hashlib
+
         raw = f"ruff-sync:drift:{path}:{description}"
         return hashlib.md5(raw.encode()).hexdigest()
 
@@ -370,7 +376,7 @@ class OutputFormat(str, enum.Enum):
     TEXT = "text"
     JSON = "json"
     GITHUB = "github"
-    GITLAB = "gitlab"   # NEW
+    GITLAB = "gitlab"  # NEW
 ```
 
 Update `get_formatter` in `formatters.py`:
@@ -530,7 +536,7 @@ fmt = get_formatter(args.output_format)
 try:
     ...
 finally:
-    fmt.finalize()   # Writes the JSON array to stdout (piped to file by CI)
+    fmt.finalize()  # Writes the JSON array to stdout (piped to file by CI)
 ```
 
 **Do not** guard the call with `isinstance` or `hasattr` checks.
@@ -562,12 +568,14 @@ from unittest.mock import patch
 
 from ruff_sync.formatters import GitlabFormatter
 
+
 def test_gitlab_formatter_empty_on_no_issues(capsys):
     fmt = GitlabFormatter()
     fmt.finalize()
     captured = capsys.readouterr()
     issues = json.loads(captured.out)
     assert issues == []
+
 
 def test_gitlab_formatter_error_produces_major_issue(capsys):
     fmt = GitlabFormatter()
@@ -581,6 +589,7 @@ def test_gitlab_formatter_error_produces_major_issue(capsys):
     assert issues[0]["location"]["lines"]["begin"] == 1
     assert "fingerprint" in issues[0]
 
+
 def test_gitlab_formatter_fingerprint_is_stable(capsys):
     fmt1 = GitlabFormatter()
     fmt2 = GitlabFormatter()
@@ -593,6 +602,7 @@ def test_gitlab_formatter_fingerprint_is_stable(capsys):
     issues1 = json.loads(out1)
     issues2 = json.loads(out2)
     assert issues1[0]["fingerprint"] == issues2[0]["fingerprint"]
+
 
 def test_gitlab_formatter_no_bom(capsys):
     fmt = GitlabFormatter()

@@ -13,7 +13,7 @@ from dirty_equals import IsPartialDict
 import tomlkit
 
 # Parse some TOML
-doc = tomlkit.parse('[tool.ruff]\nline-length = 80')
+doc = tomlkit.parse("[tool.ruff]\nline-length = 80")
 
 # Match the tool.ruff section
 ruff_config = doc["tool"]["ruff"]
@@ -46,9 +46,11 @@ args = ruff_sync_cli.Arguments(
 )
 
 # Convert to dict and match specific fields
-assert args._asdict() == IsPartialDict({
-    "command": "pull",
-    "upstream": (IsInstance(httpx.URL),),
-    "to": IsInstance(pathlib.Path),
-})
+assert args._asdict() == IsPartialDict(
+    {
+        "command": "pull",
+        "upstream": (IsInstance(httpx.URL),),
+        "to": IsInstance(pathlib.Path),
+    }
+)
 ```

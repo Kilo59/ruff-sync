@@ -13,9 +13,11 @@ Simple containers or return types that provide immediate clarity over `Any`.
 ```python
 T = TypeVar("T")
 
+
 class Result(Generic[T]):
     def __init__(self, value: T) -> None:
         self.value = value
+
 
 # Result[Project] is 10x clearer than Mapping[str, object].
 ```
@@ -26,6 +28,7 @@ Bound TypeVars that restrict a Generic to a specific hierarchy or protocol.
 **Example**:
 ```python
 T = TypeVar("T", bound=Mapping[str, object])
+
 
 def merge_configs(base: T, update: T) -> T:
     # Guaranteed to return the same specific type (e.g. Table).
@@ -59,6 +62,7 @@ Stop refactoring and use a simple `isinstance` or `# type: ignore[code]` if:
 **"Pragmatic but Safe" (Better for ruff-sync Features)**:
 ```python
 from typing import Mapping
+
 
 def deep_navigate(data: Mapping[str, object], path: list[str]) -> Optional[str]:
     # Navigate using a simple loop and isinstance narrowing.

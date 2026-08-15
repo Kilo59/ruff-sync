@@ -24,11 +24,13 @@ import httpx
 import pathlib
 
 # Match a partial dict with mixed types
-assert response_data == IsPartialDict({
-    "url": IsInstance(httpx.URL),
-    "status": "success",
-    "retries": 0,
-})
+assert response_data == IsPartialDict(
+    {
+        "url": IsInstance(httpx.URL),
+        "status": "success",
+        "retries": 0,
+    }
+)
 ```
 
 ### String and Path Matching

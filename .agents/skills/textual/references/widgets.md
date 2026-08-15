@@ -82,6 +82,7 @@ Modals are screens with a transparent or dim background that overlay the main ap
 from textual.screen import ModalScreen
 from textual.app import App
 
+
 class OmniboxScreen(ModalScreen[str]):
     # A modal screen that returns a `str` when dismissed.
     def compose(self) -> ComposeResult:
@@ -92,10 +93,12 @@ class OmniboxScreen(ModalScreen[str]):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         self.dismiss(event.value)
 
+
 # In the main App or Screen:
 def on_key(self, event: events.Key) -> None:
     if event.key == "ctrl+p":
         self.push_screen(OmniboxScreen(), self.handle_omnibox_result)
+
 
 def handle_omnibox_result(self, result: str | None) -> None:
     if result:

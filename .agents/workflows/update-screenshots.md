@@ -41,7 +41,7 @@ To add a new view to the automated screenshot rotation:
     ```python
     # Navigate to the new view
     await pilot.press("control+f")  # Example: Open a specific dialog
-    await pilot.pause(0.2)          # Give the UI time to animate
+    await pilot.pause(0.2)  # Give the UI time to animate
     ```
 3.  **Capture the Screen**:
     ```python

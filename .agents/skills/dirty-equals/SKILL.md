@@ -14,13 +14,16 @@ Instead of asserting on every field manually, compare against a "dirty" object t
 ```python
 from dirty_equals import IsInt, IsPartialDict, IsStr
 
+
 def test_config_logic():
     result = {"status": "active", "version": 1, "extra": "data"}
     # Declarative assertion
-    assert result == IsPartialDict({
-        "status": IsStr(regex="act.*"),
-        "version": IsInt(gt=0),
-    })
+    assert result == IsPartialDict(
+        {
+            "status": IsStr(regex="act.*"),
+            "version": IsInt(gt=0),
+        }
+    )
 ```
 
 ## Detailed reference

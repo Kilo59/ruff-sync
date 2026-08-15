@@ -129,7 +129,7 @@ class ConfKey(str, enum.Enum):
 
 def resolve_defaults(
     branch: str | MissingType,
-    path: str | None | MissingType,
+    path: str | MissingType | None,
     exclude: Iterable[str] | MissingType,
 ) -> tuple[str, str | None, Iterable[str]]:
     """Resolve MISSING sentinel values to their effective defaults.
