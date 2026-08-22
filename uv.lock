@@ -1795,7 +1795,7 @@ dev = [
     { name = "pyfakefs", specifier = ">=5.4.1" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-asyncio", specifier = ">=0.23.5" },
-    { name = "pytest-codspeed", specifier = ">=4.3.0" },
+    { name = "pytest-codspeed", specifier = ">=5.0.3" },
     { name = "pytest-icdiff", specifier = ">=0.9" },
     { name = "pytest-textual-snapshot", specifier = ">=1.0.0" },
     { name = "respx", specifier = ">=0.23.1" },
