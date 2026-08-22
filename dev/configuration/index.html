@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1116,6 +1116,8 @@
       
         
       
+        
+      
     
     
     
@@ -1799,6 +1801,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sitecustomize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sitecustomize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2175,22 +2205,22 @@ See <a href="../best-practices/#use-strategic-exclusions">Strategic Exclusions</
 <h4 id="preserve-per-file-ignores">Preserve per-file ignores<a class="headerlink" href="#preserve-per-file-ignores" title="Permanent link">&para;</a></h4>
 <p>This is the default. It ensures that any custom ignores you've set for specific files in your repo aren't overwritten by the upstream.</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">]</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"lint.per-file-ignores"</span><span class="p">]</span>
 </span></code></pre></div>
 <h4 id="manage-specific-plugins-locally">Manage specific plugins locally<a class="headerlink" href="#manage-specific-plugins-locally" title="Permanent link">&para;</a></h4>
 <p>If you want to use the upstream rules but manage <code>pydocstyle</code> settings yourself:</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.pydocstyle&quot;</span><span class="p">]</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"lint.pydocstyle"</span><span class="p">]</span>
 </span></code></pre></div>
 <h4 id="keep-a-specific-rule-toggle">Keep a specific rule toggle<a class="headerlink" href="#keep-a-specific-rule-toggle" title="Permanent link">&para;</a></h4>
 <p>If you want to manage whether a specific rule is ignored or selected:</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.ignore&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;lint.select&quot;</span><span class="p">]</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"lint.ignore"</span><span class="p">,</span><span class="w"> </span><span class="s2">"lint.select"</span><span class="p">]</span>
 </span></code></pre></div>
 <h4 id="preserve-target-version">Preserve target version<a class="headerlink" href="#preserve-target-version" title="Permanent link">&para;</a></h4>
 <p>If your projects are on different Python versions but share linting rules:</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;target-version&quot;</span><span class="p">]</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"target-version"</span><span class="p">]</span>
 </span></code></pre></div>
 <blockquote>
 <p>[!NOTE]
@@ -2209,8 +2239,8 @@ Excluding <code>target-version</code> also automatically skips the Python versio
 <p>You can specify multiple upstream sources as a list. They will be merged in order—from top to bottom—with later sources overriding or extending earlier ones.</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[tool.ruff-sync]</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/shared-config&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1"># 1. Base rules</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="s2">&quot;https://github.com/my-org/team-overrides&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1"># 2. Team-specific tweaks (wins)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="s2">"https://github.com/my-org/shared-config"</span><span class="p">,</span><span class="w">  </span><span class="c1"># 1. Base rules</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="s2">"https://github.com/my-org/team-overrides"</span><span class="p">,</span><span class="w"> </span><span class="c1"># 2. Team-specific tweaks (wins)</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">]</span>
 </span></code></pre></div>
 <div class="admonition tip">
@@ -2223,10 +2253,10 @@ Excluding <code>target-version</code> also automatically skips the Python versio
 <p>Syncs the provided <code>fastapi</code> predefined config from the <code>ruff-sync</code> repository itself, while keeping your local per-file ignores intact.</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">[tool.ruff-sync]</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># The source to sync from (supports GitHub/GitLab web URLs, raw file URLs, and git:// or git+https:// URLs)</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/Kilo59/ruff-sync&quot;</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"https://github.com/Kilo59/ruff-sync"</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># `path` is only needed if the config file is NOT in the root directory of the upstream repo</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;configs/fastapi&quot;</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">]</span><span class="w"> </span><span class="c1"># Keys to preserve in your local config</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"configs/fastapi"</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"lint.per-file-ignores"</span><span class="p">]</span><span class="w"> </span><span class="c1"># Keys to preserve in your local config</span>
 </span></code></pre></div>
 <h3 id="advanced-configuration">Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Permanent link">&para;</a></h3>
 <p>Demonstrates a sequential strategy: it pulls the comprehensive <code>kitchen-sink</code> configuration first, then overlays the <code>fastapi</code> configuration on top. It also protects your own local <code>pydocstyle</code> settings and Python target version from being overwritten, and ensures your pre-commit hooks stay in sync with Ruff's version.</p>
@@ -2234,14 +2264,14 @@ Excluding <code>target-version</code> also automatically skips the Python versio
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># Merge multiple upstreams sequentially (last one wins)</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Supports GitHub/GitLab web URLs, raw file URLs, and git:// or git+https:// URLs</span>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="s2">&quot;https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1"># Base configuration profile</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="s2">&quot;https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi&quot;</span><span class="p">,</span><span class="w">      </span><span class="c1"># Overrides with asyncio/web focus</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="s2">"https://github.com/Kilo59/ruff-sync/tree/main/configs/kitchen-sink"</span><span class="p">,</span><span class="w"> </span><span class="c1"># Base configuration profile</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="s2">"https://github.com/Kilo59/ruff-sync/tree/main/configs/fastapi"</span><span class="p">,</span><span class="w">      </span><span class="c1"># Overrides with asyncio/web focus</span>
 </span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">]</span>
 </span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># Keys that you want to manage strictly locally</span>
 </span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="s2">&quot;lint.per-file-ignores&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1"># Keep your local file-specific ignore lists</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="s2">&quot;lint.pydocstyle&quot;</span><span class="p">,</span><span class="w">       </span><span class="c1"># Manage your own docstring conventions</span>
-</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="s2">&quot;target-version&quot;</span><span class="p">,</span><span class="w">        </span><span class="c1"># Do not override the local python target version</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="s2">"lint.per-file-ignores"</span><span class="p">,</span><span class="w"> </span><span class="c1"># Keep your local file-specific ignore lists</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="s2">"lint.pydocstyle"</span><span class="p">,</span><span class="w">       </span><span class="c1"># Manage your own docstring conventions</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="s2">"target-version"</span><span class="p">,</span><span class="w">        </span><span class="c1"># Do not override the local python target version</span>
 </span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="p">]</span>
 </span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="c1"># Synchronize your .pre-commit-config.yaml with the upstream Ruff version</span>
 </span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="n">pre-commit-version-sync</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
@@ -2382,7 +2412,7 @@ Excluding <code>target-version</code> also automatically skips the Python versio
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.tabs.link", "navigation.expand", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "navigation.path", "search.highlight", "search.share", "search.suggest", "toc.follow", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

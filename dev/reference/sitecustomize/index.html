@@ -10,31 +10,29 @@
       
       
       
-        <link rel="canonical" href="https://kilo59.github.io/ruff-sync/stable/pre-commit/">
+        <link rel="canonical" href="https://kilo59.github.io/ruff-sync/stable/reference/sitecustomize/">
       
       
-        <link rel="prev" href="../best-practices/">
+        <link rel="prev" href="../ruff_sync/validation/">
       
-      
-        <link rel="next" href="../ci-integration/">
       
       
         
       
       
-      <link rel="icon" href="../assets/favicon.png">
+      <link rel="icon" href="../../assets/favicon.png">
       <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
-        <title>Pre-commit - ruff-sync</title>
+        <title>sitecustomize - ruff-sync</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pre-commit-integration" class="md-skip">
+        <a href="#sitecustomize" class="md-skip">
           Skip to content
         </a>
       
@@ -98,9 +96,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="ruff-sync" class="md-header__button md-logo" aria-label="ruff-sync" data-md-component="logo">
+    <a href="../.." title="ruff-sync" class="md-header__button md-logo" aria-label="ruff-sync" data-md-component="logo">
       
-  <img src="../assets/logo.png" alt="logo">
+  <img src="../../assets/logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -117,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Pre-commit
+              sitecustomize
             
           </span>
         </div>
@@ -235,7 +233,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -254,7 +252,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../installation/" class="md-tabs__link">
+      <a href="../../installation/" class="md-tabs__link">
         
   
   
@@ -271,13 +269,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../usage/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../usage/" class="md-tabs__link">
           
   
   
@@ -297,7 +293,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../troubleshooting/" class="md-tabs__link">
+      <a href="../../troubleshooting/" class="md-tabs__link">
         
   
   
@@ -316,7 +312,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../pre-defined-configs/" class="md-tabs__link">
+      <a href="../../pre-defined-configs/" class="md-tabs__link">
         
   
   
@@ -335,7 +331,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../agent-skill/" class="md-tabs__link">
+      <a href="../../agent-skill/" class="md-tabs__link">
         
   
   
@@ -354,7 +350,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../inspect/" class="md-tabs__link">
+      <a href="../../inspect/" class="md-tabs__link">
         
   
   
@@ -373,7 +369,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../contributing/" class="md-tabs__link">
+      <a href="../../contributing/" class="md-tabs__link">
         
   
   
@@ -390,6 +386,8 @@
   
   
   
+    
+  
   
     
     
@@ -397,11 +395,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../reference/ruff_sync/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../ruff_sync/" class="md-tabs__link">
           
   
   
@@ -440,9 +440,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="ruff-sync" class="md-nav__button md-logo" aria-label="ruff-sync" data-md-component="logo">
+    <a href="../.." title="ruff-sync" class="md-nav__button md-logo" aria-label="ruff-sync" data-md-component="logo">
       
-  <img src="../assets/logo.png" alt="logo">
+  <img src="../../assets/logo.png" alt="logo">
 
     </a>
     ruff-sync
@@ -469,7 +469,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -496,7 +496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/" class="md-nav__link">
+      <a href="../../installation/" class="md-nav__link">
         
   
   
@@ -520,10 +520,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -543,22 +541,21 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -576,7 +573,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -594,7 +591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/" class="md-nav__link">
+      <a href="../../usage/" class="md-nav__link">
         
   
   
@@ -622,7 +619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../url-resolution/" class="md-nav__link">
+      <a href="../../url-resolution/" class="md-nav__link">
         
   
   
@@ -650,7 +647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../configuration/" class="md-nav__link">
         
   
   
@@ -678,7 +675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../best-practices/" class="md-nav__link">
+      <a href="../../best-practices/" class="md-nav__link">
         
   
   
@@ -703,37 +700,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pre-commit
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../pre-commit/" class="md-nav__link">
         
   
   
@@ -749,126 +719,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#official-hooks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Official Hooks
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Official Hooks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#ruff-sync-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ruff-sync-check
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ruff-sync-pull" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ruff-sync-pull
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configuration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-pre-commit-configyaml" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example .pre-commit-config.yaml
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-use-ruff-sync-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why use ruff-sync-check?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#manual-execution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Execution
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#syncing-the-ruff-hook-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Syncing the Ruff Hook Version
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -881,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ci-integration/" class="md-nav__link">
+      <a href="../../ci-integration/" class="md-nav__link">
         
   
   
@@ -916,7 +766,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../troubleshooting/" class="md-nav__link">
+      <a href="../../troubleshooting/" class="md-nav__link">
         
   
   
@@ -943,7 +793,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pre-defined-configs/" class="md-nav__link">
+      <a href="../../pre-defined-configs/" class="md-nav__link">
         
   
   
@@ -970,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent-skill/" class="md-nav__link">
+      <a href="../../agent-skill/" class="md-nav__link">
         
   
   
@@ -997,7 +847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspect/" class="md-nav__link">
+      <a href="../../inspect/" class="md-nav__link">
         
   
   
@@ -1024,7 +874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
+      <a href="../../contributing/" class="md-nav__link">
         
   
   
@@ -1048,8 +898,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1061,21 +913,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
             
   
   
@@ -1093,7 +946,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1145,10 +998,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1158,7 +1014,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/ruff_sync/" class="md-nav__link ">
+            <a href="../ruff_sync/" class="md-nav__link ">
               
   
   
@@ -1176,7 +1032,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_9_1" id="__nav_9_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_9_1" id="__nav_9_1_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -1202,7 +1058,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/cli/" class="md-nav__link">
+      <a href="../ruff_sync/cli/" class="md-nav__link">
         
   
   
@@ -1230,7 +1086,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/config_io/" class="md-nav__link">
+      <a href="../ruff_sync/config_io/" class="md-nav__link">
         
   
   
@@ -1258,7 +1114,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/constants/" class="md-nav__link">
+      <a href="../ruff_sync/constants/" class="md-nav__link">
         
   
   
@@ -1286,7 +1142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/core/" class="md-nav__link">
+      <a href="../ruff_sync/core/" class="md-nav__link">
         
   
   
@@ -1314,7 +1170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/dependencies/" class="md-nav__link">
+      <a href="../ruff_sync/dependencies/" class="md-nav__link">
         
   
   
@@ -1342,7 +1198,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/formatters/" class="md-nav__link">
+      <a href="../ruff_sync/formatters/" class="md-nav__link">
         
   
   
@@ -1370,7 +1226,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/pre_commit/" class="md-nav__link">
+      <a href="../ruff_sync/pre_commit/" class="md-nav__link">
         
   
   
@@ -1398,7 +1254,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/system/" class="md-nav__link">
+      <a href="../ruff_sync/system/" class="md-nav__link">
         
   
   
@@ -1463,7 +1319,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/ruff_sync/tui/" class="md-nav__link ">
+            <a href="../ruff_sync/tui/" class="md-nav__link ">
               
   
   
@@ -1507,7 +1363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/tui/app/" class="md-nav__link">
+      <a href="../ruff_sync/tui/app/" class="md-nav__link">
         
   
   
@@ -1535,7 +1391,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/tui/constants/" class="md-nav__link">
+      <a href="../ruff_sync/tui/constants/" class="md-nav__link">
         
   
   
@@ -1563,7 +1419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/tui/screens/" class="md-nav__link">
+      <a href="../ruff_sync/tui/screens/" class="md-nav__link">
         
   
   
@@ -1591,7 +1447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/tui/themes/" class="md-nav__link">
+      <a href="../ruff_sync/tui/themes/" class="md-nav__link">
         
   
   
@@ -1619,7 +1475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/tui/types_/" class="md-nav__link">
+      <a href="../ruff_sync/tui/types_/" class="md-nav__link">
         
   
   
@@ -1647,7 +1503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/tui/widgets/" class="md-nav__link">
+      <a href="../ruff_sync/tui/widgets/" class="md-nav__link">
         
   
   
@@ -1683,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/types_/" class="md-nav__link">
+      <a href="../ruff_sync/types_/" class="md-nav__link">
         
   
   
@@ -1711,7 +1567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/ruff_sync/validation/" class="md-nav__link">
+      <a href="../ruff_sync/validation/" class="md-nav__link">
         
   
   
@@ -1744,10 +1600,35 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../reference/sitecustomize/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sitecustomize
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1763,6 +1644,35 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sitecustomize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sitecustomize
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1792,8 +1702,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1802,99 +1710,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#official-hooks" class="md-nav__link">
+  <a href="#sitecustomize" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Official Hooks
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Official Hooks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#ruff-sync-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ruff-sync-check
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ruff-sync-pull" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ruff-sync-pull
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configuration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-pre-commit-configyaml" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example .pre-commit-config.yaml
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-use-ruff-sync-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why use ruff-sync-check?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#manual-execution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Execution
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#syncing-the-ruff-hook-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Syncing the Ruff Hook Version
+        sitecustomize
       
     </span>
   </a>
@@ -1926,7 +1745,7 @@
   
   
     <li class="md-path__item">
-      <a href=".." class="md-path__link">
+      <a href="../.." class="md-path__link">
         
   <span class="md-ellipsis">
     Home
@@ -1943,15 +1762,23 @@
   
     
     
+      
+  
+  
+    
+    
       <li class="md-path__item">
-        <a href="../usage/" class="md-path__link">
+        <a href="../ruff_sync/" class="md-path__link">
           
   <span class="md-ellipsis">
-    Usage
+    API Reference
   </span>
 
         </a>
       </li>
+    
+  
+
     
   
 
@@ -1997,66 +1824,54 @@
   
 
 
-<h1 id="pre-commit-integration">Pre-commit Integration<a class="headerlink" href="#pre-commit-integration" title="Permanent link">&para;</a></h1>
-<p>Using <code>ruff-sync</code> with <a href="https://pre-commit.com/">pre-commit</a> ensures that your Ruff configuration stays in sync with your organization's standards automatically.</p>
-<h2 id="official-hooks">Official Hooks<a class="headerlink" href="#official-hooks" title="Permanent link">&para;</a></h2>
-<p><code>ruff-sync</code> provides two official hooks:</p>
-<h3 id="ruff-sync-check"><code>ruff-sync-check</code><a class="headerlink" href="#ruff-sync-check" title="Permanent link">&para;</a></h3>
-<p>Verifies that your local <code>pyproject.toml</code> or <code>ruff.toml</code> matches the upstream configuration. It is recommended to use this hook to prevent accidental drift.</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/Kilo59/ruff-sync</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1.6</span><span class="w">  </span><span class="c1"># Use the latest version</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">hooks</span><span class="p">:</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync-check</span>
-</span></code></pre></div>
-<h3 id="ruff-sync-pull"><code>ruff-sync-pull</code><a class="headerlink" href="#ruff-sync-pull" title="Permanent link">&para;</a></h3>
-<p>Automatically pulls and applies the upstream configuration if a drift is detected.</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/Kilo59/ruff-sync</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1.6</span><span class="w">  </span><span class="c1"># Use the latest version</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">hooks</span><span class="p">:</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync-pull</span>
-</span></code></pre></div>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>The hooks will automatically respect the configuration defined in your <code>pyproject.toml</code> under <code>[tool.ruff-sync]</code>. Any arguments passed via <code>args</code> in <code>.pre-commit-config.yaml</code> will override these settings.</p>
-<blockquote>
-<p>[!NOTE]
-For a full list of configuration options, see the <a href="../configuration/">Configuration Guide</a>.</p>
-</blockquote>
-<h3 id="example-pre-commit-configyaml">Example <code>.pre-commit-config.yaml</code><a class="headerlink" href="#example-pre-commit-configyaml" title="Permanent link">&para;</a></h3>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">repos</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/Kilo59/ruff-sync</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1.6</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">hooks</span><span class="p">:</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-sync-check</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="c1"># Common arguments:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="c1"># --semantic: ignore cosmetic changes (default in check hook)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="c1"># --no-diff: hide the unified diff</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="c1"># --to PATH: sync to a specific file or directory</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"--semantic"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"--no-diff"</span><span class="p p-Indicator">]</span>
-</span></code></pre></div>
-<h2 id="why-use-ruff-sync-check">Why use <code>ruff-sync-check</code>?<a class="headerlink" href="#why-use-ruff-sync-check" title="Permanent link">&para;</a></h2>
-<p>Running <code>ruff-sync check</code> in pre-commit is fast because:</p>
-<ol>
-<li>It only checks the <code>[tool.ruff]</code> section of the configuration.</li>
-<li>It minimizes network overhead by only fetching exactly what it needs (e.g., using direct HTTP requests for single files or partial git cloning for repositories).</li>
-<li>By default, it uses <code>--semantic</code> to ignore formatting-only differences, reducing false positives.</li>
-</ol>
-<p>For more complex scenarios, such as syncing from multiple upstreams or using directory prefixes, see <a href="../usage/">Usage</a>.</p>
-<h2 id="manual-execution">Manual Execution<a class="headerlink" href="#manual-execution" title="Permanent link">&para;</a></h2>
-<p>You can always run the hooks manually using:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>ruff-sync-check<span class="w"> </span>--all-files
-</span></code></pre></div>
-<h2 id="syncing-the-ruff-hook-version">Syncing the Ruff Hook Version<a class="headerlink" href="#syncing-the-ruff-hook-version" title="Permanent link">&para;</a></h2>
-<p>In addition to syncing your Ruff configuration rules, <code>ruff-sync</code> can also automatically synchronize the version of the <code>astral-sh/ruff-pre-commit</code> hook in your <code>.pre-commit-config.yaml</code> to match the Ruff version installed in your project (e.g., from <code>uv.lock</code> or <code>pyproject.toml</code>).</p>
-<p>To enable this, use the <code>--pre-commit</code> flag:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ruff-sync<span class="w"> </span>--pre-commit
-</span></code></pre></div>
-<p>Or enable it permanently in your <code>pyproject.toml</code>:</p>
-<div class="language-toml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">[tool.ruff-sync]</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">pre-commit-version-sync</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-</span></code></pre></div>
-<p>If you have <code>pre-commit-version-sync</code> enabled in your configuration but need to explicitly disable it for a specific run (for example, during a CI step where pre-commit is turned off), you can bypass it using the <code>--no-pre-commit</code> flag:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ruff-sync<span class="w"> </span>check<span class="w"> </span>--no-pre-commit
-</span></code></pre></div>
+  <h1>sitecustomize</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="sitecustomize" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">sitecustomize</span>
+
+
+<a href="#sitecustomize" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Process startup script to alias httpx to httpx2 during pytest test runs.</p>
+<p>PACKAGING INTENT:
+This file must NEVER be included in built wheels (.whl) or release distributions.
+It lives outside <code>src/ruff_sync/</code> and is excluded from packaging by Hatchling
+(<code>packages = ["src/ruff_sync"]</code>). If the build backend or target configuration is
+ever changed in <code>pyproject.toml</code>, ensure this file remains strictly excluded.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -2095,7 +1910,7 @@ For a full list of configuration options, see the <a href="../configuration/">Co
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../best-practices/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Best Practices">
+          <a href="../ruff_sync/validation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: validation">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2105,27 +1920,11 @@ For a full list of configuration options, see the <a href="../configuration/">Co
                 Previous
               </span>
               <div class="md-ellipsis">
-                Best Practices
+                validation
               </div>
             </div>
           </a>
         
-        
-          
-          <a href="../ci-integration/" class="md-footer__link md-footer__link--next" aria-label="Next: CI Integration">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                CI Integration
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
         
       </nav>
     
@@ -2182,10 +1981,10 @@ For a full list of configuration options, see the <a href="../configuration/">Co
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.tabs.link", "navigation.expand", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "navigation.path", "search.highlight", "search.share", "search.suggest", "toc.follow", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.tabs.link", "navigation.expand", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "navigation.path", "search.highlight", "search.share", "search.suggest", "toc.follow", "navigation.footer"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

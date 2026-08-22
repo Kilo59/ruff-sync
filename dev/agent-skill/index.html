@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1007,6 +1007,8 @@
       
         
       
+        
+      
     
     
     
@@ -1690,6 +1692,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sitecustomize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sitecustomize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1839,7 +1869,7 @@
 <h2 id="what-is-an-agent-skill">What Is an Agent Skill?<a class="headerlink" href="#what-is-an-agent-skill" title="Permanent link">&para;</a></h2>
 <p>The <a href="https://agentskills.io/specification">Agent Skills specification</a> is an open format for packaging domain expertise as a <code>SKILL.md</code> file. Agents load it when the task is relevant, gaining specialized knowledge without you needing to re-explain it every time.</p>
 <h2 id="what-the-ruff-sync-skill-covers">What the ruff-sync Skill Covers<a class="headerlink" href="#what-the-ruff-sync-skill-covers" title="Permanent link">&para;</a></h2>
-<p>The skill lives at <a href="https://github.com/Kilo59/ruff-sync/tree/main/.agents/skills/ruff-sync-usage/"><code>.agents/skills/ruff-sync-usage/</code></a> and teaches agents:</p>
+<p>The skill lives at <a href="https://github.com/Kilo59/ruff-sync/tree/main/src/ruff_sync/.agents/skills/ruff-sync/"><code>.agents/skills/ruff-sync/</code></a> and teaches agents:</p>
 <table>
 <thead>
 <tr>
@@ -1868,11 +1898,13 @@
 </table>
 <p>The skill uses <a href="https://agentskills.io/specification#progressive-disclosure">progressive disclosure</a> — <code>SKILL.md</code> is concise enough to load in full when activated, and agents pull in the reference files only when they need specifics.</p>
 <h2 id="using-the-skill-in-your-project">Using the Skill in Your Project<a class="headerlink" href="#using-the-skill-in-your-project" title="Permanent link">&para;</a></h2>
-<p>The skill is bundled in the <code>ruff-sync</code> repository itself. If you install <code>ruff-sync</code> from source or clone the repo, the skill is already present.</p>
-<p>For agents that scan a configurable skill directory (e.g. <code>.agents/skills/</code>), copy the skill folder into your own project:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cp<span class="w"> </span>-r<span class="w"> </span>path/to/ruff-sync/.agents/skills/ruff-sync-usage<span class="w"> </span>.agents/skills/
+<p><code>ruff-sync</code> supports the <a href="https://library-skills.io/">Library Skills</a> specification. You can automatically install the agent skill using <code>uvx</code> (or <code>npx</code> if in a Node.js project):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uvx<span class="w"> </span>library-skills
 </span></code></pre></div>
-<p>Or reference the upstream directly if your agent supports remote skills.</p>
+<p>This scans your environment, detects <code>ruff-sync</code> from your project's dependencies, and sets up a symlink at <code>.agents/skills/ruff-sync</code> pointing to the skill files bundled inside the installed package.</p>
+<p>For Claude Code (which uses <code>.claude/skills</code> instead of <code>.agents/skills</code>), you can specify the targets or run:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uvx<span class="w"> </span>library-skills<span class="w"> </span>--claude
+</span></code></pre></div>
 <h2 id="activation">Activation<a class="headerlink" href="#activation" title="Permanent link">&para;</a></h2>
 <p>Once the skill is in your agent's skill directory, it activates automatically for prompts like:</p>
 <ul>
@@ -2011,7 +2043,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.tabs.link", "navigation.expand", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "navigation.path", "search.highlight", "search.share", "search.suggest", "toc.follow", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
