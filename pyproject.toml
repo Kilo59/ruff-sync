@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.8"
+version = "0.1.9.dev0"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -8,7 +8,7 @@ authors = [
 ]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -16,7 +16,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -48,18 +47,18 @@ dev = [
     "coverage>=7.4.4",
     "dirty-equals>=0.11",
     "invoke>=2.2.0",
-    "mypy>=1.10.0",
+    "mypy>=2.3.0",
     "packaging>=26.0",
-    "pre-commit>=3.7.0",
+    "prek>=0.4.14",
     "pyfakefs>=5.4.1",
-    "pytest>=8.0.0",
+    "pytest>=9.1.1",
     "pytest-asyncio>=0.23.5",
-    "pytest-codspeed>=4.3.0",
+    "pytest-codspeed>=5.0.3",
     "pytest-icdiff>=0.9",
     "pytest-textual-snapshot>=1.0.0",
     "respx>=0.23.1",
     "ruamel-yaml>=0.18.6",
-    "ruff>=0.15.0",
+    "ruff>=0.16.0",
     "textual>=8.2.2",
     "wily>=1.25.0",
 ]
@@ -86,7 +85,7 @@ build-backend = "hatchling.build"
 packages = ["src/ruff_sync"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 files = ["src", "tests/", "tasks.py", ".agents/"]
 strict = true
 warn_unused_configs = true
@@ -120,7 +119,7 @@ exclude = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]

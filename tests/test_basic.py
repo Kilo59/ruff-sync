@@ -136,7 +136,7 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
     parsed_toml_doc = ruff_sync.toml_ruff_parse(toml_s, exclude=exclude)
     print(f"\n{pf(parsed_toml_doc, compact=True)}")
 
-    lint_config: TOMLDocument = parsed_toml_doc["lint"]  # type: ignore[assignment]
+    lint_config: TOMLDocument = parsed_toml_doc["lint"]
 
     for section in exclude:
         assert section not in lint_config
@@ -269,7 +269,7 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     print(f"Upstream\n{sep_str}\n{upstream_toml}")
 
     source_toml = tomlkit.parse(source)
-    upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]
 
     merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
     print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
@@ -305,7 +305,7 @@ async def test_sync_updates_ruff_config(
     mock_http: respx.MockRouter, fake_fs_source: pathlib.Path, sep_str: str
 ):
     original_toml = fake_fs_source.read_text()
-    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]
     print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
 
     upstream = URL("https://example.com/pyproject.toml")
@@ -320,12 +320,12 @@ async def test_sync_updates_ruff_config(
         )
     )
     updated_toml = fake_fs_source.read_text()
-    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]
     print(f"\nUpdated tool.ruff\n{sep_str}\n{tomlkit.dumps(updated_ruff_config)}")
     assert original_toml != updated_toml
 
     # Ensure the updated ruff config contains all original keys and matches upstream values
-    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]
     assert updated_ruff_config.unwrap() == IsPartialDict(upstream_ruff_config.unwrap())
     assert set(original_ruff_config.keys()).issubset(updated_ruff_config.keys())
 
@@ -781,6 +781,29 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.MockRou
         assert isinstance(err, httpx.HTTPStatusError)
 
 
+@pytest.mark.asyncio
+async def test_fetch_upstreams_concurrently_cancelled_sibling(respx_mock: respx.MockRouter):
+    """Verify that if one upstream fails and cancels sibling tasks, UpstreamError is raised."""
+
+    async def slow_side_effect(request: original_httpx.Request) -> original_httpx.Response:
+        await asyncio.sleep(1.0)
+        return original_httpx.Response(200, text="[tool.ruff]\n")
+
+    respx_mock.get("http://slow.toml").mock(side_effect=slow_side_effect)
+    respx_mock.get("http://fail.toml").respond(500)
+
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(UpstreamError) as excinfo:
+            await fetch_upstreams_concurrently(
+                [URL("http://fail.toml"), URL("http://slow.toml")], client
+            )
+
+        assert len(excinfo.value.errors) == 1
+        url, err = excinfo.value.errors[0]
+        assert str(url) == "http://fail.toml"
+        assert isinstance(err, httpx.HTTPStatusError)
+
+
 def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     monkeypatch: pytest.MonkeyPatch,
     respx_mock: respx.MockRouter,
@@ -835,7 +858,7 @@ def test_cli_output_format_github(
     """End-to-end: --output-format=github produces GitHub-style annotations."""
     respx_mock.get("https://example.com/pyproject.toml").respond(
         status_code=200,
-        text="[tool.ruff]\ntarget-version = 'py311'\n",
+        text="[tool.ruff]\ntarget-version = 'py312'\n",
     )
 
     # Patch sys.argv to simulate CLI call
@@ -877,7 +900,7 @@ def test_cli_output_format_json(
     """End-to-end: --output-format=json produces JSON records."""
     respx_mock.get("https://example.com/pyproject.toml").respond(
         status_code=200,
-        text="[tool.ruff]\ntarget-version = 'py311'\n",
+        text="[tool.ruff]\ntarget-version = 'py312'\n",
     )
 
     # Patch sys.argv

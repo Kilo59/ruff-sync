@@ -15,7 +15,7 @@ This page covers the essentials. For the full contributor's guide, see [CONTRIBU
    ```
 3. **Install pre-commit hooks**:
    ```bash
-   uv run pre-commit install
+   uv run prek install
    ```
 
 ---

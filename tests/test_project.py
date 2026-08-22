@@ -25,7 +25,7 @@ PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 
 PYTHON_VERSION: Final = Version(sys.version.split()[0])
 # TODO: get this from pyproject.toml
-MIN_PYTHON_VERSION: Final = Version("3.10")
+MIN_PYTHON_VERSION: Final = Version("3.11")
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def uv_lock_packages() -> Mapping[str, dict]:
     uv_lock = PROJECT_ROOT / "uv.lock"
     toml_doc = tomlkit.loads(uv_lock.read_text())
     LOGGER.info(f"uv.lock ->\n {pf(toml_doc, depth=1)[:1000]}...")
-    packages: list[dict] = toml_doc["package"].unwrap()  # type: ignore[assignment] # values are always list[dict]
+    packages: list[dict] = toml_doc["package"].unwrap()
     return {pkg.pop("name"): pkg for pkg in packages}
 
 

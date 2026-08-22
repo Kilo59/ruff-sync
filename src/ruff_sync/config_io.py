@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class RuffConfigFileName(str, enum.Enum):
+class RuffConfigFileName(enum.StrEnum):
     """Enumeration of Ruff configuration filenames."""
 
     PYPROJECT_TOML = "pyproject.toml"

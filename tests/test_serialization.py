@@ -265,7 +265,7 @@ def test_get_or_create_ruff_sync_table_non_table_tool():
     assert len(tool_keys) == 1
 
     # The replacement table should contain the new ruff-sync sub-table
-    assert isinstance(doc["tool"]["ruff-sync"], tomlkit.items.Table)  # type: ignore[index]
+    assert isinstance(doc["tool"]["ruff-sync"], tomlkit.items.Table)
 
 
 def test_get_or_create_ruff_sync_table_non_table_ruff_sync():
