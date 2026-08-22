@@ -835,7 +835,7 @@ def test_cli_output_format_github(
     """End-to-end: --output-format=github produces GitHub-style annotations."""
     respx_mock.get("https://example.com/pyproject.toml").respond(
         status_code=200,
-        text="[tool.ruff]\ntarget-version = 'py311'\n",
+        text="[tool.ruff]\ntarget-version = 'py312'\n",
     )
 
     # Patch sys.argv to simulate CLI call
@@ -877,7 +877,7 @@ def test_cli_output_format_json(
     """End-to-end: --output-format=json produces JSON records."""
     respx_mock.get("https://example.com/pyproject.toml").respond(
         status_code=200,
-        text="[tool.ruff]\ntarget-version = 'py311'\n",
+        text="[tool.ruff]\ntarget-version = 'py312'\n",
     )
 
     # Patch sys.argv

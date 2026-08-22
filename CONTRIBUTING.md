@@ -34,7 +34,7 @@ Thank you for your interest in contributing! This guide covers everything you ne
    ```
 5. **Install pre-commit hooks**:
    ```bash
-   uv run pre-commit install
+   uv run prek install
    ```
 
 ---
@@ -96,7 +96,7 @@ uv run pytest -vv
 > [!IMPORTANT]
 > **Do not add `# noqa` comments or suppress lint rules.** Fix the underlying issue instead.
 
-CI runs the same checks across Python 3.10–3.14, so make sure everything passes locally first.
+CI runs the same checks across Python 3.11–3.14, so make sure everything passes locally first.
 
 ---
 

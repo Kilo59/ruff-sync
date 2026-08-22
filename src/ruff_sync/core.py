@@ -697,51 +697,24 @@ async def fetch_upstreams_concurrently(
         UpstreamError: If one or more upstreams fail to fetch.
     """
     upstream_list = list(upstreams)
-    if sys.version_info >= (3, 11):
-        # Use structured concurrency on Python 3.11+
-        tasks: list[asyncio.Task[FetchResult]] = []
-        try:
-            async with asyncio.TaskGroup() as tg:
-                tasks = [
-                    tg.create_task(fetch_upstream_config(url, client, branch, path))
-                    for url in upstream_list
-                ]
-            return [t.result() for t in tasks]
-        except BaseException as eg:
-            if isinstance(eg, (asyncio.CancelledError, KeyboardInterrupt)):
-                raise
-            # TODO: Use `except*` once Python 3.11+ is the minimum supported version.
-            # On Python 3.11+, TaskGroup raises an ExceptionGroup.
-            # Catching it as Exception is safe and compatible with Python 3.10 syntax.
-            errors = [
-                (upstream_list[i], t.exception())
-                for i, t in enumerate(tasks)
-                if t.done() and t.exception() is not None
+    tasks: list[asyncio.Task[FetchResult]] = []
+    try:
+        async with asyncio.TaskGroup() as tg:
+            tasks = [
+                tg.create_task(fetch_upstream_config(url, client, branch, path))
+                for url in upstream_list
             ]
-            if errors:
-                raise UpstreamError(errors) from eg
-            raise
-    else:
-        # Fallback for Python 3.10
-        fetch_tasks = [fetch_upstream_config(url, client, branch, path) for url in upstream_list]
-        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
-
-        errors_list: list[tuple[URL, BaseException]] = []
-        fetch_results: list[FetchResult] = []
-
-        for i, res in enumerate(results):
-            if isinstance(res, BaseException):
-                errors_list.append((upstream_list[i], res))
-            elif isinstance(res, FetchResult):
-                fetch_results.append(res)
-            else:
-                msg = f"Unexpected result type from fetch: {type(res)}"
-                raise TypeError(msg)
-
-        if errors_list:
-            raise UpstreamError(errors_list)
-
-        return fetch_results
+        return [t.result() for t in tasks]
+    except* Exception as eg:
+        errors: list[tuple[URL, BaseException]] = []
+        for i, t in enumerate(tasks):
+            if t.done():
+                exc = t.exception()
+                if exc is not None:
+                    errors.append((upstream_list[i], exc))
+        if errors:
+            raise UpstreamError(errors) from eg
+        raise
 
 
 async def _merge_multiple_upstreams(

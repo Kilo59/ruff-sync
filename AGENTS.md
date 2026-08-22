@@ -18,14 +18,14 @@ Specific workflows, libraries, and tools are documented in `.agents/skills/`. Be
 
 ## Tech Stack
 
-- **Python** ≥ 3.10 (target version `py310`)
+- **Python** ≥ 3.11 (target version `py311`)
 - **Package Manager**: [uv](https://docs.astral.sh/uv/) — Use `uv run <command>` for all executions to ensure the correct environment.
     - **Note on PATH**: On macOS, `uv` is often installed in `~/.local/bin`. If `uv` is not found, add this to your `PATH`: `export PATH="$PATH:$HOME/.local/bin"`.
 - **Linter / Formatter**: [Ruff](https://docs.astral.sh/ruff/) (`>=0.15.0`)
 - **Type Checker**: [mypy](https://mypy-lang.org/) (strict mode)
 - **Test Framework**: [pytest](https://docs.pytest.org/) with `pytest-asyncio`, `respx`, `pyfakefs` (See [Testing Standards](.agents/TESTING.md))
 - **Coverage**: `coverage` + Codecov
-- **Pre-commit**: `pre-commit` / `prek` (see `.pre-commit-config.yaml`)
+- **Pre-commit**: `prek` (see `.pre-commit-config.yaml`)
 - **TOML Parsing**: [tomlkit](https://github.com/sdispater/tomlkit) — preserves formatting and comments
 - **HTTP**: [httpx](https://www.python-httpx.org/) (async)
 
@@ -120,7 +120,7 @@ uv run ruff format .
 uv run mypy .
 ```
 
-- mypy is configured in strict mode with `python_version = "3.10"`.
+- mypy is configured in strict mode with `python_version = "3.11"`.
 - It checks `src/`, `tests/`, and `tasks.py`.
 - Tests have relaxed rules: `type-arg` and `no-untyped-def` are disabled for `tests.*`.
 - `tomlkit` returns complex union types — use `cast(Any, ...)` in tests when indexing parsed TOML documents to satisfy mypy without verbose type narrowing.
@@ -211,8 +211,8 @@ Defined in `tasks.py`. **ALWAYS** run these through uv: `uv run invoke <task>`
 
 CI is defined in `.github/workflows/ci.yaml`:
 
-- **Static Analysis**: runs `lint --check`, `fmt --check`, and `type-check` on Python 3.10.
-- **Tests**: matrix across Python 3.10, 3.11, 3.12, 3.13, 3.14.
+- **Static Analysis**: runs `lint --check`, `fmt --check`, and `type-check` on Python 3.11.
+- **Tests**: matrix across Python 3.11, 3.12, 3.13, 3.14.
 - **Pre-commit.ci**: auto-fixes and auto-updates hooks on PRs.
 
 ## Common Pitfalls

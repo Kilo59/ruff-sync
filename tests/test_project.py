@@ -25,7 +25,7 @@ PYPROJECT_TOML: Final = PROJECT_ROOT / "pyproject.toml"
 
 PYTHON_VERSION: Final = Version(sys.version.split()[0])
 # TODO: get this from pyproject.toml
-MIN_PYTHON_VERSION: Final = Version("3.10")
+MIN_PYTHON_VERSION: Final = Version("3.11")
 
 
 @pytest.fixture

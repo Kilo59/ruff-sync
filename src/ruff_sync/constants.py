@@ -47,7 +47,7 @@ MISSING: Final[MissingType] = MissingType.SENTINEL
 
 
 @enum.unique
-class OutputFormat(str, enum.Enum):
+class OutputFormat(enum.StrEnum):
     """Output formats for the CLI."""
 
     TEXT = "text"
@@ -63,7 +63,7 @@ class OutputFormat(str, enum.Enum):
 
 
 @enum.unique
-class ConfKey(str, enum.Enum):
+class ConfKey(enum.StrEnum):
     """Centralized configuration keys for [tool.ruff-sync].
 
     These are the canonical names used in the pyproject.toml configuration file.
