@@ -708,7 +708,7 @@ async def fetch_upstreams_concurrently(
     except* Exception as eg:
         errors: list[tuple[URL, BaseException]] = []
         for i, t in enumerate(tasks):
-            if t.done():
+            if t.done() and not t.cancelled():
                 exc = t.exception()
                 if exc is not None:
                     errors.append((upstream_list[i], exc))

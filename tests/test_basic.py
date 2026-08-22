@@ -781,6 +781,29 @@ async def test_merge_multiple_upstreams_handles_errors(respx_mock: respx.MockRou
         assert isinstance(err, httpx.HTTPStatusError)
 
 
+@pytest.mark.asyncio
+async def test_fetch_upstreams_concurrently_cancelled_sibling(respx_mock: respx.MockRouter):
+    """Verify that if one upstream fails and cancels sibling tasks, UpstreamError is raised."""
+
+    async def slow_side_effect(request: original_httpx.Request) -> original_httpx.Response:
+        await asyncio.sleep(1.0)
+        return original_httpx.Response(200, text="[tool.ruff]\n")
+
+    respx_mock.get("http://slow.toml").mock(side_effect=slow_side_effect)
+    respx_mock.get("http://fail.toml").respond(500)
+
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(UpstreamError) as excinfo:
+            await fetch_upstreams_concurrently(
+                [URL("http://fail.toml"), URL("http://slow.toml")], client
+            )
+
+        assert len(excinfo.value.errors) == 1
+        url, err = excinfo.value.errors[0]
+        assert str(url) == "http://fail.toml"
+        assert isinstance(err, httpx.HTTPStatusError)
+
+
 def test_cli_surfaces_upstream_error_with_exit_code_and_logs(
     monkeypatch: pytest.MonkeyPatch,
     respx_mock: respx.MockRouter,
