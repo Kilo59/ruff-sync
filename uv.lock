@@ -1789,7 +1789,7 @@ dev = [
     { name = "coverage", specifier = ">=7.4.4" },
     { name = "dirty-equals", specifier = ">=0.11" },
     { name = "invoke", specifier = ">=2.2.0" },
-    { name = "mypy", specifier = ">=1.10.0" },
+    { name = "mypy", specifier = ">=2.3.0" },
     { name = "packaging", specifier = ">=26.0" },
     { name = "prek", specifier = ">=0.4.14" },
     { name = "pyfakefs", specifier = ">=5.4.1" },
