@@ -136,7 +136,7 @@ def test_toml_ruff_parse(toml_s: str, exclude: tuple[str, ...]):
     parsed_toml_doc = ruff_sync.toml_ruff_parse(toml_s, exclude=exclude)
     print(f"\n{pf(parsed_toml_doc, compact=True)}")
 
-    lint_config: TOMLDocument = parsed_toml_doc["lint"]  # type: ignore[assignment]
+    lint_config: TOMLDocument = parsed_toml_doc["lint"]
 
     for section in exclude:
         assert section not in lint_config
@@ -269,7 +269,7 @@ def test_merge_ruff_toml(source: str, toml_s: str, sep_str: str):
     print(f"Upstream\n{sep_str}\n{upstream_toml}")
 
     source_toml = tomlkit.parse(source)
-    upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    upstream_ruff: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]
 
     merged_ruff = ruff_sync.merge_ruff_toml(source_toml, upstream_ruff_doc=upstream_ruff)
     print(f"Merged\n{sep_str}\n{merged_ruff.as_string()}\n")
@@ -305,7 +305,7 @@ async def test_sync_updates_ruff_config(
     mock_http: respx.MockRouter, fake_fs_source: pathlib.Path, sep_str: str
 ):
     original_toml = fake_fs_source.read_text()
-    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    original_ruff_config: Table = tomlkit.parse(original_toml)["tool"]["ruff"]
     print(f"Original tool.ruff:\n{sep_str}\n{tomlkit.dumps(original_ruff_config)}\n")
 
     upstream = URL("https://example.com/pyproject.toml")
@@ -320,12 +320,12 @@ async def test_sync_updates_ruff_config(
         )
     )
     updated_toml = fake_fs_source.read_text()
-    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    updated_ruff_config: Table = tomlkit.parse(updated_toml)["tool"]["ruff"]
     print(f"\nUpdated tool.ruff\n{sep_str}\n{tomlkit.dumps(updated_ruff_config)}")
     assert original_toml != updated_toml
 
     # Ensure the updated ruff config contains all original keys and matches upstream values
-    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]  # type: ignore[index,assignment]
+    upstream_ruff_config: Table = tomlkit.parse(upstream_toml)["tool"]["ruff"]
     assert updated_ruff_config.unwrap() == IsPartialDict(upstream_ruff_config.unwrap())
     assert set(original_ruff_config.keys()).issubset(updated_ruff_config.keys())
 

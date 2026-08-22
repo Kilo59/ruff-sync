@@ -265,7 +265,7 @@ def test_bench_recursive_update(benchmark: BenchmarkFixture):
     source_ruff = source_tool["ruff"]
     upstream_ruff = upstream_tool["ruff"]
 
-    benchmark(_recursive_update, source_ruff, upstream_ruff)  # type: ignore[arg-type]
+    benchmark(_recursive_update, source_ruff, upstream_ruff)
 
 
 # ---------------------------------------------------------------------------
