@@ -2668,7 +2668,14 @@
 <span class="normal"><a href="#__codelineno-0-264">264</a></span>
 <span class="normal"><a href="#__codelineno-0-265">265</a></span>
 <span class="normal"><a href="#__codelineno-0-266">266</a></span>
-<span class="normal"><a href="#__codelineno-0-267">267</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="k">class</span><span class="w"> </span><span class="nc">RuffSyncApp</span><span class="p">(</span><span class="n">App</span><span class="p">[</span><span class="kc">None</span><span class="p">]):</span>
+<span class="normal"><a href="#__codelineno-0-267">267</a></span>
+<span class="normal"><a href="#__codelineno-0-268">268</a></span>
+<span class="normal"><a href="#__codelineno-0-269">269</a></span>
+<span class="normal"><a href="#__codelineno-0-270">270</a></span>
+<span class="normal"><a href="#__codelineno-0-271">271</a></span>
+<span class="normal"><a href="#__codelineno-0-272">272</a></span>
+<span class="normal"><a href="#__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#__codelineno-0-274">274</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="k">class</span><span class="w"> </span><span class="nc">RuffSyncApp</span><span class="p">(</span><span class="n">App</span><span class="p">[</span><span class="kc">None</span><span class="p">]):</span>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="w">    </span><span class="sd">"""Ruff Inspect Terminal User Interface."""</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="n">TITLE</span> <span class="o">=</span> <span class="s2">"Ruff Inspect"</span>
@@ -2857,53 +2864,60 @@
 </span><span id="__span-0-218"><a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="w">        </span><span class="sd">"""Centralized helper for rule inspection with metadata enrichment.</span>
 </span><span id="__span-0-219"><a id="__codelineno-0-219" name="__codelineno-0-219"></a>
 </span><span id="__span-0-220"><a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">            rule_code: The Ruff rule code to inspect.</span>
+</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">            rule_code: A Ruff rule code or rule name to inspect.</span>
 </span><span id="__span-0-222"><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">        """</span>
 </span><span id="__span-0-223"><a id="__codelineno-0-223" name="__codelineno-0-223"></a>        <span class="c1"># Fetch metadata for enrichment</span>
-</span><span id="__span-0-224"><a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="n">rule_data</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_rules</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"code"</span><span class="p">]</span> <span class="o">==</span> <span class="n">rule_code</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
-</span><span id="__span-0-225"><a id="__codelineno-0-225" name="__codelineno-0-225"></a>        <span class="n">name</span> <span class="o">=</span> <span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span id="__span-0-226"><a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="n">status</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"status"</span><span class="p">,</span> <span class="s2">"Disabled"</span><span class="p">))</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="s2">"Disabled"</span>
-</span><span id="__span-0-227"><a id="__codelineno-0-227" name="__codelineno-0-227"></a>        <span class="n">explanation</span> <span class="o">=</span> <span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"explanation"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span id="__span-0-228"><a id="__codelineno-0-228" name="__codelineno-0-228"></a>        <span class="n">fix</span> <span class="o">=</span> <span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fix_availability"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span id="__span-0-229"><a id="__codelineno-0-229" name="__codelineno-0-229"></a>
-</span><span id="__span-0-230"><a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="n">inspector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_one</span><span class="p">(</span><span class="n">RuleInspector</span><span class="p">)</span>
-</span><span id="__span-0-231"><a id="__codelineno-0-231" name="__codelineno-0-231"></a>        <span class="n">inspector</span><span class="o">.</span><span class="n">fetch_and_display</span><span class="p">(</span>
-</span><span id="__span-0-232"><a id="__codelineno-0-232" name="__codelineno-0-232"></a>            <span class="n">rule_code</span><span class="p">,</span>
-</span><span id="__span-0-233"><a id="__codelineno-0-233" name="__codelineno-0-233"></a>            <span class="n">is_rule</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-0-234"><a id="__codelineno-0-234" name="__codelineno-0-234"></a>            <span class="n">cached_content</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span>
-</span><span id="__span-0-235"><a id="__codelineno-0-235" name="__codelineno-0-235"></a>            <span class="n">rule_name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-</span><span id="__span-0-236"><a id="__codelineno-0-236" name="__codelineno-0-236"></a>            <span class="n">rule_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
-</span><span id="__span-0-237"><a id="__codelineno-0-237" name="__codelineno-0-237"></a>            <span class="n">fix_availability</span><span class="o">=</span><span class="n">fix</span><span class="p">,</span>
-</span><span id="__span-0-238"><a id="__codelineno-0-238" name="__codelineno-0-238"></a>        <span class="p">)</span>
-</span><span id="__span-0-239"><a id="__codelineno-0-239" name="__codelineno-0-239"></a>
-</span><span id="__span-0-240"><a id="__codelineno-0-240" name="__codelineno-0-240"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">action_search</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-241"><a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="w">        </span><span class="sd">"""Launch the global fuzzy search Omnibox."""</span>
-</span><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">:</span>
-</span><span id="__span-0-243"><a id="__codelineno-0-243" name="__codelineno-0-243"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Still fetching rule metadata..."</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
-</span><span id="__span-0-244"><a id="__codelineno-0-244" name="__codelineno-0-244"></a>            <span class="c1"># Even if empty, we push; the screen handles empty list</span>
-</span><span id="__span-0-245"><a id="__codelineno-0-245" name="__codelineno-0-245"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">OmniboxScreen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_omnibox_result</span><span class="p">)</span>
+</span><span id="__span-0-224"><a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="n">rule_data</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+</span><span id="__span-0-225"><a id="__codelineno-0-225" name="__codelineno-0-225"></a>            <span class="p">(</span>
+</span><span id="__span-0-226"><a id="__codelineno-0-226" name="__codelineno-0-226"></a>                <span class="n">r</span>
+</span><span id="__span-0-227"><a id="__codelineno-0-227" name="__codelineno-0-227"></a>                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_rules</span>
+</span><span id="__span-0-228"><a id="__codelineno-0-228" name="__codelineno-0-228"></a>                <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"code"</span><span class="p">)</span> <span class="o">==</span> <span class="n">rule_code</span> <span class="ow">or</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="o">==</span> <span class="n">rule_code</span>
+</span><span id="__span-0-229"><a id="__codelineno-0-229" name="__codelineno-0-229"></a>            <span class="p">),</span>
+</span><span id="__span-0-230"><a id="__codelineno-0-230" name="__codelineno-0-230"></a>            <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-231"><a id="__codelineno-0-231" name="__codelineno-0-231"></a>        <span class="p">)</span>
+</span><span id="__span-0-232"><a id="__codelineno-0-232" name="__codelineno-0-232"></a>        <span class="n">name</span> <span class="o">=</span> <span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="__span-0-233"><a id="__codelineno-0-233" name="__codelineno-0-233"></a>        <span class="n">status</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"status"</span><span class="p">,</span> <span class="s2">"Disabled"</span><span class="p">))</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="s2">"Disabled"</span>
+</span><span id="__span-0-234"><a id="__codelineno-0-234" name="__codelineno-0-234"></a>        <span class="n">explanation</span> <span class="o">=</span> <span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"explanation"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="__span-0-235"><a id="__codelineno-0-235" name="__codelineno-0-235"></a>        <span class="n">fix</span> <span class="o">=</span> <span class="n">rule_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fix_availability"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule_data</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="__span-0-236"><a id="__codelineno-0-236" name="__codelineno-0-236"></a>
+</span><span id="__span-0-237"><a id="__codelineno-0-237" name="__codelineno-0-237"></a>        <span class="n">inspector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_one</span><span class="p">(</span><span class="n">RuleInspector</span><span class="p">)</span>
+</span><span id="__span-0-238"><a id="__codelineno-0-238" name="__codelineno-0-238"></a>        <span class="n">inspector</span><span class="o">.</span><span class="n">fetch_and_display</span><span class="p">(</span>
+</span><span id="__span-0-239"><a id="__codelineno-0-239" name="__codelineno-0-239"></a>            <span class="n">rule_code</span><span class="p">,</span>
+</span><span id="__span-0-240"><a id="__codelineno-0-240" name="__codelineno-0-240"></a>            <span class="n">is_rule</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-241"><a id="__codelineno-0-241" name="__codelineno-0-241"></a>            <span class="n">cached_content</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span>
+</span><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a>            <span class="n">rule_name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+</span><span id="__span-0-243"><a id="__codelineno-0-243" name="__codelineno-0-243"></a>            <span class="n">rule_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
+</span><span id="__span-0-244"><a id="__codelineno-0-244" name="__codelineno-0-244"></a>            <span class="n">fix_availability</span><span class="o">=</span><span class="n">fix</span><span class="p">,</span>
+</span><span id="__span-0-245"><a id="__codelineno-0-245" name="__codelineno-0-245"></a>        <span class="p">)</span>
 </span><span id="__span-0-246"><a id="__codelineno-0-246" name="__codelineno-0-246"></a>
-</span><span id="__span-0-247"><a id="__codelineno-0-247" name="__codelineno-0-247"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">handle_omnibox_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-248"><a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="w">        </span><span class="sd">"""Handle the result from the Omnibox search.</span>
-</span><span id="__span-0-249"><a id="__codelineno-0-249" name="__codelineno-0-249"></a>
-</span><span id="__span-0-250"><a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-251"><a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">            rule_code: The selected rule code, or None if cancelled.</span>
-</span><span id="__span-0-252"><a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">        """</span>
-</span><span id="__span-0-253"><a id="__codelineno-0-253" name="__codelineno-0-253"></a>        <span class="k">if</span> <span class="n">rule_code</span><span class="p">:</span>
-</span><span id="__span-0-254"><a id="__codelineno-0-254" name="__codelineno-0-254"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_inspect_rule</span><span class="p">(</span><span class="n">rule_code</span><span class="p">)</span>
-</span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a>
-</span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">action_show_legend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="w">        </span><span class="sd">"""Display the TUI legend modal."""</span>
-</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">LegendScreen</span><span class="p">())</span>
-</span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a>
-</span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">action_copy_content</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="w">        </span><span class="sd">"""Copy the current inspector content to the clipboard."""</span>
-</span><span id="__span-0-262"><a id="__codelineno-0-262" name="__codelineno-0-262"></a>        <span class="n">inspector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_one</span><span class="p">(</span><span class="n">RuleInspector</span><span class="p">)</span>
-</span><span id="__span-0-263"><a id="__codelineno-0-263" name="__codelineno-0-263"></a>        <span class="k">if</span> <span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">:</span>
-</span><span id="__span-0-264"><a id="__codelineno-0-264" name="__codelineno-0-264"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">copy_to_clipboard</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">))</span>
-</span><span id="__span-0-265"><a id="__codelineno-0-265" name="__codelineno-0-265"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Copied content to clipboard"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Clipboard"</span><span class="p">)</span>
-</span><span id="__span-0-266"><a id="__codelineno-0-266" name="__codelineno-0-266"></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-267"><a id="__codelineno-0-267" name="__codelineno-0-267"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"No content to copy"</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
+</span><span id="__span-0-247"><a id="__codelineno-0-247" name="__codelineno-0-247"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">action_search</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-248"><a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="w">        </span><span class="sd">"""Launch the global fuzzy search Omnibox."""</span>
+</span><span id="__span-0-249"><a id="__codelineno-0-249" name="__codelineno-0-249"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">:</span>
+</span><span id="__span-0-250"><a id="__codelineno-0-250" name="__codelineno-0-250"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Still fetching rule metadata..."</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
+</span><span id="__span-0-251"><a id="__codelineno-0-251" name="__codelineno-0-251"></a>            <span class="c1"># Even if empty, we push; the screen handles empty list</span>
+</span><span id="__span-0-252"><a id="__codelineno-0-252" name="__codelineno-0-252"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">OmniboxScreen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_omnibox_result</span><span class="p">)</span>
+</span><span id="__span-0-253"><a id="__codelineno-0-253" name="__codelineno-0-253"></a>
+</span><span id="__span-0-254"><a id="__codelineno-0-254" name="__codelineno-0-254"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">handle_omnibox_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="w">        </span><span class="sd">"""Handle the result from the Omnibox search.</span>
+</span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a>
+</span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">        Args:</span>
+</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">            rule_code: The selected rule code, or None if cancelled.</span>
+</span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">        """</span>
+</span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a>        <span class="k">if</span> <span class="n">rule_code</span><span class="p">:</span>
+</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_inspect_rule</span><span class="p">(</span><span class="n">rule_code</span><span class="p">)</span>
+</span><span id="__span-0-262"><a id="__codelineno-0-262" name="__codelineno-0-262"></a>
+</span><span id="__span-0-263"><a id="__codelineno-0-263" name="__codelineno-0-263"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">action_show_legend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-264"><a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="w">        </span><span class="sd">"""Display the TUI legend modal."""</span>
+</span><span id="__span-0-265"><a id="__codelineno-0-265" name="__codelineno-0-265"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">LegendScreen</span><span class="p">())</span>
+</span><span id="__span-0-266"><a id="__codelineno-0-266" name="__codelineno-0-266"></a>
+</span><span id="__span-0-267"><a id="__codelineno-0-267" name="__codelineno-0-267"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">action_copy_content</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-268"><a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="w">        </span><span class="sd">"""Copy the current inspector content to the clipboard."""</span>
+</span><span id="__span-0-269"><a id="__codelineno-0-269" name="__codelineno-0-269"></a>        <span class="n">inspector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_one</span><span class="p">(</span><span class="n">RuleInspector</span><span class="p">)</span>
+</span><span id="__span-0-270"><a id="__codelineno-0-270" name="__codelineno-0-270"></a>        <span class="k">if</span> <span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">:</span>
+</span><span id="__span-0-271"><a id="__codelineno-0-271" name="__codelineno-0-271"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">copy_to_clipboard</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">))</span>
+</span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Copied content to clipboard"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Clipboard"</span><span class="p">)</span>
+</span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-274"><a id="__codelineno-0-274" name="__codelineno-0-274"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"No content to copy"</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -3596,17 +3610,17 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/ruff_sync/tui/app.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-240">240</a></span>
-<span class="normal"><a href="#__codelineno-0-241">241</a></span>
-<span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-240"><a id="__codelineno-0-240" name="__codelineno-0-240"></a><span class="k">def</span><span class="w"> </span><span class="nf">action_search</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-241"><a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="w">    </span><span class="sd">"""Launch the global fuzzy search Omnibox."""</span>
-</span><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">:</span>
-</span><span id="__span-0-243"><a id="__codelineno-0-243" name="__codelineno-0-243"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Still fetching rule metadata..."</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
-</span><span id="__span-0-244"><a id="__codelineno-0-244" name="__codelineno-0-244"></a>        <span class="c1"># Even if empty, we push; the screen handles empty list</span>
-</span><span id="__span-0-245"><a id="__codelineno-0-245" name="__codelineno-0-245"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">OmniboxScreen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_omnibox_result</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-247">247</a></span>
+<span class="normal"><a href="#__codelineno-0-248">248</a></span>
+<span class="normal"><a href="#__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#__codelineno-0-252">252</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-247"><a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="k">def</span><span class="w"> </span><span class="nf">action_search</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-248"><a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="w">    </span><span class="sd">"""Launch the global fuzzy search Omnibox."""</span>
+</span><span id="__span-0-249"><a id="__codelineno-0-249" name="__codelineno-0-249"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">:</span>
+</span><span id="__span-0-250"><a id="__codelineno-0-250" name="__codelineno-0-250"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Still fetching rule metadata..."</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
+</span><span id="__span-0-251"><a id="__codelineno-0-251" name="__codelineno-0-251"></a>        <span class="c1"># Even if empty, we push; the screen handles empty list</span>
+</span><span id="__span-0-252"><a id="__codelineno-0-252" name="__codelineno-0-252"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">OmniboxScreen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_rules</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_omnibox_result</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3662,21 +3676,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/ruff_sync/tui/app.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-247">247</a></span>
-<span class="normal"><a href="#__codelineno-0-248">248</a></span>
-<span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span>
-<span class="normal"><a href="#__codelineno-0-252">252</a></span>
-<span class="normal"><a href="#__codelineno-0-253">253</a></span>
-<span class="normal"><a href="#__codelineno-0-254">254</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-247"><a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="k">def</span><span class="w"> </span><span class="nf">handle_omnibox_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-248"><a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="w">    </span><span class="sd">"""Handle the result from the Omnibox search.</span>
-</span><span id="__span-0-249"><a id="__codelineno-0-249" name="__codelineno-0-249"></a>
-</span><span id="__span-0-250"><a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-251"><a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">        rule_code: The selected rule code, or None if cancelled.</span>
-</span><span id="__span-0-252"><a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">    """</span>
-</span><span id="__span-0-253"><a id="__codelineno-0-253" name="__codelineno-0-253"></a>    <span class="k">if</span> <span class="n">rule_code</span><span class="p">:</span>
-</span><span id="__span-0-254"><a id="__codelineno-0-254" name="__codelineno-0-254"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_inspect_rule</span><span class="p">(</span><span class="n">rule_code</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#__codelineno-0-257">257</a></span>
+<span class="normal"><a href="#__codelineno-0-258">258</a></span>
+<span class="normal"><a href="#__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#__codelineno-0-261">261</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-254"><a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="k">def</span><span class="w"> </span><span class="nf">handle_omnibox_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="w">    </span><span class="sd">"""Handle the result from the Omnibox search.</span>
+</span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a>
+</span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">        rule_code: The selected rule code, or None if cancelled.</span>
+</span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">    """</span>
+</span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a>    <span class="k">if</span> <span class="n">rule_code</span><span class="p">:</span>
+</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_inspect_rule</span><span class="p">(</span><span class="n">rule_code</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3701,11 +3715,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/ruff_sync/tui/app.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span>
-<span class="normal"><a href="#__codelineno-0-258">258</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="k">def</span><span class="w"> </span><span class="nf">action_show_legend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="w">    </span><span class="sd">"""Display the TUI legend modal."""</span>
-</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">LegendScreen</span><span class="p">())</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#__codelineno-0-265">265</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-263"><a id="__codelineno-0-263" name="__codelineno-0-263"></a><span class="k">def</span><span class="w"> </span><span class="nf">action_show_legend</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-264"><a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="w">    </span><span class="sd">"""Display the TUI legend modal."""</span>
+</span><span id="__span-0-265"><a id="__codelineno-0-265" name="__codelineno-0-265"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">push_screen</span><span class="p">(</span><span class="n">LegendScreen</span><span class="p">())</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3730,21 +3744,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/ruff_sync/tui/app.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span>
-<span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span>
-<span class="normal"><a href="#__codelineno-0-266">266</a></span>
-<span class="normal"><a href="#__codelineno-0-267">267</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="k">def</span><span class="w"> </span><span class="nf">action_copy_content</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="w">    </span><span class="sd">"""Copy the current inspector content to the clipboard."""</span>
-</span><span id="__span-0-262"><a id="__codelineno-0-262" name="__codelineno-0-262"></a>    <span class="n">inspector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_one</span><span class="p">(</span><span class="n">RuleInspector</span><span class="p">)</span>
-</span><span id="__span-0-263"><a id="__codelineno-0-263" name="__codelineno-0-263"></a>    <span class="k">if</span> <span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">:</span>
-</span><span id="__span-0-264"><a id="__codelineno-0-264" name="__codelineno-0-264"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">copy_to_clipboard</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">))</span>
-</span><span id="__span-0-265"><a id="__codelineno-0-265" name="__codelineno-0-265"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Copied content to clipboard"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Clipboard"</span><span class="p">)</span>
-</span><span id="__span-0-266"><a id="__codelineno-0-266" name="__codelineno-0-266"></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-267"><a id="__codelineno-0-267" name="__codelineno-0-267"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"No content to copy"</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-267">267</a></span>
+<span class="normal"><a href="#__codelineno-0-268">268</a></span>
+<span class="normal"><a href="#__codelineno-0-269">269</a></span>
+<span class="normal"><a href="#__codelineno-0-270">270</a></span>
+<span class="normal"><a href="#__codelineno-0-271">271</a></span>
+<span class="normal"><a href="#__codelineno-0-272">272</a></span>
+<span class="normal"><a href="#__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#__codelineno-0-274">274</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-267"><a id="__codelineno-0-267" name="__codelineno-0-267"></a><span class="k">def</span><span class="w"> </span><span class="nf">action_copy_content</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-268"><a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="w">    </span><span class="sd">"""Copy the current inspector content to the clipboard."""</span>
+</span><span id="__span-0-269"><a id="__codelineno-0-269" name="__codelineno-0-269"></a>    <span class="n">inspector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_one</span><span class="p">(</span><span class="n">RuleInspector</span><span class="p">)</span>
+</span><span id="__span-0-270"><a id="__codelineno-0-270" name="__codelineno-0-270"></a>    <span class="k">if</span> <span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">:</span>
+</span><span id="__span-0-271"><a id="__codelineno-0-271" name="__codelineno-0-271"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">copy_to_clipboard</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">inspector</span><span class="o">.</span><span class="n">source</span><span class="p">))</span>
+</span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"Copied content to clipboard"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Clipboard"</span><span class="p">)</span>
+</span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-274"><a id="__codelineno-0-274" name="__codelineno-0-274"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="s2">"No content to copy"</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">"warning"</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
