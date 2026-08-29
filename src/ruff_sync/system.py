@@ -16,10 +16,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def get_ruff_rule_markdown(rule_code: str) -> str | None:
-    """Execute `ruff rule <CODE>` and return the Markdown documentation.
+    """Execute `ruff rule <CODE|NAME>` and return the Markdown documentation.
 
     Args:
-        rule_code: The Ruff rule code (e.g., 'RUF012').
+        rule_code: The Ruff rule code or rule name (e.g., 'RUF012' or 'unused-imports').
 
     Returns:
         The Markdown documentation for the rule, or None if the execution fails

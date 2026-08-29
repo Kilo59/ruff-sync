@@ -29,6 +29,24 @@ async def test_get_ruff_rule_markdown_success() -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_ruff_rule_markdown_by_name() -> None:
+    mock_process = AsyncMock()
+    mock_process.communicate.return_value = (b"unused-imports rule docs", b"")
+    mock_process.returncode = 0
+
+    with patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
+        result = await get_ruff_rule_markdown("unused-imports")
+        assert result == "unused-imports rule docs"
+        mock_exec.assert_called_once_with(
+            "ruff",
+            "rule",
+            "unused-imports",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+
+@pytest.mark.asyncio
 async def test_get_ruff_rule_markdown_error_code() -> None:
     mock_process = AsyncMock()
     mock_process.communicate.return_value = (b"", b"Rule not found")
