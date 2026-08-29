@@ -1,25 +1,209 @@
-# configs/data-science-engineering/ruff.toml
+# ruff-sync Data Science & Engineering Configuration
+# https://github.com/Kilo59/ruff-sync
+#
+# This is a Ruff configuration tailored for Data Science, Machine Learning,
+# and Data Engineering workflows.
+# It enables rules for Jupyter Notebooks, NumPy, Pandas, Airflow, and performance.
+#
+# Usage (direct Ruff config, assuming this file is vendored into your repo):
+#   extend = "configs/data-science-engineering/ruff.toml"
+#
+# Usage (with ruff-sync in pyproject.toml):
+#   [tool.ruff-sync]
+#   path = "configs/data-science-engineering/ruff.toml"
 
-# Enable Jupyter notebook linting
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.10. Consumers should override this to match their project's Python version.
+target-version = "py310"
+
+# Enable Jupyter notebook linting and formatting
 extend-include = ["*.ipynb"]
 extend-exclude = [".ipynb_checkpoints"]
 
 [lint]
-# Enable rules tailored for data science and engineering.
-extend-select = [
+# Enable rules tailored for data science, machine learning, and data engineering.
+select = [
+    # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "F",      # Pyflakes: Essential checks for Python bugs
+    # https://docs.astral.sh/ruff/rules/#error-e
+    "E",      # pycodestyle errors: PEP8 styling
+    # https://docs.astral.sh/ruff/rules/#warning-w
+    "W",      # pycodestyle warnings: PEP8 styling
+    # https://docs.astral.sh/ruff/rules/#mccabe-c90
+    "C90",    # mccabe: Code complexity (cyclomatic complexity)
     # https://docs.astral.sh/ruff/rules/#isort-i
     "I",      # isort: Import sorting
-    # https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
-    "NPY",    # NumPy-specific rules: NumPy conventions
+    # https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    "N",      # pep8-naming: Naming conventions
+    # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "D",      # pydocstyle: Docstring conventions (NumPy style)
+    # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "UP",     # pyupgrade: Upgrade syntax for newer Python versions
+    # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
+    "ANN",    # flake8-annotations: Type annotation checks
+    # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "B",      # flake8-bugbear: Finding likely bugs and design problems
+    # https://docs.astral.sh/ruff/rules/#flake8-builtins-a
+    "A",      # flake8-builtins: Check for python builtins being used as variables
+    # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "C4",     # flake8-comprehensions: Better list/set/dict comprehensions
+    # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "DTZ",    # flake8-datetimez: Usage of unsafe naive datetime class
+    # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    "T10",    # flake8-debugger: Check for pdb/ipdb imports and set_traces
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "G",      # flake8-logging-format: Validate logging format strings
+    # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
+    "PIE",    # flake8-pie: Misc. lints
+    # https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    "T20",    # flake8-print: Check for Print statements
+    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "PT",     # flake8-pytest-style: Pytest style checks
+    # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    "Q",      # flake8-quotes: Lint for quotes
+    # https://docs.astral.sh/ruff/rules/#flake8-return-ret
+    "RET",    # flake8-return: Check return values
+    # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+    "SIM",    # flake8-simplify: Code simplification
+    # https://docs.astral.sh/ruff/rules/#flake8-unused-arguments-arg
+    "ARG",    # flake8-unused-arguments: Unused argument checks
+    # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
+    "PTH",    # flake8-use-pathlib: Use pathlib instead of os.path
     # https://docs.astral.sh/ruff/rules/#pandas-vet-pd
     "PD",     # pandas-vet: Pandas code checks
+    # https://docs.astral.sh/ruff/rules/#numpy-specific-rules-npy
+    "NPY",    # NumPy-specific rules: NumPy conventions & NumPy 2.0 migration
+    # https://docs.astral.sh/ruff/rules/#airflow-air
+    "AIR",    # Airflow: Airflow best practices (Data Engineering pipelines)
+    # https://docs.astral.sh/ruff/rules/#perflint-perf
+    "PERF",   # Perflint: Performance anti-patterns in loops
+    # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "FURB",   # refurb: Modernize Python code
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "LOG",    # flake8-logging: Better logging practices
+    # https://docs.astral.sh/ruff/rules/#pylint-pl
+    "PL",     # Pylint: Pylint rules
+    # https://docs.astral.sh/ruff/rules/#flynt-fly
+    "FLY",    # flynt: Convert string formatting to f-strings
+    # https://docs.astral.sh/ruff/rules/#pydoclint-doc
+    # "DOC",                      # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
+    # https://docs.astral.sh/ruff/rules/pytest-fixture-autouse/
+    # "pedantic",                 # Category selector: Pedantic checks (Note: requires `preview = true`)
+    # "pytest-fixture-autouse",   # Codeless rule: Avoid autouse=True in pytest fixtures (Note: requires `preview = true`)
+    # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "RUF",    # Ruff-specific rules: Rules unique to Ruff
 ]
-# Ignore rules that conflict with `ruff format` (formatter-managed concerns).
-# Keep this in sync with other curated configs (e.g. fastapi/ruff.toml).
+
+# Preview mode settings:
+# preview = true                # Enable preview rules and fixes across Ruff
+# explicit-preview-rules = true # When preview is enabled, require full rule codes instead of prefixes
+
+# Ignore rules that conflict with the Ruff formatter.
+# See: https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
 ignore = [
-    "E111",  # indentation is handled by the formatter
-    "E114",  # indentation with comments is handled by the formatter
-    "E117",  # over-indented code is handled by the formatter
-    "E501",  # line length is handled by the formatter
-    "W191",  # tabs vs spaces is handled by the formatter
+    "W191",   # tab-indentation
+    "E111",   # indentation-with-invalid-multiple
+    "E114",   # indentation-with-invalid-multiple-comment
+    "E117",   # over-indented
+    "D206",   # docstring-tab-indentation
+    "D300",   # triple-single-quotes
+    "Q000",   # bad-quotes-inline-string
+    "Q001",   # bad-quotes-multiline-string
+    "Q002",   # bad-quotes-docstring
+    "Q003",   # avoidable-escaped-quote
+    "Q004",   # unnecessary-escaped-quote
+    "COM812", # missing-trailing-comma
+    "COM819", # prohibited-trailing-comma
+    "ISC001", # single-line-implicit-string-concatenation
+    "ISC002", # multi-line-implicit-string-concatenation
 ]
+
+# Allow autofix for all enabled rules.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+# Notebooks often have top-level statements, plots, and exploratory code.
+"*.ipynb" = [
+    "E402",   # Module level import not at top of file
+    "T201",   # print found
+    "D100",   # Missing docstring in public module
+    "D103",   # Missing docstring in public function
+]
+
+[lint.pydocstyle]
+# Use NumPy-style docstrings (standard in Data Science / Scientific Python).
+# Default: "pep257"
+convention = "numpy"
+
+[lint.mccabe]
+# Flag errors (C901) whenever the complexity level exceeds 10.
+# Default: 10
+max-complexity = 10
+
+[lint.flake8-quotes]
+# Use double quotes for inline strings (same as Black).
+# Default: "double"
+inline-quotes = "double"
+# Use double quotes for multiline strings.
+# Default: "double"
+multiline-quotes = "double"
+# Use double quotes for docstrings.
+# Default: "double"
+docstring-quotes = "double"
+# Avoid escaping quotes if the other quote type would save an escape.
+# Default: true
+avoid-escape = true
+
+[lint.flake8-pytest-style]
+# Whether to require parentheses for pytest fixtures.
+# Default: true
+fixture-parentheses = true
+# The type of pytest.mark.parametrize names to use: "tuple", "list", or "csv"
+# Default: "tuple"
+parametrize-names-type = "tuple"
+
+[lint.pylint]
+# The maximum number of arguments allowed for a function.
+# Default: 5
+max-args = 5
+# The maximum number of branches allowed for a function.
+# Default: 12
+max-branches = 12
+
+[format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+# Controls the quote style for nested strings inside interpolated string expressions (Python 3.12+).
+# Can be "alternating" (default) or "preferred".
+nested-string-quote-style = "alternating"

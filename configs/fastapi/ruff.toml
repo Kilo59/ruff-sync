@@ -1,8 +1,8 @@
 # ruff-sync FastAPI Configuration
 # https://github.com/Kilo59/ruff-sync
 #
-# This is a Ruff configuration tailored for FastAPI / Web App development.
-# It enables rules directly relevant to web development and async Python.
+# This is a Ruff configuration tailored for FastAPI and modern async web applications.
+# It enables rules directly relevant to web development, async Python, and Pydantic models.
 #
 # Usage (direct Ruff config, assuming this file is vendored into your repo):
 #   extend = "configs/fastapi/ruff.toml"
@@ -43,50 +43,92 @@ select = [
     "ASYNC", # flake8-async: Asynchronous code checks
     # https://docs.astral.sh/ruff/rules/#flake8-bandit-s
     "S",     # flake8-bandit: Security testing
+    # https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
+    "BLE",   # flake8-blind-except: Checks for blind except: statements
     # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
     "B",     # flake8-bugbear: Finding likely bugs and design problems
+    # https://docs.astral.sh/ruff/rules/#flake8-builtins-a
+    "A",     # flake8-builtins: Check for python builtins being used as variables
+    # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "C4",    # flake8-comprehensions: Write better list/set/dict comprehensions
+    # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "DTZ",   # flake8-datetimez: Usage of unsafe naive datetime class
+    # https://docs.astral.sh/ruff/rules/#flake8-debugger-t10
+    "T10",   # flake8-debugger: Check for pdb/ipdb imports and set_traces
+    # https://docs.astral.sh/ruff/rules/#flake8-future-annotations-fa
+    "FA",    # flake8-future-annotations: Verify python 3.7+ from __future__ import annotations
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "G",     # flake8-logging-format: Validate logging format strings
+    # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "LOG",   # flake8-logging: Better logging practices
     # https://docs.astral.sh/ruff/rules/#flake8-pie-pie
     "PIE",   # flake8-pie: Misc. lints
     # https://docs.astral.sh/ruff/rules/#flake8-print-t20
     "T20",   # flake8-print: Check for Print statements
+    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+    "PT",    # flake8-pytest-style: Pytest style checks
+    # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    "Q",     # flake8-quotes: Lint for quotes
+    # https://docs.astral.sh/ruff/rules/#flake8-raise-rse
+    "RSE",   # flake8-raise: Find and correct raise statements
     # https://docs.astral.sh/ruff/rules/#flake8-return-ret
     "RET",   # flake8-return: Check return values
     # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
     "SIM",   # flake8-simplify: Code simplification
-    # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
-    "G",     # flake8-logging-format: Validate logging format strings
-    # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
-    "Q",     # flake8-quotes: Lint for quotes
-    # https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
-    "PT",    # flake8-pytest-style: Pytest style checks
+    # https://docs.astral.sh/ruff/rules/#flake8-tidy-imports-tid
+    "TID",   # flake8-tidy-imports: Tidy imports
+    # https://docs.astral.sh/ruff/rules/#flake8-type-checking-tc
+    "TC",    # flake8-type-checking: Move imports into type-checking blocks
+    # https://docs.astral.sh/ruff/rules/#flake8-unused-arguments-arg
+    "ARG",   # flake8-unused-arguments: Unused argument checks
+    # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
+    "PTH",   # flake8-use-pathlib: Use pathlib instead of os.path
+    # https://docs.astral.sh/ruff/rules/#flynt-fly
+    "FLY",   # flynt: Convert string formatting to f-strings
+    # https://docs.astral.sh/ruff/rules/#perflint-perf
+    "PERF",  # Perflint: Performance anti-patterns
+    # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "FURB",  # refurb: Modernize Python code
     # https://docs.astral.sh/ruff/rules/#pylint-pl
     "PL",    # Pylint: Pylint rules
     # https://docs.astral.sh/ruff/rules/#fastapi-fast
     "FAST",  # FastAPI: FastAPI-specific rules
+    # https://docs.astral.sh/ruff/rules/#pydoclint-doc
+    # "DOC",                      # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
+    # https://docs.astral.sh/ruff/rules/pytest-fixture-autouse/
+    # "pedantic",                 # Category selector: Pedantic checks (Note: requires `preview = true`)
+    # "pytest-fixture-autouse",   # Codeless rule: Avoid autouse=True in pytest fixtures (Note: requires `preview = true`)
+    # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "RUF",   # Ruff-specific rules: Rules unique to Ruff
 ]
+
+# Preview mode settings:
+# preview = true                # Enable preview rules and fixes across Ruff
+# explicit-preview-rules = true # When preview is enabled, require full rule codes instead of prefixes
 
 # Ignore rules that conflict with the Ruff formatter.
 # See: https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
 ignore = [
-    "W191",  # tab-indentation
-    "E111",  # indentation-with-invalid-multiple
-    "E114",  # indentation-with-invalid-multiple-comment
-    "E117",  # over-indented
-    "D206",  # docstring-tab-indentation
-    "D300",  # triple-single-quotes
-    "Q000",  # bad-quotes-inline-string
-    "Q001",  # bad-quotes-multiline-string
-    "Q002",  # bad-quotes-docstring
-    "Q003",  # avoidable-escaped-quote
-    "Q004",  # unnecessary-escaped-quote
-    "COM812",    # missing-trailing-comma
-    "COM819",    # prohibited-trailing-comma
-    "ISC001",    # single-line-implicit-string-concatenation
-    "ISC002",    # multi-line-implicit-string-concatenation
+    "W191",   # tab-indentation
+    "E111",   # indentation-with-invalid-multiple
+    "E114",   # indentation-with-invalid-multiple-comment
+    "E117",   # over-indented
+    "D206",   # docstring-tab-indentation
+    "D300",   # triple-single-quotes
+    "Q000",   # bad-quotes-inline-string
+    "Q001",   # bad-quotes-multiline-string
+    "Q002",   # bad-quotes-docstring
+    "Q003",   # avoidable-escaped-quote
+    "Q004",   # unnecessary-escaped-quote
+    "COM812", # missing-trailing-comma
+    "COM819", # prohibited-trailing-comma
+    "ISC001", # single-line-implicit-string-concatenation
+    "ISC002", # multi-line-implicit-string-concatenation
 ]
 
 # Allow autofix for all enabled rules.
 fixable = ["ALL"]
+unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -144,9 +186,30 @@ classmethod-decorators = [
 [format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
+
 # Like Black, indent with spaces, rather than tabs.
 indent-style = "space"
+
 # Like Black, respect magic trailing commas.
 skip-magic-trailing-comma = false
+
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+# Controls the quote style for nested strings inside interpolated string expressions (Python 3.12+).
+# Can be "alternating" (default) or "preferred".
+nested-string-quote-style = "alternating"
