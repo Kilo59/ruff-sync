@@ -189,8 +189,9 @@ as a GitHub issue body.
 When opening a PR from a topic branch:
 
 ```bash
-# 1. Make sure your local branch is pushed to remote
-git push -u origin <branch-name>
+# 1. Push topic branch (prefer plain 'git push' if autoSetupRemote is enabled)
+git push
+# Fallback if upstream tracking is unset: git push -u origin HEAD
 
 # 2. Open the PR linking to the relevant issue
 gh pr create \

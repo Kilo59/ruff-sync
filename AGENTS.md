@@ -26,7 +26,7 @@ All new tasks, bug fixes, refactors, and features MUST follow the standard lifec
 3. **Test First (TDD)**: For bugfixes, write a reproduction test before fixing the bug. Commit test cases incrementally (`test: ...`).
 4. **Implement & Validate**: Adhere to project conventions (strict typing, DI, `tomlkit`, sentinels). Run the 4-step quality pipeline (`ruff check`, `ruff format`, `mypy`, `pytest`). Commit logical units of implementation incrementally (`feat: ...`, `fix: ...`, `refactor: ...`).
 5. **Sync Documentation & Skills**: Update `.agents/skills/ruff-sync/` and `docs/` if CLI flags, config keys, or behavior change. Commit documentation changes (`docs: ...`).
-6. **Open PR**: Push branch and open a PR via `gh pr create`. **Do not wait until the very end to make a single giant commit**; keep commit history clean, granular, and incremental.
+6. **Open PR**: Push branch (prefer plain `git push` if upstream tracking / `push.autoSetupRemote` is configured) and open a PR via `gh pr create`. **Do not wait until the very end to make a single giant commit**; keep commit history clean, granular, and incremental.
 7. **No Git Surgery / Commit Amending**: This repository uses **Squash and Merge** on PR merge, so there is no pressure to curate branch history. Do **not** use `git commit --amend` or `git reset` to polish past commits (standard `git rebase` to stay up to date with `main` is fine). Always make forward-only commits for fixes and follow-ups.
 
 ## Agent Skills

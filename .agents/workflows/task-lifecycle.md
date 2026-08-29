@@ -139,7 +139,9 @@ git commit -m "docs: update documentation and agent skills for <feature-name>"
 
 1. **Push Topic Branch**:
    ```bash
-   git push -u origin <branch-name>
+   # Prefer plain 'git push' (works automatically if push.autoSetupRemote is enabled and matches auto-approval prefixes)
+   git push
+   # Fallback if upstream tracking is not configured: git push -u origin HEAD
    ```
 
 2. **Open Pull Request via `gh` CLI**:
