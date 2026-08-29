@@ -13,8 +13,8 @@ Follow this end-to-end lifecycle whenever starting a new feature, bug fix, refac
 > [!IMPORTANT]
 > **Commit Incrementally & Forward-Only (No Git Surgery)**:
 > - Make focused, atomic commits as you complete each stage of work (`test:`, `feat:`, `fix:`, `docs:`). Do not wait until the very end.
-> - **Never rewrite history**: This repository uses **Squash and Merge** when merging PRs to `main`. There is zero pressure to have a curated commit history on a feature branch.
-> - **Do NOT use** `git commit --amend`, interactive rebasing (`git rebase -i`), or `git reset` to polish history. Always make new forward-only commits for fixes, follow-ups, or formatting.
+> - **No need to polish history**: This repository uses **Squash and Merge** when merging PRs to `main`. There is no pressure to maintain an artificially pristine internal commit history.
+> - **Avoid Git Surgery**: Do NOT use `git commit --amend` or `git reset` to rewrite past commits (standard `git rebase` against `main` is fine). Always make new forward-only commits for fixes, follow-ups, or formatting.
 
 ---
 
