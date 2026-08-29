@@ -10,7 +10,24 @@
 
 ## GitHub Context
 
-Use the GitHub CLI (`gh`) to gather extra context about issues, pull requests, and releases before starting work. For detailed workflows on managing issues, see the `gh-issues` skill in `.agents/skills/gh-issues/SKILL.md`.
+Use the GitHub CLI (`gh`) to gather extra context about issues, pull requests, and releases before starting work. For detailed workflows on managing issues and pull requests, see the `gh-issues` skill in `.agents/skills/gh-issues/SKILL.md`.
+
+## Task Lifecycle & Git Workflow
+
+All new tasks, bug fixes, refactors, and features MUST follow the standard lifecycle (see detailed guide in [`.agents/workflows/task-lifecycle.md`](.agents/workflows/task-lifecycle.md)):
+
+1. **Intake Context**: Read relevant issues (`gh issue view <num> --comments`) and ADRs in `.agents/decisions/`.
+2. **Branch from Latest `main`**: **Never commit directly to `main`** unless explicitly instructed.
+   ```bash
+   git checkout main && git pull origin main
+   git checkout -b <type>/<issue-number>-<short-description>
+   ```
+   *Branch types: `feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/`.*
+3. **Test First (TDD)**: For bugfixes, write a reproduction test before fixing the bug. Commit test cases incrementally (`test: ...`).
+4. **Implement & Validate**: Adhere to project conventions (strict typing, DI, `tomlkit`, sentinels). Run the 4-step quality pipeline (`ruff check`, `ruff format`, `mypy`, `pytest`). Commit logical units of implementation incrementally (`feat: ...`, `fix: ...`, `refactor: ...`).
+5. **Sync Documentation & Skills**: Update `.agents/skills/ruff-sync/` and `docs/` if CLI flags, config keys, or behavior change. Commit documentation changes (`docs: ...`).
+6. **Open PR**: Push branch (prefer plain `git push` if upstream tracking / `push.autoSetupRemote` is configured) and open a PR via `gh pr create`. **Do not wait until the very end to make a single giant commit**; keep commit history clean, granular, and incremental.
+7. **No Git Surgery / Commit Amending**: This repository uses **Squash and Merge** on PR merge, so there is no pressure to curate branch history. Do **not** use `git commit --amend` or `git reset` to polish past commits (standard `git rebase` to stay up to date with `main` is fine). Always make forward-only commits for fixes and follow-ups.
 
 ## Agent Skills
 
@@ -34,9 +51,15 @@ Specific workflows, libraries, and tools are documented in `.agents/skills/`. Be
 ```text
 .agents/               # Agent-specific instructions (Deep Standards)
   TESTING.md           # Mandatory testing patterns and rules
+  DEPENDENCIES.md      # Optional dependencies and lazy loading standard
   workflows/           # Step-by-step guides for common tasks
+    task-lifecycle.md  # Standard end-to-end task lifecycle & git workflow
+    add-test-case.md   # How to add lifecycle TOML fixtures
+    update-recordings.md # How to regenerate VHS CLI animation recordings
+    update-screenshots.md # How to regenerate TUI screenshots
   decisions/           # Internal Architectural Decision Records (ADRs)
     README.md          # Index of all architectural decisions
+  plans/               # Historical and active implementation plans
   skills/
     ruff-sync/         # Symlink to src/ruff_sync/.agents/skills/ruff-sync (for local workspace agent loading)
       SKILL.md
@@ -45,7 +68,7 @@ Specific workflows, libraries, and tools are documented in `.agents/skills/`. Be
         troubleshooting.md
         ci-integration.md
 src/ruff_sync/         # The application source
-  .agents/skills/ruff-sync/ # [NEW] Canonical physical skill source directory (packaged into wheels)
+  .agents/skills/ruff-sync/ # Canonical physical skill source directory (packaged into wheels)
   __init__.py          # Public API
   __main__.py          # CLI entry point (`python -m ruff_sync`)
   cli.py               # CLI argparse definition and orchestration

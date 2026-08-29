@@ -1,16 +1,17 @@
 ---
 name: gh-issues
 description: >-
-  Create, update, comment on, and link GitHub issues using the gh CLI.
-  Use when creating a new issue, adding sub-issues, cross-referencing issues,
-  or posting large structured content (e.g. research docs) to GitHub.
+  Create, update, comment on, and link GitHub issues and pull requests using the gh CLI.
+  Use when creating a new issue or PR, adding sub-issues, cross-referencing issues,
+  checking CI status, or posting large structured content to GitHub.
 ---
 
-# Working with GitHub Issues via the `gh` CLI
+# Working with GitHub Issues and Pull Requests via the `gh` CLI
 
 ## Quick Reference
 
 ```bash
+# Issues
 gh issue list                          # Open issues
 gh issue list --limit 5               # Most recent 5
 gh issue view <number>                 # Read issue body + metadata
@@ -20,6 +21,13 @@ gh issue create --title "..." --body-file /tmp/body.md  # Create from file (pref
 gh issue comment <number> --body "..." # Post a comment
 gh issue edit <number> --title "..."  # Edit issue metadata
 gh issue close <number>               # Close an issue
+
+# Pull Requests
+gh pr list                             # Open PRs
+gh pr view <number_or_branch>          # Read PR details
+gh pr create --title "..." --body "..." # Open PR (or use --body-file)
+gh pr checks                           # Check CI run status on current PR branch
+gh pr diff                             # Review changes in PR
 ```
 
 ---
@@ -174,8 +182,37 @@ as a GitHub issue body.
 
 ---
 
+## Working with Pull Requests via `gh`
+
+### Creating a Pull Request
+
+When opening a PR from a topic branch:
+
+```bash
+# 1. Push topic branch (prefer plain 'git push' if autoSetupRemote is enabled)
+git push
+# Fallback if upstream tracking is unset: git push -u origin HEAD
+
+# 2. Open the PR linking to the relevant issue
+gh pr create \
+  --title "feat(cli): short descriptive summary" \
+  --body $'## Summary\n- Description of changes made\n\nCloses #<issue-number>'
+# Or use --body-file /tmp/pr-body.md for larger PR descriptions
+```
+
+### Reviewing CI and PR Status
+
+```bash
+gh pr view                             # View current PR summary in terminal
+gh pr checks                           # Check CI run / check status
+gh pr diff                             # Review line-by-line diff of the PR
+```
+
+---
+
 ## References
 
-- `gh issue --help` — full CLI reference
-- [GitHub CLI manual](https://cli.github.com/manual/gh_issue)
-- [GitHub cross-referencing issues](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls#issues-and-pull-requests)
+- `gh issue --help` — full issue CLI reference
+- `gh pr --help` — full PR CLI reference
+- [GitHub CLI manual](https://cli.github.com/manual/)
+- [GitHub cross-referencing issues and PRs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls#issues-and-pull-requests)
