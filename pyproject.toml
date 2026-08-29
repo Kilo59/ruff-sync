@@ -115,6 +115,7 @@ exclude = [
     "lint.per-file-ignores",
     "lint.ignore",
     "lint.flake8-tidy-imports.banned-api",
+    "lint.flake8-import-conventions.banned-from",
     "lint.isort.required-imports",
 ]
 
