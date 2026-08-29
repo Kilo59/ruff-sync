@@ -208,8 +208,9 @@ class RuleNode:
     def __init__(self, rule: RuffRule) -> None:
         """Initialize a Rule Node."""
         self.rule = rule
-        self._key = rule["code"]
-        self._path = f"__rule__:{rule['code']}"
+        rule_ident = rule.get("code") or rule["name"]
+        self._key = rule_ident
+        self._path = f"__rule__:{rule_ident}"
 
     @property
     def key(self) -> str:
@@ -227,13 +228,14 @@ class RuleNode:
 
     def doc_target(self) -> tuple[str, Literal["rule", "config", "none"]]:
         """Target the rule exactly for documentation."""
-        return (self.rule["code"], "rule")
+        return (self.rule.get("code") or self.rule["name"], "rule")
 
 
 def _is_linter_active(linter: RuffLinter, effective_rules: list[RuffRule]) -> bool:
     prefix = linter.get("prefix")
     if prefix and any(
-        r["code"].startswith(prefix) and r["status"] != "Disabled" for r in effective_rules
+        (r.get("code") or "").startswith(prefix) and r.get("status") != "Disabled"
+        for r in effective_rules
     ):
         return True
 

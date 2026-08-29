@@ -58,7 +58,7 @@ dev = [
     "pytest-textual-snapshot>=1.0.0",
     "respx>=0.23.1",
     "ruamel-yaml>=0.18.6",
-    "ruff>=0.16.0",
+    "ruff>=0.16.5",
     "textual>=8.2.2",
     "wily>=1.25.0",
 ]

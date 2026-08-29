@@ -100,3 +100,56 @@ def test_compute_effective_rules_extend():
     # I001: Selected via extend-select
     i001 = next(r for r in enriched if r["code"] == "I001")
     assert i001["status"] == "Enabled"
+
+
+def test_compute_effective_rules_codeless_and_category_rules():
+    """Test handling of rules without rule codes and rules selected by name or category."""
+    all_rules = [
+        {
+            "code": None,
+            "name": "pytest-fixture-autouse",
+            "category": "pedantic",
+            "linter": None,
+            "summary": "Avoid using autouse=True",
+        },
+        {
+            "code": "F401",
+            "name": "unused-import",
+            "category": None,
+            "linter": "Pyflakes",
+            "summary": "Unused import",
+        },
+    ]
+
+    # Select by rule name
+    toml_config_1 = {
+        "tool": {
+            "ruff": {
+                "lint": {
+                    "select": ["pytest-fixture-autouse"],
+                }
+            }
+        }
+    }
+    enriched_1 = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config_1)
+    autouse_1 = next(r for r in enriched_1 if r["name"] == "pytest-fixture-autouse")
+    assert autouse_1["status"] == "Enabled"
+
+    # Select by category
+    toml_config_2 = {
+        "tool": {
+            "ruff": {
+                "lint": {
+                    "select": ["pedantic"],
+                }
+            }
+        }
+    }
+    enriched_2 = compute_effective_rules(cast("list[RuffRule]", all_rules), toml_config_2)
+    autouse_2 = next(r for r in enriched_2 if r["name"] == "pytest-fixture-autouse")
+    assert autouse_2["status"] == "Enabled"
+
+    # Default (E, F) -> codeless rule is Disabled
+    enriched_default = compute_effective_rules(cast("list[RuffRule]", all_rules), {})
+    autouse_def = next(r for r in enriched_default if r["name"] == "pytest-fixture-autouse")
+    assert autouse_def["status"] == "Disabled"

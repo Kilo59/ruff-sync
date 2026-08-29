@@ -172,9 +172,14 @@ class CategoryTable(DataTable[Any]):
             elif status == "Disabled":
                 status_clr = "dim"
 
-            code_markup = f"[{status_clr}]{rule['code']}[/]" if status_clr else rule["code"]
-            name_markup = f"[{status_clr}]{rule['name']}[/]" if status_clr else rule["name"]
-            linter_markup = f"[{status_clr}]{rule['linter']}[/]" if status_clr else rule["linter"]
+            code_val = rule.get("code") or "-"
+            name_val = rule["name"]
+            linter_val = rule.get("linter") or rule.get("category") or "-"
+            rule_key = rule.get("code") or rule["name"]
+
+            code_markup = f"[{status_clr}]{code_val}[/]" if status_clr else code_val
+            name_markup = f"[{status_clr}]{name_val}[/]" if status_clr else name_val
+            linter_markup = f"[{status_clr}]{linter_val}[/]" if status_clr else linter_val
 
             # Fix column uses its own color keyed on fix_availability:
             #   Always    → accent (e.g. magenta)
@@ -188,7 +193,7 @@ class CategoryTable(DataTable[Any]):
             else:
                 fix_markup = fix
 
-            self.add_row(code_markup, name_markup, linter_markup, fix_markup, key=rule["code"])
+            self.add_row(code_markup, name_markup, linter_markup, fix_markup, key=rule_key)
 
 
 class RuleInspector(Markdown):

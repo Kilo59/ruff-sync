@@ -221,7 +221,14 @@ class RuffSyncApp(App[None]):
             rule_code: The Ruff rule code to inspect.
         """
         # Fetch metadata for enrichment
-        rule_data = next((r for r in self.effective_rules if r["code"] == rule_code), None)
+        rule_data = next(
+            (
+                r
+                for r in self.effective_rules
+                if r.get("code") == rule_code or r.get("name") == rule_code
+            ),
+            None,
+        )
         name = rule_data.get("name") if rule_data else None
         status = str(rule_data.get("status", "Disabled")) if rule_data else "Disabled"
         explanation = rule_data.get("explanation") if rule_data else None

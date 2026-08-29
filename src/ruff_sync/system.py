@@ -115,18 +115,20 @@ def compute_effective_rules(
 
     enriched: list[RuffRule] = []
     for rule in all_rules:
-        code = rule["code"]
+        code = rule.get("code")
+        name = rule.get("name", "")
+        category = rule.get("category", "")
 
         # Find longest matching select prefix
         best_select_len = -1
         for s in select:
-            if code.startswith(s):
+            if (code and code.startswith(s)) or s in (name, category):
                 best_select_len = max(best_select_len, len(s))
 
         # Find longest matching ignore prefix
         best_ignore_len = -1
         for i in ignore:
-            if code.startswith(i):
+            if (code and code.startswith(i)) or i in (name, category):
                 best_ignore_len = max(best_ignore_len, len(i))
 
         status = "Disabled"

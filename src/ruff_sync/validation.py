@@ -131,7 +131,7 @@ def _get_deprecated_rule_codes() -> frozenset[str]:
         if result.returncode != 0:
             return frozenset()
         rules = json.loads(result.stdout)
-        return frozenset(r["code"] for r in rules if r.get("deprecated") is True)
+        return frozenset(r["code"] for r in rules if r.get("code") and r.get("deprecated") is True)
     except (
         FileNotFoundError,
         subprocess.TimeoutExpired,

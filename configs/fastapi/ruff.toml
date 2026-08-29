@@ -61,6 +61,8 @@ select = [
     "PT",    # flake8-pytest-style: Pytest style checks
     # https://docs.astral.sh/ruff/rules/#pylint-pl
     "PL",    # Pylint: Pylint rules
+    # https://docs.astral.sh/ruff/rules/#fastapi-fast
+    "FAST",  # FastAPI: FastAPI-specific rules
 ]
 
 # Ignore rules that conflict with the Ruff formatter.

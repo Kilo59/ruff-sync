@@ -86,17 +86,16 @@ class OmniboxScreen(ModalScreen[str]):
 
         matches = []
         for rule in self.all_rules:
-            code = rule["code"].lower()
+            code = (rule.get("code") or "").lower()
             name = rule["name"].lower()
-            if search_query in code or search_query in name:
+            if (code and search_query in code) or search_query in name:
                 matches.append(rule)
                 if len(matches) >= MAX_SEARCH_RESULTS:  # Limit results
                     break
 
         for match in matches:
-            results_list.add_option(
-                Option(f"[b]{match['code']}[/b] - {match['name']}", id=match["code"])
-            )
+            ident = match.get("code") or match["name"]
+            results_list.add_option(Option(f"[b]{ident}[/b] - {match['name']}", id=ident))
 
     @on(Input.Submitted)
     def handle_input_submitted(self) -> None:
