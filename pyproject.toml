@@ -221,7 +221,6 @@ ignore = [
     "PLW1510", # subprocess check not needed in tests
     "PT013", # pytest import style, prevents importing param and or types in from style
     "TC002", # Move third-party import into type-checking block
-    "TID251", # allow cast in tests
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -238,12 +237,13 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "unittest.mock".msg = "Prefer dedicated libraries to mock at external dependencies, such as `httpx` or `pyfakefs`."
+"unittest".msg = "Do not use unittest; use pytest."
 "typing.cast".msg = "Please fix the underlying type issues instead of using typing.cast."
 "httpx".msg = "Use httpx2 instead."
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
-banned-from = ["pathlib", "datetime"]
+banned-from = ["pathlib", "datetime", "unittest", "unittest.mock"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # Declare the default aliases.
