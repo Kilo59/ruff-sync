@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import patch
 
 import pytest
 from textual.widgets import DataTable, Tree
@@ -124,7 +123,9 @@ line-length = 88
 
 
 @pytest.mark.asyncio
-async def test_ruff_sync_app_rule_selection(mock_args: Arguments, tmp_path: pathlib.Path) -> None:
+async def test_ruff_sync_app_rule_selection(
+    mock_args: Arguments, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
         """
@@ -137,50 +138,54 @@ select = ["RUF012"]
     app = RuffSyncApp(mock_args)
     mock_markdown = "## RUF012 Documentation\n\nDetailed info here."
 
-    with patch("ruff_sync.tui.widgets.get_ruff_rule_markdown", return_value=mock_markdown):
-        async with app.run_test() as pilot:
-            # Wait for background worker and tree repopulation (priming)
-            while not app.effective_rules:
-                await asyncio.sleep(0.1)
-                await pilot.pause()
+    async def fake_get_rule_markdown(code: str) -> str:
+        return mock_markdown
 
-            tree = app.query_one(Tree)
-            # Find and select RUF012 node in the now-stable tree
-            # It's inside tool.ruff -> lint -> select -> RUF012
-            lint_node = next(
-                n
-                for n in tree.root.children
-                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "lint"
-            )
-            lint_node.expand()
+    monkeypatch.setattr("ruff_sync.tui.widgets.get_ruff_rule_markdown", fake_get_rule_markdown)
+
+    async with app.run_test() as pilot:
+        # Wait for background worker and tree repopulation (priming)
+        while not app.effective_rules:
+            await asyncio.sleep(0.1)
             await pilot.pause()
 
-            select_node = next(
-                n
-                for n in lint_node.children
-                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "select"
-            )
-            select_node.expand()
-            await pilot.pause()
+        tree = app.query_one(Tree)
+        # Find and select RUF012 node in the now-stable tree
+        # It's inside tool.ruff -> lint -> select -> RUF012
+        lint_node = next(
+            n
+            for n in tree.root.children
+            if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "lint"
+        )
+        lint_node.expand()
+        await pilot.pause()
 
-            rule_node = next(
-                n
-                for n in select_node.children
-                if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "RUF012"
-            )
-            tree.focus()
-            tree.select_node(rule_node)
-            await pilot.press("enter")
+        select_node = next(
+            n
+            for n in lint_node.children
+            if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "select"
+        )
+        select_node.expand()
+        await pilot.pause()
 
-            inspector = app.query_one("#inspector", RuleInspector)
-            # Wait for background worker and UI update
-            for _ in range(20):
-                await pilot.pause(0.2)
-                if "RUF012" in str(inspector.source):
-                    break
+        rule_node = next(
+            n
+            for n in select_node.children
+            if str(n.label.plain if hasattr(n.label, "plain") else n.label) == "RUF012"
+        )
+        tree.focus()
+        tree.select_node(rule_node)
+        await pilot.press("enter")
 
-            # Verify Markdown content (simplified check)
-            assert "RUF012" in str(inspector.source)
+        inspector = app.query_one("#inspector", RuleInspector)
+        # Wait for background worker and UI update
+        for _ in range(20):
+            await pilot.pause(0.2)
+            if "RUF012" in str(inspector.source):
+                break
+
+        # Verify Markdown content (simplified check)
+        assert "RUF012" in str(inspector.source)
 
 
 def test_cli_inspect_subcommand(
@@ -190,12 +195,17 @@ def test_cli_inspect_subcommand(
     # Mock load_local_ruff_config where it's used in RuffSyncApp.on_mount
     monkeypatch.setattr("ruff_sync.tui.app.load_local_ruff_config", lambda _: {})
 
-    # Use patch to prevent the App from actually running (which would block/fail in CI)
-    # and just verify it was instantiated and run() was called.
-    with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
-        exit_code, _out, _err = cli_run(["inspect", "--to", str(tmp_path)])
-        assert exit_code == 0
-        mock_run.assert_called_once()
+    run_calls: list[RuffSyncApp] = []
+
+    def fake_run_inspect(self: RuffSyncApp) -> int:
+        run_calls.append(self)
+        return 0
+
+    monkeypatch.setattr(RuffSyncApp, "run", fake_run_inspect)
+
+    exit_code, _out, _err = cli_run(["inspect", "--to", str(tmp_path)])
+    assert exit_code == 0
+    assert len(run_calls) == 1
 
 
 @pytest.mark.parametrize(
@@ -224,37 +234,48 @@ def test_cli_ruff_inspect_entry_point_variations(
     if "--to" not in args and "--help" not in args:
         final_args = [*args, "--to", str(tmp_path)]
 
-    # 1. Test running (using patched run() to avoid TUI execution)
-    with patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0) as mock_run:
-        exit_code, _out, _err = cli_run(final_args, entry_point="ruff-inspect")
+    # 1. Test running (using monkeypatched run() to avoid TUI execution)
+    run_calls: list[RuffSyncApp] = []
 
-        # If --help was passed, argparse will exit 0 and not call run()
-        if "--help" in args:
-            assert exit_code == 0
-            mock_run.assert_not_called()
-        elif expected_command == "inspect":
-            assert exit_code == 0
-            mock_run.assert_called_once()
-        else:
-            # For 'check', asyncio.run(check()) is called, not RuffSyncApp.run()
-            assert exit_code == 0
-            mock_run.assert_not_called()
+    def fake_run_variations(self: RuffSyncApp) -> int:
+        run_calls.append(self)
+        return 0
+
+    monkeypatch.setattr(RuffSyncApp, "run", fake_run_variations)
+
+    async def fake_check(*_a: Any, **_kw: Any) -> int:
+        return 0
+
+    monkeypatch.setattr("ruff_sync.cli.check", fake_check)
+
+    exit_code, _out, _err = cli_run(final_args, entry_point="ruff-inspect")
+    expected_runs = 1 if (expected_command == "inspect" and "--help" not in args) else 0
+    assert exit_code == 0
+    assert len(run_calls) == expected_runs
 
     # 2. Test instantiation (to verify the command was correctly resolved)
-    with (
-        patch("ruff_sync.tui.app.RuffSyncApp.__init__", return_value=None) as mock_init,
-        patch("ruff_sync.cli.asyncio.run", return_value=0),
-        patch("ruff_sync.tui.app.RuffSyncApp.run", return_value=0),
-    ):
-        cli_run(final_args, entry_point="ruff-inspect")
+    init_args: list[Any] = []
+    original_init = RuffSyncApp.__init__
 
-        if "--help" not in args:
-            if expected_command == "inspect":
-                mock_init.assert_called_once()
-                exec_args = mock_init.call_args[0][0]
-                assert exec_args.command == "inspect"
-            else:
-                mock_init.assert_not_called()
+    def spy_init(self: Any, parsed_args: Any, *a: Any, **kw: Any) -> None:
+        init_args.append(parsed_args)
+        original_init(self, parsed_args, *a, **kw)
+
+    def fake_asyncio_run(coro: Any, *a: Any, **kw: Any) -> int:
+        if asyncio.iscoroutine(coro):
+            coro.close()
+        return 0
+
+    monkeypatch.setattr(RuffSyncApp, "__init__", spy_init)
+    monkeypatch.setattr("ruff_sync.cli.asyncio.run", fake_asyncio_run)
+
+    cli_run(final_args, entry_point="ruff-inspect")
+
+    if "--help" not in args:
+        expected_inits = 1 if expected_command == "inspect" else 0
+        assert len(init_args) == expected_inits
+        if expected_inits:
+            assert init_args[0].command == "inspect"
 
 
 @pytest.mark.asyncio
@@ -272,21 +293,24 @@ async def test_ruff_sync_app_show_legend(mock_args: Arguments) -> None:
 
 
 @pytest.mark.asyncio
-async def test_ruff_sync_app_copy_content(mock_args: Arguments) -> None:
+async def test_ruff_sync_app_copy_content(
+    mock_args: Arguments, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The inspector content should be copied to the clipboard when 'c' is pressed."""
     app = RuffSyncApp(mock_args)
-    # Mock copy_to_clipboard on the app instance
-    with patch.object(RuffSyncApp, "copy_to_clipboard") as mock_copy:
-        async with app.run_test() as pilot:
-            # Manually update inspector to simulate a selected rule/config
-            inspector = app.query_one(RuleInspector)
-            inspector.update("Copied Content Test")
-            await pilot.pause()
+    copied_texts: list[str] = []
+    monkeypatch.setattr(app, "copy_to_clipboard", copied_texts.append)
 
-            await pilot.press("c")
-            await pilot.pause()
+    async with app.run_test() as pilot:
+        # Manually update inspector to simulate a selected rule/config
+        inspector = app.query_one(RuleInspector)
+        inspector.update("Copied Content Test")
+        await pilot.pause()
 
-            mock_copy.assert_called_once_with("Copied Content Test")
+        await pilot.press("c")
+        await pilot.pause()
+
+        assert copied_texts == ["Copied Content Test"]
 
 
 @pytest.mark.asyncio
