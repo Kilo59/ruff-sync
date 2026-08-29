@@ -23,11 +23,10 @@ All new tasks, bug fixes, refactors, and features MUST follow the standard lifec
    git checkout -b <type>/<issue-number>-<short-description>
    ```
    *Branch types: `feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/`.*
-3. **Test First (TDD)**: For bugfixes, write a reproduction test before fixing the bug.
-4. **Implement**: Adhere to project conventions (strict typing, DI, `tomlkit`, sentinels).
-5. **Quality Validation**: Run the mandatory 4-step check pipeline below.
-6. **Sync Documentation & Skills**: Update `.agents/skills/ruff-sync/` and `docs/` if CLI flags, config keys, or behavior change.
-7. **Commit & PR**: Use Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`) and open a PR via `gh pr create`.
+3. **Test First (TDD)**: For bugfixes, write a reproduction test before fixing the bug. Commit test cases incrementally (`test: ...`).
+4. **Implement & Validate**: Adhere to project conventions (strict typing, DI, `tomlkit`, sentinels). Run the 4-step quality pipeline (`ruff check`, `ruff format`, `mypy`, `pytest`). Commit logical units of implementation incrementally (`feat: ...`, `fix: ...`, `refactor: ...`).
+5. **Sync Documentation & Skills**: Update `.agents/skills/ruff-sync/` and `docs/` if CLI flags, config keys, or behavior change. Commit documentation changes (`docs: ...`).
+6. **Open PR**: Push branch and open a PR via `gh pr create`. **Do not wait until the very end to make a single giant commit**; keep commit history clean, granular, and incremental.
 
 ## Agent Skills
 
