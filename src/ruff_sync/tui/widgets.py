@@ -17,6 +17,7 @@ from ruff_sync.tui.types_ import (
     ListNode,
     RulesCollectionNode,
     ScalarNode,
+    rule_matches_linter,
 )
 
 if TYPE_CHECKING:
@@ -138,8 +139,7 @@ class CategoryTable(DataTable[Any]):
     @render_node.register
     def _(self, node: LinterNode) -> None:
         self._reset_columns("Code", "Name", "Linter", "Fix")
-        linter_name = node.linter["name"]
-        filtered = [r for r in node.effective_rules if r["linter"] == linter_name]
+        filtered = [r for r in node.effective_rules if rule_matches_linter(r, node.linter)]
         self._render_rules(filtered)
 
     def _render_rules(self, rules: list[RuffRule]) -> None:

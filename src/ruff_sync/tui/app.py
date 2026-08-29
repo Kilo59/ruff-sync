@@ -218,7 +218,7 @@ class RuffSyncApp(App[None]):
         """Centralized helper for rule inspection with metadata enrichment.
 
         Args:
-            rule_code: The Ruff rule code to inspect.
+            rule_code: A Ruff rule code or rule name to inspect.
         """
         # Fetch metadata for enrichment
         rule_data = next(

@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-import pytest
-
-from ruff_sync.tui.types_ import DictNode, ListNode, ScalarNode, wrap_data
+from ruff_sync.tui.types_ import (
+    DictNode,
+    ListNode,
+    RuleNode,
+    ScalarNode,
+    _is_linter_active,
+    rule_matches_linter,
+    wrap_data,
+)
+from ruff_sync.types_ import RuffLinter, RuffRule
 
 
 def test_wrap_data_scalar() -> None:
@@ -83,5 +90,74 @@ def test_rule_node_behavior() -> None:
     assert node.doc_target() == ("RUF012", "rule")
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-vv"])
+def test_rule_node_codeless() -> None:
+    """Test RuleNode when rule has no code."""
+    rule: RuffRule = {
+        "code": None,
+        "name": "pytest-fixture-autouse",
+        "category": "pedantic",
+        "linter": None,
+        "summary": "Avoid using autouse=True",
+    }
+    node = RuleNode(rule)
+    assert node.key == "pytest-fixture-autouse"
+    assert node.path == "__rule__:pytest-fixture-autouse"
+    assert node.doc_target() == ("pytest-fixture-autouse", "rule")
+
+
+def test_rule_matches_linter() -> None:
+    """Test rule_matches_linter across standard, prefix, and codeless/category rules."""
+    standard_linter: RuffLinter = {"name": "Pyflakes", "prefix": "F"}
+    category_linter: RuffLinter = {"name": "pedantic"}
+    prefix_linter: RuffLinter = {"name": "pytest", "prefix": "PT"}
+
+    standard_rule: RuffRule = {
+        "code": "F401",
+        "name": "unused-import",
+        "linter": "Pyflakes",
+        "summary": "Unused import",
+    }
+    codeless_rule: RuffRule = {
+        "code": None,
+        "name": "pytest-fixture-autouse",
+        "category": "pedantic",
+        "linter": None,
+        "summary": "Avoid using autouse=True",
+    }
+
+    assert rule_matches_linter(standard_rule, standard_linter) is True
+    assert rule_matches_linter(standard_rule, category_linter) is False
+
+    # Codeless rule matches by category
+    assert rule_matches_linter(codeless_rule, category_linter) is True
+    # Codeless rule matches by name starting with prefix or name
+    assert rule_matches_linter(codeless_rule, prefix_linter) is True
+    assert rule_matches_linter(codeless_rule, standard_linter) is False
+
+
+def test_is_linter_active_codeless() -> None:
+    """Test _is_linter_active when effective rules contain active codeless rules."""
+    linter: RuffLinter = {"name": "pedantic"}
+    disabled_rules: list[RuffRule] = [
+        {
+            "code": None,
+            "name": "pytest-fixture-autouse",
+            "category": "pedantic",
+            "linter": None,
+            "summary": "Avoid using autouse=True",
+            "status": "Disabled",
+        }
+    ]
+    enabled_rules: list[RuffRule] = [
+        {
+            "code": None,
+            "name": "pytest-fixture-autouse",
+            "category": "pedantic",
+            "linter": None,
+            "summary": "Avoid using autouse=True",
+            "status": "Enabled",
+        }
+    ]
+
+    assert _is_linter_active(linter, disabled_rules) is False
+    assert _is_linter_active(linter, enabled_rules) is True

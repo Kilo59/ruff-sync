@@ -9,6 +9,7 @@ from textual.widgets import DataTable, Tree
 
 from ruff_sync.tui.app import RuffSyncApp
 from ruff_sync.tui.screens import LegendScreen
+from ruff_sync.tui.types_ import LinterNode
 from ruff_sync.tui.widgets import CategoryTable, RuleInspector
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
     from ruff_sync.cli import Arguments
     from ruff_sync.tui.widgets import ConfigTree
-    from ruff_sync.types_ import RuffRule
+    from ruff_sync.types_ import RuffLinter, RuffRule
     from tests.conftest import CLIRunner
 
 
@@ -375,6 +376,40 @@ async def test_category_table_handles_ignored_status(
 
         assert warning_hex in code_cell.lower()
         assert warning_hex in fix_cell.lower()
+
+
+@pytest.mark.asyncio
+async def test_category_table_renders_codeless_linter_node(
+    mock_args: Arguments, tmp_path: pathlib.Path
+) -> None:
+    """Verify that CategoryTable correctly renders codeless rules under a LinterNode."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.ruff]\n", encoding="utf-8")
+
+    app = RuffSyncApp(mock_args)
+    async with app.run_test() as pilot:
+        table = app.query_one("#category-table", CategoryTable)
+
+        linter: RuffLinter = {"name": "pedantic"}
+        test_rule: RuffRule = {
+            "code": None,
+            "name": "pytest-fixture-autouse",
+            "category": "pedantic",
+            "linter": None,
+            "summary": "Avoid using autouse=True",
+            "status": "Enabled",
+            "fix_availability": "None",
+        }
+
+        linter_node = LinterNode(linter, [test_rule])
+        table.render_node(linter_node)
+        await pilot.pause()
+
+        assert table.row_count == 1
+        row = table.get_row_at(0)
+        assert "-" in str(row[0])  # Code column fallback
+        assert "pytest-fixture-autouse" in str(row[1])
+        assert "pedantic" in str(row[2])
 
 
 if __name__ == "__main__":
