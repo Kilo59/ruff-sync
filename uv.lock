@@ -1733,7 +1733,7 @@ wheels = [
 
 [[package]]
 name = "ruff-sync"
-version = "0.1.9.dev0"
+version = "0.1.9.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "httpx2" },
