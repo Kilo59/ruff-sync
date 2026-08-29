@@ -1,7 +1,7 @@
 # ruff-sync Kitchen Sink Configuration
 # https://github.com/Kilo59/ruff-sync
 #
-# This file enables ALL possible Ruff rules as of Ruff v0.15.5
+# This file enables ALL possible Ruff rules as of Ruff v0.16.5
 # It explicitly lists all rule categories and provides links to their documentation.
 # This serves as a comprehensive reference for what is possible with Ruff.
 
@@ -51,7 +51,7 @@ select = [
     # https://docs.astral.sh/ruff/rules/#flake8-commas-com
     "COM",    # flake8-commas: Trailing commas checks
     # https://docs.astral.sh/ruff/rules/#flake8-copyright-cpy
-    # "CPY",    # flake8-copyright: Copyright notice checks (Note: requires `preview = true`)
+    "CPY",    # flake8-copyright: Copyright notice checks
     # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
     "C4",     # flake8-comprehensions: Write better list/set/dict comprehensions
     # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
@@ -99,6 +99,8 @@ select = [
     # https://docs.astral.sh/ruff/rules/#flake8-type-checking-tc
     "TC",     # flake8-type-checking: Move imports into type-checking blocks
     # https://docs.astral.sh/ruff/rules/#flake8-gettext-int
+    "INT",    # flake8-gettext: Internationalization / gettext checks
+    # https://docs.astral.sh/ruff/rules/#flake8-unused-arguments-arg
     "ARG",    # flake8-unused-arguments: Unused argument checks
     # https://docs.astral.sh/ruff/rules/#flake8-use-pathlib-pth
     "PTH",    # flake8-use-pathlib: Use pathlib instead of os.path
@@ -128,11 +130,20 @@ select = [
     "FURB",   # refurb: Modernize Python code
     # https://docs.astral.sh/ruff/rules/#flake8-logging-log
     "LOG",    # flake8-logging: Better logging practices
+    # https://docs.astral.sh/ruff/rules/#fastapi-fast
+    "FAST",   # FastAPI: FastAPI-specific rules
     # https://docs.astral.sh/ruff/rules/#pydoclint-doc
-    # "DOC",    # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
+    # "DOC",                      # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
+    # https://docs.astral.sh/ruff/rules/pytest-fixture-autouse/
+    # "pedantic",                 # Category selector: Pedantic checks (Note: requires `preview = true`)
+    # "pytest-fixture-autouse",   # Codeless rule: Avoid autouse=True in pytest fixtures (Note: requires `preview = true`)
     # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
-    "RUF"     # Ruff-specific rules: Rules unique to Ruff
+    "RUF",    # Ruff-specific rules: Rules unique to Ruff
 ]
+
+# Preview mode settings:
+# preview = true                # Enable preview rules and fixes across Ruff
+# explicit-preview-rules = true # When preview is enabled, require full rule codes instead of prefixes
 
 # We don't ignore any rules in this config, as it aims to be exhaustive.
 # WARNING: Some of the rules enabled above may be mutually exclusive or
@@ -228,6 +239,10 @@ docstring-code-format = true
 # enabled.
 docstring-code-line-length = "dynamic"
 
+# Controls the quote style for nested strings inside interpolated string expressions (Python 3.12+).
+# Can be "alternating" (default) or "preferred".
+nested-string-quote-style = "alternating"
+
 [lint.flake8-pytest-style]
 # Whether to require parentheses for pytest fixtures.
 # Default: true
@@ -259,4 +274,17 @@ ignore-names = []
 classmethod-decorators = [
     "pydantic.validator",
     "pydantic.root_validator",
+    "pydantic.field_validator",
+    "pydantic.model_validator",
 ]
+
+[lint.flake8-copyright]
+# Copyright notice regex pattern.
+# notice-rgx = "(?i)Copyright \\(C\\) \\d{4}"
+
+[lint.flake8-gettext]
+# Additional function names to consider as gettext calls.
+# extend-function-names = ["_"]
+
+# [lint.pydoclint]
+# ignore-one-line-docstrings = true # (Note: requires `preview = true`)

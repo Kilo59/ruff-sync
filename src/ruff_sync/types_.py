@@ -10,10 +10,11 @@ RuleSyncStatus = Literal["Enabled", "Ignored", "Disabled"]
 class RuffRule(TypedDict):
     """Represents a single Ruff rule as returned by `ruff rule --all --output-format json`."""
 
-    code: str
+    code: str | None
     name: str
-    linter: str
+    linter: str | None
     summary: str
+    category: NotRequired[str | None]
     explanation: NotRequired[str]
     fix_availability: NotRequired[str]
     status: NotRequired[RuleSyncStatus | dict[str, Any]]

@@ -22,7 +22,7 @@ repos:
 
   # Ruff: fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.16.4"
+    rev: "v0.16.5"
     hooks:
       - id: ruff-check # lints Python code and auto-fixes where possible
         args: ["--fix"]

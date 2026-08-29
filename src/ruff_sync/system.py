@@ -16,10 +16,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def get_ruff_rule_markdown(rule_code: str) -> str | None:
-    """Execute `ruff rule <CODE>` and return the Markdown documentation.
+    """Execute `ruff rule <CODE|NAME>` and return the Markdown documentation.
 
     Args:
-        rule_code: The Ruff rule code (e.g., 'RUF012').
+        rule_code: The Ruff rule code or rule name (e.g., 'RUF012' or 'unused-imports').
 
     Returns:
         The Markdown documentation for the rule, or None if the execution fails
@@ -115,18 +115,20 @@ def compute_effective_rules(
 
     enriched: list[RuffRule] = []
     for rule in all_rules:
-        code = rule["code"]
+        code = rule.get("code")
+        name = rule.get("name", "")
+        category = rule.get("category", "")
 
         # Find longest matching select prefix
         best_select_len = -1
         for s in select:
-            if code.startswith(s):
+            if (code and code.startswith(s)) or s in (name, category):
                 best_select_len = max(best_select_len, len(s))
 
         # Find longest matching ignore prefix
         best_ignore_len = -1
         for i in ignore:
-            if code.startswith(i):
+            if (code and code.startswith(i)) or i in (name, category):
                 best_ignore_len = max(best_ignore_len, len(i))
 
         status = "Disabled"

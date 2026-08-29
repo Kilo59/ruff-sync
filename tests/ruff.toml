@@ -31,3 +31,6 @@ lint.extend-ignore = [
 
 [lint.isort]
 known-first-party = ["ruff_sync", "tests"]
+
+[lint.flake8-tidy-imports.banned-api]
+"unittest.mock".msg = "Do not use unittest.mock. Prefer DI, respx, pyfakefs, or monkeypatch."

@@ -11,7 +11,7 @@ These configurations are maintained in the [`configs/`](https://github.com/Kilo5
 An exhaustive configuration that explicitly enables and documents almost all available Ruff rules. This is ideal for teams that want a strict, "no-stone-unturned" approach to linting and formatting.
 
 ### Key Features
-- **Strict Linting**: Enables almost all Ruff rules (over 700 rules).
+- **Strict Linting**: Enables almost all Ruff rules (over 900 rules).
 - **Explicit Documentation**: Each rule or category is documented with comments explaining why it's enabled.
 - **Safety First**: Includes security-related rules from `flake8-bandit`.
 

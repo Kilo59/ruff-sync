@@ -208,8 +208,9 @@ class RuleNode:
     def __init__(self, rule: RuffRule) -> None:
         """Initialize a Rule Node."""
         self.rule = rule
-        self._key = rule["code"]
-        self._path = f"__rule__:{rule['code']}"
+        rule_ident = rule.get("code") or rule["name"]
+        self._key = rule_ident
+        self._path = f"__rule__:{rule_ident}"
 
     @property
     def key(self) -> str:
@@ -227,13 +228,47 @@ class RuleNode:
 
     def doc_target(self) -> tuple[str, Literal["rule", "config", "none"]]:
         """Target the rule exactly for documentation."""
-        return (self.rule["code"], "rule")
+        return (self.rule.get("code") or self.rule["name"], "rule")
+
+
+def rule_matches_linter(rule: RuffRule, linter: RuffLinter) -> bool:
+    """Check if a rule belongs to a given linter or category group."""
+    linter_name = linter["name"]
+    prefix = linter.get("prefix")
+    rule_code = rule.get("code")
+    rule_linter = rule.get("linter")
+    rule_category = rule.get("category")
+    rule_name = rule.get("name")
+
+    # 1. Direct linter name match if rule has linter specified
+    if rule_linter and rule_linter.lower() == linter_name.lower():
+        return True
+
+    # 2. Prefix match if both rule code and linter prefix exist
+    if prefix and rule_code and rule_code.startswith(prefix):
+        return True
+
+    # 3. Fallback for codeless rules or rules without linter field:
+    # Match category or rule name against linter name or prefix
+    if not rule_linter or not rule_code:
+        if rule_category and (
+            rule_category.lower() == linter_name.lower()
+            or (prefix and rule_category.lower() == prefix.lower())
+        ):
+            return True
+        if rule_name and (
+            rule_name.lower() == linter_name.lower()
+            or rule_name.lower().startswith(linter_name.lower())
+            or (prefix and rule_name.lower().startswith(prefix.lower()))
+        ):
+            return True
+
+    return False
 
 
 def _is_linter_active(linter: RuffLinter, effective_rules: list[RuffRule]) -> bool:
-    prefix = linter.get("prefix")
-    if prefix and any(
-        r["code"].startswith(prefix) and r["status"] != "Disabled" for r in effective_rules
+    if any(
+        rule_matches_linter(r, linter) and r.get("status") != "Disabled" for r in effective_rules
     ):
         return True
 

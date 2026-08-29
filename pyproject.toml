@@ -1,6 +1,6 @@
 [project]
 name = "ruff-sync"
-version = "0.1.9.dev0"
+version = "0.1.9.dev1"
 description = "Synchronize Ruff linter configuration across projects"
 keywords = ["ruff", "linter", "config", "synchronize", "python", "linting", "automation", "tomlkit", "pre-commit"]
 authors = [
@@ -58,7 +58,7 @@ dev = [
     "pytest-textual-snapshot>=1.0.0",
     "respx>=0.23.1",
     "ruamel-yaml>=0.18.6",
-    "ruff>=0.16.0",
+    "ruff>=0.16.5",
     "textual>=8.2.2",
     "wily>=1.25.0",
 ]
@@ -115,6 +115,7 @@ exclude = [
     "lint.per-file-ignores",
     "lint.ignore",
     "lint.flake8-tidy-imports.banned-api",
+    "lint.flake8-import-conventions.banned-from",
     "lint.isort.required-imports",
 ]
 
@@ -221,7 +222,6 @@ ignore = [
     "PLW1510", # subprocess check not needed in tests
     "PT013", # pytest import style, prevents importing param and or types in from style
     "TC002", # Move third-party import into type-checking block
-    "TID251", # allow cast in tests
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -243,7 +243,7 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.flake8-import-conventions]
 # Declare the banned `from` imports.
-banned-from = ["pathlib", "datetime"]
+banned-from = ["pathlib", "datetime", "unittest.mock"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # Declare the default aliases.
