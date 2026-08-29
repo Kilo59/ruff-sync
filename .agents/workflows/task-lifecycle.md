@@ -146,7 +146,8 @@ git commit -m "docs: update documentation and agent skills for <feature-name>"
    ```bash
    gh pr create \
      --title "feat: descriptive title" \
-     --body "## Summary\n- Description of changes\n\nCloses #<issue-number>"
+     --body $'## Summary\n- Description of changes\n\nCloses #<issue-number>'
+   # Or use --body-file /tmp/pr-body.md for larger descriptions
    ```
 
 3. **Verify CI**:

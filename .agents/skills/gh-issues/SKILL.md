@@ -195,7 +195,8 @@ git push -u origin <branch-name>
 # 2. Open the PR linking to the relevant issue
 gh pr create \
   --title "feat(cli): short descriptive summary" \
-  --body "## Summary\n- Description of changes made\n\nCloses #<issue-number>"
+  --body $'## Summary\n- Description of changes made\n\nCloses #<issue-number>'
+# Or use --body-file /tmp/pr-body.md for larger PR descriptions
 ```
 
 ### Reviewing CI and PR Status
