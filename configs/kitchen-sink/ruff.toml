@@ -133,10 +133,17 @@ select = [
     # https://docs.astral.sh/ruff/rules/#fastapi-fast
     "FAST",   # FastAPI: FastAPI-specific rules
     # https://docs.astral.sh/ruff/rules/#pydoclint-doc
-    # "DOC",    # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
+    # "DOC",                      # pydoclint: Validate docstrings against function signatures (Note: requires `preview = true`)
+    # https://docs.astral.sh/ruff/rules/pytest-fixture-autouse/
+    # "pedantic",                 # Category selector: Pedantic checks (Note: requires `preview = true`)
+    # "pytest-fixture-autouse",   # Codeless rule: Avoid autouse=True in pytest fixtures (Note: requires `preview = true`)
     # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF",    # Ruff-specific rules: Rules unique to Ruff
 ]
+
+# Preview mode settings:
+# preview = true                # Enable preview rules and fixes across Ruff
+# explicit-preview-rules = true # When preview is enabled, require full rule codes instead of prefixes
 
 # We don't ignore any rules in this config, as it aims to be exhaustive.
 # WARNING: Some of the rules enabled above may be mutually exclusive or
@@ -278,3 +285,6 @@ classmethod-decorators = [
 [lint.flake8-gettext]
 # Additional function names to consider as gettext calls.
 # extend-function-names = ["_"]
+
+# [lint.pydoclint]
+# ignore-one-line-docstrings = true # (Note: requires `preview = true`)
